@@ -1,0 +1,17 @@
+server.port=3001
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/hooppicks
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.datasource.username=postgres
+spring.datasource.password=TON_MOT_DE_PASSE_ICI
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+balldontlie.api-key=TA_CLE_API_ICI
+balldontlie.base-url=https://api.balldontlie.io
+
+nba.sync.use-fixed-window=true
+nba.sync.window-start=2026-06-10
+nba.sync.window-days=10

@@ -1,0 +1,14 @@
+# Frontend (Next.js)
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# Backend (Spring Boot / Maven)
+backend/target/
+backend/.idea/
+backend/*.iml
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-prod.properties
+
+# Général
+.DS_Store

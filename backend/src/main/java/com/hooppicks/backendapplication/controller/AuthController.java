@@ -1,0 +1,138 @@
+package com.hooppicks.backendapplication.controller;
+
+import com.hooppicks.backendapplication.dto.LoginRequest;
+import com.hooppicks.backendapplication.dto.RegisterRequest;
+import com.hooppicks.backendapplication.dto.UserProfileDto;
+import com.hooppicks.backendapplication.entity.User;
+import com.hooppicks.backendapplication.repository.BetRepository;
+import com.hooppicks.backendapplication.repository.UserRepository;
+import com.hooppicks.backendapplication.security.SessionStore;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import com.hooppicks.backendapplication.security.LoginAttemptService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final SessionStore sessionStore;
+    private final BetRepository betRepository;
+    private final LoginAttemptService loginAttemptService;
+
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                          SessionStore sessionStore, BetRepository betRepository,
+                          LoginAttemptService loginAttemptService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.sessionStore = sessionStore;
+        this.betRepository = betRepository;
+        this.loginAttemptService = loginAttemptService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<UserProfileDto> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            return ResponseEntity.status(409).build();
+        }
+
+        User user = new User();
+        user.setUsername(request.username());
+        user.setEmail(request.email());
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        userRepository.save(user);
+
+        setSessionCookie(response, user.getId());
+        return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+        if (loginAttemptService.isBlocked(request.email())) {
+            return ResponseEntity.status(429).body("Trop de tentatives. Réessaie dans 15 minutes.");
+        }
+
+        User user = userRepository.findByEmail(request.email()).orElse(null);
+
+        if (user == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            loginAttemptService.recordFailedAttempt(request.email());
+            return ResponseEntity.status(401).build();
+        }
+
+        loginAttemptService.recordSuccessfulLogin(request.email());
+        setSessionCookie(response, user.getId());
+        return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileDto> me(HttpServletRequest request) {
+        String userId = getUserIdFromCookie(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        return userRepository.findById(userId)
+                .map(user -> ResponseEntity.ok(buildProfileDto(user)))
+                .orElse(ResponseEntity.status(401).build());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("hp_session")) {
+                    sessionStore.invalidate(cookie.getValue());
+                }
+            }
+        }
+        ResponseCookie expired = ResponseCookie.from("hp_session", "")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, expired.toString());
+        return ResponseEntity.ok().build();
+    }
+
+    private UserProfileDto buildProfileDto(User user) {
+        List<Object[]> stats = betRepository.getUserStats(user.getId());
+        long totalBets = 0;
+        long wonBets = 0;
+        if (!stats.isEmpty() && stats.get(0)[0] != null) {
+            totalBets = (Long) stats.get(0)[0];
+            wonBets = stats.get(0)[1] != null ? (Long) stats.get(0)[1] : 0;
+        }
+        int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
+        return UserProfileDto.from(user, winRate, (int) totalBets);
+    }
+
+    private void setSessionCookie(HttpServletResponse response, String userId) {
+        String token = sessionStore.createSession(userId);
+        ResponseCookie cookie = ResponseCookie.from("hp_session", token)
+                .path("/")
+                .httpOnly(true)
+                .secure(true) // le cookie ne circule qu'en HTTPS — indispensable en prod, sans effet en local http
+                .sameSite("Strict") // empêche le cookie d'être envoyé depuis un autre site (protection CSRF)
+                .maxAge(60 * 60 * 24)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private String getUserIdFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+        for (Cookie cookie : request.getCookies()) {
+            if (cookie.getName().equals("hp_session")) {
+                return sessionStore.getUserId(cookie.getValue());
+            }
+        }
+        return null;
+    }
+}
