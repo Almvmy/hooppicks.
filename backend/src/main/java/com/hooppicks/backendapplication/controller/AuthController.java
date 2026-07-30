@@ -22,6 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
+
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -29,6 +30,12 @@ public class AuthController {
     private final SessionStore sessionStore;
     private final BetRepository betRepository;
     private final LoginAttemptService loginAttemptService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
+    private String cookieSameSite;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cookie-secure:false}")
+    private boolean cookieSecure;
 
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
                           SessionStore sessionStore, BetRepository betRepository,
@@ -119,8 +126,8 @@ public class AuthController {
         ResponseCookie cookie = ResponseCookie.from("hp_session", token)
                 .path("/")
                 .httpOnly(true)
-                .secure(true) // le cookie ne circule qu'en HTTPS — indispensable en prod, sans effet en local http
-                .sameSite("Strict") // empêche le cookie d'être envoyé depuis un autre site (protection CSRF)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
                 .maxAge(60 * 60 * 24)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
