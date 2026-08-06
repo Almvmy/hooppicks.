@@ -32,6 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
-# Ne jamais versionner les secrets de prod
-application-prod.properties
+# Ne jamais versionner les vrais secrets locaux
+application.properties
 .env
