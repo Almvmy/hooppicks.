@@ -28,9 +28,12 @@ async function proxy(request: NextRequest, path: string[]) {
     headers: responseHeaders,
   });
 
+  const headersWithGetSetCookie = backendResponse.headers as Headers & {
+    getSetCookie?: () => string[];
+  };
   const setCookies =
-    typeof (backendResponse.headers as any).getSetCookie === "function"
-      ? (backendResponse.headers as any).getSetCookie()
+    typeof headersWithGetSetCookie.getSetCookie === "function"
+      ? headersWithGetSetCookie.getSetCookie()
       : backendResponse.headers.get("set-cookie")
       ? [backendResponse.headers.get("set-cookie") as string]
       : [];
