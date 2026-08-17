@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Award, ArrowRight, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchBadges } from "@/lib/mock/badges";
+import { fetchBadges } from "@/lib/api/badges";
 
 export function BadgesTeaserCard() {
   const { data, isLoading, isError } = useQuery({
