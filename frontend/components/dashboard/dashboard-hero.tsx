@@ -56,9 +56,14 @@ export function DashboardHero({
               {greetingForNow()}, {username ?? "champion"}
             </h1>
           )}
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {isLoading ? <Skeleton className="mt-1 h-4 w-64" /> : subtitleFor(streak, pendingCount)}
-          </p>
+          {isLoading ? ( 
+            <Skeleton className="mt-2 h-4 w-64" />
+          ) : ( 
+            <p className="mt-1.5 text-sm text-muted-foreground">
+            {subtitleFor(streak, pendingCount)} + </p>
+            )}
+
+
         </div>
 
         <div className="flex items-center gap-3">

@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Award, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchBadges } from "@/lib/mock/badges";
+import { fetchBadges } from "@/lib/api/badges"
 import { cn } from "@/lib/utils";
 
 export function BadgeGrid() {
