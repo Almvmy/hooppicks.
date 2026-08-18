@@ -4,9 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { fetchBets } from "@/lib/api/bets";
 import { BetStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 8;
 
 const STATUS_CONFIG: Record<BetStatus, { label: string; className: string }> = {
   pending: { label: "En attente", className: "border-border bg-secondary text-muted-foreground" },
@@ -17,12 +20,16 @@ const STATUS_CONFIG: Record<BetStatus, { label: string; className: string }> = {
 
 export default function BetsPage() {
   const { data, isLoading, isError } = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
+  const { page, pageCount, pageItems, setPage, totalCount } = usePagination(data, PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold">Mes paris</h1>
-        <p className="mt-1 text-muted-foreground">Historique de tes tickets.</p>
+        <p className="mt-1 text-muted-foreground">
+          Historique de tes tickets
+          {!isLoading && !isError && totalCount > 0 && ` — ${totalCount} au total`}.
+        </p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -33,13 +40,13 @@ export default function BetsPage() {
 
         {isError && <p className="text-destructive">Impossible de charger tes paris.</p>}
 
-        {!isLoading && !isError && data?.length === 0 && (
+        {!isLoading && !isError && totalCount === 0 && (
           <p className="text-muted-foreground">Aucun ticket pour l&apos;instant.</p>
         )}
 
         {!isLoading &&
           !isError &&
-          data?.map((bet) => (
+          pageItems.map((bet) => (
             <Card key={bet.id} className="border-border bg-card">
               <CardContent className="flex flex-col gap-2 pt-6">
                 <div className="flex items-center justify-between">
@@ -80,6 +87,10 @@ export default function BetsPage() {
               </CardContent>
             </Card>
           ))}
+
+        {!isLoading && !isError && totalCount > 0 && (
+          <PaginationControls page={page} pageCount={pageCount} onPageChange={setPage} />
+        )}
       </div>
     </div>
   );

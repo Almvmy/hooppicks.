@@ -11,8 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 20;
 
 const RANK_COLORS: Record<number, string> = {
   1: "text-primary",
@@ -26,13 +29,15 @@ export default function LeaderboardPage() {
     queryFn: fetchLeaderboard,
     staleTime: 2 * 60 * 1000, // 2 minutes  
   });
+  const { page, pageCount, pageItems, setPage, totalCount } = usePagination(data, PAGE_SIZE);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold">Classement</h1>
         <p className="mt-1 text-muted-foreground">
-          Les meilleurs pronostiqueurs de la saison.
+          Les meilleurs pronostiqueurs de la saison
+          {!isLoading && !isError && totalCount > 0 && ` — ${totalCount} joueurs`}.
         </p>
       </div>
 
@@ -67,7 +72,7 @@ export default function LeaderboardPage() {
 
             {!isLoading &&
               !isError &&
-              data?.map((entry) => (
+              pageItems.map((entry) => (
                 <TableRow key={entry.rank}>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
@@ -101,6 +106,10 @@ export default function LeaderboardPage() {
           </TableBody>
         </Table>
       </div>
+
+      {!isLoading && !isError && totalCount > 0 && (
+        <PaginationControls page={page} pageCount={pageCount} onPageChange={setPage} />
+      )}
     </div>
   );
 }
