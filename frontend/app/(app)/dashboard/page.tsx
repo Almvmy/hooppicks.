@@ -26,6 +26,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { WalletTrend } from "@/components/dashboard/wallet-trend";
 import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
+import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 
 export default function DashboardPage() {
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -113,6 +114,7 @@ export default function DashboardPage() {
             currentUsername={profileQuery.data?.username}
             isLoading={leaderboardQuery.isLoading}
           />
+          <FunFactCard />
         </div>
       </div>
     </div>

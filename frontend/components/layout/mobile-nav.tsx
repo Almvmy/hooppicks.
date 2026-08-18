@@ -97,6 +97,8 @@ export function MobileNav() {
         l'écran entier. S'il restait un descendant du <header> (qui a backdrop-blur),
         cet ancêtre créerait un nouveau containing block et casserait le
         positionnement fixed (le panneau se retrouverait coincé derrière/dans le header).
+        Cette branche ne s'exécute qu'après un clic utilisateur, donc toujours
+        côté client : document est garanti disponible, pas besoin d'état "mounted".
       */}
       {panel && createPortal(panel, document.body)}
     </div>

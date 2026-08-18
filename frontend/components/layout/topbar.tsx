@@ -2,6 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,10 +13,12 @@ import {
 import { WalletBalance } from "@/components/wallet-balance";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { MobileNav } from "@/components/layout/mobile-nav";
-import { logoutUser } from "@/lib/api/auth";
+import { PlayerAvatar } from "@/components/player-avatar";
+import { logoutUser, fetchProfile } from "@/lib/api/auth";
 
 export function Topbar() {
   const router = useRouter();
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
   async function handleLogout() {
     await logoutUser();
@@ -32,9 +35,19 @@ export function Topbar() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full" data-testid="user-menu-trigger">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-secondary text-xs">AL</AvatarFallback>
-            </Avatar>
+            {profile ? (
+              <PlayerAvatar
+                number={profile.avatarNumber}
+                position={profile.avatarPosition}
+                colorway={profile.avatarColorway}
+                icon={profile.avatarIcon}
+                size="sm"
+              />
+            ) : (
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-secondary text-xs">…</AvatarFallback>
+              </Avatar>
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem

@@ -12,12 +12,28 @@ export interface WalletData {
   balance: number;
 }
 
+export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
+export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal";
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker";
+
 export interface UserProfile {
   username: string;
   email: string;
   winRate: number;
   totalBets: number;
   favoriteTeam: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
+}
+
+export interface UpdateProfileInput {
+  favoriteTeam?: string;
+  avatarNumber?: number;
+  avatarPosition?: AvatarPosition;
+  avatarColorway?: AvatarColorway;
+  avatarIcon?: AvatarIcon;
 }
 
 export type MatchStatus = "scheduled" | "live" | "finished";

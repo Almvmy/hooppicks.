@@ -1,15 +1,32 @@
 import Link from "next/link";
+import { Swords } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
+import { isRivalryMatchup } from "@/lib/rivalries";
+import { cn } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
   const date = new Date(match.date);
+  const isRivalry = isRivalryMatchup(match.homeTeam.abbreviation, match.awayTeam.abbreviation);
 
   return (
     <Link href={`/matches/${match.id}`}>
-      <Card className="border-border bg-card transition-colors hover:border-primary/40">
+      <Card
+        className={cn(
+          "relative overflow-hidden border-border bg-card transition-colors hover:border-primary/40",
+          isRivalry && "border-primary/30"
+        )}
+      >
+        {isRivalry && (
+          <div className="flex items-center gap-1.5 border-b border-primary/20 bg-primary/10 px-4 py-1.5">
+            <Swords className="h-3 w-3 text-primary" />
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-primary">
+              Rivalité historique
+            </span>
+          </div>
+        )}
         <CardContent className="flex items-center justify-between gap-4 pt-6">
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm">
@@ -48,4 +65,3 @@ export function MatchCard({ match }: { match: Match }) {
     </Link>
   );
 }
-

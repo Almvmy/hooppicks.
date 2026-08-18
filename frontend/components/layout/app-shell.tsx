@@ -3,6 +3,7 @@ import { Topbar } from "@/components/layout/topbar";
 import { BetSlipProvider } from "@/components/bet-slip-provider";
 import { BetSlipPanel } from "@/components/bet-slip-panel";
 import { BadgeUnlockWatcher } from "@/components/badge-unlock-watcher";
+import { BetResultWatcher } from "@/components/bet-result-watcher";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <BetSlipPanel />
       <BadgeUnlockWatcher />
+      <BetResultWatcher />
     </BetSlipProvider>
   );
 }

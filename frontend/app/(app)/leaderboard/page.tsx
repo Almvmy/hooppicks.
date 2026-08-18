@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Trophy } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { BasketballLoader } from "@/components/ui/basketball-loader";
 import {
   Table,
   TableBody,
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
+import { CourtWatermark } from "@/components/court-watermark";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +42,8 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="relative overflow-hidden rounded-lg border border-border bg-card">
+        <CourtWatermark className="pointer-events-none absolute -right-6 -top-10 h-[220px] w-[340px] opacity-[0.05]" />
         <Table>
           <TableHeader>
             <TableRow>
@@ -53,14 +55,13 @@ export default function LeaderboardPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell colSpan={5}>
-                    <Skeleton className="h-6 w-full" />
-                  </TableCell>
-                </TableRow>
-              ))}
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={5}>
+                  <BasketballLoader label="Chargement du classement..." />
+                </TableCell>
+              </TableRow>
+            )}
 
             {isError && (
               <TableRow>

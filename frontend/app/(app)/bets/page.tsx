@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { fetchBets } from "@/lib/api/bets";
 import { BetStatus } from "@/lib/types";
@@ -33,10 +33,7 @@ export default function BetsPage() {
       </div>
 
       <div className="flex flex-col gap-3">
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
+        {isLoading && <BasketballLoader label="Chargement de tes tickets..." />}
 
         {isError && <p className="text-destructive">Impossible de charger tes paris.</p>}
 

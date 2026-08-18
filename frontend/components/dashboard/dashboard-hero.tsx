@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { greetingForNow } from "@/lib/dashboard";
+import { CourtWatermark } from "@/components/court-watermark";
 
 interface DashboardHeroProps {
   username?: string;
@@ -36,16 +37,7 @@ export function DashboardHero({
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card">
       {/* Signature : tracé de terrain de basket en filigrane, ancré à droite */}
-      <svg
-        aria-hidden
-        viewBox="0 0 400 260"
-        className="pointer-events-none absolute -right-10 -top-8 h-[260px] w-[400px] opacity-[0.06] sm:opacity-[0.08]"
-      >
-        <circle cx="330" cy="130" r="90" fill="none" stroke="var(--primary)" strokeWidth="2" />
-        <path d="M400 40 A120 120 0 0 1 400 220" fill="none" stroke="var(--primary)" strokeWidth="2" />
-        <rect x="330" y="70" width="70" height="120" fill="none" stroke="var(--primary)" strokeWidth="2" />
-        <line x1="330" y1="10" x2="330" y2="250" stroke="var(--primary)" strokeWidth="2" />
-      </svg>
+      <CourtWatermark />
 
       <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -60,7 +52,7 @@ export function DashboardHero({
             <Skeleton className="mt-2 h-4 w-64" />
           ) : ( 
             <p className="mt-1.5 text-sm text-muted-foreground">
-            {subtitleFor(streak, pendingCount)} </p>
+            {subtitleFor(streak, pendingCount)} + </p>
             )}
 
 
