@@ -2,6 +2,7 @@ package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.dto.LoginRequest;
 import com.hooppicks.backendapplication.dto.RegisterRequest;
+import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
@@ -19,11 +20,18 @@ import org.springframework.http.ResponseCookie;
 import com.hooppicks.backendapplication.security.LoginAttemptService;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/auth")
 
 public class AuthController {
+
+    private static final Set<String> VALID_POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
+    private static final Set<String> VALID_COLORWAYS =
+            Set.of("orange", "purple", "blue", "green", "red", "teal");
+    private static final Set<String> VALID_ICONS =
+            Set.of("dunk", "three", "handles", "defense", "playmaker");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -89,6 +97,35 @@ public class AuthController {
         return userRepository.findById(userId)
                 .map(user -> ResponseEntity.ok(buildProfileDto(user)))
                 .orElse(ResponseEntity.status(401).build());
+    }
+
+    @PatchMapping("/profile")
+    public ResponseEntity<UserProfileDto> updateProfile(
+            @RequestBody UpdateProfileRequest request, HttpServletRequest httpRequest) {
+        String userId = getUserIdFromCookie(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (request.favoriteTeam() != null) {
+            user.setFavoriteTeam(request.favoriteTeam());
+        }
+        if (request.avatarNumber() != null) {
+            user.setAvatarNumber(Math.max(0, Math.min(99, request.avatarNumber())));
+        }
+        if (request.avatarPosition() != null && VALID_POSITIONS.contains(request.avatarPosition())) {
+            user.setAvatarPosition(request.avatarPosition());
+        }
+        if (request.avatarColorway() != null && VALID_COLORWAYS.contains(request.avatarColorway())) {
+            user.setAvatarColorway(request.avatarColorway());
+        }
+        if (request.avatarIcon() != null && VALID_ICONS.contains(request.avatarIcon())) {
+            user.setAvatarIcon(request.avatarIcon());
+        }
+
+        userRepository.save(user);
+        return ResponseEntity.ok(buildProfileDto(user));
     }
 
     @PostMapping("/logout")

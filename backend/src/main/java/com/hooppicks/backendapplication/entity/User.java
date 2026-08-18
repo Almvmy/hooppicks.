@@ -25,4 +25,16 @@ public class User {
     private String favoriteTeam = "";
 
     private int walletBalance = 1000; // solde de départ, comme ton mock frontend
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private int avatarNumber = 0;
+
+    @Column(columnDefinition = "varchar(255) default 'PG'")
+    private String avatarPosition = "PG";
+
+    @Column(columnDefinition = "varchar(255) default 'orange'")
+    private String avatarColorway = "orange";
+
+    @Column(columnDefinition = "varchar(255) default 'dunk'")
+    private String avatarIcon = "dunk";
 }

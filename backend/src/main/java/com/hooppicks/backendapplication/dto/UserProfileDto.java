@@ -7,9 +7,23 @@ public record UserProfileDto(
         String email,
         int winRate,
         int totalBets,
-        String favoriteTeam
+        String favoriteTeam,
+        int avatarNumber,
+        String avatarPosition,
+        String avatarColorway,
+        String avatarIcon
 ) {
     public static UserProfileDto from(User user, int winRate, int totalBets) {
-        return new UserProfileDto(user.getUsername(), user.getEmail(), winRate, totalBets, user.getFavoriteTeam());
+        return new UserProfileDto(
+                user.getUsername(),
+                user.getEmail(),
+                winRate,
+                totalBets,
+                user.getFavoriteTeam(),
+                user.getAvatarNumber(),
+                user.getAvatarPosition(),
+                user.getAvatarColorway(),
+                user.getAvatarIcon()
+        );
     }
 }
