@@ -11,6 +11,7 @@ import com.hooppicks.backendapplication.nba.dto.NbaTeamDto;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.PlayerRepository;
 import com.hooppicks.backendapplication.repository.TeamRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -129,6 +130,26 @@ public class NbaSyncService {
         match.setTotalValue(220.5);
         match.setTotalOddsOver(1.9);
         match.setTotalOddsUnder(1.9);
+    }
+
+    /**
+     * Version asynchrone de syncPlayers(), pensée pour être appelée depuis un
+     * contrôleur qui doit répondre immédiatement (sans quoi le proxy Railway
+     * coupe la connexion avant la fin des ~10 minutes de synchro et une partie
+     * des équipes n'est jamais traitée). Grâce à @Async, cette méthode tourne
+     * dans un thread séparé, indépendant du cycle de vie de la requête HTTP :
+     * même si le client (curl, navigateur) se déconnecte, le job continue
+     * jusqu'au bout côté serveur.
+     */
+    @Async
+    public void syncPlayersAsync() {
+        System.out.println("[NbaSyncService] Démarrage de la synchro des effectifs en tâche de fond...");
+        try {
+            int count = syncPlayers();
+            System.out.println("[NbaSyncService] Synchro des effectifs terminée : " + count + " joueur(s) synchronisé(s).");
+        } catch (Exception e) {
+            System.out.println("[NbaSyncService] Échec de la synchro des effectifs : " + e.getMessage());
+        }
     }
 
     /**
