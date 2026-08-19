@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
+import { TeamRoster } from "@/components/team-roster";
 import { fetchMatchById } from "@/lib/api/matches";
 
 export default function MatchDetailPage({
@@ -87,6 +88,15 @@ export default function MatchDetailPage({
                 minute: "2-digit",
               })}
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {match && (
+        <Card className="border-border bg-card">
+          <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
+            <TeamRoster teamId={match.awayTeam.id} teamName={match.awayTeam.name} />
+            <TeamRoster teamId={match.homeTeam.id} teamName={match.homeTeam.name} />
           </CardContent>
         </Card>
       )}

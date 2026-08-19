@@ -51,8 +51,15 @@ export function PlayerAvatar({
   size = "md",
   className,
 }: PlayerAvatarProps) {
-  const palette = AVATAR_COLORWAYS[colorway];
-  const { icon: Icon } = AVATAR_ICONS[icon];
+  // Filet de sécurité : un compte créé avant l'ajout des colonnes avatar (ou
+  // une valeur corrompue côté base) peut renvoyer une clé absente des
+  // catalogues ci-dessus. On retombe alors sur des valeurs par défaut plutôt
+  // que de planter tout le composant.
+  const palette = AVATAR_COLORWAYS[colorway] ?? AVATAR_COLORWAYS.orange;
+  const iconEntry = AVATAR_ICONS[icon] ?? AVATAR_ICONS.dunk;
+  const Icon = iconEntry.icon;
+  const safePosition = AVATAR_POSITIONS.includes(position) ? position : "PG";
+  const safeNumber = Number.isFinite(number) ? Math.max(0, Math.min(99, number)) : 0;
   const px = SIZE_PX[size];
   const gradientId = `avatar-gradient-${colorway}-${size}`;
   const showBadges = size !== "sm";
@@ -80,7 +87,7 @@ export function PlayerAvatar({
           fill="white"
           style={{ fontFamily: "var(--font-heading)" }}
         >
-          {number}
+          {safeNumber}
         </text>
       </svg>
 
@@ -89,12 +96,12 @@ export function PlayerAvatar({
           <span
             className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-background bg-background/95"
             style={{ width: px * 0.42, height: px * 0.42 }}
-            title={AVATAR_ICONS[icon].label}
+            title={iconEntry.label}
           >
             <Icon className="h-[60%] w-[60%] text-foreground" />
           </span>
           <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full border border-background bg-background px-1.5 py-0.5 font-mono text-[9px] font-bold leading-none">
-            {position}
+            {safePosition}
           </span>
         </>
       )}

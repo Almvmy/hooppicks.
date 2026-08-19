@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, CalendarDays, Ticket, Trophy, User } from "lucide-react";
+import { Menu, X, LayoutDashboard, CalendarDays, Ticket, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/matches", label: "Matchs", icon: CalendarDays },
+  { href: "/players", label: "Joueurs", icon: Users },
   { href: "/bets", label: "Mes paris", icon: Ticket },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
   { href: "/profile", label: "Profil", icon: User },

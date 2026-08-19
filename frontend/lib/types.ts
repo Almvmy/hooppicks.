@@ -69,6 +69,16 @@ export interface MatchOdds {
   totalOddsUnder: number;
 }
 
+export interface Player {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string | null;
+  height: string | null; // format brut balldontlie, ex: "6-6" (pieds-pouces)
+  weight: string | null; // en livres
+  team: Team | null;
+}
+
 export type BetMarket = "moneyline" | "spread" | "total";
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";
