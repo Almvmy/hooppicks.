@@ -8,21 +8,23 @@ import { Input } from "@/components/ui/input";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { fetchPlayers } from "@/lib/api/players";
 
+const MIN_SEARCH_LENGTH = 2;
+
 export default function PlayersPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce classique : on ne relance la recherche que 300ms après la
-  // dernière frappe. La recherche tape sur ta propre base (pas balldontlie),
-  // donc pas un souci de quota — juste plus propre côté UX.
   useEffect(() => {
     const timeoutId = window.setTimeout(() => setDebouncedSearch(search), 300);
     return () => window.clearTimeout(timeoutId);
   }, [search]);
 
+  const isSearchValid = debouncedSearch.trim().length >= MIN_SEARCH_LENGTH;
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["players", "search", debouncedSearch],
-    queryFn: () => fetchPlayers(debouncedSearch ? { search: debouncedSearch } : undefined),
+    queryFn: () => fetchPlayers({ search: debouncedSearch }),
+    enabled: isSearchValid,
     staleTime: 60 * 60 * 1000,
   });
 
@@ -30,7 +32,9 @@ export default function PlayersPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold">Joueurs</h1>
-        <p className="mt-1 text-muted-foreground">Explore les effectifs des 30 franchises NBA.</p>
+        <p className="mt-1 text-muted-foreground">
+          Cherche un joueur, actuel ou historique, parmi toute la base NBA.
+        </p>
       </div>
 
       <div className="relative max-w-sm">
@@ -40,21 +44,27 @@ export default function PlayersPage() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Chercher un joueur (nom ou prénom)..."
           className="pl-9"
+          autoFocus
         />
       </div>
 
-      {isLoading && <BasketballLoader label="Chargement des joueurs..." />}
-
-      {isError && <p className="text-destructive">Impossible de charger les joueurs.</p>}
-
-      {!isLoading && !isError && data && data.length === 0 && (
-        <p className="text-muted-foreground">
-          Aucun joueur trouvé. Si la liste est vide sans recherche, l&apos;effectif n&apos;a
-          peut-être pas encore été synchronisé côté serveur.
+      {!isSearchValid && (
+        <p className="text-sm text-muted-foreground">
+          Tape au moins {MIN_SEARCH_LENGTH} caractères pour lancer la recherche.
         </p>
       )}
 
-      {!isLoading && !isError && data && data.length > 0 && (
+      {isSearchValid && isLoading && <BasketballLoader label="Recherche en cours..." />}
+
+      {isSearchValid && isError && <p className="text-destructive">Impossible de charger les joueurs.</p>}
+
+      {isSearchValid && !isLoading && !isError && data && data.length === 0 && (
+        <p className="text-muted-foreground">
+          Aucun joueur trouvé pour &quot;{debouncedSearch}&quot;.
+        </p>
+      )}
+
+      {isSearchValid && !isLoading && !isError && data && data.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {data.map((player) => (
             <Card key={player.id} className="border-border bg-card">
