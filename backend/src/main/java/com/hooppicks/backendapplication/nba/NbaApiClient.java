@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.nba;
 
 import com.hooppicks.backendapplication.nba.dto.NbaGameListResponse;
+import com.hooppicks.backendapplication.nba.dto.NbaPlayerListResponse;
 import com.hooppicks.backendapplication.nba.dto.NbaTeamDto;
 import com.hooppicks.backendapplication.nba.dto.NbaTeamListResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +49,13 @@ public class NbaApiClient {
         }
         ResponseEntity<NbaGameListResponse> response = restTemplate.exchange(
                 url.toString(), HttpMethod.GET, authEntity(), NbaGameListResponse.class);
+        return response.getBody() != null ? response.getBody().data() : List.of();
+    }
+
+    public List<com.hooppicks.backendapplication.nba.dto.NbaPlayerDto> fetchPlayersForTeam(String teamExternalId) {
+        String url = baseUrl + "/nba/v1/players?per_page=100&team_ids[]=" + teamExternalId;
+        ResponseEntity<NbaPlayerListResponse> response = restTemplate.exchange(
+                url, HttpMethod.GET, authEntity(), NbaPlayerListResponse.class);
         return response.getBody() != null ? response.getBody().data() : List.of();
     }
 }

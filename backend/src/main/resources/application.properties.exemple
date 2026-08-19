@@ -19,3 +19,5 @@ balldontlie.base-url=https://api.balldontlie.io
 nba.sync.use-fixed-window=true
 nba.sync.window-start=2026-06-10
 nba.sync.window-days=10
+
+admin.api-key=change-moi-en-dev

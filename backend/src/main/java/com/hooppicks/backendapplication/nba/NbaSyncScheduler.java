@@ -45,4 +45,5 @@ public class NbaSyncScheduler {
         System.out.println("[NbaSyncScheduler] " + result.gamesSynced() + " match(s) synchronisé(s), "
                 + result.betsResolved() + " pari(s) résolu(s) (fenêtre "
                 + (useFixedWindow ? "fixe " + windowStart : "glissante") + ")");
-}}
+    }
+}

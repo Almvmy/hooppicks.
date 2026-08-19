@@ -24,6 +24,14 @@ public class NbaSyncController {
         return Map.of("teamsSynced", nbaSyncService.syncTeams());
     }
 
+    @PostMapping("/sync-players")
+    public Map<String, Integer> syncPlayers() {
+        // Boucle sur les 30 équipes avec un délai entre chaque appel (cf.
+        // NbaSyncService) — cette requête HTTP peut donc rester en attente
+        // plusieurs minutes avant de répondre, c'est normal.
+        return Map.of("playersSynced", nbaSyncService.syncPlayers());
+    }
+
     @PostMapping("/sync-games")
     public Map<String, Integer> syncGames(
             @RequestParam(defaultValue = "3") int daysAhead,
@@ -33,5 +41,6 @@ public class NbaSyncController {
         List<LocalDate> dates = LongStream.rangeClosed(0, daysAhead)
                 .mapToObj(start::plusDays)
                 .collect(Collectors.toList());
-        return Map.of("gamesSynced", nbaSyncService.syncGames(dates).gamesSynced());    }
+        return Map.of("gamesSynced", nbaSyncService.syncGames(dates).gamesSynced());
+    }
 }
