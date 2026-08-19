@@ -42,13 +42,14 @@ public class NbaApiClient {
         return response.getBody() != null ? response.getBody().data() : List.of();
     }
 
-    public List<com.hooppicks.backendapplication.nba.dto.NbaGameDto> fetchGamesForDates(List<LocalDate> dates) {
-        StringBuilder url = new StringBuilder(baseUrl + "/nba/v1/games?per_page=100");
-        for (LocalDate date : dates) {
-            url.append("&dates[]=").append(date);
+    public List<com.hooppicks.backendapplication.nba.dto.NbaPlayerDto> searchPlayers(String query, String teamId) {
+        StringBuilder url = new StringBuilder(baseUrl + "/nba/v1/players?per_page=25&search=")
+                .append(java.net.URLEncoder.encode(query, java.nio.charset.StandardCharsets.UTF_8));
+        if (teamId != null && !teamId.isBlank()) {
+            url.append("&team_ids[]=").append(teamId);
         }
-        ResponseEntity<NbaGameListResponse> response = restTemplate.exchange(
-                url.toString(), HttpMethod.GET, authEntity(), NbaGameListResponse.class);
+        ResponseEntity<NbaPlayerListResponse> response = restTemplate.exchange(
+                url.toString(), HttpMethod.GET, authEntity(), NbaPlayerListResponse.class);
         return response.getBody() != null ? response.getBody().data() : List.of();
     }
 

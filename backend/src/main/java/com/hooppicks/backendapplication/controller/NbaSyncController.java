@@ -27,20 +27,6 @@ public class NbaSyncController {
         return Map.of("teamsSynced", nbaSyncService.syncTeams());
     }
 
-    @PostMapping("/sync-players")
-    public Map<String, String> syncPlayers() {
-        // Lancé en tâche de fond (cf. NbaSyncService.syncPlayersAsync) pour ne
-        // pas garder la requête HTTP ouverte pendant ~10 minutes : le proxy
-        // Railway la coupait avant la fin, laissant certaines équipes non
-        // traitées. On répond tout de suite ; le job continue côté serveur.
-        nbaSyncService.syncPlayersAsync();
-        return Map.of(
-                "status", "started",
-                "message", "Synchro lancée en tâche de fond (~10 min, ~20s entre chaque équipe). "
-                        + "Suis la progression via GET /admin/nba/players-count."
-        );
-    }
-
     @GetMapping("/players-count")
     public Map<String, Long> playersCount() {
         return Map.of("playersCount", playerRepository.count());

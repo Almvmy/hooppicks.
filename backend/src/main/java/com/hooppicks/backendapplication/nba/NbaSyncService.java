@@ -11,7 +11,6 @@ import com.hooppicks.backendapplication.nba.dto.NbaTeamDto;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.PlayerRepository;
 import com.hooppicks.backendapplication.repository.TeamRepository;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,24 +27,18 @@ public class NbaSyncService {
     private final PlayerRepository playerRepository;
 
     private final BetResolutionService betResolutionService;
-
-    // Délai entre deux appels /players lors d'une synchro d'effectifs, pour
-    // rester bien sous les 5 req/min du plan gratuit balldontlie MÊME si la
-    // synchro des matchs (toutes les 5 min, 1 requête) tombe pile en même
-    // temps. 20s => 3 req/min pour cette boucle + 1 req/min max pour les
-    // matchs = 4 req/min max, marge de sécurité gardée sous la limite de 5.
-    private static final long DELAY_BETWEEN_TEAM_REQUESTS_MS = 20_000;
+    private final NbaRateLimiter rateLimiter;
 
     public NbaSyncService(NbaApiClient nbaApiClient, TeamRepository teamRepository,
                           MatchRepository matchRepository, PlayerRepository playerRepository,
-                          BetResolutionService betResolutionService) {
+                          BetResolutionService betResolutionService, NbaRateLimiter rateLimiter) {
         this.nbaApiClient = nbaApiClient;
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
         this.playerRepository = playerRepository;
         this.betResolutionService = betResolutionService;
+        this.rateLimiter = rateLimiter;
     }
-
 
     @Transactional
     public int syncTeams() {
@@ -133,67 +126,41 @@ public class NbaSyncService {
     }
 
     /**
-     * Version asynchrone de syncPlayers(), pensée pour être appelée depuis un
-     * contrôleur qui doit répondre immédiatement (sans quoi le proxy Railway
-     * coupe la connexion avant la fin des ~10 minutes de synchro et une partie
-     * des équipes n'est jamais traitée). Grâce à @Async, cette méthode tourne
-     * dans un thread séparé, indépendant du cycle de vie de la requête HTTP :
-     * même si le client (curl, navigateur) se déconnecte, le job continue
-     * jusqu'au bout côté serveur.
+     * Recherche des joueurs chez balldontlie et met en cache le résultat en
+     * base — appelée uniquement en cas de "cache miss" côté PlayerController,
+     * jamais en boucle sur toutes les équipes (c'est justement l'ancienne
+     * approche, par team_ids[], qui tronquait silencieusement les effectifs
+     * de plus de 100 joueurs et faisait rater des joueurs comme Ja Morant).
+     *
+     * Protégée par NbaRateLimiter : si le quota est déjà consommé pour cette
+     * minute, renvoie une liste vide plutôt que de risquer un 429 — l'appelant
+     * retombe alors sur ce qu'il avait déjà en cache local.
      */
-    @Async
-    public void syncPlayersAsync() {
-        System.out.println("[NbaSyncService] Démarrage de la synchro des effectifs en tâche de fond...");
-        try {
-            int count = syncPlayers();
-            System.out.println("[NbaSyncService] Synchro des effectifs terminée : " + count + " joueur(s) synchronisé(s).");
-        } catch (Exception e) {
-            System.out.println("[NbaSyncService] Échec de la synchro des effectifs : " + e.getMessage());
+    public List<Player> searchAndCachePlayers(String query, String teamId) {
+        if (!rateLimiter.tryAcquire()) {
+            return List.of();
         }
-    }
 
-    /**
-     * Synchronise l'effectif de chaque équipe déjà connue en base, une
-     * franchise à la fois avec un délai entre les appels pour respecter le
-     * quota gratuit de balldontlie. Volontairement déclenchée à la main
-     * (endpoint admin) plutôt qu'automatique : les effectifs bougent très
-     * rarement, pas besoin de la refaire tourner en continu.
-     */
-    public int syncPlayers() {
-        List<Team> teams = teamRepository.findAll();
-        int count = 0;
+        List<NbaPlayerDto> results = nbaApiClient.searchPlayers(query, teamId);
+        List<Player> saved = new java.util.ArrayList<>();
 
-        for (int i = 0; i < teams.size(); i++) {
-            Team team = teams.get(i);
-            List<NbaPlayerDto> players = nbaApiClient.fetchPlayersForTeam(team.getId());
+        for (NbaPlayerDto p : results) {
+            Player player = playerRepository.findByExternalId(p.id()).orElseGet(Player::new);
+            player.setExternalId(p.id());
+            player.setFirstName(p.firstName());
+            player.setLastName(p.lastName());
+            player.setPosition(p.position());
+            player.setHeight(p.height());
+            player.setWeight(p.weight());
 
-            for (NbaPlayerDto p : players) {
-                Player player = playerRepository.findByExternalId(p.id()).orElseGet(Player::new);
-                player.setExternalId(p.id());
-                player.setFirstName(p.firstName());
-                player.setLastName(p.lastName());
-                player.setPosition(p.position());
-                player.setHeight(p.height());
-                player.setWeight(p.weight());
-                player.setTeam(team);
-                playerRepository.save(player);
-                count++;
+            if (p.team() != null) {
+                teamRepository.findById(String.valueOf(p.team().id())).ifPresent(player::setTeam);
             }
 
-            boolean isLastTeam = i == teams.size() - 1;
-            if (!isLastTeam) {
-                sleepBetweenRequests();
-            }
+            playerRepository.save(player);
+            saved.add(player);
         }
 
-        return count;
-    }
-
-    private void sleepBetweenRequests() {
-        try {
-            Thread.sleep(DELAY_BETWEEN_TEAM_REQUESTS_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        return saved;
     }
 }
