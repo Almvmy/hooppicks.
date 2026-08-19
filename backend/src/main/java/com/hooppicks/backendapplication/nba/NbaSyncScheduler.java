@@ -41,8 +41,8 @@ public class NbaSyncScheduler {
             dates = List.of(today.minusDays(1), today, today.plusDays(1));
         }
 
-        int updated = nbaSyncService.syncGames(dates);
-        System.out.println("[NbaSyncScheduler] " + updated + " match(s) synchronisé(s) (fenêtre "
+        NbaSyncService.SyncResult result = nbaSyncService.syncGames(dates);
+        System.out.println("[NbaSyncScheduler] " + result.gamesSynced() + " match(s) synchronisé(s), "
+                + result.betsResolved() + " pari(s) résolu(s) (fenêtre "
                 + (useFixedWindow ? "fixe " + windowStart : "glissante") + ")");
-    }
-}
+}}

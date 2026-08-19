@@ -47,8 +47,16 @@ public class NbaSyncService {
         return count;
     }
 
+    /**
+     * Résultat d'une synchro : nombre de matchs mis à jour, et nombre de
+     * paris résolus dans la foulée (matchs qui viennent de passer à
+     * "terminé" pendant cette synchro).
+     */
+    public record SyncResult(int gamesSynced, int betsResolved) {
+    }
+
     @Transactional
-    public int syncGames(List<LocalDate> dates) {
+    public SyncResult syncGames(List<LocalDate> dates) {
         List<NbaGameDto> games = nbaApiClient.fetchGamesForDates(dates);
         int count = 0;
 
@@ -75,7 +83,13 @@ public class NbaSyncService {
             matchRepository.save(match);
             count++;
         }
-        return count;
+
+        // Dès que des matchs sont synchronisés (et donc potentiellement
+        // passés à FINISHED), on résout tout de suite les paris en attente
+        // qui les concernent — plus besoin d'appeler /admin/bets/resolve à la main.
+        int resolved = betResolutionService.resolvePendingBets();
+
+        return new SyncResult(count, resolved);
     }
 
     private MatchStatus resolveStatus(NbaGameDto g) {

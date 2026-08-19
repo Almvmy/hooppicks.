@@ -33,6 +33,5 @@ public class NbaSyncController {
         List<LocalDate> dates = LongStream.rangeClosed(0, daysAhead)
                 .mapToObj(start::plusDays)
                 .collect(Collectors.toList());
-        return Map.of("gamesSynced", nbaSyncService.syncGames(dates));
-    }
+        return Map.of("gamesSynced", nbaSyncService.syncGames(dates).gamesSynced());    }
 }
