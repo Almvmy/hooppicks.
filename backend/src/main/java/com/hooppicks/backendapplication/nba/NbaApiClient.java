@@ -59,4 +59,14 @@ public class NbaApiClient {
                 url, HttpMethod.GET, authEntity(), NbaPlayerListResponse.class);
         return response.getBody() != null ? response.getBody().data() : List.of();
     }
+
+    public List<com.hooppicks.backendapplication.nba.dto.NbaGameDto> fetchGamesForDates(List<LocalDate> dates) {
+        StringBuilder url = new StringBuilder(baseUrl + "/nba/v1/games?per_page=100");
+        for (LocalDate date : dates) {
+            url.append("&dates[]=").append(date);
+        }
+        ResponseEntity<NbaGameListResponse> response = restTemplate.exchange(
+                url.toString(), HttpMethod.GET, authEntity(), NbaGameListResponse.class);
+        return response.getBody() != null ? response.getBody().data() : List.of();
+    }
 }
