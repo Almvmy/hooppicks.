@@ -41,6 +41,8 @@
   --color-card: var(--card);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-live: var(--live);
+  --color-live-foreground: var(--live-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -71,6 +73,8 @@
   --ring: #FF7A1A;
   --success: #22C55E;
   --success-foreground: #0B1120;
+  --live: #00E5FF;
+  --live-foreground: #0B1120;
   --chart-1: #FF7A1A;
   --chart-2: #FF9A4D;
   --chart-3: #FFB380;
@@ -108,6 +112,8 @@
   --ring: #FF7A1A;
   --success: #22C55E;
   --success-foreground: #0B1120;
+  --live: #00E5FF;
+  --live-foreground: #0B1120;
   --chart-1: #FF7A1A;
   --chart-2: #FF9A4D;
   --chart-3: #FFB380;

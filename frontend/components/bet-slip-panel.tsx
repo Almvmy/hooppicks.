@@ -42,8 +42,11 @@ export function BetSlipPanel() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 rounded-lg border border-border bg-card shadow-lg">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <div className="fixed bottom-4 right-4 z-50 w-80 overflow-hidden rounded-lg border border-white/10 bg-card/70 shadow-2xl shadow-black/40 backdrop-blur-xl">
+      {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-primary via-live to-primary" />
+
+      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
         <div className="flex items-center gap-2 font-heading font-bold">
           <TicketIcon className="h-4 w-4 text-primary" />
           Ticket ({selections.length})
@@ -57,7 +60,7 @@ export function BetSlipPanel() {
         {selections.map((s) => (
           <div
             key={s.id}
-            className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-sm"
+            className="flex items-center justify-between rounded-md border border-white/5 bg-secondary/40 px-3 py-2 text-sm"
           >
             <div>
               <p className="text-xs text-muted-foreground">{s.matchLabel}</p>
@@ -73,7 +76,7 @@ export function BetSlipPanel() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-border p-4">
+      <div className="flex flex-col gap-3 border-t border-white/10 p-4">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Cote totale</span>
           <span className="font-mono font-bold">{totalOdds.toFixed(2)}</span>
