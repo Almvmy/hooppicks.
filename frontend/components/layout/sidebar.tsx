@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LogoSymbol } from "@/app/LogoSymbol";
 
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -26,7 +27,8 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6">
-      <div className="mb-8 px-2">
+      <div className="mb-8 flex items-center gap-2 px-2">
+        <LogoSymbol variant="compact" className="h-7 w-7 shrink-0" />
         <span className="font-heading text-xl font-bold tracking-tight text-sidebar-foreground">
           Hoop<span className="text-primary">Picks</span>
         </span>

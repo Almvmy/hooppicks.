@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Flame, ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +37,14 @@ export function DashboardHero({
 }: DashboardHeroProps) {
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card">
+      <Image
+        src="/images/hoop-net.jpg"
+        alt=""
+        fill
+        sizes="(min-width: 640px) 100vw, 100vw"
+        className="object-cover opacity-[0.08]"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-card via-card/95 to-card/70" />
       {/* Signature : tracé de terrain de basket en filigrane, ancré à droite */}
       <CourtWatermark />
 

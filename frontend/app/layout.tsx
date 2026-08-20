@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -12,6 +12,11 @@ const inter = Inter({
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-heading",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono-num",
   subsets: ["latin"],
 });
 
@@ -48,11 +53,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
-        suppressHydrationWarning
-      >        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+    <html
+      lang="fr"
+      className={`dark ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="antialiased" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
           <QueryProvider>
             {children}
             <Toaster />

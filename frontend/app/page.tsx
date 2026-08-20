@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fetchPublicLeaderboard, fetchPublicMatches } from "@/lib/api/public";
 import { Match } from "@/lib/types";
+import { LogoSymbol } from "@/app/LogoSymbol";
 
 const RANK_COLORS: Record<number, string> = {
   1: "text-primary",
@@ -30,12 +32,23 @@ export default async function HomePage() {
   const upcoming = nextScheduledMatches(matches, 3);
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background px-4 py-16">
-      <div className="flex w-full max-w-md flex-col items-center text-center">
+    <div className="relative flex min-h-screen flex-col items-center overflow-hidden bg-background px-4 py-16">
+      <Image
+        src="/images/auth-court-lines.jpg"
+        alt=""
+        fill
+        preload
+        sizes="100vw"
+        className="object-cover opacity-60 [filter:brightness(1.6)_contrast(1.15)]"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/55 to-background" />
+
+      <div className="relative z-10 flex w-full max-w-md flex-col items-center text-center">
         <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-xs text-primary">
           Saison NBA 2026 — Points virtuels
         </span>
-        <h1 className="font-heading text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="flex items-center gap-3 font-heading text-4xl font-bold tracking-tight sm:text-5xl">
+          <LogoSymbol className="h-10 w-10 shrink-0 sm:h-12 sm:w-12" />
           Hoop<span className="text-primary">Picks</span>
         </h1>
         <p className="mt-4 max-w-md text-muted-foreground">
@@ -56,7 +69,7 @@ export default async function HomePage() {
       </div>
 
       {(topPlayers.length > 0 || upcoming.length > 0) && (
-        <div className="mt-16 grid w-full max-w-4xl gap-6 sm:grid-cols-2">
+        <div className="relative z-10 mt-16 grid w-full max-w-4xl gap-6 sm:grid-cols-2">
           {topPlayers.length > 0 && (
             <div className="rounded-xl border border-border bg-card p-5 text-left">
               <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-muted-foreground">

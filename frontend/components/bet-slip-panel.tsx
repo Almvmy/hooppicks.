@@ -42,7 +42,7 @@ export function BetSlipPanel() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 overflow-hidden rounded-lg border border-white/10 bg-card/70 shadow-2xl shadow-black/40 backdrop-blur-xl">
+    <div className="fixed bottom-20 left-4 right-4 z-50 w-auto overflow-hidden rounded-lg border border-white/10 bg-card/70 shadow-2xl shadow-black/40 backdrop-blur-xl sm:bottom-4 sm:left-auto sm:w-80">
       {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
       <div className="h-[3px] w-full bg-gradient-to-r from-primary via-live to-primary" />
 

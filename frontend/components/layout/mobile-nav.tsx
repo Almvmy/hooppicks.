@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, LayoutDashboard, CalendarDays, Ticket, Trophy, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LogoSymbol } from "@/app/LogoSymbol";
 
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -45,7 +46,8 @@ export function MobileNav() {
       aria-modal="true"
     >
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-        <span className="font-heading text-lg font-bold">
+        <span className="flex items-center gap-2 font-heading text-lg font-bold">
+          <LogoSymbol variant="compact" className="h-6 w-6 shrink-0" />
           Hoop<span className="text-primary">Picks</span>
         </span>
         <button

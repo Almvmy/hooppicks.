@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { CourtWatermark } from "@/components/court-watermark";
+import { NetPattern } from "@/components/net-pattern";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export default function LeaderboardPage() {
 
       <div className="relative overflow-hidden rounded-lg border border-border bg-card">
         <CourtWatermark className="pointer-events-none absolute -right-6 -top-10 h-[220px] w-[340px] opacity-[0.05]" />
+        <NetPattern className="pointer-events-none absolute -bottom-10 -left-8 h-[200px] w-[260px] opacity-[0.05]" />
         <Table>
           <TableHeader>
             <TableRow>
