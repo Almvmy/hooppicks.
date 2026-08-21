@@ -1,14 +1,19 @@
 package com.hooppicks.backendapplication.nba;
 
 import com.hooppicks.backendapplication.bet.BetResolutionService;
+import com.hooppicks.backendapplication.entity.AppNotification;
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.entity.MatchStatus;
+import com.hooppicks.backendapplication.entity.NotificationType;
 import com.hooppicks.backendapplication.entity.Player;
 import com.hooppicks.backendapplication.entity.Team;
+import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.nba.dto.NbaGameDto;
 import com.hooppicks.backendapplication.nba.dto.NbaPlayerDto;
 import com.hooppicks.backendapplication.nba.dto.NbaTeamDto;
+import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
+import com.hooppicks.backendapplication.repository.NotificationRepository;
 import com.hooppicks.backendapplication.repository.PlayerRepository;
 import com.hooppicks.backendapplication.repository.TeamRepository;
 import org.springframework.stereotype.Service;
@@ -25,19 +30,29 @@ public class NbaSyncService {
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
     private final PlayerRepository playerRepository;
+    private final BetRepository betRepository;
+    private final NotificationRepository notificationRepository;
 
     private final BetResolutionService betResolutionService;
     private final NbaRateLimiter rateLimiter;
+    private final EloService eloService;
+    private final OddsService oddsService;
 
     public NbaSyncService(NbaApiClient nbaApiClient, TeamRepository teamRepository,
                           MatchRepository matchRepository, PlayerRepository playerRepository,
-                          BetResolutionService betResolutionService, NbaRateLimiter rateLimiter) {
+                          BetRepository betRepository, NotificationRepository notificationRepository,
+                          BetResolutionService betResolutionService,
+                          NbaRateLimiter rateLimiter, EloService eloService, OddsService oddsService) {
         this.nbaApiClient = nbaApiClient;
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
         this.playerRepository = playerRepository;
+        this.betRepository = betRepository;
+        this.notificationRepository = notificationRepository;
         this.betResolutionService = betResolutionService;
         this.rateLimiter = rateLimiter;
+        this.eloService = eloService;
+        this.oddsService = oddsService;
     }
 
     @Transactional
@@ -45,7 +60,11 @@ public class NbaSyncService {
         List<NbaTeamDto> teams = nbaApiClient.fetchAllTeams();
         int count = 0;
         for (NbaTeamDto t : teams) {
-            if (t.city() == null || t.city().isBlank()) continue; // ignore les franchises historiques disparues (ids 37+)
+            // Ignore les franchises historiques disparues (ids 37+, ville vide) et les
+            // clubs hors NBA (EuroLeague etc.) que l'API renvoie mélangés dans la même
+            // liste — repérables par une conference qui n'est ni "East" ni "West".
+            boolean isRealNbaConference = "East".equals(t.conference()) || "West".equals(t.conference());
+            if (t.city() == null || t.city().isBlank() || !isRealNbaConference) continue;
 
             String id = String.valueOf(t.id());
             Team team = teamRepository.findById(id).orElse(new Team());
@@ -76,6 +95,7 @@ public class NbaSyncService {
         for (NbaGameDto g : games) {
             Match match = matchRepository.findByExternalId(g.id()).orElseGet(Match::new);
             boolean isNew = match.getId() == null;
+            MatchStatus previousStatus = match.getStatus();
 
             Team home = teamRepository.findById(String.valueOf(g.homeTeam().id())).orElse(null);
             Team away = teamRepository.findById(String.valueOf(g.visitorTeam().id())).orElse(null);
@@ -87,13 +107,34 @@ public class NbaSyncService {
             match.setDate(Instant.parse(g.datetime()));
             match.setHomeScore(g.homeTeamScore());
             match.setAwayScore(g.visitorTeamScore());
-            match.setStatus(resolveStatus(g));
+            MatchStatus newStatus = resolveStatus(g);
+            match.setStatus(newStatus);
 
-            if (isNew) {
-                assignPlaceholderOdds(match);
+            // Cotes dynamiques (Elo) : recalculées à chaque synchro tant que le
+            // match n'a pas commencé ET qu'aucun pari n'est encore posé dessus —
+            // sinon la ligne resterait injuste pour qui a déjà parié dessus
+            // (cf. BetResolutionService.evaluateSelection, qui relit spreadValue/
+            // totalValue en direct sur le match au moment de la résolution).
+            if (isNew || (newStatus == MatchStatus.SCHEDULED
+                    && !betRepository.existsPendingBetForMatch(match.getId()))) {
+                oddsService.applyOdds(match, home, away);
             }
 
+            boolean justFinished = previousStatus != MatchStatus.FINISHED && newStatus == MatchStatus.FINISHED;
+            boolean justWentLive = previousStatus == MatchStatus.SCHEDULED && newStatus == MatchStatus.LIVE;
+
             matchRepository.save(match);
+
+            if (justFinished && match.getHomeScore() != null && match.getAwayScore() != null) {
+                eloService.applyResult(home, away, match.getHomeScore(), match.getAwayScore());
+                teamRepository.save(home);
+                teamRepository.save(away);
+            }
+
+            if (justWentLive) {
+                notifyMatchStarting(match, home, away);
+            }
+
             count++;
         }
 
@@ -105,24 +146,29 @@ public class NbaSyncService {
         return new SyncResult(count, resolved);
     }
 
+    /**
+     * Prévient les utilisateurs qui ont un pari en attente sur ce match qu'il
+     * vient de démarrer — déclenché une seule fois, au moment où le statut
+     * calculé passe de SCHEDULED à LIVE (cf. justWentLive dans syncGames).
+     */
+    private void notifyMatchStarting(Match match, Team home, Team away) {
+        List<User> users = betRepository.findUsersWithPendingBetOnMatch(match.getId());
+        String message = "Ça démarre : " + home.getName() + " vs " + away.getName() + " !";
+
+        for (User user : users) {
+            AppNotification notification = new AppNotification();
+            notification.setUser(user);
+            notification.setType(NotificationType.MATCH_STARTING);
+            notification.setMessage(message);
+            notificationRepository.save(notification);
+        }
+    }
+
     private MatchStatus resolveStatus(NbaGameDto g) {
         if ("Final".equalsIgnoreCase(g.status())) return MatchStatus.FINISHED;
         Instant gameTime = Instant.parse(g.datetime());
         if (gameTime.isAfter(Instant.now())) return MatchStatus.SCHEDULED;
         return MatchStatus.LIVE; // heuristique : l'heure de coup d'envoi est passée et ce n'est pas encore "Final"
-    }
-
-    private void assignPlaceholderOdds(Match match) {
-        // L'API gratuite ne fournit pas de vraies cotes — on en génère des plausibles,
-        // une seule fois à la création du match (jamais modifiées ensuite, cf. décision "cotes fixes").
-        match.setMoneylineHome(1.80);
-        match.setMoneylineAway(2.00);
-        match.setSpreadValue(-2.5);
-        match.setSpreadOddsHome(1.9);
-        match.setSpreadOddsAway(1.9);
-        match.setTotalValue(220.5);
-        match.setTotalOddsOver(1.9);
-        match.setTotalOddsUnder(1.9);
     }
 
     /**

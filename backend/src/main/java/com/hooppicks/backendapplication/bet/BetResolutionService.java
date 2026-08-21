@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class BetResolutionService {
@@ -38,25 +41,27 @@ public class BetResolutionService {
         int resolvedCount = 0;
 
         for (Bet bet : pendingBets) {
-            List<Match> matches = bet.getSelections().stream()
-                    .map(s -> matchRepository.findById(s.getMatchId()).orElse(null))
-                    .toList();
+            List<String> matchIds = bet.getSelections().stream().map(BetSelection::getMatchId).toList();
+            Map<String, Match> matchesById = matchRepository.findAllById(matchIds).stream()
+                    .collect(Collectors.toMap(Match::getId, Function.identity()));
 
             // On ne résout un ticket que si TOUS ses matchs sont terminés
-            boolean allFinished = matches.stream().allMatch(m -> m != null && m.getStatus() == MatchStatus.FINISHED);
+            boolean allFinished = matchIds.stream()
+                    .allMatch(id -> matchesById.containsKey(id) && matchesById.get(id).getStatus() == MatchStatus.FINISHED);
             if (!allFinished) continue;
 
             boolean anyLoss = false;
             boolean allPush = true;
 
             for (BetSelection selection : bet.getSelections()) {
-                Match match = matchRepository.findById(selection.getMatchId()).orElseThrow();
+                Match match = matchesById.get(selection.getMatchId());
                 LegResult result = evaluateSelection(selection, match);
                 if (result == LegResult.LOSE) anyLoss = true;
                 if (result != LegResult.PUSH) allPush = false;
             }
 
             User user = bet.getUser();
+            bet.setResolvedAt(java.time.Instant.now());
 
             if (anyLoss) {
                 bet.setStatus(BetStatus.LOST);
@@ -69,6 +74,7 @@ public class BetResolutionService {
                 user.setWalletBalance(user.getWalletBalance() + bet.getStake());
                 userRepository.save(user);
                 logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
+                notify(user, NotificationType.SYSTEM, "Ton pari a été annulé (égalité sur le seuil) — mise remboursée : +" + bet.getStake() + " pts");
             } else {
                 bet.setStatus(BetStatus.WON);
                 user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());

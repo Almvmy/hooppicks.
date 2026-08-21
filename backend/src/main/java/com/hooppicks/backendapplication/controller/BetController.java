@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import com.hooppicks.backendapplication.entity.MatchStatus;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/bets")
@@ -61,8 +63,13 @@ public class BetController {
             return ResponseEntity.badRequest().body("Solde insuffisant");
         }
 
+        // On garde les matchs déjà chargés pour la validation : la cote appliquée au
+        // pari vient de là (autoritaire, côté serveur), jamais de request.selections().odds()
+        // — sinon un client pourrait renvoyer une ancienne cote plus favorable
+        // maintenant que les cotes bougent (cf. OddsService).
+        Map<String, Match> matchesById = new HashMap<>();
         for (PlaceBetRequest.SelectionInput s : request.selections()) {
-            var match = matchRepository.findById(s.matchId()).orElse(null);
+            Match match = matchRepository.findById(s.matchId()).orElse(null);
             if (match == null) {
                 return ResponseEntity.badRequest().body("Match introuvable.");
             }
@@ -71,8 +78,12 @@ public class BetController {
                         "Ce match n'est plus ouvert aux paris : " + match.getHomeTeam().getName() + " vs " + match.getAwayTeam().getName()
                 );
             }
+            matchesById.put(s.matchId(), match);
         }
-        double totalOdds = request.selections().stream().mapToDouble(PlaceBetRequest.SelectionInput::odds).reduce(1, (a, b) -> a * b);
+
+        double totalOdds = request.selections().stream()
+                .mapToDouble(s -> resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()))
+                .reduce(1, (a, b) -> a * b);
         int potentialPayout = (int) Math.round(request.stake() * totalOdds);
 
         Bet bet = new Bet();
@@ -90,7 +101,7 @@ public class BetController {
             selection.setMarket(s.market());
             selection.setOutcome(s.outcome());
             selection.setLabel(s.label());
-            selection.setOdds(s.odds());
+            selection.setOdds(resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()));
             bet.getSelections().add(selection);
         });
 
@@ -108,5 +119,14 @@ public class BetController {
         transactionRepository.save(tx);
 
         return ResponseEntity.ok(PlacedBetDto.from(bet));
+    }
+
+    private double resolveOdds(Match match, String market, String outcome) {
+        return switch (market) {
+            case "moneyline" -> "home".equals(outcome) ? match.getMoneylineHome() : match.getMoneylineAway();
+            case "spread" -> "home".equals(outcome) ? match.getSpreadOddsHome() : match.getSpreadOddsAway();
+            case "total" -> "over".equals(outcome) ? match.getTotalOddsOver() : match.getTotalOddsUnder();
+            default -> throw new IllegalArgumentException("Marché inconnu : " + market);
+        };
     }
 }

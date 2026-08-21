@@ -12,6 +12,7 @@ import java.util.stream.LongStream;
 public class NbaSyncScheduler {
 
     private final NbaSyncService nbaSyncService;
+    private final AdminSyncStatus adminSyncStatus;
 
     @Value("${nba.sync.use-fixed-window:false}")
     private boolean useFixedWindow;
@@ -22,8 +23,9 @@ public class NbaSyncScheduler {
     @Value("${nba.sync.window-days:10}")
     private int windowDays;
 
-    public NbaSyncScheduler(NbaSyncService nbaSyncService) {
+    public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus) {
         this.nbaSyncService = nbaSyncService;
+        this.adminSyncStatus = adminSyncStatus;
     }
 
     @Scheduled(fixedRate = 5 * 60 * 1000) // toutes les 5 minutes
@@ -41,9 +43,10 @@ public class NbaSyncScheduler {
             dates = List.of(today.minusDays(1), today, today.plusDays(1));
         }
 
+        String mode = useFixedWindow ? "fixe " + windowStart : "glissante";
         NbaSyncService.SyncResult result = nbaSyncService.syncGames(dates);
+        adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
         System.out.println("[NbaSyncScheduler] " + result.gamesSynced() + " match(s) synchronisé(s), "
-                + result.betsResolved() + " pari(s) résolu(s) (fenêtre "
-                + (useFixedWindow ? "fixe " + windowStart : "glissante") + ")");
+                + result.betsResolved() + " pari(s) résolu(s) (fenêtre " + mode + ")");
     }
 }

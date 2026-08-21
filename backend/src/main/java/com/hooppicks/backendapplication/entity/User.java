@@ -37,4 +37,7 @@ public class User {
 
     @Column(columnDefinition = "varchar(255) default 'dunk'")
     private String avatarIcon = "dunk";
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isAdmin = false;
 }

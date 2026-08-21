@@ -11,7 +11,8 @@ public record UserProfileDto(
         int avatarNumber,
         String avatarPosition,
         String avatarColorway,
-        String avatarIcon
+        String avatarIcon,
+        boolean isAdmin
 ) {
     public static UserProfileDto from(User user, int winRate, int totalBets) {
         return new UserProfileDto(
@@ -23,7 +24,8 @@ public record UserProfileDto(
                 user.getAvatarNumber(),
                 user.getAvatarPosition(),
                 user.getAvatarColorway(),
-                user.getAvatarIcon()
+                user.getAvatarIcon(),
+                user.isAdmin()
         );
     }
 }

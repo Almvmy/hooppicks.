@@ -1,12 +1,15 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.dto.ForgotPasswordRequest;
 import com.hooppicks.backendapplication.dto.LoginRequest;
 import com.hooppicks.backendapplication.dto.RegisterRequest;
+import com.hooppicks.backendapplication.dto.ResetPasswordRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
+import com.hooppicks.backendapplication.security.PasswordResetService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +41,7 @@ public class AuthController {
     private final SessionStore sessionStore;
     private final BetRepository betRepository;
     private final LoginAttemptService loginAttemptService;
+    private final PasswordResetService passwordResetService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
     private String cookieSameSite;
@@ -47,12 +51,13 @@ public class AuthController {
 
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
                           SessionStore sessionStore, BetRepository betRepository,
-                          LoginAttemptService loginAttemptService) {
+                          LoginAttemptService loginAttemptService, PasswordResetService passwordResetService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionStore = sessionStore;
         this.betRepository = betRepository;
         this.loginAttemptService = loginAttemptService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -91,7 +96,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDto> me(HttpServletRequest request) {
-        String userId = getUserIdFromCookie(request);
+        String userId = sessionStore.getUserIdFromRequest(request);
         if (userId == null) return ResponseEntity.status(401).build();
 
         return userRepository.findById(userId)
@@ -102,7 +107,7 @@ public class AuthController {
     @PatchMapping("/profile")
     public ResponseEntity<UserProfileDto> updateProfile(
             @RequestBody UpdateProfileRequest request, HttpServletRequest httpRequest) {
-        String userId = getUserIdFromCookie(httpRequest);
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
         if (userId == null) return ResponseEntity.status(401).build();
 
         User user = userRepository.findById(userId).orElse(null);
@@ -126,6 +131,22 @@ public class AuthController {
 
         userRepository.save(user);
         return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        // Toujours 200, que l'email corresponde à un compte ou non — pas d'énumération.
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        boolean success = passwordResetService.resetPassword(request.token(), request.newPassword());
+        if (!success) {
+            return ResponseEntity.badRequest().body("Lien invalide ou expiré.");
+        }
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")
@@ -168,15 +189,5 @@ public class AuthController {
                 .maxAge(60 * 60 * 24)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    private String getUserIdFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
-        for (Cookie cookie : request.getCookies()) {
-            if (cookie.getName().equals("hp_session")) {
-                return sessionStore.getUserId(cookie.getValue());
-            }
-        }
-        return null;
     }
 }

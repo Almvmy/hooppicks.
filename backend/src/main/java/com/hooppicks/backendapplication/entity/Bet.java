@@ -32,4 +32,5 @@ public class Bet {
     private BetStatus status = BetStatus.PENDING;
 
     private Instant placedAt = Instant.now();
+    private Instant resolvedAt;
 }
