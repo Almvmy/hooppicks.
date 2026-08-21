@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   CalendarDays,
+  Shield,
+  ShieldCheck,
   Ticket,
   Trophy,
   User,
@@ -12,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoSymbol } from "@/app/LogoSymbol";
+import { fetchProfile } from "@/lib/api/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
@@ -19,11 +23,17 @@ const navItems = [
   { href: "/players", label: "Joueurs", icon: Users },
   { href: "/bets", label: "Mes paris", icon: Ticket },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
+  { href: "/leagues", label: "Ligues", icon: Shield },
   { href: "/profile", label: "Profil", icon: User },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+
+  const items = profile?.isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: ShieldCheck }]
+    : navItems;
 
   return (
     <aside className="hidden md:flex h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6">
@@ -35,7 +45,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const Icon = item.icon;
           return (

@@ -62,14 +62,15 @@ export function PlayerAvatar({
   const safeNumber = Number.isFinite(number) ? Math.max(0, Math.min(99, number)) : 0;
   const px = SIZE_PX[size];
   const gradientId = `avatar-gradient-${colorway}-${size}`;
-  const showBadges = size !== "sm";
+  const showPositionTag = size !== "sm"; // trop petit pour rester lisible à 32px
+  const badgeSize = size === "sm" ? px * 0.5 : px * 0.42;
 
   return (
     <div
-      className={cn("relative shrink-0", className)}
-      style={{ width: px, height: px }}
+      className={cn("relative shrink-0 rounded-full", className)}
+      style={{ width: px, height: px, boxShadow: `0 0 0 2px var(--background), 0 0 0 4px ${palette.from}` }}
     >
-      <svg viewBox="0 0 100 100" width={px} height={px}>
+      <svg viewBox="0 0 100 100" width={px} height={px} className="rounded-full">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor={palette.from} />
@@ -91,19 +92,17 @@ export function PlayerAvatar({
         </text>
       </svg>
 
-      {showBadges && (
-        <>
-          <span
-            className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-background bg-background/95"
-            style={{ width: px * 0.42, height: px * 0.42 }}
-            title={iconEntry.label}
-          >
-            <Icon className="h-[60%] w-[60%] text-foreground" />
-          </span>
-          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full border border-background bg-background px-1.5 py-0.5 font-mono text-[9px] font-bold leading-none">
-            {safePosition}
-          </span>
-        </>
+      <span
+        className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-background bg-background/95"
+        style={{ width: badgeSize, height: badgeSize }}
+        title={iconEntry.label}
+      >
+        <Icon className="h-[60%] w-[60%] text-foreground" />
+      </span>
+      {showPositionTag && (
+        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full border border-background bg-background px-1.5 py-0.5 font-mono text-[9px] font-bold leading-none">
+          {safePosition}
+        </span>
       )}
     </div>
   );

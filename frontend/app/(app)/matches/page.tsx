@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchCard } from "@/components/match-card";
 import { fetchMatches } from "@/lib/api/matches";
-import { Conference } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { Conference, Match } from "@/lib/types";
+import { cn, getDayLabel } from "@/lib/utils";
 
 const CONFERENCE_FILTERS: (Conference | "Toutes")[] = ["Toutes", "Est", "Ouest"];
 
@@ -17,17 +17,35 @@ export default function MatchesPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["matches"],
     queryFn: fetchMatches,
+    refetchInterval: 60 * 1000, // les cotes bougent en continu côté serveur (cf. OddsService) — on suit
   });
 
   const filteredMatches = useMemo(() => {
     if (!data) return [];
-    if (conferenceFilter === "Toutes") return data;
-    return data.filter(
-      (m) =>
-        m.homeTeam.conference === conferenceFilter ||
-        m.awayTeam.conference === conferenceFilter
-    );
+    const base =
+      conferenceFilter === "Toutes"
+        ? data
+        : data.filter(
+            (m) =>
+              m.homeTeam.conference === conferenceFilter ||
+              m.awayTeam.conference === conferenceFilter
+          );
+    return [...base].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [data, conferenceFilter]);
+
+  const groupedByDay = useMemo(() => {
+    const groups: { label: string; matches: Match[] }[] = [];
+    for (const match of filteredMatches) {
+      const label = getDayLabel(new Date(match.date));
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.label === label) {
+        lastGroup.matches.push(match);
+      } else {
+        groups.push({ label, matches: [match] });
+      }
+    }
+    return groups;
+  }, [filteredMatches]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -80,7 +98,16 @@ export default function MatchesPage() {
 
         {!isLoading &&
           !isError &&
-          filteredMatches.map((match) => <MatchCard key={match.id} match={match} />)}
+          groupedByDay.map((group) => (
+            <div key={group.label} className="flex flex-col gap-3">
+              <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                {group.label}
+              </h2>
+              {group.matches.map((match) => (
+                <MatchCard key={match.id} match={match} />
+              ))}
+            </div>
+          ))}
       </div>
     </div>
   );

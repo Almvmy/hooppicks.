@@ -36,7 +36,11 @@ export default function DashboardPage() {
     queryFn: fetchWalletTransactions,
   });
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
-  const matchesQuery = useQuery({ queryKey: ["matches"], queryFn: fetchMatches });
+  const matchesQuery = useQuery({
+    queryKey: ["matches"],
+    queryFn: fetchMatches,
+    refetchInterval: 60 * 1000,
+  });
   const leaderboardQuery = useQuery({
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,

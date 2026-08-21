@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { TeamRoster } from "@/components/team-roster";
 import { fetchMatchById } from "@/lib/api/matches";
+import { getTeamColor } from "@/lib/team-colors";
 
 export default function MatchDetailPage({
   params,
@@ -20,6 +21,7 @@ export default function MatchDetailPage({
   const { data: match, isLoading, isError } = useQuery({
     queryKey: ["match", id],
     queryFn: () => fetchMatchById(id),
+    refetchInterval: 60 * 1000,
   });
 
   return (
@@ -49,6 +51,11 @@ export default function MatchDetailPage({
 
             <div className="flex w-full items-center justify-around">
               <div className="flex flex-col items-center gap-2">
+                <span
+                  aria-hidden
+                  className="h-2.5 w-8 rounded-full"
+                  style={{ backgroundColor: getTeamColor(match.awayTeam.abbreviation) }}
+                />
                 <span className="font-heading text-lg font-bold">
                   {match.awayTeam.name}
                 </span>
@@ -65,6 +72,11 @@ export default function MatchDetailPage({
               <span className="text-muted-foreground">@</span>
 
               <div className="flex flex-col items-center gap-2">
+                <span
+                  aria-hidden
+                  className="h-2.5 w-8 rounded-full"
+                  style={{ backgroundColor: getTeamColor(match.homeTeam.abbreviation) }}
+                />
                 <span className="font-heading text-lg font-bold">
                   {match.homeTeam.name}
                 </span>

@@ -13,8 +13,8 @@ import {
   AVATAR_COLORWAYS,
   AVATAR_ICONS,
   AVATAR_POSITIONS,
-  PlayerAvatar,
 } from "@/components/player-avatar";
+import { PlayerCard } from "@/components/player-card";
 
 export function AvatarEditor({ profile }: { profile: UserProfile }) {
   const queryClient = useQueryClient();
@@ -48,8 +48,14 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
         <CardTitle className="font-heading text-lg">Ta carte joueur</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <div className="flex items-center gap-4">
-          <PlayerAvatar number={number} position={position} colorway={colorway} icon={icon} size="xl" />
+        <div className="flex items-center gap-5">
+          <PlayerCard
+            username={profile.username}
+            number={number}
+            position={position}
+            colorway={colorway}
+            icon={icon}
+          />
           <div className="flex flex-col gap-1">
             <label htmlFor="avatar-number" className="text-xs uppercase tracking-wide text-muted-foreground">
               Numéro de maillot

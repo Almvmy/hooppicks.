@@ -19,6 +19,20 @@ export async function logoutUser(): Promise<void> {
   return apiFetch<void>("/auth/logout", { method: "POST" });
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  return apiFetch<void>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  return apiFetch<void>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
 export async function fetchProfile(): Promise<UserProfile> {
   return apiFetch<UserProfile>("/auth/me");
 }

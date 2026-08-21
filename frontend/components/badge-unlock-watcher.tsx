@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trophy } from "lucide-react";
 import { fetchBadges } from "@/lib/api/badges";
 import { detectNewlyUnlockedBadges } from "@/lib/badge-notifications";
+import { ConfettiBurst } from "@/components/confetti-burst";
 
 /**
  * Composant invisible : surveille en arrière-plan les badges de l'utilisateur
- * et affiche un toast de félicitations pour chaque nouveau badge débloqué
- * depuis la dernière visite. À monter une seule fois, dans AppShell.
+ * et déclenche confettis + toast de félicitations pour chaque nouveau badge
+ * débloqué depuis la dernière visite. À monter une seule fois, dans AppShell.
  */
 export function BadgeUnlockWatcher() {
+  const [celebrating, setCelebrating] = useState(false);
+
   const { data: badges } = useQuery({
     queryKey: ["badges"],
     queryFn: fetchBadges,
@@ -23,6 +26,10 @@ export function BadgeUnlockWatcher() {
     if (!badges) return;
     const newlyUnlocked = detectNewlyUnlockedBadges(badges);
 
+    if (newlyUnlocked.length > 0) {
+      setCelebrating(true);
+    }
+
     for (const badge of newlyUnlocked) {
       toast.success(`Badge débloqué : ${badge.label}`, {
         description: badge.description,
@@ -31,5 +38,5 @@ export function BadgeUnlockWatcher() {
     }
   }, [badges]);
 
-  return null;
+  return celebrating ? <ConfettiBurst onDone={() => setCelebrating(false)} /> : null;
 }

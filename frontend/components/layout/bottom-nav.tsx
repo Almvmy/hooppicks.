@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Ticket, Trophy, User } from "lucide-react";
+import { CalendarDays, Shield, Ticket, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/matches", label: "Matchs", icon: CalendarDays },
   { href: "/bets", label: "Mes picks", icon: Ticket },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
+  { href: "/leagues", label: "Ligues", icon: Shield },
   { href: "/profile", label: "Profil", icon: User },
 ];
 

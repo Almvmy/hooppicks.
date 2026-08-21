@@ -26,6 +26,7 @@ export interface UserProfile {
   avatarPosition: AvatarPosition;
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
+  isAdmin: boolean;
 }
 
 export interface UpdateProfileInput {
@@ -45,6 +46,16 @@ export interface Team {
   abbreviation: string;
   conference: Conference;
   division: string;
+}
+
+export interface TeamRank {
+  id: string;
+  name: string;
+  abbreviation: string;
+  conference: Conference;
+  division: string;
+  rank: number;
+  eloRating: number;
 }
 
 export interface Match {
@@ -109,6 +120,43 @@ export interface LeaderboardEntry {
   points: number;
   winRate: number;
   totalBets: number;
+}
+
+export interface League {
+  id: string;
+  name: string;
+  inviteCode: string;
+  memberCount: number;
+  isOwner: boolean;
+  createdAt: string;
+}
+
+export interface LeaguePreview {
+  id: string;
+  name: string;
+  memberCount: number;
+}
+
+export interface LeagueMember {
+  username: string;
+  isOwner: boolean;
+  joinedAt: string;
+}
+
+export interface LeagueActivity {
+  username: string;
+  message: string;
+  occurredAt: string;
+}
+
+export interface AdminStatus {
+  lastSyncAt: string | null;
+  lastGamesSynced: number;
+  lastBetsResolved: number;
+  syncMode: string | null;
+  totalUsers: number;
+  totalMatches: number;
+  pendingBets: number;
 }
 
 export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "system";
