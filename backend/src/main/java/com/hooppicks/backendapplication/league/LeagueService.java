@@ -180,13 +180,28 @@ public class LeagueService {
     @Transactional
     public void leaveLeague(String leagueId, String userId) {
         membershipRepository.findByLeagueIdAndUserId(leagueId, userId).ifPresent(membership -> {
+            League league = membership.getLeague();
+            boolean wasOwner = league.getOwnerId().equals(userId);
+
             membershipRepository.delete(membership);
             membershipRepository.flush();
 
+            List<LeagueMembership> remaining = membershipRepository.findByLeagueId(leagueId);
+
             // Plus personne dans la ligue : autant la nettoyer plutôt que de
             // laisser un code d'invitation orphelin traîner indéfiniment.
-            if (membershipRepository.countByLeagueId(leagueId) == 0) {
+            if (remaining.isEmpty()) {
                 leagueRepository.deleteById(leagueId);
+            } else if (wasOwner) {
+                // Pas de transfert manuel dans ce produit : si le proprio part,
+                // la ligue ne doit pas se retrouver avec un ownerId pointant
+                // vers quelqu'un qui n'en fait plus partie — on transfère au
+                // membre le plus ancien plutôt que de laisser la propriété orpheline.
+                LeagueMembership oldest = remaining.stream()
+                        .min(Comparator.comparing(LeagueMembership::getJoinedAt))
+                        .orElseThrow();
+                league.setOwnerId(oldest.getUser().getId());
+                leagueRepository.save(league);
             }
         });
     }
@@ -203,6 +218,7 @@ public class LeagueService {
     private void notifyExistingMembersOfNewJoin(League league, User joiningUser) {
         for (LeagueMembership membership : membershipRepository.findByLeagueId(league.getId())) {
             if (membership.getUser().getId().equals(joiningUser.getId())) continue; // pas de notif à soi-même
+            if (!membership.getUser().isNotifyLeagueActivity()) continue;
 
             AppNotification notification = new AppNotification();
             notification.setUser(membership.getUser());

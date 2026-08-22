@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface WalletTransactionRepository extends JpaRepository<WalletTransaction, String> {
     List<WalletTransaction> findByUserIdOrderByDateDesc(String userId);
+
+    void deleteByUserId(String userId);
 }

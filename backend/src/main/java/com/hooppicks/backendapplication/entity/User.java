@@ -40,4 +40,13 @@ public class User {
 
     @Column(columnDefinition = "boolean default false")
     private boolean isAdmin = false;
+
+    @Column(columnDefinition = "boolean default true")
+    private boolean notifyMatchStarting = true;
+
+    @Column(columnDefinition = "boolean default true")
+    private boolean notifyBetResults = true;
+
+    @Column(columnDefinition = "boolean default true")
+    private boolean notifyLeagueActivity = true;
 }

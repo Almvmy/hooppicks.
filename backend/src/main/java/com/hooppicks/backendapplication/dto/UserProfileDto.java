@@ -12,7 +12,10 @@ public record UserProfileDto(
         String avatarPosition,
         String avatarColorway,
         String avatarIcon,
-        boolean isAdmin
+        boolean isAdmin,
+        boolean notifyMatchStarting,
+        boolean notifyBetResults,
+        boolean notifyLeagueActivity
 ) {
     public static UserProfileDto from(User user, int winRate, int totalBets) {
         return new UserProfileDto(
@@ -25,7 +28,10 @@ public record UserProfileDto(
                 user.getAvatarPosition(),
                 user.getAvatarColorway(),
                 user.getAvatarIcon(),
-                user.isAdmin()
+                user.isAdmin(),
+                user.isNotifyMatchStarting(),
+                user.isNotifyBetResults(),
+                user.isNotifyLeagueActivity()
         );
     }
 }

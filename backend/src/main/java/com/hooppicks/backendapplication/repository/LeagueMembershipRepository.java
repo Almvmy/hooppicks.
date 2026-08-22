@@ -14,4 +14,6 @@ public interface LeagueMembershipRepository extends JpaRepository<LeagueMembersh
     Optional<LeagueMembership> findByLeagueIdAndUserId(String leagueId, String userId);
 
     long countByLeagueId(String leagueId);
+
+    void deleteByLeagueId(String leagueId);
 }

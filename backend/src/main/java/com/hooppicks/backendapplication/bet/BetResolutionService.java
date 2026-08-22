@@ -129,6 +129,8 @@ public class BetResolutionService {
     }
 
     private void notify(User user, NotificationType type, String message) {
+        if (!user.isNotifyBetResults()) return;
+
         AppNotification notification = new AppNotification();
         notification.setUser(user);
         notification.setType(type);

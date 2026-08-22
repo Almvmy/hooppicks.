@@ -1,14 +1,19 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.dto.ChangeEmailRequest;
+import com.hooppicks.backendapplication.dto.ChangePasswordRequest;
+import com.hooppicks.backendapplication.dto.DeleteAccountRequest;
 import com.hooppicks.backendapplication.dto.ForgotPasswordRequest;
 import com.hooppicks.backendapplication.dto.LoginRequest;
 import com.hooppicks.backendapplication.dto.RegisterRequest;
 import com.hooppicks.backendapplication.dto.ResetPasswordRequest;
+import com.hooppicks.backendapplication.dto.UpdateNotificationPreferencesRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
+import com.hooppicks.backendapplication.security.AccountDeletionService;
 import com.hooppicks.backendapplication.security.PasswordResetService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.Cookie;
@@ -42,6 +47,7 @@ public class AuthController {
     private final BetRepository betRepository;
     private final LoginAttemptService loginAttemptService;
     private final PasswordResetService passwordResetService;
+    private final AccountDeletionService accountDeletionService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
     private String cookieSameSite;
@@ -51,13 +57,15 @@ public class AuthController {
 
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
                           SessionStore sessionStore, BetRepository betRepository,
-                          LoginAttemptService loginAttemptService, PasswordResetService passwordResetService) {
+                          LoginAttemptService loginAttemptService, PasswordResetService passwordResetService,
+                          AccountDeletionService accountDeletionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionStore = sessionStore;
         this.betRepository = betRepository;
         this.loginAttemptService = loginAttemptService;
         this.passwordResetService = passwordResetService;
+        this.accountDeletionService = accountDeletionService;
     }
 
     @PostMapping("/register")
@@ -146,6 +154,90 @@ public class AuthController {
         if (!success) {
             return ResponseEntity.badRequest().body("Lien invalide ou expiré.");
         }
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/notification-preferences")
+    public ResponseEntity<UserProfileDto> updateNotificationPreferences(
+            @RequestBody UpdateNotificationPreferencesRequest request, HttpServletRequest httpRequest) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        user.setNotifyMatchStarting(request.notifyMatchStarting());
+        user.setNotifyBetResults(request.notifyBetResults());
+        user.setNotifyLeagueActivity(request.notifyLeagueActivity());
+        userRepository.save(user);
+
+        return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body("Mot de passe actuel incorrect.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        // Comme pour le reset par lien : si le mot de passe a fuité, on ne veut
+        // pas qu'une session déjà ouverte par quelqu'un d'autre reste valide.
+        sessionStore.invalidateAllForUser(userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/change-email")
+    public ResponseEntity<?> changeEmail(
+            @Valid @RequestBody ChangeEmailRequest request, HttpServletRequest httpRequest) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body("Mot de passe incorrect.");
+        }
+
+        if (!request.newEmail().equalsIgnoreCase(user.getEmail())
+                && userRepository.findByEmail(request.newEmail()).isPresent()) {
+            return ResponseEntity.status(409).body("Cet email est déjà utilisé.");
+        }
+
+        user.setEmail(request.newEmail());
+        userRepository.save(user);
+
+        return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/delete-account")
+    public ResponseEntity<?> deleteAccount(
+            @Valid @RequestBody DeleteAccountRequest request, HttpServletRequest httpRequest,
+            HttpServletResponse response) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body("Mot de passe incorrect.");
+        }
+
+        accountDeletionService.deleteAccount(userId);
+
+        ResponseCookie expired = ResponseCookie.from("hp_session", "").path("/").maxAge(0).build();
+        response.addHeader(HttpHeaders.SET_COOKIE, expired.toString());
         return ResponseEntity.ok().build();
     }
 

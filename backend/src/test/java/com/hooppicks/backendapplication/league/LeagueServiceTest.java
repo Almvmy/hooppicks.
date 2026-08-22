@@ -159,10 +159,14 @@ class LeagueServiceTest {
 
     @Test
     void quitter_une_ligue_qui_devient_vide_supprime_la_ligue() {
+        League league = new League();
+        league.setId("league-1");
+        league.setOwnerId("seul-membre");
         LeagueMembership membership = new LeagueMembership();
+        membership.setLeague(league);
         when(membershipRepository.findByLeagueIdAndUserId("league-1", "seul-membre"))
                 .thenReturn(Optional.of(membership));
-        when(membershipRepository.countByLeagueId("league-1")).thenReturn(0L);
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of());
 
         leagueService.leaveLeague("league-1", "seul-membre");
 
@@ -172,14 +176,54 @@ class LeagueServiceTest {
 
     @Test
     void quitter_une_ligue_qui_a_encore_des_membres_ne_la_supprime_pas() {
+        League league = new League();
+        league.setId("league-1");
+        league.setOwnerId("owner-1"); // pas celui qui quitte
         LeagueMembership membership = new LeagueMembership();
+        membership.setLeague(league);
+        LeagueMembership remaining = new LeagueMembership();
+        remaining.setUser(userWithId("owner-1"));
+        remaining.setJoinedAt(Instant.now());
         when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
                 .thenReturn(Optional.of(membership));
-        when(membershipRepository.countByLeagueId("league-1")).thenReturn(1L);
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of(remaining));
 
         leagueService.leaveLeague("league-1", "user-1");
 
         verify(membershipRepository).delete(membership);
         verify(leagueRepository, never()).deleteById(anyString());
+        verify(leagueRepository, never()).save(any());
+    }
+
+    @Test
+    void quand_le_proprietaire_quitte_la_propriete_passe_au_membre_le_plus_ancien() {
+        League league = new League();
+        league.setId("league-1");
+        league.setOwnerId("owner-1");
+        LeagueMembership ownerMembership = new LeagueMembership();
+        ownerMembership.setLeague(league);
+
+        LeagueMembership older = new LeagueMembership();
+        older.setUser(userWithId("membre-ancien"));
+        older.setJoinedAt(Instant.parse("2026-01-01T00:00:00Z"));
+        LeagueMembership newer = new LeagueMembership();
+        newer.setUser(userWithId("membre-recent"));
+        newer.setJoinedAt(Instant.parse("2026-02-01T00:00:00Z"));
+
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "owner-1"))
+                .thenReturn(Optional.of(ownerMembership));
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of(newer, older));
+
+        leagueService.leaveLeague("league-1", "owner-1");
+
+        assertThat(league.getOwnerId()).isEqualTo("membre-ancien");
+        verify(leagueRepository).save(league);
+        verify(leagueRepository, never()).deleteById(anyString());
+    }
+
+    private User userWithId(String id) {
+        User user = new User();
+        user.setId(id);
+        return user;
     }
 }

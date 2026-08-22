@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface NotificationRepository extends JpaRepository<AppNotification, String> {
     List<AppNotification> findByUserIdOrderByDateDesc(String userId);
+
+    void deleteByUserId(String userId);
 }

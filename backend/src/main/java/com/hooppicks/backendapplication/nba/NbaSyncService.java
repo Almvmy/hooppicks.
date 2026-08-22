@@ -156,6 +156,8 @@ public class NbaSyncService {
         String message = "Ça démarre : " + home.getName() + " vs " + away.getName() + " !";
 
         for (User user : users) {
+            if (!user.isNotifyMatchStarting()) continue;
+
             AppNotification notification = new AppNotification();
             notification.setUser(user);
             notification.setType(NotificationType.MATCH_STARTING);
