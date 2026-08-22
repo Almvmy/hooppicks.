@@ -76,7 +76,7 @@ export default function AdminPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-1 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Utilisateurs</p>
             {statusQuery.isLoading ? (
@@ -86,7 +86,7 @@ export default function AdminPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-1 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Matchs en base</p>
             {statusQuery.isLoading ? (
@@ -96,7 +96,7 @@ export default function AdminPage() {
             )}
           </CardContent>
         </Card>
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-1 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris en attente</p>
             {statusQuery.isLoading ? (
@@ -108,7 +108,7 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="flex flex-col gap-2 pt-6">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Dernière synchro</p>
           {statusQuery.isLoading ? (
@@ -135,7 +135,7 @@ export default function AdminPage() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Équipes</p>
             <Button
@@ -150,7 +150,7 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Matchs</p>
             <div className="flex gap-2">
@@ -182,7 +182,7 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="flex flex-col gap-3 pt-6">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris</p>
           <Button

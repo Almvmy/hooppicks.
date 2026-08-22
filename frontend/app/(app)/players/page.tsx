@@ -99,9 +99,9 @@ function PlayersTab() {
             <Badge
               variant="outline"
               className={cn(
-                "cursor-pointer px-3 py-1.5 transition-colors",
+                "cursor-pointer border-transparent px-3 py-1.5 transition-colors",
                 positionFilter === null
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "glass-accent"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -113,9 +113,9 @@ function PlayersTab() {
               <Badge
                 variant="outline"
                 className={cn(
-                  "cursor-pointer px-3 py-1.5 font-mono transition-colors",
+                  "cursor-pointer border-transparent px-3 py-1.5 font-mono transition-colors",
                   positionFilter === pos
-                    ? "border-primary/40 bg-primary/10 text-primary"
+                    ? "glass-accent"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -129,7 +129,7 @@ function PlayersTab() {
       {isSearchValid && !isLoading && !isError && filteredPlayers.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPlayers.map((player) => (
-            <Card key={player.id} className="border-border bg-card">
+            <Card key={player.id}>
               <CardContent className="flex items-center gap-3 pt-6">
                 <span
                   aria-hidden
@@ -190,7 +190,7 @@ function TeamsTab() {
           {data.map((team) => {
             const isExpanded = expandedTeamId === team.id;
             return (
-              <Card key={team.id} className="border-border bg-card">
+              <Card key={team.id}>
                 <CardContent className="flex flex-col gap-3 pt-6">
                   <button
                     type="button"
@@ -247,9 +247,9 @@ export default function PlayersPage() {
           <Badge
             variant="outline"
             className={cn(
-              "cursor-pointer gap-1.5 px-3 py-1.5 transition-colors",
+              "cursor-pointer border-transparent gap-1.5 px-3 py-1.5 transition-colors",
               tab === "players"
-                ? "border-primary/40 bg-primary/10 text-primary"
+                ? "glass-accent"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -261,9 +261,9 @@ export default function PlayersPage() {
           <Badge
             variant="outline"
             className={cn(
-              "cursor-pointer gap-1.5 px-3 py-1.5 transition-colors",
+              "cursor-pointer border-transparent gap-1.5 px-3 py-1.5 transition-colors",
               tab === "teams"
-                ? "border-primary/40 bg-primary/10 text-primary"
+                ? "glass-accent"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

@@ -1,19 +1,30 @@
 import { Badge } from "@/components/ui/badge";
 import { MatchStatus } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
-const STATUS_CONFIG: Record<MatchStatus, { label: string; className: string }> = {
-  scheduled: { label: "À venir", className: "border-border bg-secondary text-muted-foreground" },
-  live: { label: "En direct", className: "border-live/30 bg-live/10 text-live" },
-  finished: { label: "Terminé", className: "border-success/30 bg-success/10 text-success" },
+/**
+ * Les trois états d'un match. Après le lot 2, plus aucune classe écrite à la
+ * main : les variantes `secondary` / `live` / `success` du Badge portent les
+ * liserés, donc un changement de grammaire visuelle se fait en un seul endroit.
+ */
+const STATUS_CONFIG: Record<
+  MatchStatus,
+  { label: string; variant: "secondary" | "live" | "success" }
+> = {
+  scheduled: { label: "À venir", variant: "secondary" },
+  live: { label: "En direct", variant: "live" },
+  finished: { label: "Terminé", variant: "success" },
 };
 
 export function MatchStatusBadge({ status }: { status: MatchStatus }) {
-  const config = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.scheduled;
+
   return (
-    <Badge variant="outline" className={cn("font-mono text-xs", config.className)}>
+    <Badge variant={config.variant} className="font-mono">
       {status === "live" && (
-        <span className="mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-live" />
+        <span
+          aria-hidden
+          className="mr-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-live"
+        />
       )}
       {config.label}
     </Badge>

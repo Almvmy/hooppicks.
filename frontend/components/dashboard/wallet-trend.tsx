@@ -44,7 +44,7 @@ export function WalletTrend({
   const isFlat = weeklyDelta === 0;
 
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardHeader className="space-y-0">
         <CardTitle className="font-heading text-base">Solde — 7 derniers jours</CardTitle>
       </CardHeader>
@@ -89,7 +89,7 @@ export function WalletTrend({
               )}
             </svg>
 
-            <div className="flex items-center justify-between border-t border-border pt-3 text-xs">
+            <div className="glass-hairline-t flex items-center justify-between pt-3 text-xs">
               <span className="text-muted-foreground">
                 Misé <span className="font-mono text-foreground">{staked.toLocaleString("fr-FR")}</span> pts
               </span>

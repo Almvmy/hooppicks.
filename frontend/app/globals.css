@@ -239,3 +239,256 @@
     opacity: 0.9;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIQUID GLASS — à coller à la FIN de app/globals.css
+   (après le bloc @layer base, avant ou après les @keyframes existants)
+
+   Aucun token existant n'est modifié. On ajoute :
+   1. des variables --glass-*
+   2. le fond lumineux ambiant .app-field  (INDISPENSABLE : sans lumière
+      derrière lui, un backdrop-filter ne produit rien)
+   3. cinq utilitaires .glass* + repli @supports
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Fond de scène — plus sombre et moins bleu que --background,
+     pour laisser respirer les halos colorés. */
+  --field-base: #0A0F1C;
+  --field-1: rgba(145, 132, 217, 0.26); /* halo indigo, haut gauche */
+  --field-2: rgba(255, 122, 26, 0.16); /* halo orange, haut droite */
+  --field-3: rgba(0, 229, 255, 0.10); /* halo cyan, bas centre */
+
+  /* Verre : dégradé de tint + liseré spéculaire + ombre portée */
+  --glass-tint: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.10),
+    rgba(255, 255, 255, 0.035) 46%,
+    rgba(255, 255, 255, 0.02)
+  );
+  --glass-blur: blur(28px) saturate(170%);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --glass-lift: 0 18px 44px rgba(3, 7, 18, 0.55);
+
+  /* Accent traité en lumière (contour + glow) et non en aplat */
+  --glow-primary: 0 0 24px rgba(255, 122, 26, 0.28);
+  --primary-lit: #ffb380; /* texte orange lisible sur verre */
+  --primary-num: #ffcba4; /* chiffres / data */
+}
+
+/* ── 1. Le fond lumineux ─────────────────────────────────────────────
+   À poser sur le conteneur racine de l'app (voir app-shell.tsx).
+   Les halos sont fixes : ils ne défilent pas avec le contenu, donc le
+   verre traverse un champ lumineux stable. */
+.app-field {
+  background-color: var(--field-base);
+  background-image: radial-gradient(1000px 560px at 8% -14%, var(--field-1), transparent 62%),
+    radial-gradient(820px 560px at 96% -6%, var(--field-2), transparent 60%),
+    radial-gradient(700px 460px at 50% 118%, var(--field-3), transparent 62%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* En dessous de 640px, les halos desktop (rayons ~1000px) sont trop dilués
+   sur un viewport de ~375-402px : l'écran entier se retrouve dans la zone de
+   fondu au lieu du cœur du dégradé, et le verre semble éteint. Valeurs reprises
+   telles quelles de la maquette « Verre signature mobile » (402×874) : rayons
+   ~2x plus petits, halos ~15-20% plus intenses. */
+@media (max-width: 640px) {
+  .app-field {
+    background-image: radial-gradient(520px 380px at 0% -6%, rgba(145, 132, 217, 0.30), transparent 64%),
+      radial-gradient(460px 360px at 100% 2%, rgba(255, 122, 26, 0.20), transparent 62%),
+      radial-gradient(420px 340px at 50% 104%, rgba(0, 229, 255, 0.12), transparent 64%);
+  }
+}
+
+/* ── 2. Les surfaces ─────────────────────────────────────────────────
+   .glass         cartes de contenu
+   .glass-chrome  barres fixes (topbar, sidebar) — plus transparent
+   .glass-strong  îles flottantes (bottom nav, bet slip) — plus dense
+   .glass-inset   petites tuiles pressables (cotes, lignes)
+   .glass-accent  état actif / CTA — l'orange en lumière */
+
+.glass {
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-edge), var(--glass-lift);
+  border: 0;
+}
+
+.glass-chrome {
+  background: linear-gradient(180deg, rgba(10, 15, 28, 0.72), rgba(10, 15, 28, 0.28));
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
+  border: 0;
+}
+
+/* Variante verticale du chrome (sidebar) : le liseré passe à droite. */
+.glass-chrome-y {
+  background: rgba(15, 23, 42, 0.42);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.07);
+  border: 0;
+}
+
+.glass-strong {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.10), 0 20px 44px rgba(3, 7, 18, 0.6);
+  border: 0;
+}
+
+.glass-inset {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  border: 0;
+}
+
+.glass-inset-quiet {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border: 0;
+}
+
+.glass-accent {
+  color: var(--primary-lit);
+  background: rgba(255, 122, 26, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22), var(--glow-primary);
+  border: 0;
+}
+
+/* Hover / pressed — le verre s'éclaire, il ne change pas de couleur. */
+.glass-inset:hover,
+.glass-inset-quiet:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05));
+}
+.glass-inset:active,
+.glass-inset-quiet:active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+.glass-accent:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.70),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 30px rgba(255, 122, 26, 0.38);
+}
+
+/* Focus clavier : on garde le ring accent du système. */
+.glass:focus-visible,
+.glass-inset:focus-visible,
+.glass-inset-quiet:focus-visible,
+.glass-accent:focus-visible,
+.glass-strong:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ── 3. Repli sans backdrop-filter ───────────────────────────────────
+   Firefox < 103, WebView anciennes, et l'impression. Le verre devient
+   une surface opaque proche de --card : le liseré et l'ombre suffisent
+   à conserver la hiérarchie. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .glass-strong {
+    background: #16203a;
+  }
+  .glass-chrome {
+    background: rgba(11, 17, 32, 0.97);
+  }
+  .glass-chrome-y {
+    background: #0f172a;
+  }
+  .glass-inset,
+  .glass-inset-quiet {
+    background: #1e293b;
+  }
+}
+
+/* Respect de prefers-reduced-transparency (Safari 17+) : on retire le
+   flou, qui est la partie coûteuse, et on opacifie. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-strong,
+  .glass-chrome,
+  .glass-chrome-y {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass,
+  .glass-strong {
+    background: #16203a;
+  }
+  .glass-chrome,
+  .glass-chrome-y {
+    background: rgba(11, 17, 32, 0.97);
+  }
+  .app-field {
+    background-image: none;
+  }
+}
+
+/* Masque les scrollbars desktop dans les zones scrollables en verre
+   (sinon une gouttière grise casse l'illusion). Optionnel. */
+.glass-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.glass-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOT 2 — à coller à la suite du bloc liquid glass dans globals.css
+
+   Trois utilitaires manquants, révélés en traitant les surfaces
+   flottantes (menus, panneau mobile) et les tableaux.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── .glass-overlay ─────────────────────────────────────────────────
+   Pour les couches qui recouvrent TOUT l'écran (panneau de nav mobile,
+   modales plein écran). Différence avec .glass-strong : bien plus
+   opaque, parce qu'il faut que le contenu dessous devienne illisible —
+   un overlay translucide sur une page dense est un piège
+   d'accessibilité, pas un effet. Le flou reste, pour la continuité. */
+.glass-overlay {
+  background: linear-gradient(180deg, rgba(10, 15, 28, 0.94), rgba(10, 15, 28, 0.88));
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+}
+
+/* ── .glass-hairline ────────────────────────────────────────────────
+   Remplace les `border-t/b border-border`. Un liseré lumineux au lieu
+   d'un trait sombre : sur du verre, une bordure #1E293B fait une
+   rayure, alors qu'un inset blanc à 8 % lit comme une arête. */
+.glass-hairline-t {
+  border-top: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.glass-hairline-b {
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ── Lignes de tableau ──────────────────────────────────────────────
+   Les <tr> ne peuvent pas porter .glass (un backdrop-filter sur un
+   élément de tableau crée un containing block et casse la mise en
+   page). On se limite donc à des fonds translucides. */
+.glass-rows > tr {
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  transition: background-color 0.15s;
+}
+.glass-rows > tr:last-child {
+  box-shadow: none;
+}
+.glass-rows > tr:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}

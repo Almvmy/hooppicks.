@@ -65,7 +65,7 @@ export default function LeaguesPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Créer une ligue</p>
             <div className="flex gap-2">
@@ -85,7 +85,7 @@ export default function LeaguesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Rejoindre avec un code</p>
 
@@ -143,7 +143,7 @@ export default function LeaguesPage() {
         )}
 
         {!leaguesQuery.isLoading && leaguesQuery.data?.length === 0 && (
-          <Card className="border-border bg-card">
+          <Card>
             <CardContent className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
               <Shield className="h-8 w-8" />
               Pas encore de ligue. Crées-en une ou rejoins celle d&apos;un ami.
@@ -152,7 +152,7 @@ export default function LeaguesPage() {
         )}
 
         {leaguesQuery.data?.map((league) => (
-          <Card key={league.id} className="border-border bg-card">
+          <Card key={league.id}>
             <CardContent className="flex items-center justify-between gap-4 pt-6">
               <Link href={`/leagues/${league.id}`} className="flex flex-1 items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -176,7 +176,7 @@ export default function LeaguesPage() {
               <button
                 type="button"
                 onClick={() => copyCode(league.inviteCode)}
-                className="flex items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-2.5 py-1.5 font-mono text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+                className="glass-inset flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-mono text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
               >
                 {league.inviteCode}
                 <Copy className="h-3 w-3" />

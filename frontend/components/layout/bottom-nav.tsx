@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, Shield, Ticket, Trophy, User } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Ticket, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// 5 items max (repère UX standard pour une bottom nav) : Ligues et Joueurs
+// restent dans le menu hamburger (mobile-nav.tsx) plutôt que de pousser
+// cette barre à 6 ou 7 icônes.
 const navItems = [
+  { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
   { href: "/matches", label: "Matchs", icon: CalendarDays },
   { href: "/bets", label: "Mes picks", icon: Ticket },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
-  { href: "/leagues", label: "Ligues", icon: Shield },
   { href: "/profile", label: "Profil", icon: User },
 ];
 
@@ -17,9 +20,12 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
+    // Île flottante : inset-x-3.5 (14px de marge) + rayon 26px + verre dense.
+    // bottom = safe-area + 14px, donc l'île se dégage du home indicator iOS.
+    // Nécessite pb-32 sur le <main> de l'AppShell.
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 backdrop-blur md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="glass-strong fixed inset-x-3.5 z-40 flex items-stretch justify-around gap-0.5 rounded-[26px] p-2 md:hidden"
+      style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}
     >
       {navItems.map((item) => {
         const isActive = pathname.startsWith(item.href);
@@ -29,11 +35,12 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-              isActive ? "text-primary" : "text-muted-foreground"
+              // min-h-[52px] : cible tactile confortable (> 44px).
+              "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[19px] text-[10px] font-semibold transition-all",
+              isActive ? "glass-accent" : "text-foreground/60"
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-[19px] w-[19px]" />
             {item.label}
           </Link>
         );

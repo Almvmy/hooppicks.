@@ -37,10 +37,10 @@ export default function HistoryPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card">
+      <div className="glass rounded-2xl">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b-0 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] hover:bg-transparent">
               <TableHead>Description</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Date</TableHead>

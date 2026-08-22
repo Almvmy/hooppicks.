@@ -32,10 +32,10 @@ export function BadgeGrid() {
         <div
           key={badge.id}
           className={cn(
-            "relative flex flex-col items-center gap-2 overflow-hidden rounded-lg border p-4 text-center transition-transform",
+            "relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl p-4 text-center transition-transform",
             badge.unlocked
-              ? "badge-holo border-primary/30 bg-primary/5 hover:-translate-y-0.5"
-              : "border-border bg-secondary/30 opacity-50"
+              ? "badge-holo glass-accent hover:-translate-y-0.5"
+              : "glass-inset-quiet opacity-55"
           )}
         >
           {badge.unlocked ? (

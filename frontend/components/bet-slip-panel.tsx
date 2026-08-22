@@ -42,11 +42,11 @@ export function BetSlipPanel() {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 w-auto overflow-hidden rounded-lg border border-white/10 bg-card/70 shadow-2xl shadow-black/40 backdrop-blur-xl sm:bottom-4 sm:left-auto sm:w-80">
+    <div className="glass fixed bottom-20 left-4 right-4 z-50 w-auto overflow-hidden rounded-2xl sm:bottom-4 sm:left-auto sm:w-80">
       {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
       <div className="h-[3px] w-full bg-gradient-to-r from-primary via-live to-primary" />
 
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
         <div className="flex items-center gap-2 font-heading font-bold">
           <TicketIcon className="h-4 w-4 text-primary" />
           Ticket ({selections.length})
@@ -60,7 +60,7 @@ export function BetSlipPanel() {
         {selections.map((s) => (
           <div
             key={s.id}
-            className="flex items-center justify-between rounded-md border border-white/5 bg-secondary/40 px-3 py-2 text-sm"
+            className="glass-inset-quiet flex items-center justify-between rounded-xl px-3 py-2 text-sm"
           >
             <div>
               <p className="text-xs text-muted-foreground">{s.matchLabel}</p>
@@ -76,7 +76,7 @@ export function BetSlipPanel() {
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-white/10 p-4">
+      <div className="flex flex-col gap-3 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Cote totale</span>
           <span className="font-mono font-bold">{totalOdds.toFixed(2)}</span>
@@ -104,6 +104,7 @@ export function BetSlipPanel() {
         )}
 
         <Button
+          variant="lit"
           onClick={handleSubmit}
           disabled={!isStakeValid || mutation.isPending}
           className="w-full"

@@ -66,9 +66,9 @@ export default function MatchesPage() {
             <Badge
               variant="outline"
               className={cn(
-                "cursor-pointer px-3 py-1.5 transition-colors",
+                "cursor-pointer border-transparent px-3 py-1.5 transition-colors",
                 conferenceFilter === conf
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "glass-accent"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

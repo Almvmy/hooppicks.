@@ -43,7 +43,7 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
     icon !== profile.avatarIcon;
 
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardHeader>
         <CardTitle className="font-heading text-lg">Ta carte joueur</CardTitle>
       </CardHeader>
@@ -84,10 +84,8 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
                 type="button"
                 onClick={() => setPosition(pos)}
                 className={cn(
-                  "rounded-md border px-3 py-1.5 font-mono text-sm font-bold transition-colors",
-                  position === pos
-                    ? "border-primary/40 bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground"
+                  "rounded-xl px-3 py-1.5 font-mono text-sm font-bold transition-colors",
+                  position === pos ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
                 )}
               >
                 {pos}
@@ -131,10 +129,8 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
                   type="button"
                   onClick={() => setIcon(key)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors",
-                    icon === key
-                      ? "border-primary/40 bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground"
+                    "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors",
+                    icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <Icon className="h-3.5 w-3.5" />

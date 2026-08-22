@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import { UpdateProfileInput, UserProfile } from "@/lib/types";
+import { NotificationPreferences, UpdateProfileInput, UserProfile } from "@/lib/types";
 
 export async function registerUser(username: string, email: string, password: string): Promise<UserProfile> {
   return apiFetch<UserProfile>("/auth/register", {
@@ -41,5 +41,35 @@ export async function updateProfile(input: UpdateProfileInput): Promise<UserProf
   return apiFetch<UserProfile>("/auth/profile", {
     method: "PATCH",
     body: JSON.stringify(input),
+  });
+}
+
+export async function updateNotificationPreferences(
+  prefs: NotificationPreferences
+): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/auth/notification-preferences", {
+    method: "PATCH",
+    body: JSON.stringify(prefs),
+  });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiFetch<void>("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export async function changeEmail(newEmail: string, currentPassword: string): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/auth/change-email", {
+    method: "POST",
+    body: JSON.stringify({ newEmail, currentPassword }),
+  });
+}
+
+export async function deleteAccount(currentPassword: string): Promise<void> {
+  return apiFetch<void>("/auth/delete-account", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword }),
   });
 }

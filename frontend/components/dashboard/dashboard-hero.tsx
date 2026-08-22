@@ -36,7 +36,7 @@ export function DashboardHero({
   pendingCount,
 }: DashboardHeroProps) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card">
+    <div className="glass relative overflow-hidden rounded-2xl">
       <Image
         src="/images/hoop-net.jpg"
         alt=""
@@ -44,7 +44,9 @@ export function DashboardHero({
         sizes="(min-width: 640px) 100vw, 100vw"
         className="object-cover opacity-[0.08]"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-card via-card/95 to-card/70" />
+      {/* Dégradé translucide (et non opaque à --card) : le champ lumineux de
+          .app-field doit rester visible derrière le verre. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,15,28,0.62)] to-transparent" />
       {/* Signature : tracé de terrain de basket en filigrane, ancré à droite */}
       <CourtWatermark />
 
@@ -71,10 +73,8 @@ export function DashboardHero({
           {!isLoading && streak > 0 && (
             <div
               className={cn(
-                "flex items-center gap-2 rounded-full border px-3 py-1.5",
-                streak >= 3
-                  ? "border-primary/40 bg-primary/10 text-primary"
-                  : "border-border bg-secondary/50 text-foreground"
+                "flex items-center gap-2 rounded-full px-3 py-1.5",
+                streak >= 3 ? "glass-accent" : "glass-inset text-foreground"
               )}
             >
               <Flame
@@ -90,7 +90,7 @@ export function DashboardHero({
 
           <Link
             href="/matches"
-            className={cn(buttonVariants({ variant: "default" }), "gap-1.5")}
+            className={cn(buttonVariants({ variant: "lit" }), "gap-1.5 rounded-full")}
           >
             Voir les matchs
             <ArrowRight className="h-4 w-4" />

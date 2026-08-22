@@ -8,6 +8,7 @@ import { fetchWallet, fetchWalletTransactions } from "@/lib/api/wallet";
 import { fetchBets } from "@/lib/api/bets";
 import { fetchMatches } from "@/lib/api/matches";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
+import { fetchNews } from "@/lib/api/news";
 
 import {
   buildDashboardSlate,
@@ -26,6 +27,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { WalletTrend } from "@/components/dashboard/wallet-trend";
 import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
+import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 
 export default function DashboardPage() {
@@ -45,6 +47,11 @@ export default function DashboardPage() {
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,
     staleTime: 2 * 60 * 1000,
+  });
+  const newsQuery = useQuery({
+    queryKey: ["news"],
+    queryFn: fetchNews,
+    staleTime: 10 * 60 * 1000,
   });
 
   const streak = computeWinStreak(betsQuery.data);
@@ -118,6 +125,7 @@ export default function DashboardPage() {
             currentUsername={profileQuery.data?.username}
             isLoading={leaderboardQuery.isLoading}
           />
+          <NewsPreview items={newsQuery.data ?? []} isLoading={newsQuery.isLoading} />
           <FunFactCard />
         </div>
       </div>

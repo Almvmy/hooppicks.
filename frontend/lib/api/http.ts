@@ -6,7 +6,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   });
 
   if (!res.ok) {
-    throw new Error(`Erreur API (${res.status}) sur ${path}`);
+    // Les endpoints d'auth renvoient parfois un message texte brut ("Mot de
+    // passe incorrect.") plutôt qu'un JSON — on le remonte tel quel s'il
+    // existe, pour l'afficher directement à l'utilisateur.
+    const body = await res.text().catch(() => "");
+    throw new Error(body || `Erreur API (${res.status}) sur ${path}`);
   }
 
   const text = await res.text();

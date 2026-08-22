@@ -16,41 +16,43 @@ export function MatchCard({ match }: { match: Match }) {
     <Link href={`/matches/${match.id}`}>
       <Card
         className={cn(
-          "relative overflow-hidden border-border bg-card transition-colors hover:border-primary/40",
-          isRivalry && "border-primary/30"
+          // border-* retirés : le Card porte maintenant son liseré via .glass.
+          // Le hover éclaircit le verre au lieu de changer la bordure.
+          "relative overflow-hidden transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,122,26,0.30),0_18px_44px_rgba(3,7,18,0.55)]",
+          isRivalry && "shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,122,26,0.35),0_18px_44px_rgba(3,7,18,0.55)]"
         )}
       >
         {isRivalry && (
-          <div className="flex items-center gap-1.5 border-b border-primary/20 bg-primary/10 px-4 py-1.5">
+          <div className="flex items-center gap-1.5 bg-primary/[0.12] px-4 py-1.5 shadow-[inset_0_-1px_0_rgba(255,122,26,0.25)]">
             <Swords className="h-3 w-3 text-primary" />
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wide text-primary">
+            <span className="font-mono text-[10px] font-bold tracking-wide uppercase text-[var(--primary-lit)]">
               Rivalité historique
             </span>
           </div>
         )}
         <CardContent className="flex items-center justify-between gap-4 pt-6">
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 font-medium">
+              <span className="flex min-w-0 items-center gap-2 font-medium">
                 <span
                   aria-hidden
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: getTeamColor(match.awayTeam.abbreviation) }}
                 />
-                {match.awayTeam.name}
+                <span className="truncate">{match.awayTeam.name}</span>
               </span>
               {match.status !== "scheduled" && (
                 <span className="font-mono font-bold">{match.awayScore}</span>
               )}
             </div>
             <div className="mt-1 flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 font-medium">
+              <span className="flex min-w-0 items-center gap-2 font-medium">
                 <span
                   aria-hidden
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: getTeamColor(match.homeTeam.abbreviation) }}
                 />
-                {match.homeTeam.name}
+                <span className="truncate">{match.homeTeam.name}</span>
               </span>
               {match.status !== "scheduled" && (
                 <span className="font-mono font-bold">{match.homeScore}</span>
@@ -71,7 +73,8 @@ export function MatchCard({ match }: { match: Match }) {
           {match.status === "scheduled" ? (
             <MatchOddsRow match={match} />
           ) : (
-            <p className="rounded-md bg-secondary/30 px-3 py-2 text-center text-xs text-muted-foreground">
+            // bg-secondary/30 → glass-inset-quiet
+            <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
               Paris fermés — ce match {match.status === "live" ? "est en cours" : "est terminé"}
             </p>
           )}

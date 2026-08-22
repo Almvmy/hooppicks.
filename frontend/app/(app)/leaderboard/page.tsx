@@ -6,6 +6,7 @@ import { CourtWatermark } from "@/components/court-watermark";
 import { NetPattern } from "@/components/net-pattern";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
+import { fetchProfile } from "@/lib/api/auth";
 
 const PAGE_SIZE = 20;
 
@@ -13,8 +14,9 @@ export default function LeaderboardPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["leaderboard"],
     queryFn: fetchLeaderboard,
-    staleTime: 2 * 60 * 1000, // 2 minutes  
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const { page, pageCount, pageItems, setPage, totalCount } = usePagination(data, PAGE_SIZE);
 
   return (
@@ -27,10 +29,15 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <div className="relative overflow-hidden rounded-lg border border-border bg-card">
+      <div className="glass relative overflow-hidden rounded-2xl">
         <CourtWatermark className="pointer-events-none absolute -right-6 -top-10 h-[220px] w-[340px] opacity-[0.05]" />
         <NetPattern className="pointer-events-none absolute -bottom-10 -left-8 h-[200px] w-[260px] opacity-[0.05]" />
-        <LeaderboardTable entries={pageItems} isLoading={isLoading} isError={isError} />
+        <LeaderboardTable
+          entries={pageItems}
+          isLoading={isLoading}
+          isError={isError}
+          currentUsername={profile?.username}
+        />
       </div>
 
       {!isLoading && !isError && totalCount > 0 && (

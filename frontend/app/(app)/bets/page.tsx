@@ -11,11 +11,11 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
 
-const STATUS_CONFIG: Record<BetStatus, { label: string; className: string }> = {
-  pending: { label: "En attente", className: "border-border bg-secondary text-muted-foreground" },
-  won: { label: "Gagné", className: "border-success/30 bg-success/10 text-success" },
-  lost: { label: "Perdu", className: "border-destructive/30 bg-destructive/10 text-destructive" },
-  void: { label: "Annulé", className: "border-border bg-secondary text-muted-foreground" },
+const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "success" | "destructive" }> = {
+  pending: { label: "En attente", variant: "secondary" },
+  won: { label: "Gagné", variant: "success" },
+  lost: { label: "Perdu", variant: "destructive" },
+  void: { label: "Annulé", variant: "secondary" },
 };
 
 export default function BetsPage() {
@@ -44,10 +44,10 @@ export default function BetsPage() {
         {!isLoading &&
           !isError &&
           pageItems.map((bet) => (
-            <Card key={bet.id} className="border-border bg-card">
+            <Card key={bet.id}>
               <CardContent className="flex flex-col gap-2 pt-6">
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className={cn(STATUS_CONFIG[bet.status].className)}>
+                  <Badge variant={STATUS_CONFIG[bet.status].variant}>
                     {STATUS_CONFIG[bet.status].label}
                   </Badge>
                   <span className="font-mono text-xs text-muted-foreground">
@@ -67,7 +67,7 @@ export default function BetsPage() {
                   </div>
                 ))}
 
-                <div className="mt-2 flex items-center justify-between border-t border-border pt-2 text-sm">
+                <div className="glass-hairline-t mt-2 flex items-center justify-between pt-2 text-sm">
                   <span className="text-muted-foreground">
                     Mise {bet.stake.toLocaleString("fr-FR")} pts · Cote totale {bet.totalOdds.toFixed(2)}
                   </span>

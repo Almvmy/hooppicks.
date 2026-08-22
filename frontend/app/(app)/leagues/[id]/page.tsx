@@ -17,6 +17,7 @@ import {
   fetchMyLeagues,
   leaveLeague,
 } from "@/lib/api/leagues";
+import { fetchProfile } from "@/lib/api/auth";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function LeagueDetailPage({
@@ -46,6 +47,8 @@ export default function LeagueDetailPage({
     queryKey: ["league-activity", id],
     queryFn: () => fetchLeagueActivity(id),
   });
+
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveLeague(id),
@@ -99,16 +102,17 @@ export default function LeagueDetailPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
-        <div className="relative overflow-hidden rounded-lg border border-border bg-card">
+        <div className="glass relative overflow-hidden rounded-2xl">
           <LeaderboardTable
             entries={leaderboardQuery.data}
             isLoading={leaderboardQuery.isLoading}
             isError={leaderboardQuery.isError}
             emptyMessage="Aucun pari résolu dans cette ligue pour l'instant."
+            currentUsername={profile?.username}
           />
         </div>
 
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Membres ({membersQuery.data?.length ?? "…"})
@@ -135,7 +139,7 @@ export default function LeagueDetailPage({
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Activité récente

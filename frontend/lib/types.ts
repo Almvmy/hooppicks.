@@ -27,6 +27,15 @@ export interface UserProfile {
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
   isAdmin: boolean;
+  notifyMatchStarting: boolean;
+  notifyBetResults: boolean;
+  notifyLeagueActivity: boolean;
+}
+
+export interface NotificationPreferences {
+  notifyMatchStarting: boolean;
+  notifyBetResults: boolean;
+  notifyLeagueActivity: boolean;
 }
 
 export interface UpdateProfileInput {
@@ -112,6 +121,14 @@ export interface PlacedBet {
   potentialPayout: number;
   status: BetStatus;
   placedAt: string;
+}
+
+export interface NewsItem {
+  title: string;
+  link: string;
+  description: string;
+  source: string;
+  publishedAt: string; // ISO
 }
 
 export interface LeaderboardEntry {

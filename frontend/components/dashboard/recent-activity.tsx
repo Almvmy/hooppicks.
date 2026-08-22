@@ -5,11 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BetStatus, PlacedBet } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STATUS_CONFIG: Record<BetStatus, { label: string; className: string }> = {
-  pending: { label: "En attente", className: "border-border bg-secondary text-muted-foreground" },
-  won: { label: "Gagné", className: "border-success/30 bg-success/10 text-success" },
-  lost: { label: "Perdu", className: "border-destructive/30 bg-destructive/10 text-destructive" },
-  void: { label: "Annulé", className: "border-border bg-secondary text-muted-foreground" },
+const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "success" | "destructive" }> = {
+  pending: { label: "En attente", variant: "secondary" },
+  won: { label: "Gagné", variant: "success" },
+  lost: { label: "Perdu", variant: "destructive" },
+  void: { label: "Annulé", variant: "secondary" },
 };
 
 export function RecentActivity({
@@ -20,7 +20,7 @@ export function RecentActivity({
   isLoading: boolean;
 }) {
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="font-heading text-base">Derniers tickets</CardTitle>
         <Link href="/bets" className="text-xs font-medium text-primary hover:underline">
@@ -41,9 +41,9 @@ export function RecentActivity({
 
         {!isLoading &&
           bets.map((bet) => (
-            <div key={bet.id} className="rounded-md border border-border bg-secondary/20 p-3">
+            <div key={bet.id} className="glass-inset-quiet rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <Badge variant="outline" className={cn("text-[11px]", STATUS_CONFIG[bet.status].className)}>
+                <Badge variant={STATUS_CONFIG[bet.status].variant} className="text-[11px]">
                   {STATUS_CONFIG[bet.status].label}
                 </Badge>
                 <span

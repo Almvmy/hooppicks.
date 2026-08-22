@@ -48,7 +48,7 @@ export function PaginationControls({
   if (pageCount <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between border-t border-border pt-4">
+    <div className="glass-hairline-t flex items-center justify-between pt-4">
       <Button
         variant="outline"
         size="sm"

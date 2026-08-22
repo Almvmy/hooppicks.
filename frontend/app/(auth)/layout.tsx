@@ -8,7 +8,13 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4">
+    // app-field ajouté : les écrans d'auth sont HORS de l'AppShell, donc ils
+    // n'héritaient pas du champ lumineux. Sans lui, la carte de login en verre
+    // (Card → .glass) floute un fond uni et rend gris.
+    // On garde la photo de terrain : elle passe AU-DESSUS du champ, et c'est
+    // elle que le verre de la carte va flouter — l'effet y est plus lisible
+    // que partout ailleurs dans le produit.
+    <div className="app-field relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
       <Image
         src="/images/auth-court-lines.jpg"
         alt=""
@@ -17,7 +23,10 @@ export default function AuthLayout({
         sizes="100vw"
         className="object-cover opacity-60 [filter:brightness(1.6)_contrast(1.15)]"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/55 to-background" />
+      {/* Dégradé de lisibilité allégé (55 % → 40 % au centre) : la carte porte
+          maintenant son propre verre, le fond n'a plus besoin d'être aussi
+          couvrant. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,15,28,0.3)] via-[rgba(10,15,28,0.4)] to-[rgba(10,15,28,0.75)]" />
 
       <Link
         href="/"

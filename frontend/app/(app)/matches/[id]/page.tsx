@@ -45,7 +45,7 @@ export default function MatchDetailPage({
       )}
 
       {match && (
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="flex flex-col items-center gap-6 pt-6 text-center">
             <MatchStatusBadge status={match.status} />
 
@@ -105,7 +105,7 @@ export default function MatchDetailPage({
       )}
 
       {match && (
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
             <TeamRoster teamId={match.awayTeam.id} teamName={match.awayTeam.name} />
             <TeamRoster teamId={match.homeTeam.id} teamName={match.homeTeam.name} />

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export function PickOfDay({ match }: { match: Match | undefined }) {
   if (!match) {
     return (
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="flex flex-col items-center gap-1 py-10 text-center">
           <p className="font-heading text-base font-bold">Aucun match programmé</p>
           <p className="text-sm text-muted-foreground">
@@ -23,7 +23,7 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
   const date = new Date(match.date);
 
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <span

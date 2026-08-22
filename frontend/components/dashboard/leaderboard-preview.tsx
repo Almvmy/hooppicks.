@@ -51,7 +51,7 @@ export function LeaderboardPreview({
   const ownIsInTop = own && top.some((e) => e.username === own.username);
 
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="font-heading text-base">Classement</CardTitle>
         <Link href="/leaderboard" className="text-xs font-medium text-primary hover:underline">

@@ -12,7 +12,7 @@ export function UpcomingMatches({
   isLoading: boolean;
 }) {
   return (
-    <Card className="border-border bg-card">
+    <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <CardTitle className="font-heading text-base">À venir cette semaine</CardTitle>
         <Link
@@ -41,7 +41,7 @@ export function UpcomingMatches({
               <Link
                 key={match.id}
                 href={`/matches/${match.id}`}
-                className="flex items-center justify-between gap-3 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-secondary/40"
+                className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm transition-colors hover:bg-white/[0.06]"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-mono text-xs text-muted-foreground">

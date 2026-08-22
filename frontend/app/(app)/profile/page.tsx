@@ -47,7 +47,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
+      <div className="glass relative overflow-hidden rounded-2xl p-6">
         <CourtWatermark />
         <div className="relative flex items-center gap-4">
           {profileQuery.isLoading ? (
@@ -84,7 +84,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="relative overflow-hidden border-border bg-card">
+        <Card className="relative overflow-hidden">
           <HaloGlow className="left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60" />
           <CardContent className="relative pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Solde actuel</p>
@@ -97,7 +97,7 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Taux de réussite</p>
             {profileQuery.isLoading ? (
@@ -107,7 +107,7 @@ export default function ProfilePage() {
             )}
           </CardContent>
         </Card>
-        <Card className="border-border bg-card">
+        <Card>
           <CardContent className="pt-6">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris joués</p>
             {profileQuery.isLoading ? (
@@ -146,7 +146,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="flex flex-col gap-2 pt-6">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Forme du moment</p>
           <FormStreak bets={betsQuery.data} />
@@ -157,7 +157,7 @@ export default function ProfilePage() {
 
       {profile && <AvatarEditor profile={profile} />}
 
-      <Card className="border-border bg-card">
+      <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Informations</p>

@@ -22,16 +22,18 @@ export function LeaderboardTable({
   isLoading,
   isError,
   emptyMessage = "Aucun joueur pour l'instant.",
+  currentUsername,
 }: {
   entries: LeaderboardEntry[] | undefined;
   isLoading: boolean;
   isError: boolean;
   emptyMessage?: string;
+  currentUsername?: string;
 }) {
   return (
     <Table>
       <TableHeader>
-        <TableRow>
+        <TableRow className="border-b-0 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] hover:bg-transparent">
           <TableHead className="w-16">Rang</TableHead>
           <TableHead>Joueur</TableHead>
           <TableHead className="text-right">Taux de réussite</TableHead>
@@ -67,7 +69,10 @@ export function LeaderboardTable({
         {!isLoading &&
           !isError &&
           entries?.map((entry) => (
-            <TableRow key={entry.rank}>
+            <TableRow
+              key={entry.rank}
+              className={cn(entry.username === currentUsername && "glass-accent border-b-0")}
+            >
               <TableCell>
                 <div className="flex items-center gap-1.5">
                   {entry.rank <= 3 && (

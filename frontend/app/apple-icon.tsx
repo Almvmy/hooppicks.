@@ -16,23 +16,15 @@ export default function AppleIcon() {
           background: "#FF7A1A",
         }}
       >
+        {/* Pas de cercle : le fond orange plein du tile EST le ballon (iOS
+            arrondit lui-même les coins), coutures + check en creux dessus —
+            même famille que LogoSymbol variant="compact". */}
         <svg width="132" height="132" viewBox="0 0 120 120" fill="none">
-          <circle cx="58" cy="62" r="42" stroke="#0B1120" strokeWidth={7} />
-          <path d="M16 62 H100" stroke="#0B1120" strokeWidth={5} />
-          <path d="M58 20 V104" stroke="#0B1120" strokeWidth={5} />
+          <path d="M28,54 Q60,64 92,54" stroke="#0B1120" strokeWidth={3} opacity={0.5} />
+          <path d="M60,26 Q50,60 60,94" stroke="#0B1120" strokeWidth={3} opacity={0.5} />
           <path
-            d="M32 66 L54 88 L108 16"
-            stroke="#FF7A1A"
-            strokeWidth={24}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M32 66 L54 88 L108 16"
-            stroke="#0B1120"
-            strokeWidth={12}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            d="M21.5,59.4 L43.1,81 L53.3,80.6 L99.9,27.4 L89.3,18.1 L42.7,71.4 L53,71.1 L31.4,49.5 Z"
+            fill="#F1F5F9"
           />
         </svg>
       </div>
