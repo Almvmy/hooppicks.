@@ -142,7 +142,15 @@ export default function LeaguesPage() {
           </>
         )}
 
-        {!leaguesQuery.isLoading && leaguesQuery.data?.length === 0 && (
+        {leaguesQuery.isError && (
+          <Card>
+            <CardContent className="py-10 text-center text-destructive">
+              Impossible de charger tes ligues. Réessaie plus tard.
+            </CardContent>
+          </Card>
+        )}
+
+        {!leaguesQuery.isLoading && !leaguesQuery.isError && leaguesQuery.data?.length === 0 && (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
               <Shield className="h-8 w-8" />

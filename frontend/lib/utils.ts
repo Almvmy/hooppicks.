@@ -18,6 +18,16 @@ export function getDayLabel(date: Date): string {
   return date.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
 }
 
+/** "22 août" — date courte d'un match, pour les cartes/lignes de calendrier. */
+export function formatMatchDate(date: Date): string {
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
+/** "20:30" — heure d'un match, pour les cartes/lignes de calendrier. */
+export function formatMatchTime(date: Date): string {
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
 /** "il y a 2j", "à l'instant"... pour les fils d'activité. */
 export function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();

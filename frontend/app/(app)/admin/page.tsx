@@ -75,6 +75,12 @@ export default function AdminPage() {
         <h1 className="font-heading text-2xl font-bold">Console admin</h1>
       </div>
 
+      {statusQuery.isError && (
+        <p className="text-sm text-destructive">
+          Impossible de charger le statut — les tirets ci-dessous ne veulent pas dire "zéro", la donnée n&apos;a simplement pas pu être récupérée.
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="flex flex-col gap-1 pt-6">

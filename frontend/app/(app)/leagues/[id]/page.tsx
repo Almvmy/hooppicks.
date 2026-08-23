@@ -126,6 +126,10 @@ export default function LeagueDetailPage({
               </div>
             )}
 
+            {membersQuery.isError && (
+              <p className="text-sm text-destructive">Impossible de charger les membres.</p>
+            )}
+
             {membersQuery.data?.map((member) => (
               <div key={member.username} className="flex items-center justify-between text-sm">
                 <span className="truncate font-medium">{member.username}</span>
@@ -152,7 +156,11 @@ export default function LeagueDetailPage({
               </div>
             )}
 
-            {!activityQuery.isLoading && activityQuery.data?.length === 0 && (
+            {activityQuery.isError && (
+              <p className="text-sm text-destructive">Impossible de charger l&apos;activité.</p>
+            )}
+
+            {!activityQuery.isLoading && !activityQuery.isError && activityQuery.data?.length === 0 && (
               <p className="text-sm text-muted-foreground">Pas encore d&apos;activité.</p>
             )}
 

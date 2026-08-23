@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Match } from "@/lib/types";
+import { formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function UpcomingMatches({
   matches,
@@ -45,7 +46,7 @@ export function UpcomingMatches({
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-mono text-xs text-muted-foreground">
-                    {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                    {formatMatchDate(date)}
                   </span>
                   <span className="truncate font-medium">
                     {match.awayTeam.abbreviation}
@@ -55,7 +56,7 @@ export function UpcomingMatches({
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="font-mono text-xs text-muted-foreground">
-                    {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    {formatMatchTime(date)}
                   </span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>

@@ -47,6 +47,12 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {profileQuery.isError && (
+        <p className="text-sm text-destructive">
+          Impossible de charger ton profil. Certaines sections ci-dessous peuvent manquer — réessaie plus tard.
+        </p>
+      )}
+
       <div className="glass relative overflow-hidden rounded-2xl p-6">
         <CourtWatermark />
         <div className="relative flex items-center gap-4">
@@ -90,6 +96,8 @@ export default function ProfilePage() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Solde actuel</p>
             {walletQuery.isLoading ? (
               <Skeleton className="mt-2 h-7 w-24" />
+            ) : walletQuery.isError ? (
+              <p className="mt-1 text-sm text-destructive">Indisponible</p>
             ) : (
               <p className="mt-1 font-mono text-2xl font-bold">
                 {walletQuery.data?.balance.toLocaleString("fr-FR") ?? "—"} pts

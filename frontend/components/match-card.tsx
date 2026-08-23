@@ -6,7 +6,7 @@ import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { isRivalryMatchup } from "@/lib/rivalries";
 import { getTeamColor } from "@/lib/team-colors";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
   const date = new Date(match.date);
@@ -63,9 +63,9 @@ export function MatchCard({ match }: { match: Match }) {
           <div className="flex flex-col items-end gap-2">
             <MatchStatusBadge status={match.status} />
             <span className="font-mono text-xs text-muted-foreground">
-              {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+              {formatMatchDate(date)}
               {" · "}
-              {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              {formatMatchTime(date)}
             </span>
           </div>
         </CardContent>

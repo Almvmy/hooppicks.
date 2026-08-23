@@ -15,8 +15,12 @@ function groupByDay(items: NewsItem[]): [string, NewsItem[]][] {
   const groups = new Map<string, NewsItem[]>();
   for (const item of items) {
     const label = getDayLabel(new Date(item.publishedAt));
-    if (!groups.has(label)) groups.set(label, []);
-    groups.get(label)!.push(item);
+    const existing = groups.get(label);
+    if (existing) {
+      existing.push(item);
+    } else {
+      groups.set(label, [item]);
+    }
   }
   return [...groups.entries()];
 }

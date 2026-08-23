@@ -83,6 +83,7 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
                 key={pos}
                 type="button"
                 onClick={() => setPosition(pos)}
+                aria-pressed={position === pos}
                 className={cn(
                   "rounded-xl px-3 py-1.5 font-mono text-sm font-bold transition-colors",
                   position === pos ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
@@ -105,6 +106,8 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
                   type="button"
                   onClick={() => setColorway(key)}
                   title={palette.label}
+                  aria-label={palette.label}
+                  aria-pressed={colorway === key}
                   className={cn(
                     "h-8 w-8 rounded-full border-2 transition-transform",
                     colorway === key ? "scale-110 border-foreground" : "border-transparent hover:scale-105"
@@ -128,6 +131,7 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
                   key={key}
                   type="button"
                   onClick={() => setIcon(key)}
+                  aria-pressed={icon === key}
                   className={cn(
                     "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors",
                     icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"

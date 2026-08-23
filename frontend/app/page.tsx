@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
 import { fetchPublicLeaderboard, fetchPublicMatches } from "@/lib/api/public";
 import { Match } from "@/lib/types";
 import { LogoSymbol } from "@/app/LogoSymbol";
@@ -114,9 +114,9 @@ export default async function HomePage() {
                         {match.homeTeam.abbreviation}
                       </span>
                       <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                        {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+                        {formatMatchDate(date)}
                         {" · "}
-                        {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                        {formatMatchTime(date)}
                       </span>
                     </div>
                   );

@@ -3,7 +3,7 @@ import { Radio, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { Match } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function PickOfDay({ match }: { match: Match | undefined }) {
   if (!match) {
@@ -46,9 +46,9 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
           </span>
           <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
-            {date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}
+            {formatMatchDate(date)}
             {" · "}
-            {date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+            {formatMatchTime(date)}
           </span>
         </div>
 
