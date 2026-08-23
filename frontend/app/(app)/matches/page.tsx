@@ -30,7 +30,17 @@ export default function MatchesPage() {
               m.homeTeam.conference === conferenceFilter ||
               m.awayTeam.conference === conferenceFilter
           );
-    return [...base].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // En direct/à venir d'abord (le plus imminent en tête), matchs terminés
+    // ensuite (le plus récent en tête) — sinon un vieux match terminé remonte
+    // avant le prochain match à jouer, ce qui n'a pas de sens pour parier.
+    return [...base].sort((a, b) => {
+      const aUpcoming = a.status !== "finished";
+      const bUpcoming = b.status !== "finished";
+      if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+
+      const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      return aUpcoming ? diff : -diff;
+    });
   }, [data, conferenceFilter]);
 
   const groupedByDay = useMemo(() => {
