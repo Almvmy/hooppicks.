@@ -21,7 +21,8 @@ export const AVATAR_ICONS: Record<AvatarIcon, { icon: React.ElementType; label: 
 
 export const AVATAR_POSITIONS: AvatarPosition[] = ["PG", "SG", "SF", "PF", "C"];
 
-const SIZE_PX: Record<"sm" | "md" | "lg" | "xl", number> = {
+const SIZE_PX: Record<"xs" | "sm" | "md" | "lg" | "xl", number> = {
+  xs: 22,
   sm: 32,
   md: 48,
   lg: 72,
@@ -33,7 +34,7 @@ interface PlayerAvatarProps {
   position: AvatarPosition;
   colorway: AvatarColorway;
   icon: AvatarIcon;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -62,13 +63,18 @@ export function PlayerAvatar({
   const safeNumber = Number.isFinite(number) ? Math.max(0, Math.min(99, number)) : 0;
   const px = SIZE_PX[size];
   const gradientId = `avatar-gradient-${colorway}-${size}`;
-  const showPositionTag = size !== "sm"; // trop petit pour rester lisible à 32px
+  const showPositionTag = size !== "xs" && size !== "sm"; // trop petit pour rester lisible en dessous de 48px
+  const showIconBadge = size !== "xs"; // en liste dense (xs), le badge qui déborde alourdit plus qu'il n'aide
   const badgeSize = size === "sm" ? px * 0.5 : px * 0.42;
 
   return (
     <div
       className={cn("relative shrink-0 rounded-full", className)}
-      style={{ width: px, height: px, boxShadow: `0 0 0 2px var(--background), 0 0 0 4px ${palette.from}` }}
+      style={
+        size === "xs"
+          ? { width: px, height: px }
+          : { width: px, height: px, boxShadow: `0 0 0 2px var(--background), 0 0 0 4px ${palette.from}` }
+      }
     >
       <svg viewBox="0 0 100 100" width={px} height={px} className="rounded-full">
         <defs>
@@ -92,13 +98,15 @@ export function PlayerAvatar({
         </text>
       </svg>
 
-      <span
-        className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-background bg-background/95"
-        style={{ width: badgeSize, height: badgeSize }}
-        title={iconEntry.label}
-      >
-        <Icon className="h-[60%] w-[60%] text-foreground" />
-      </span>
+      {showIconBadge && (
+        <span
+          className="absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-background bg-background/95"
+          style={{ width: badgeSize, height: badgeSize }}
+          title={iconEntry.label}
+        >
+          <Icon className="h-[60%] w-[60%] text-foreground" />
+        </span>
+      )}
       {showPositionTag && (
         <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full border border-background bg-background px-1.5 py-0.5 font-mono text-[9px] font-bold leading-none">
           {safePosition}

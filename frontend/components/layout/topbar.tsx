@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings } from "lucide-react";
+import { HelpCircle, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -34,23 +34,30 @@ export function Topbar() {
     // "border-b border-border bg-background/80 backdrop-blur" → "glass-chrome"
     // + sticky top-0 : la barre reste au-dessus du contenu qui défile, ce qui
     //   est le seul moment où le flou se voit vraiment.
-    <header className="glass-chrome sticky top-0 z-30 flex h-16 items-center gap-4 px-6">
-      {/* Sur mobile la sidebar (qui porte la marque) est masquée : on
-          réaffiche le logo ici pour garder la marque visible en permanence,
-          comme dans la maquette. Caché en desktop où la sidebar suffit. */}
+    <header className="glass-chrome relative sticky top-0 z-30 flex h-16 items-center gap-4 px-6">
       <div className="flex items-center gap-2 md:hidden">
         <MobileNav />
-        {/* Icône seule (pas de wordmark) : à 402px de large, garder le texte
-            "HoopPicks" ici fait toucher le solde et la cloche. */}
-        <Link href="/dashboard">
-          <LogoSymbol variant="compact" className="h-6 w-6 shrink-0" />
-        </Link>
       </div>
 
-      {/* Comble l'espace mort entre la sidebar et le solde/cloche/avatar sur
-          desktop — inutile sur mobile où la topbar est déjà pleine. */}
+      {/* La topbar porte la marque en permanence désormais (plus dans la
+          sidebar) : une seule barre continue en haut, sidebar en dessous. */}
+      <Link href="/dashboard" className="flex items-center gap-2">
+        <LogoSymbol variant="compact" className="h-7 w-7 shrink-0" />
+        {/* Wordmark caché sous sm : à 402px de large, le garder ici fait
+            toucher le solde et la cloche. */}
+        <span className="hidden font-heading text-xl font-bold tracking-tight sm:inline">
+          Hoop<span className="text-primary">Picks</span>
+        </span>
+      </Link>
+
+      {/* Centré sur toute la largeur de la barre (pas juste dans l'espace
+          restant entre logo et actions) — sinon le titre penche visuellement
+          vers la gauche dès que le logo prend de la place. Caché sur mobile
+          où la topbar est déjà pleine. */}
       {pageTitle && (
-        <h1 className="hidden font-heading text-lg font-bold md:block">{pageTitle}</h1>
+        <h1 className="absolute left-1/2 hidden -translate-x-1/2 font-heading text-lg font-bold md:block">
+          {pageTitle}
+        </h1>
       )}
 
       <div className="ml-auto flex items-center gap-4">
@@ -77,6 +84,10 @@ export function Topbar() {
             <DropdownMenuItem onClick={() => router.push("/settings")}>
               <Settings className="mr-2 h-4 w-4" />
               Paramètres
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/about")}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              À propos
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleLogout}

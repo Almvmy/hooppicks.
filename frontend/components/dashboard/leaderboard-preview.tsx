@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlayerAvatar } from "@/components/player-avatar";
 import { LeaderboardEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -28,9 +29,22 @@ function Row({ entry, highlight }: { entry: LeaderboardEntry; highlight: boolean
         <span className={cn("font-mono text-xs font-bold", RANK_COLORS[entry.rank])}>
           #{entry.rank}
         </span>
-        <span className={cn("truncate", highlight && "font-semibold text-primary")}>
-          {entry.username}
-        </span>
+        <Link
+          href={`/u/${encodeURIComponent(entry.username)}`}
+          className={cn(
+            "flex min-w-0 items-center gap-1.5 truncate hover:underline",
+            highlight && "font-semibold text-primary"
+          )}
+        >
+          <PlayerAvatar
+            number={entry.avatarNumber}
+            position={entry.avatarPosition}
+            colorway={entry.avatarColorway}
+            icon={entry.avatarIcon}
+            size="xs"
+          />
+          <span className="truncate">{entry.username}</span>
+        </Link>
       </div>
       <span className="font-mono text-xs font-bold">{entry.points.toLocaleString("fr-FR")}</span>
     </div>

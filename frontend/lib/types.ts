@@ -30,6 +30,7 @@ export interface UserProfile {
   notifyMatchStarting: boolean;
   notifyBetResults: boolean;
   notifyLeagueActivity: boolean;
+  emailVerified: boolean;
 }
 
 export interface NotificationPreferences {
@@ -137,6 +138,10 @@ export interface LeaderboardEntry {
   points: number;
   winRate: number;
   totalBets: number;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
 }
 
 export interface League {
@@ -158,12 +163,20 @@ export interface LeagueMember {
   username: string;
   isOwner: boolean;
   joinedAt: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
 }
 
 export interface LeagueActivity {
   username: string;
   message: string;
   occurredAt: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
 }
 
 export interface AdminStatus {
@@ -191,4 +204,16 @@ export interface UserBadge {
   label: string;
   description: string;
   unlocked: boolean;
+}
+
+export interface PublicProfile {
+  username: string;
+  winRate: number;
+  totalBets: number;
+  favoriteTeam: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
+  badges: UserBadge[];
 }

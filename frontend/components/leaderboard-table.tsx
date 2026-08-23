@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import {
@@ -8,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PlayerAvatar } from "@/components/player-avatar";
 import { LeaderboardEntry } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +85,21 @@ export function LeaderboardTable({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="font-medium">{entry.username}</TableCell>
+              <TableCell className="font-medium">
+                <Link
+                  href={`/u/${encodeURIComponent(entry.username)}`}
+                  className="flex items-center gap-2 hover:underline"
+                >
+                  <PlayerAvatar
+                    number={entry.avatarNumber}
+                    position={entry.avatarPosition}
+                    colorway={entry.avatarColorway}
+                    icon={entry.avatarIcon}
+                    size="xs"
+                  />
+                  {entry.username}
+                </Link>
+              </TableCell>
               <TableCell className="text-right text-muted-foreground">
                 {entry.winRate}%
               </TableCell>

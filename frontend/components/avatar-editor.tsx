@@ -19,6 +19,7 @@ import { PlayerCard } from "@/components/player-card";
 export function AvatarEditor({ profile }: { profile: UserProfile }) {
   const queryClient = useQueryClient();
 
+  const [isEditing, setIsEditing] = useState(false);
   const [number, setNumber] = useState(profile.avatarNumber);
   const [position, setPosition] = useState<AvatarPosition>(profile.avatarPosition);
   const [colorway, setColorway] = useState<AvatarColorway>(profile.avatarColorway);
@@ -42,10 +43,25 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
     colorway !== profile.avatarColorway ||
     icon !== profile.avatarIcon;
 
+  function toggleEditing() {
+    if (isEditing) {
+      // On referme : on abandonne les changements non enregistrés plutôt que
+      // de les garder en mémoire pour la prochaine ouverture.
+      setNumber(profile.avatarNumber);
+      setPosition(profile.avatarPosition);
+      setColorway(profile.avatarColorway);
+      setIcon(profile.avatarIcon);
+    }
+    setIsEditing((v) => !v);
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="font-heading text-lg">Ta carte joueur</CardTitle>
+        <Button variant="outline" size="sm" onClick={toggleEditing}>
+          {isEditing ? "Fermer" : "Modifier"}
+        </Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div className="flex items-center gap-5">
@@ -56,102 +72,110 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
             colorway={colorway}
             icon={icon}
           />
-          <div className="flex flex-col gap-1">
-            <label htmlFor="avatar-number" className="text-xs uppercase tracking-wide text-muted-foreground">
-              Numéro de maillot
-            </label>
-            <Input
-              id="avatar-number"
-              type="number"
-              min={0}
-              max={99}
-              value={number}
-              onChange={(e) => {
-                const v = Number(e.target.value);
-                setNumber(Number.isFinite(v) ? Math.max(0, Math.min(99, v)) : 0);
-              }}
-              className="w-20"
-            />
-          </div>
+          {isEditing && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="avatar-number" className="text-xs uppercase tracking-wide text-muted-foreground">
+                Numéro de maillot
+              </label>
+              <Input
+                id="avatar-number"
+                type="number"
+                min={0}
+                max={99}
+                value={number}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setNumber(Number.isFinite(v) ? Math.max(0, Math.min(99, v)) : 0);
+                }}
+                className="w-20"
+              />
+            </div>
+          )}
         </div>
 
-        <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Poste</p>
-          <div className="flex flex-wrap gap-2">
-            {AVATAR_POSITIONS.map((pos) => (
-              <button
-                key={pos}
-                type="button"
-                onClick={() => setPosition(pos)}
-                aria-pressed={position === pos}
-                className={cn(
-                  "rounded-xl px-3 py-1.5 font-mono text-sm font-bold transition-colors",
-                  position === pos ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {pos}
-              </button>
-            ))}
-          </div>
-        </div>
+        {isEditing && (
+          <>
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Poste</p>
+              <div className="flex flex-wrap gap-2">
+                {AVATAR_POSITIONS.map((pos) => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setPosition(pos)}
+                    aria-pressed={position === pos}
+                    className={cn(
+                      "rounded-xl px-3 py-1.5 font-mono text-sm font-bold transition-colors",
+                      position === pos ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Palette</p>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(AVATAR_COLORWAYS) as AvatarColorway[]).map((key) => {
-              const palette = AVATAR_COLORWAYS[key];
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setColorway(key)}
-                  title={palette.label}
-                  aria-label={palette.label}
-                  aria-pressed={colorway === key}
-                  className={cn(
-                    "h-8 w-8 rounded-full border-2 transition-transform",
-                    colorway === key ? "scale-110 border-foreground" : "border-transparent hover:scale-105"
-                  )}
-                  style={{
-                    background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-                  }}
-                />
-              );
-            })}
-          </div>
-        </div>
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Palette</p>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(AVATAR_COLORWAYS) as AvatarColorway[]).map((key) => {
+                  const palette = AVATAR_COLORWAYS[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setColorway(key)}
+                      title={palette.label}
+                      aria-label={palette.label}
+                      aria-pressed={colorway === key}
+                      className={cn(
+                        "h-8 w-8 rounded-full border-2 border-transparent transition-transform",
+                        colorway === key
+                          ? "scale-110 ring-2 ring-primary ring-offset-2 ring-offset-background"
+                          : "hover:scale-105"
+                      )}
+                      style={{
+                        background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
 
-        <div>
-          <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Style de jeu</p>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(AVATAR_ICONS) as AvatarIcon[]).map((key) => {
-              const { icon: Icon, label } = AVATAR_ICONS[key];
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setIcon(key)}
-                  aria-pressed={icon === key}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                    icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+            <div>
+              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Style de jeu</p>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(AVATAR_ICONS) as AvatarIcon[]).map((key) => {
+                  const { icon: Icon, label } = AVATAR_ICONS[key];
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setIcon(key)}
+                      aria-pressed={icon === key}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors",
+                        icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        <Button
-          onClick={() => mutation.mutate()}
-          disabled={!hasChanges || mutation.isPending}
-          className="w-fit"
-        >
-          {mutation.isPending ? "Enregistrement..." : "Enregistrer ma carte"}
-        </Button>
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={!hasChanges || mutation.isPending}
+              className="w-fit"
+            >
+              {mutation.isPending ? "Enregistrement..." : "Enregistrer ma carte"}
+            </Button>
+          </>
+        )}
       </CardContent>
     </Card>
   );

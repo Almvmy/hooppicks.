@@ -33,6 +33,17 @@ export async function resetPassword(token: string, newPassword: string): Promise
   });
 }
 
+export async function verifyEmail(token: string): Promise<void> {
+  return apiFetch<void>("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerificationEmail(): Promise<void> {
+  return apiFetch<void>("/auth/resend-verification", { method: "POST" });
+}
+
 export async function fetchProfile(): Promise<UserProfile> {
   return apiFetch<UserProfile>("/auth/me");
 }

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { LogoSymbol } from "@/app/LogoSymbol";
 import { fetchProfile } from "@/lib/api/auth";
 import { NAV_ITEMS } from "@/lib/nav";
 
@@ -18,14 +17,9 @@ export function Sidebar() {
 
   return (
     // "border-r border-sidebar-border bg-sidebar" → "glass-chrome-y"
-    <aside className="glass-chrome-y sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto px-4 py-6 md:flex">
-      <div className="mb-8 flex items-center gap-2 px-2">
-        <LogoSymbol variant="compact" className="h-7 w-7 shrink-0" />
-        <span className="font-heading text-xl font-bold tracking-tight text-sidebar-foreground">
-          Hoop<span className="text-primary">Picks</span>
-        </span>
-      </div>
-
+    // top-16/h-[calc(100vh-4rem)] : démarre sous la topbar (h-16, pleine
+    // largeur, logo compris) plutôt qu'à côté d'elle depuis le haut.
+    <aside className="glass-chrome-y sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 flex-col overflow-y-auto px-4 py-6 md:flex">
       <nav className="flex flex-1 flex-col gap-1">
         {items.map((item) => {
           const isActive = pathname.startsWith(item.href);

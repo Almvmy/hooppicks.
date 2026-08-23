@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { PlayerAvatar } from "@/components/player-avatar";
 import {
   fetchLeagueActivity,
   fetchLeagueLeaderboard,
@@ -132,7 +133,19 @@ export default function LeagueDetailPage({
 
             {membersQuery.data?.map((member) => (
               <div key={member.username} className="flex items-center justify-between text-sm">
-                <span className="truncate font-medium">{member.username}</span>
+                <Link
+                  href={`/u/${encodeURIComponent(member.username)}`}
+                  className="flex min-w-0 items-center gap-2 truncate font-medium hover:underline"
+                >
+                  <PlayerAvatar
+                    number={member.avatarNumber}
+                    position={member.avatarPosition}
+                    colorway={member.avatarColorway}
+                    icon={member.avatarIcon}
+                    size="xs"
+                  />
+                  {member.username}
+                </Link>
                 {member.isOwner && (
                   <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
                     Créateur
@@ -173,7 +186,12 @@ export default function LeagueDetailPage({
                     className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isWin ? "text-primary" : "text-muted-foreground"}`}
                   />
                   <div>
-                    <span className="font-medium">{event.username}</span>{" "}
+                    <Link
+                      href={`/u/${encodeURIComponent(event.username)}`}
+                      className="font-medium hover:underline"
+                    >
+                      {event.username}
+                    </Link>{" "}
                     <span className="text-muted-foreground">{event.message}</span>
                     <p className="font-mono text-[11px] text-muted-foreground">
                       {formatRelativeTime(event.occurredAt)}
