@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -22,6 +24,8 @@ import java.io.IOException;
 @Component
 public class AdminAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminAuthFilter.class);
+
     @Value("${admin.api-key:}")
     private String adminApiKey;
 
@@ -32,11 +36,17 @@ public class AdminAuthFilter extends OncePerRequestFilter {
         if (request.getRequestURI().startsWith("/admin/")) {
             String providedKey = request.getHeader("X-Admin-Key");
             if (adminApiKey == null || adminApiKey.isBlank() || !adminApiKey.equals(providedKey)) {
+                log.warn("Accès /admin/** refusé (clé invalide ou manquante) : {} {} depuis {}",
+                        request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\":\"Clé admin invalide ou manquante.\"}");
                 return;
             }
+            // Pas d'identité d'utilisateur ici (clé statique partagée, pas de session) —
+            // seule trace d'audit possible pour ce chemin : qui a appelé quoi, depuis où.
+            log.info("Accès /admin/** autorisé : {} {} depuis {}",
+                    request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
         }
 
         filterChain.doFilter(request, response);

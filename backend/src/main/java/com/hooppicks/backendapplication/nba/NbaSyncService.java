@@ -16,15 +16,26 @@ import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.NotificationRepository;
 import com.hooppicks.backendapplication.repository.PlayerRepository;
 import com.hooppicks.backendapplication.repository.TeamRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class NbaSyncService {
+
+    private static final Logger log = LoggerFactory.getLogger(NbaSyncService.class);
+
+    // Empêche deux synchros de tourner en même temps (la planifiée toutes les
+    // 5 min + un déclenchement manuel admin) : sans ça, les deux peuvent lire
+    // le même match "previousStatus=SCHEDULED" avant que l'une des deux ne
+    // l'ait sauvegardé en FINISHED, et appliquer deux fois l'Elo / les gains.
+    private final ReentrantLock syncLock = new ReentrantLock();
 
     private final NbaApiClient nbaApiClient;
     private final TeamRepository teamRepository;
@@ -89,6 +100,18 @@ public class NbaSyncService {
 
     @Transactional
     public SyncResult syncGames(List<LocalDate> dates) {
+        if (!syncLock.tryLock()) {
+            log.info("Synchro déjà en cours, celle-ci est ignorée.");
+            return new SyncResult(0, 0);
+        }
+        try {
+            return doSyncGames(dates);
+        } finally {
+            syncLock.unlock();
+        }
+    }
+
+    private SyncResult doSyncGames(List<LocalDate> dates) {
         List<NbaGameDto> games = nbaApiClient.fetchGamesForDates(dates);
         int count = 0;
 

@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.news;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
@@ -16,10 +18,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class NewsService {
 
+    private static final Logger log = LoggerFactory.getLogger(NewsService.class);
     private static final String FEED_URL = "https://www.espn.com/espn/rss/nba/news";
     private static final Duration CACHE_TTL = Duration.ofMinutes(15);
 
@@ -38,6 +42,7 @@ public class NewsService {
 
     private volatile List<NewsItemDto> cache = List.of();
     private volatile Instant cachedAt = Instant.EPOCH;
+    private final AtomicBoolean refreshing = new AtomicBoolean(false);
 
     public NewsService(RestTemplate restTemplate, DeepLService deepLService) {
         this.restTemplate = restTemplate;
@@ -50,39 +55,49 @@ public class NewsService {
      * est indisponible, on garde le dernier cache connu (même périmé) plutôt
      * que de vider la page.
      */
-    public synchronized List<NewsItemDto> fetchLatest() {
+    public List<NewsItemDto> fetchLatest() {
         if (Duration.between(cachedAt, Instant.now()).compareTo(CACHE_TTL) < 0) {
             return cache;
         }
 
-        // ESPN sert son flux depuis plusieurs IP en répartition de charge
-        // (Akamai) ; certaines peuvent être injoignables depuis un réseau
-        // donné pendant que d'autres répondent normalement. Java ne bascule
-        // pas automatiquement d'une IP à l'autre comme le font curl/les
-        // navigateurs — on retente donc quelques fois plutôt que d'abandonner
-        // à la première IP malchanceuse.
-        Exception lastError = null;
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            try {
-                String xml = restTemplate.getForObject(FEED_URL, String.class);
-                cache = parse(xml);
-                cachedAt = Instant.now();
-                return cache;
-            } catch (Exception e) {
-                lastError = e;
+        // Un seul appelant effectue le rafraîchissement à la fois (les tentatives
+        // + pauses réseau peuvent tenir ~35s) — les autres reçoivent le cache
+        // existant immédiatement plutôt que d'attendre en file derrière un
+        // verrou. Même principe de dégradation gracieuse que pour ESPN indisponible.
+        if (!refreshing.compareAndSet(false, true)) {
+            return cache;
+        }
+        try {
+            // ESPN sert son flux depuis plusieurs IP en répartition de charge
+            // (Akamai) ; certaines peuvent être injoignables depuis un réseau
+            // donné pendant que d'autres répondent normalement. Java ne bascule
+            // pas automatiquement d'une IP à l'autre comme le font curl/les
+            // navigateurs — on retente donc quelques fois plutôt que d'abandonner
+            // à la première IP malchanceuse.
+            Exception lastError = null;
+            for (int attempt = 1; attempt <= 3; attempt++) {
                 try {
-                    // > networkaddress.cache.ttl (10s, fixé dans BackendApplication) :
-                    // sinon cette pause ne fait que retaper la même IP en cache.
-                    Thread.sleep(11_000);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    break;
+                    String xml = restTemplate.getForObject(FEED_URL, String.class);
+                    cache = parse(xml);
+                    cachedAt = Instant.now();
+                    return cache;
+                } catch (Exception e) {
+                    lastError = e;
+                    try {
+                        // > networkaddress.cache.ttl (10s, fixé dans BackendApplication) :
+                        // sinon cette pause ne fait que retaper la même IP en cache.
+                        Thread.sleep(11_000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
+            log.warn("Synchro actualités NBA échouée après 3 tentatives, conservation du cache précédent", lastError);
+            return cache;
+        } finally {
+            refreshing.set(false);
         }
-        System.out.println("Synchro actualités NBA échouée après 3 tentatives, conservation du cache précédent : "
-                + (lastError != null ? lastError.getMessage() : "raison inconnue"));
-        return cache;
     }
 
     private List<NewsItemDto> parse(String xml) throws Exception {

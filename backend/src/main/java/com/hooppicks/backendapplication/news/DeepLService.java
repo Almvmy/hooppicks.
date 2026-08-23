@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.news;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Service
 public class DeepLService {
+
+    private static final Logger log = LoggerFactory.getLogger(DeepLService.class);
 
     private final RestTemplate restTemplate;
 
@@ -53,7 +57,7 @@ public class DeepLService {
                 }
                 return response.translations().stream().map(DeepLResponse.Translation::text).toList();
             } catch (Exception e) {
-                System.out.println("Traduction DeepL échouée (tentative " + attempt + "/3) : " + e.getMessage());
+                log.warn("Traduction DeepL échouée (tentative {}/3) : {}", attempt, e.getMessage());
                 if (attempt == 3) break;
                 try {
                     Thread.sleep(11_000);

@@ -10,6 +10,7 @@ import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import com.hooppicks.backendapplication.entity.MatchStatus;
@@ -18,6 +19,7 @@ import com.hooppicks.backendapplication.repository.MatchRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/bets")
@@ -52,11 +54,26 @@ public class BetController {
     }
 
     @PostMapping
+    @Transactional
     public ResponseEntity<?> placeBet(@Valid @RequestBody PlaceBetRequest request, HttpServletRequest httpRequest) {
         String userId = sessionStore.getUserIdFromRequest(httpRequest);
         if (userId == null) return ResponseEntity.status(401).build();
 
-        User user = userRepository.findById(userId).orElse(null);
+        // Une seule sélection par match : deux issues sur le même match dans un
+        // même ticket n'a pas de sens (parfois contradictoire) et gonflerait la
+        // cote du parlay artificiellement.
+        Set<String> matchIds = request.selections().stream()
+                .map(PlaceBetRequest.SelectionInput::matchId)
+                .collect(java.util.stream.Collectors.toSet());
+        if (matchIds.size() != request.selections().size()) {
+            return ResponseEntity.badRequest().body("Un même match ne peut apparaître qu'une seule fois dans le ticket.");
+        }
+
+        // Verrou pessimiste sur la ligne utilisateur : empêche deux requêtes
+        // concurrentes (double-clic, deux onglets) de lire le même solde avant
+        // que l'une des deux ne l'ait débité — la seconde attend la fin de la
+        // transaction de la première et voit le solde déjà à jour.
+        User user = userRepository.findByIdForUpdate(userId).orElse(null);
         if (user == null) return ResponseEntity.status(401).build();
 
         if (request.stake() > user.getWalletBalance()) {

@@ -5,6 +5,8 @@ import com.hooppicks.backendapplication.entity.PasswordResetToken;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.PasswordResetTokenRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class PasswordResetService {
 
+    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
     private static final long TOKEN_TTL_MINUTES = 30;
     private static final int MAX_REQUESTS_PER_WINDOW = 3;
     private static final long REQUEST_WINDOW_MINUTES = 60;
@@ -78,7 +81,7 @@ public class PasswordResetService {
             // Ne jamais laisser un échec d'envoi (SMTP mal configuré, panne du
             // fournisseur...) se distinguer d'un email inconnu côté client —
             // sinon le code de réponse redevient un oracle d'énumération.
-            e.printStackTrace();
+            log.warn("Échec d'envoi de l'e-mail de reset mot de passe", e);
         }
     }
 

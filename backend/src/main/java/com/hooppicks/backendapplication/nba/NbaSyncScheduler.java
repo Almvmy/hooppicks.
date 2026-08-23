@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.nba;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -10,6 +12,8 @@ import java.util.stream.LongStream;
 
 @Component
 public class NbaSyncScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(NbaSyncScheduler.class);
 
     private final NbaSyncService nbaSyncService;
     private final AdminSyncStatus adminSyncStatus;
@@ -46,7 +50,7 @@ public class NbaSyncScheduler {
         String mode = useFixedWindow ? "fixe " + windowStart : "glissante";
         NbaSyncService.SyncResult result = nbaSyncService.syncGames(dates);
         adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
-        System.out.println("[NbaSyncScheduler] " + result.gamesSynced() + " match(s) synchronisé(s), "
-                + result.betsResolved() + " pari(s) résolu(s) (fenêtre " + mode + ")");
+        log.info("{} match(s) synchronisé(s), {} pari(s) résolu(s) (fenêtre {})",
+                result.gamesSynced(), result.betsResolved(), mode);
     }
 }
