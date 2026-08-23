@@ -4,6 +4,7 @@ public record BadgeDto(
         String id,
         String label,
         String description,
-        boolean unlocked
+        boolean unlocked,
+        String icon
 ) {
 }

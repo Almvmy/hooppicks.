@@ -39,25 +39,25 @@ public class BadgeService {
 
         List<BadgeDto> badges = new ArrayList<>();
         badges.add(new BadgeDto("first_bet", "Premier ticket",
-                "Place ton tout premier pari.", totalPlaced >= 1));
+                "Place ton tout premier pari.", totalPlaced >= 1, "ticket"));
         badges.add(new BadgeDto("ten_bets", "Habitué",
-                "Place 10 paris au total.", totalPlaced >= 10));
+                "Place 10 paris au total.", totalPlaced >= 10, "repeat"));
         badges.add(new BadgeDto("fifty_bets", "Vétéran",
-                "Place 50 paris au total.", totalPlaced >= 50));
+                "Place 50 paris au total.", totalPlaced >= 50, "medal"));
         badges.add(new BadgeDto("hot_streak_3", "Main chaude",
-                "Gagne 3 paris d'affilée.", winStreak >= 3));
+                "Gagne 3 paris d'affilée.", winStreak >= 3, "flame"));
         badges.add(new BadgeDto("hot_streak_5", "Sur un nuage",
-                "Gagne 5 paris d'affilée.", winStreak >= 5));
+                "Gagne 5 paris d'affilée.", winStreak >= 5, "cloud"));
         badges.add(new BadgeDto("sharpshooter", "Sniper",
                 "Termine au moins 10 paris avec 60% de réussite.",
-                totalResolved >= SHARPSHOOTER_MIN_BETS && winRate >= SHARPSHOOTER_MIN_WIN_RATE));
+                totalResolved >= SHARPSHOOTER_MIN_BETS && winRate >= SHARPSHOOTER_MIN_WIN_RATE, "target"));
         badges.add(new BadgeDto("parlay_master", "Roi du multiple",
-                "Combine au moins 3 sélections dans un seul ticket.", hasParlay));
+                "Combine au moins 3 sélections dans un seul ticket.", hasParlay, "crown"));
         badges.add(new BadgeDto("big_win", "Gros coup",
-                "Remporte un ticket rapportant au moins 500 pts.", hasBigWin));
+                "Remporte un ticket rapportant au moins 500 pts.", hasBigWin, "zap"));
         badges.add(new BadgeDto("grinder", "Gros joueur",
                 "Mise un total de 2000 pts sur l'ensemble de tes tickets.",
-                totalStaked >= GRINDER_STAKE_THRESHOLD));
+                totalStaked >= GRINDER_STAKE_THRESHOLD, "coins"));
 
         return badges;
     }
