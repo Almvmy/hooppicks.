@@ -21,3 +21,16 @@ nba.sync.window-start=2026-06-10
 nba.sync.window-days=10
 
 admin.api-key=change-moi-en-dev
+
+# Optionnel : uniquement nécessaire pour tester le reset de mot de passe (envoi d'e-mail)
+spring.mail.host=TON_HOTE_SMTP
+spring.mail.port=587
+spring.mail.username=TON_UTILISATEUR_SMTP
+spring.mail.password=TON_MOT_DE_PASSE_SMTP
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+app.mail-from=TON_ADRESSE_EXPEDITEUR
+
+# Optionnel : uniquement nécessaire pour la traduction des actualités
+deepl.api-key=TA_CLE_API_ICI
+deepl.api-url=https://api-free.deepl.com/v2/translate

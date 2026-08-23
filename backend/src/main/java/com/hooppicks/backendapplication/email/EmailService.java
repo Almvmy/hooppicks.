@@ -34,4 +34,18 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+
+    public void sendVerificationEmail(String to, String username, String verifyLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromAddress);
+        message.setTo(to);
+        message.setSubject("HoopPicks — Confirme ton adresse e-mail");
+        message.setText(
+                "Salut " + username + ",\n\n"
+                        + "Bienvenue sur HoopPicks ! Confirme ton adresse e-mail en cliquant sur ce lien (valable 24 heures) :\n\n"
+                        + verifyLink + "\n\n"
+                        + "Si tu n'es pas à l'origine de cette inscription, ignore simplement cet e-mail."
+        );
+        mailSender.send(message);
+    }
 }

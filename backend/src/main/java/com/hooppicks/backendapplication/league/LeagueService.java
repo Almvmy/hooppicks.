@@ -109,7 +109,11 @@ public class LeagueService {
                 .map(m -> new LeagueMemberDto(
                         m.getUser().getUsername(),
                         m.getUser().getId().equals(league.getOwnerId()),
-                        m.getJoinedAt()
+                        m.getJoinedAt(),
+                        m.getUser().getAvatarNumber(),
+                        m.getUser().getAvatarPosition(),
+                        m.getUser().getAvatarColorway(),
+                        m.getUser().getAvatarIcon()
                 ))
                 .toList();
     }
@@ -131,14 +135,20 @@ public class LeagueService {
         List<LeagueActivityDto> activity = new ArrayList<>();
 
         for (LeagueMembership m : memberships) {
-            activity.add(new LeagueActivityDto(m.getUser().getUsername(), "a rejoint la ligue", m.getJoinedAt()));
+            activity.add(new LeagueActivityDto(
+                    m.getUser().getUsername(), "a rejoint la ligue", m.getJoinedAt(),
+                    m.getUser().getAvatarNumber(), m.getUser().getAvatarPosition(),
+                    m.getUser().getAvatarColorway(), m.getUser().getAvatarIcon()
+            ));
         }
 
         for (Bet bet : betRepository.findTop10ByUser_IdInAndStatusOrderByResolvedAtDesc(memberIds, BetStatus.WON)) {
             activity.add(new LeagueActivityDto(
                     bet.getUser().getUsername(),
                     "a gagné un ticket : +" + bet.getPotentialPayout() + " pts",
-                    bet.getResolvedAt()
+                    bet.getResolvedAt(),
+                    bet.getUser().getAvatarNumber(), bet.getUser().getAvatarPosition(),
+                    bet.getUser().getAvatarColorway(), bet.getUser().getAvatarIcon()
             ));
         }
 
@@ -172,7 +182,8 @@ public class LeagueService {
             long wonBets = (Long) row[4];
             int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
 
-            result.add(new LeaderboardEntryDto(rank++, username, (int) points, winRate, (int) totalBets));
+            result.add(new LeaderboardEntryDto(rank++, username, (int) points, winRate, (int) totalBets,
+                    (Integer) row[5], (String) row[6], (String) row[7], (String) row[8]));
         }
         return result;
     }

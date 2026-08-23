@@ -2,9 +2,15 @@ package com.hooppicks.backendapplication.dto;
 
 import com.hooppicks.backendapplication.entity.User;
 
-public record UserProfileDto(
+import java.util.List;
+
+/**
+ * Sous-ensemble "sûr à montrer à n'importe qui" de User — jamais l'email,
+ * jamais isAdmin/notifyXxx. Contrairement à UserProfileDto (réservé au
+ * propriétaire du compte via /auth/me).
+ */
+public record PublicProfileDto(
         String username,
-        String email,
         int winRate,
         int totalBets,
         String favoriteTeam,
@@ -12,16 +18,11 @@ public record UserProfileDto(
         String avatarPosition,
         String avatarColorway,
         String avatarIcon,
-        boolean isAdmin,
-        boolean notifyMatchStarting,
-        boolean notifyBetResults,
-        boolean notifyLeagueActivity,
-        boolean emailVerified
+        List<BadgeDto> badges
 ) {
-    public static UserProfileDto from(User user, int winRate, int totalBets) {
-        return new UserProfileDto(
+    public static PublicProfileDto from(User user, int winRate, int totalBets, List<BadgeDto> badges) {
+        return new PublicProfileDto(
                 user.getUsername(),
-                user.getEmail(),
                 winRate,
                 totalBets,
                 user.getFavoriteTeam(),
@@ -29,11 +30,7 @@ public record UserProfileDto(
                 user.getAvatarPosition(),
                 user.getAvatarColorway(),
                 user.getAvatarIcon(),
-                user.isAdmin(),
-                user.isNotifyMatchStarting(),
-                user.isNotifyBetResults(),
-                user.isNotifyLeagueActivity(),
-                user.isEmailVerified()
+                badges
         );
     }
 }

@@ -7,6 +7,7 @@ import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.LeagueMembershipRepository;
 import com.hooppicks.backendapplication.repository.LeagueRepository;
 import com.hooppicks.backendapplication.repository.NotificationRepository;
+import com.hooppicks.backendapplication.repository.EmailVerificationTokenRepository;
 import com.hooppicks.backendapplication.repository.PasswordResetTokenRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
 import com.hooppicks.backendapplication.repository.WalletTransactionRepository;
@@ -24,13 +25,16 @@ public class AccountDeletionService {
     private final WalletTransactionRepository transactionRepository;
     private final NotificationRepository notificationRepository;
     private final PasswordResetTokenRepository tokenRepository;
+    private final EmailVerificationTokenRepository verificationTokenRepository;
     private final SessionStore sessionStore;
 
     public AccountDeletionService(UserRepository userRepository, LeagueRepository leagueRepository,
                                    LeagueMembershipRepository membershipRepository, LeagueService leagueService,
                                    BetRepository betRepository, WalletTransactionRepository transactionRepository,
                                    NotificationRepository notificationRepository,
-                                   PasswordResetTokenRepository tokenRepository, SessionStore sessionStore) {
+                                   PasswordResetTokenRepository tokenRepository,
+                                   EmailVerificationTokenRepository verificationTokenRepository,
+                                   SessionStore sessionStore) {
         this.userRepository = userRepository;
         this.leagueRepository = leagueRepository;
         this.membershipRepository = membershipRepository;
@@ -39,6 +43,7 @@ public class AccountDeletionService {
         this.transactionRepository = transactionRepository;
         this.notificationRepository = notificationRepository;
         this.tokenRepository = tokenRepository;
+        this.verificationTokenRepository = verificationTokenRepository;
         this.sessionStore = sessionStore;
     }
 
@@ -62,6 +67,7 @@ public class AccountDeletionService {
         transactionRepository.deleteByUserId(userId);
         notificationRepository.deleteByUserId(userId);
         tokenRepository.deleteByUserId(userId);
+        verificationTokenRepository.deleteByUserId(userId);
 
         userRepository.deleteById(userId);
         sessionStore.invalidateAllForUser(userId);

@@ -10,10 +10,12 @@ import com.hooppicks.backendapplication.dto.ResetPasswordRequest;
 import com.hooppicks.backendapplication.dto.UpdateNotificationPreferencesRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
+import com.hooppicks.backendapplication.dto.VerifyEmailRequest;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
 import com.hooppicks.backendapplication.security.AccountDeletionService;
+import com.hooppicks.backendapplication.security.EmailVerificationService;
 import com.hooppicks.backendapplication.security.PasswordResetService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.Cookie;
@@ -48,6 +50,7 @@ public class AuthController {
     private final LoginAttemptService loginAttemptService;
     private final PasswordResetService passwordResetService;
     private final AccountDeletionService accountDeletionService;
+    private final EmailVerificationService emailVerificationService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
     private String cookieSameSite;
@@ -58,7 +61,7 @@ public class AuthController {
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
                           SessionStore sessionStore, BetRepository betRepository,
                           LoginAttemptService loginAttemptService, PasswordResetService passwordResetService,
-                          AccountDeletionService accountDeletionService) {
+                          AccountDeletionService accountDeletionService, EmailVerificationService emailVerificationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionStore = sessionStore;
@@ -66,6 +69,7 @@ public class AuthController {
         this.loginAttemptService = loginAttemptService;
         this.passwordResetService = passwordResetService;
         this.accountDeletionService = accountDeletionService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @PostMapping("/register")
@@ -80,8 +84,30 @@ public class AuthController {
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
 
+        emailVerificationService.requestVerification(user);
         setSessionCookie(response, user.getId());
         return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        boolean success = emailVerificationService.verify(request.token());
+        if (!success) {
+            return ResponseEntity.badRequest().body("Lien invalide ou expiré.");
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(HttpServletRequest httpRequest) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        emailVerificationService.requestVerification(user);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
@@ -215,7 +241,9 @@ public class AuthController {
         }
 
         user.setEmail(request.newEmail());
+        user.setEmailVerified(false); // la nouvelle adresse n'a pas encore été confirmée
         userRepository.save(user);
+        emailVerificationService.requestVerification(user);
 
         return ResponseEntity.ok(buildProfileDto(user));
     }

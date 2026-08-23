@@ -32,7 +32,8 @@ public class LeaderboardController {
             long wonBets = (Long) row[4];
             int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
 
-            result.add(new LeaderboardEntryDto(rank++, username, (int) points, winRate, (int) totalBets));
+            result.add(new LeaderboardEntryDto(rank++, username, (int) points, winRate, (int) totalBets,
+                    (Integer) row[5], (String) row[6], (String) row[7], (String) row[8]));
         }
         return result;
     }

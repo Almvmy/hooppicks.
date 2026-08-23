@@ -41,6 +41,13 @@ public class User {
     @Column(columnDefinition = "boolean default false")
     private boolean isAdmin = false;
 
+    // Non bloquant : le compte reste utilisable sans vérifier son email (pas
+    // d'argent réel en jeu), mais un email non vérifié peut être invalide ou
+    // appartenir à quelqu'un d'autre — surtout utile pour fiabiliser le reset
+    // de mot de passe, qui en dépend entièrement.
+    @Column(columnDefinition = "boolean default false")
+    private boolean emailVerified = false;
+
     @Column(columnDefinition = "boolean default true")
     private boolean notifyMatchStarting = true;
 

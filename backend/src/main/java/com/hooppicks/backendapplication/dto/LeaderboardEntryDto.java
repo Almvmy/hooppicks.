@@ -5,5 +5,9 @@ public record LeaderboardEntryDto(
         String username,
         int points,
         int winRate,
-        int totalBets
+        int totalBets,
+        int avatarNumber,
+        String avatarPosition,
+        String avatarColorway,
+        String avatarIcon
 ) {}
