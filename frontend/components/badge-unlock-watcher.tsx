@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trophy } from "lucide-react";
 import { fetchBadges } from "@/lib/api/badges";
+import { badgeIcon } from "@/lib/badges";
 import { detectNewlyUnlockedBadges } from "@/lib/badge-notifications";
 import { ConfettiBurst } from "@/components/confetti-burst";
 
@@ -31,9 +31,10 @@ export function BadgeUnlockWatcher() {
     }
 
     for (const badge of newlyUnlocked) {
+      const Icon = badgeIcon(badge.icon);
       toast.success(`Badge débloqué : ${badge.label}`, {
         description: badge.description,
-        icon: <Trophy className="h-4 w-4 text-primary" />,
+        icon: <Icon className="h-4 w-4 text-primary" />,
       });
     }
   }, [badges]);

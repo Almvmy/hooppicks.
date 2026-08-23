@@ -204,6 +204,7 @@ export interface UserBadge {
   label: string;
   description: string;
   unlocked: boolean;
+  icon: string;
 }
 
 export interface PublicProfile {

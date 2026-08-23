@@ -2,12 +2,11 @@
 
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Award, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerCard } from "@/components/player-card";
 import { fetchPublicProfile } from "@/lib/api/users";
-import { cn } from "@/lib/utils";
+import { badgeIcon } from "@/lib/badges";
 
 export default function PublicProfilePage({
   params,
@@ -40,6 +39,8 @@ export default function PublicProfilePage({
       </div>
     );
   }
+
+  const unlockedBadges = profile.badges.filter((badge) => badge.unlocked);
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,30 +76,38 @@ export default function PublicProfilePage({
       </div>
 
       <div>
-        <h2 className="mb-3 font-heading text-lg font-bold">Badges</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {profile.badges.map((badge) => (
-            <div
-              key={badge.id}
-              className={cn(
-                "relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl p-4 text-center transition-transform",
-                badge.unlocked
-                  ? "badge-holo glass-accent hover:-translate-y-0.5"
-                  : "glass-inset-quiet opacity-55"
-              )}
-            >
-              {badge.unlocked ? (
-                <Award className="h-6 w-6 text-primary" />
-              ) : (
-                <Lock className="h-6 w-6 text-muted-foreground" />
-              )}
-              <div>
-                <p className="text-sm font-medium">{badge.label}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{badge.description}</p>
-              </div>
-            </div>
-          ))}
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-heading text-lg font-bold">Badges</h2>
+          {unlockedBadges.length > 0 && (
+            <span className="text-xs font-medium text-muted-foreground">
+              {unlockedBadges.length} débloqué{unlockedBadges.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
+        {/* Contrairement à la page Profil (BadgeGrid), on ne montre ici que
+            les badges débloqués — les verrouillés servent d'objectif perso,
+            pas d'intérêt à les exposer sur le profil de quelqu'un d'autre. */}
+        {unlockedBadges.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun badge débloqué pour l&apos;instant.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {unlockedBadges.map((badge) => {
+              const Icon = badgeIcon(badge.icon);
+              return (
+                <div
+                  key={badge.id}
+                  className="badge-holo glass-accent relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl p-4 text-center transition-transform hover:-translate-y-0.5"
+                >
+                  <Icon className="h-6 w-6 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium">{badge.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{badge.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
