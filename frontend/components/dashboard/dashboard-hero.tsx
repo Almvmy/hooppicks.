@@ -63,7 +63,7 @@ export function DashboardHero({
             <Skeleton className="mt-2 h-4 w-64" />
           ) : ( 
             <p className="mt-1.5 text-sm text-muted-foreground">
-            {subtitleFor(streak, pendingCount)} + </p>
+            {subtitleFor(streak, pendingCount)} </p>
             )}
 
 

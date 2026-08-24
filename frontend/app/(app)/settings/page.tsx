@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   changeEmail,
   changePassword,
+  changeUsername,
   deleteAccount,
   fetchProfile,
   logoutUser,
@@ -82,6 +83,72 @@ function NotificationsCard() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ChangeUsernameForm() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+  const [newUsername, setNewUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () => changeUsername(newUsername, password),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(["profile"], updated);
+      setNewUsername("");
+      setPassword("");
+      setError(null);
+      toast.success("Pseudo mis à jour.");
+    },
+    onError: (err: Error) => setError(err.message || "Impossible de changer le pseudo."),
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-medium">Pseudo</p>
+        <p className="text-xs text-muted-foreground">@{profile?.username}</p>
+      </div>
+      <form
+        className="flex flex-col gap-2 sm:flex-row sm:items-end"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError(null);
+          mutation.mutate();
+        }}
+      >
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="new-username">Nouveau pseudo</Label>
+          <Input
+            id="new-username"
+            type="text"
+            minLength={3}
+            maxLength={20}
+            value={newUsername}
+            onChange={(e) => setNewUsername(e.target.value)}
+            placeholder="TonPseudo"
+            required
+          />
+        </div>
+        <div className="flex flex-1 flex-col gap-1.5">
+          <Label htmlFor="username-password">Mot de passe actuel</Label>
+          <Input
+            id="username-password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        <Button type="submit" variant="outline" disabled={mutation.isPending}>
+          {mutation.isPending ? "..." : "Changer"}
+        </Button>
+      </form>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
   );
 }
 
@@ -311,6 +378,7 @@ export default function SettingsPage() {
             <Mail className="h-3.5 w-3.5" />
             Compte
           </p>
+          <ChangeUsernameForm />
           <ChangeEmailForm />
           <ChangePasswordForm />
         </CardContent>

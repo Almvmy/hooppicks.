@@ -8,12 +8,18 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUsername(String username);
+
+    List<User> findTop50ByOrderByCreatedAtDesc();
+
+    List<User> findTop50ByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCreatedAtDesc(
+            String username, String email);
 
     // SELECT ... FOR UPDATE : verrouille la ligne le temps de la transaction
     // pour empêcher deux requêtes concurrentes (double-clic, deux onglets) de

@@ -247,6 +247,66 @@ class AuthControllerTest {
     }
 
     @Test
+    void changeUsername_avec_le_mauvais_mot_de_passe_echoue() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", "joueur@example.com", "joueur", "hash");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("mauvais", "hash")).thenReturn(false);
+
+        ChangeUsernameRequest body = new ChangeUsernameRequest("nouveauPseudo", "mauvais");
+        ResponseEntity<?> response = controller.changeUsername(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(user.getUsername()).isEqualTo("joueur");
+    }
+
+    @Test
+    void changeUsername_vers_un_pseudo_deja_pris_renvoie_409() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", "joueur@example.com", "joueur", "hash");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
+        User other = user("u2", "autre@example.com", "pris", "hash2");
+        when(userRepository.findByUsername("pris")).thenReturn(Optional.of(other));
+
+        ChangeUsernameRequest body = new ChangeUsernameRequest("pris", "motdepasse");
+        ResponseEntity<?> response = controller.changeUsername(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(409);
+        assertThat(user.getUsername()).isEqualTo("joueur");
+    }
+
+    @Test
+    void changeUsername_valide_met_a_jour_le_pseudo() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", "joueur@example.com", "joueur", "hash");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
+        when(userRepository.findByUsername("nouveauPseudo")).thenReturn(Optional.empty());
+
+        ChangeUsernameRequest body = new ChangeUsernameRequest("nouveauPseudo", "motdepasse");
+        ResponseEntity<?> response = controller.changeUsername(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        assertThat(user.getUsername()).isEqualTo("nouveauPseudo");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void changeUsername_vers_le_meme_pseudo_ignore_la_verification_d_unicite() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", "joueur@example.com", "joueur", "hash");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
+
+        ChangeUsernameRequest body = new ChangeUsernameRequest("joueur", "motdepasse");
+        ResponseEntity<?> response = controller.changeUsername(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        verify(userRepository, never()).findByUsername(any());
+    }
+
+    @Test
     void deleteAccount_avec_le_bon_mot_de_passe_supprime_le_compte_et_expire_le_cookie() {
         HttpServletRequest request = authenticatedRequest("u1");
         User user = user("u1", "joueur@example.com", "joueur", "hash");

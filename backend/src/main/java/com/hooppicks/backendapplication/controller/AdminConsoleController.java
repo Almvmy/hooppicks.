@@ -1,14 +1,21 @@
 package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.bet.BetResolutionService;
+import com.hooppicks.backendapplication.dto.AdminBetDto;
 import com.hooppicks.backendapplication.dto.AdminStatusDto;
+import com.hooppicks.backendapplication.dto.AdminUpdateMatchRequest;
+import com.hooppicks.backendapplication.dto.AdminUserDto;
+import com.hooppicks.backendapplication.dto.MatchDto;
 import com.hooppicks.backendapplication.entity.BetStatus;
+import com.hooppicks.backendapplication.entity.Match;
+import com.hooppicks.backendapplication.entity.MatchStatus;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.nba.AdminSyncStatus;
 import com.hooppicks.backendapplication.nba.NbaSyncService;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
+import com.hooppicks.backendapplication.security.AccountDeletionService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -37,11 +44,12 @@ public class AdminConsoleController {
     private final NbaSyncService nbaSyncService;
     private final BetResolutionService betResolutionService;
     private final AdminSyncStatus adminSyncStatus;
+    private final AccountDeletionService accountDeletionService;
 
     public AdminConsoleController(SessionStore sessionStore, UserRepository userRepository,
                                    MatchRepository matchRepository, BetRepository betRepository,
                                    NbaSyncService nbaSyncService, BetResolutionService betResolutionService,
-                                   AdminSyncStatus adminSyncStatus) {
+                                   AdminSyncStatus adminSyncStatus, AccountDeletionService accountDeletionService) {
         this.sessionStore = sessionStore;
         this.userRepository = userRepository;
         this.matchRepository = matchRepository;
@@ -49,6 +57,7 @@ public class AdminConsoleController {
         this.nbaSyncService = nbaSyncService;
         this.betResolutionService = betResolutionService;
         this.adminSyncStatus = adminSyncStatus;
+        this.accountDeletionService = accountDeletionService;
     }
 
     @GetMapping("/status")
@@ -98,6 +107,123 @@ public class AdminConsoleController {
         if (denied != null) return denied;
 
         return ResponseEntity.ok(Map.of("resolved", betResolutionService.resolvePendingBets()));
+    }
+
+    // --- Utilisateurs -------------------------------------------------
+
+    @GetMapping("/users")
+    public ResponseEntity<?> getUsers(@RequestParam(required = false) String search, HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        List<User> users = (search == null || search.isBlank())
+                ? userRepository.findTop50ByOrderByCreatedAtDesc()
+                : userRepository.findTop50ByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCreatedAtDesc(search, search);
+
+        return ResponseEntity.ok(users.stream().map(AdminUserDto::from).toList());
+    }
+
+    @PostMapping("/users/{id}/toggle-admin")
+    public ResponseEntity<?> toggleAdmin(@PathVariable String id, HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        // On ne se retire jamais soi-même le statut admin depuis ici — sinon un
+        // admin seul peut se verrouiller hors de la console par erreur de clic.
+        if (id.equals(sessionStore.getUserIdFromRequest(request))) {
+            return ResponseEntity.badRequest().body("Impossible de modifier ton propre statut admin ici.");
+        }
+
+        User target = userRepository.findById(id).orElse(null);
+        if (target == null) return ResponseEntity.notFound().build();
+
+        target.setAdmin(!target.isAdmin());
+        userRepository.save(target);
+        return ResponseEntity.ok(AdminUserDto.from(target));
+    }
+
+    @PostMapping("/users/{id}/delete")
+    public ResponseEntity<?> deleteUser(@PathVariable String id, HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        // La suppression de son propre compte passe par /auth/delete-account
+        // (avec confirmation de mot de passe) — pas par cette voie admin.
+        if (id.equals(sessionStore.getUserIdFromRequest(request))) {
+            return ResponseEntity.badRequest().body("Utilise la suppression de compte depuis tes paramètres.");
+        }
+        if (userRepository.findById(id).isEmpty()) return ResponseEntity.notFound().build();
+
+        accountDeletionService.deleteAccount(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- Matchs ---------------------------------------------------------
+
+    @GetMapping("/matches")
+    public ResponseEntity<?> getMatches(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            HttpServletRequest request
+    ) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        List<Match> matches = matchRepository.findTop100ByOrderByDateDesc();
+
+        if (status != null && !status.isBlank()) {
+            try {
+                MatchStatus wanted = MatchStatus.valueOf(status.toUpperCase());
+                matches = matches.stream().filter(m -> m.getStatus() == wanted).toList();
+            } catch (IllegalArgumentException ignored) {
+                // statut inconnu dans la query string : on ignore le filtre plutôt que de 400
+            }
+        }
+        if (search != null && !search.isBlank()) {
+            String needle = search.toLowerCase();
+            matches = matches.stream()
+                    .filter(m -> m.getHomeTeam().getName().toLowerCase().contains(needle)
+                            || m.getAwayTeam().getName().toLowerCase().contains(needle))
+                    .toList();
+        }
+
+        return ResponseEntity.ok(matches.stream().map(MatchDto::from).toList());
+    }
+
+    @PatchMapping("/matches/{id}")
+    public ResponseEntity<?> updateMatch(
+            @PathVariable String id, @RequestBody AdminUpdateMatchRequest body, HttpServletRequest request
+    ) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        Match match = matchRepository.findById(id).orElse(null);
+        if (match == null) return ResponseEntity.notFound().build();
+
+        if (body.status() != null) {
+            try {
+                match.setStatus(MatchStatus.valueOf(body.status().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Statut inconnu : " + body.status());
+            }
+        }
+        if (body.homeScore() != null) match.setHomeScore(body.homeScore());
+        if (body.awayScore() != null) match.setAwayScore(body.awayScore());
+
+        matchRepository.save(match);
+        return ResponseEntity.ok(MatchDto.from(match));
+    }
+
+    // --- Paris en attente -------------------------------------------------
+
+    @GetMapping("/bets/pending")
+    public ResponseEntity<?> getPendingBets(HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        return ResponseEntity.ok(betRepository.findByStatus(BetStatus.PENDING).stream()
+                .map(AdminBetDto::from)
+                .toList());
     }
 
     /**

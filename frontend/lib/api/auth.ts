@@ -78,6 +78,13 @@ export async function changeEmail(newEmail: string, currentPassword: string): Pr
   });
 }
 
+export async function changeUsername(newUsername: string, currentPassword: string): Promise<UserProfile> {
+  return apiFetch<UserProfile>("/auth/change-username", {
+    method: "POST",
+    body: JSON.stringify({ newUsername, currentPassword }),
+  });
+}
+
 export async function deleteAccount(currentPassword: string): Promise<void> {
   return apiFetch<void>("/auth/delete-account", {
     method: "POST",

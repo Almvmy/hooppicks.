@@ -8,13 +8,16 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 
 | Méthode | Route | Auth | Description |
 |---|---|---|---|
-| POST | `/auth/register` | — | Crée un compte (`username`, `email`, `password`), pose le cookie de session. `409` si l'email existe déjà. |
+| POST | `/auth/register` | — | Crée un compte (`username`, `email`, `password`), pose le cookie de session, déclenche l'envoi d'un e-mail de vérification. `409` si l'email existe déjà. |
+| POST | `/auth/verify-email` | — | `token` reçu par e-mail. `400` si invalide/expiré. Marque `emailVerified = true`. |
+| POST | `/auth/resend-verification` | 🔒 | Renvoie l'e-mail de vérification (rate-limité, no-op si déjà vérifié). |
 | POST | `/auth/login` | — | `email` + `password`. `401` si invalide, `429` si trop de tentatives récentes (`LoginAttemptService`). |
 | GET | `/auth/me` | 🔒 | Profil de l'utilisateur connecté. |
 | PATCH | `/auth/profile` | 🔒 | Met à jour équipe favorite / avatar (numéro, poste, palette, icône) — champs optionnels, validés côté serveur contre une liste fermée. |
 | PATCH | `/auth/notification-preferences` | 🔒 | Active/désactive les 3 types de notifications. |
 | POST | `/auth/change-password` | 🔒 | Nécessite le mot de passe actuel. Invalide toutes les sessions actives après succès. |
-| POST | `/auth/change-email` | 🔒 | Nécessite le mot de passe actuel. `409` si le nouvel email est déjà pris. |
+| POST | `/auth/change-email` | 🔒 | Nécessite le mot de passe actuel. `409` si le nouvel email est déjà pris. Remet `emailVerified` à `false` et redemande la vérification. |
+| POST | `/auth/change-username` | 🔒 | Nécessite le mot de passe actuel. `409` si le pseudo est déjà pris. Les anciens liens `/u/ancien-pseudo` renvoient `404` après renommage. |
 | POST | `/auth/delete-account` | 🔒 | Nécessite le mot de passe actuel. Suppression définitive (`AccountDeletionService`). |
 | POST | `/auth/forgot-password` | — | `email`. Toujours `200`, que le compte existe ou non (anti-énumération). Rate-limité à 3/heure/email. |
 | POST | `/auth/reset-password` | — | `token` + `newPassword`. `400` si token invalide/expiré/déjà utilisé. |
@@ -56,12 +59,13 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 | GET | `/teams` | — (public) | Classement des équipes NBA (Elo). |
 | GET | `/players?search=...&teamId=...` | — (public) | Recherche de joueurs (3 caractères min), locale puis fallback balldontlie.io. |
 
-## Classement, badges, notifications
+## Classement, profils, badges, notifications
 
 | Méthode | Route | Auth | Description |
 |---|---|---|---|
 | GET | `/leaderboard` | — (public) | Classement global toutes ligues confondues. |
-| GET | `/badges` | 🔒 | Badges débloqués/à débloquer par l'utilisateur. |
+| GET | `/users/{username}` | 🔒 | Profil public d'un joueur (carte, stats, **badges débloqués uniquement**) — jamais l'email. `404` si le pseudo n'existe pas. |
+| GET | `/badges` | 🔒 | Tous les badges (débloqués et verrouillés) de l'utilisateur connecté, avec une clé `icon`. |
 | GET | `/notifications` | 🔒 | Notifications de l'utilisateur. |
 | PATCH | `/notifications/{id}/read` | 🔒 | Marque une notification comme lue. |
 
@@ -93,6 +97,12 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 | POST | `/console/sync-teams` | Équivalent de `/admin/nba/sync-teams`, avec attribution de l'admin qui déclenche. |
 | POST | `/console/sync-games?daysAhead=&startDate=` | Équivalent de `/admin/nba/sync-games`. |
 | POST | `/console/resolve-bets` | Équivalent de `/admin/bets/resolve`. |
+| GET | `/console/users?search=` | Liste/recherche des utilisateurs (pseudo ou email), 50 résultats max, plus récents d'abord. |
+| POST | `/console/users/{id}/toggle-admin` | Bascule le statut admin d'un utilisateur. `400` si `id` = l'admin qui appelle (pas d'auto-rétrogradation ici). Rétrograder un *autre* admin reste possible — volontairement non restreint, voir [CLAUDE.md](../CLAUDE.md). |
+| POST | `/console/users/{id}/delete` | Supprime définitivement un compte (réutilise `AccountDeletionService`). `400` si `id` = l'admin qui appelle (passer par `/auth/delete-account`). |
+| GET | `/console/matches?search=&status=` | Liste les 100 matchs les plus récents, filtrables par nom d'équipe et par statut. |
+| PATCH | `/console/matches/{id}` | Corrige manuellement le statut/score d'un match (`status`, `homeScore`, `awayScore`, tous optionnels) — pour rattraper une synchro externe (balldontlie.io) qui aurait renvoyé une donnée fausse. |
+| GET | `/console/bets/pending` | Liste les paris en attente (joueur, sélections, mise, gain potentiel) — pour inspecter avant de forcer une résolution. |
 
 ## Divers
 

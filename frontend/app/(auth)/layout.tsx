@@ -33,7 +33,9 @@ export default function AuthLayout({
         className="relative z-10 mb-8 flex items-center gap-2.5 font-heading text-2xl font-bold"
       >
         <LogoSymbol className="h-9 w-9 shrink-0" />
-        Hoop<span className="text-primary">Picks</span>
+        <span>
+          Hoop<span className="text-primary">Picks</span>
+        </span>
       </Link>
       <div className="relative z-10 flex w-full flex-col items-center">{children}</div>
     </div>

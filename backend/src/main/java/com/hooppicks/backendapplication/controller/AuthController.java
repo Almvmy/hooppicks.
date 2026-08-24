@@ -8,6 +8,7 @@ import com.hooppicks.backendapplication.dto.LoginRequest;
 import com.hooppicks.backendapplication.dto.RegisterRequest;
 import com.hooppicks.backendapplication.dto.ResetPasswordRequest;
 import com.hooppicks.backendapplication.dto.UpdateNotificationPreferencesRequest;
+import com.hooppicks.backendapplication.dto.ChangeUsernameRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
 import com.hooppicks.backendapplication.dto.VerifyEmailRequest;
@@ -244,6 +245,30 @@ public class AuthController {
         user.setEmailVerified(false); // la nouvelle adresse n'a pas encore été confirmée
         userRepository.save(user);
         emailVerificationService.requestVerification(user);
+
+        return ResponseEntity.ok(buildProfileDto(user));
+    }
+
+    @PostMapping("/change-username")
+    public ResponseEntity<?> changeUsername(
+            @Valid @RequestBody ChangeUsernameRequest request, HttpServletRequest httpRequest) {
+        String userId = sessionStore.getUserIdFromRequest(httpRequest);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ResponseEntity.status(401).build();
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body("Mot de passe incorrect.");
+        }
+
+        if (!request.newUsername().equalsIgnoreCase(user.getUsername())
+                && userRepository.findByUsername(request.newUsername()).isPresent()) {
+            return ResponseEntity.status(409).body("Ce pseudo est déjà pris.");
+        }
+
+        user.setUsername(request.newUsername());
+        userRepository.save(user);
 
         return ResponseEntity.ok(buildProfileDto(user));
     }

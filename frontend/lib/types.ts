@@ -189,6 +189,25 @@ export interface AdminStatus {
   pendingBets: number;
 }
 
+export interface AdminUser {
+  id: string;
+  username: string;
+  email: string;
+  isAdmin: boolean;
+  emailVerified: boolean;
+  walletBalance: number;
+  createdAt: string | null;
+}
+
+export interface AdminBet {
+  id: string;
+  username: string;
+  selections: { matchLabel: string; label: string }[];
+  stake: number;
+  potentialPayout: number;
+  placedAt: string;
+}
+
 export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "system";
 
 export interface AppNotification {

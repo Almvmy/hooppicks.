@@ -17,14 +17,20 @@ export default function AppleIcon() {
         }}
       >
         {/* Pas de cercle : le fond orange plein du tile EST le ballon (iOS
-            arrondit lui-même les coins), coutures + check en creux dessus —
-            même famille que LogoSymbol variant="compact". */}
-        <svg width="132" height="132" viewBox="0 0 120 120" fill="none">
-          <path d="M28,54 Q60,64 92,54" stroke="#0B1120" strokeWidth={3} opacity={0.5} />
-          <path d="M60,26 Q50,60 60,94" stroke="#0B1120" strokeWidth={3} opacity={0.5} />
+            arrondit lui-même les coins), coutures + monogramme HP dessus —
+            même artwork que LogoSymbol/icon.svg. */}
+        <svg width="144" height="144" viewBox="0 0 184 184" fill="none">
+          <path d="M92,0 V184" stroke="#0B1120" strokeWidth={5} opacity={0.54} />
+          <path d="M0,92 H184" stroke="#0B1120" strokeWidth={5} opacity={0.6} />
+          <path d="M24.25,29.77c40,35,38.83,88.18-1.17,123.18" stroke="#0B1120" strokeWidth={5} opacity={0.6} />
+          <path d="M155.31,25.25c-40,35-38.06,96.55,1.94,131.55" stroke="#0B1120" strokeWidth={5} opacity={0.6} />
           <path
-            d="M21.5,59.4 L43.1,81 L53.3,80.6 L99.9,27.4 L89.3,18.1 L42.7,71.4 L53,71.1 L31.4,49.5 Z"
+            d="M27.65,122.93V46.28h13.51v32.19h30.83v-32.19h13.51v76.65h-13.51v-32.41h-30.83v32.41h-13.51Z"
             fill="#F1F5F9"
+          />
+          <path
+            d="M100.92,122.93V46.28h31.61c4.91,0,9.23.95,12.96,2.85,3.72,1.9,6.66,4.58,8.82,8.05,2.16,3.47,3.24,7.57,3.24,12.32v1.53c0,4.67-1.1,8.76-3.29,12.26-2.2,3.5-5.18,6.21-8.94,8.1-3.76,1.9-8.02,2.85-12.79,2.85h-18.09v28.69h-13.51ZM114.43,82.31h16.75c3.87,0,6.98-1.02,9.33-3.07,2.35-2.04,3.52-4.85,3.52-8.43v-1.09c0-3.58-1.15-6.39-3.46-8.43-2.31-2.04-5.44-3.07-9.38-3.07h-16.75v24.09Z"
+            fill="#0B1120"
           />
         </svg>
       </div>

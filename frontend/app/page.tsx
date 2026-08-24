@@ -45,15 +45,17 @@ export default async function HomePage() {
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center text-center">
         <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-xs text-primary">
-          Saison NBA 2026 — Points virtuels
+          Saison NBA 2026 - Points virtuels
         </span>
         <h1 className="flex items-center gap-3 font-heading text-4xl font-bold tracking-tight sm:text-5xl">
           <LogoSymbol className="h-10 w-10 shrink-0 sm:h-12 sm:w-12" />
-          Hoop<span className="text-primary">Picks</span>
+          <span>
+            Hoop<span className="text-primary">Picks</span>
+          </span>
         </h1>
         <p className="mt-4 max-w-md text-muted-foreground">
-          Pronostique sur chaque match de la saison NBA, grimpe dans le
-          classement, aucun argent réel en jeu.
+          Pronostique sur chaque match de la saison NBA, gagne des points et grimpe dans le
+          classement.
         </p>
         <div className="mt-8 flex gap-3">
           <Link href="/register" className={cn(buttonVariants({ size: "lg" }))}>

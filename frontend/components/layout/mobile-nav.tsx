@@ -51,7 +51,9 @@ export function MobileNav() {
       <div className="glass-hairline-b flex h-16 shrink-0 items-center justify-between px-4">
         <span className="flex items-center gap-2 font-heading text-lg font-bold">
           <LogoSymbol variant="compact" className="h-6 w-6 shrink-0" />
-          Hoop<span className="text-primary">Picks</span>
+          <span>
+            Hoop<span className="text-primary">Picks</span>
+          </span>
         </span>
         <button
           type="button"

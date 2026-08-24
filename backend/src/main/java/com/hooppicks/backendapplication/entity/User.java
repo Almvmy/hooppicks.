@@ -3,6 +3,9 @@ package com.hooppicks.backendapplication.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "app_user")
@@ -56,4 +59,11 @@ public class User {
 
     @Column(columnDefinition = "boolean default true")
     private boolean notifyLeagueActivity = true;
+
+    // columnDefinition sans "not null" : @CreationTimestamp force sinon une
+    // contrainte NOT NULL, que Postgres refuse d'ajouter tant que les comptes
+    // créés avant ce champ n'ont pas de valeur rétroactive à lui donner.
+    @CreationTimestamp
+    @Column(columnDefinition = "timestamptz")
+    private Instant createdAt;
 }

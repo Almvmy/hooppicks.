@@ -10,8 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchAdminStatus, resolveBets, syncGames, syncTeams } from "@/lib/api/admin";
+import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
+import { AdminMatchesPanel } from "@/components/admin/admin-matches-panel";
+import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-panel";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -58,9 +70,12 @@ export default function AdminPage() {
     onSuccess: (r) => {
       toast.success(`${r.resolved} pari(s) résolu(s).`);
       refreshStatus();
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-bets"] });
     },
     onError: () => toast.error("Échec de la résolution des paris."),
   });
+
+  const [confirmResolve, setConfirmResolve] = useState(false);
 
   if (profileQuery.isLoading || !profileQuery.data?.isAdmin) {
     return <BasketballLoader label="Vérification des accès..." />;
@@ -194,7 +209,7 @@ export default function AdminPage() {
           <Button
             variant="outline"
             className="w-fit gap-1.5"
-            onClick={() => resolveBetsMutation.mutate()}
+            onClick={() => setConfirmResolve(true)}
             disabled={resolveBetsMutation.isPending}
           >
             <Users2 className="h-4 w-4" />
@@ -202,6 +217,24 @@ export default function AdminPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AdminPendingBetsPanel />
+      <AdminMatchesPanel />
+      <AdminUsersPanel />
+
+      <AlertDialog open={confirmResolve} onOpenChange={setConfirmResolve}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Résoudre les paris en attente ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tous les paris en attente dont le match est terminé seront réglés immédiatement (gains crédités,
+            mises perdues débitées). Cette action est immédiate et ne peut pas être annulée.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => resolveBetsMutation.mutate()}>Confirmer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
