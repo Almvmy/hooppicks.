@@ -42,7 +42,7 @@ Renseigne dans ce fichier :
 - `spring.datasource.url` / `username` / `password` — ta base Postgres locale
 - `balldontlie.api-key` — clé gratuite sur [balldontlie.io](https://balldontlie.io)
 - `admin.api-key` — un secret arbitraire pour toi seul (protège `/admin/**`, voir [CLAUDE.md](CLAUDE.md))
-- `spring.mail.*` / `app.mail-from` — optionnel, seulement nécessaire pour tester le reset de mot de passe et la vérification d'email à l'inscription (SMTP, ex. Brevo)
+- `brevo.api-key` / `app.mail-from` — optionnel, seulement nécessaire pour tester le reset de mot de passe et la vérification d'email à l'inscription (API HTTP Brevo, pas SMTP — beaucoup d'hébergeurs bloquent les ports SMTP sortants)
 - `deepl.api-key` — optionnel, seulement nécessaire pour la traduction des actualités (clé gratuite sur DeepL)
 
 Puis lance :
