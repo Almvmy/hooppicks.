@@ -1,51 +1,80 @@
 package com.hooppicks.backendapplication.email;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
+/**
+ * Envoi via l'API HTTP de Brevo plutôt que le SMTP classique : Railway (et
+ * pas mal d'hébergeurs PaaS) bloque les ports SMTP sortants (587/465) pour
+ * limiter le spam — timeout systématique constaté en prod. L'API HTTP passe
+ * par le port 443 comme n'importe quel appel externe (balldontlie, DeepL),
+ * donc jamais bloquée de la même façon.
+ */
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final RestTemplate restTemplate;
 
-    // Distinct du login SMTP (spring.mail.username, qui est un identifiant
-    // d'authentification Brevo, pas une adresse d'envoi valable) : l'adresse
-    // affichée comme expéditeur doit être un email vérifié dans Brevo.
+    @Value("${brevo.api-key}")
+    private String apiKey;
+
+    @Value("${brevo.api-url:https://api.brevo.com/v3/smtp/email}")
+    private String apiUrl;
+
+    // Distinct du login SMTP historique : l'adresse affichée comme expéditeur
+    // doit être un email vérifié dans Brevo.
     @Value("${app.mail-from}")
     private String fromAddress;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public EmailService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
 
     public void sendPasswordResetEmail(String to, String username, String resetLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(to);
-        message.setSubject("HoopPicks — Réinitialisation de ton mot de passe");
-        message.setText(
+        send(to, "HoopPicks — Réinitialisation de ton mot de passe",
                 "Salut " + username + ",\n\n"
                         + "Tu as demandé à réinitialiser ton mot de passe HoopPicks.\n"
                         + "Clique sur ce lien pour en choisir un nouveau (valable 30 minutes) :\n\n"
                         + resetLink + "\n\n"
                         + "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail — ton mot de passe reste inchangé."
         );
-        mailSender.send(message);
     }
 
     public void sendVerificationEmail(String to, String username, String verifyLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(to);
-        message.setSubject("HoopPicks — Confirme ton adresse e-mail");
-        message.setText(
+        send(to, "HoopPicks — Confirme ton adresse e-mail",
                 "Salut " + username + ",\n\n"
                         + "Bienvenue sur HoopPicks ! Confirme ton adresse e-mail en cliquant sur ce lien (valable 24 heures) :\n\n"
                         + verifyLink + "\n\n"
                         + "Si tu n'es pas à l'origine de cette inscription, ignore simplement cet e-mail."
         );
-        mailSender.send(message);
+    }
+
+    private void send(String to, String subject, String textContent) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("api-key", apiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        BrevoEmailRequest body = new BrevoEmailRequest(
+                new BrevoEmailRequest.Contact(fromAddress, "HoopPicks"),
+                List.of(new BrevoEmailRequest.Contact(to, null)),
+                subject,
+                textContent
+        );
+
+        // Laisse l'exception remonter : les deux appelants (reset mot de passe,
+        // vérification email) attrapent déjà l'échec pour ne jamais bloquer le
+        // flux principal — même comportement qu'avec l'ancien JavaMailSender.
+        restTemplate.postForEntity(apiUrl, new HttpEntity<>(body, headers), String.class);
+    }
+
+    private record BrevoEmailRequest(Contact sender, List<Contact> to, String subject, String textContent) {
+        private record Contact(String email, String name) {}
     }
 }
