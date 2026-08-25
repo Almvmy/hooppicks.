@@ -22,13 +22,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "HoopPicks — Pronostics NBA",
+    default: "HoopPicks - Pronostics NBA",
     template: "%s · HoopPicks",
   },
   description:
     "Pronostique sur chaque match de la saison NBA en points virtuels, grimpe dans le classement, aucun argent réel en jeu.",
   openGraph: {
-    title: "HoopPicks — Pronostics NBA",
+    title: "HoopPicks - Pronostics NBA",
     description:
       "Pronostique sur chaque match de la saison NBA en points virtuels, grimpe dans le classement.",
     siteName: "HoopPicks",

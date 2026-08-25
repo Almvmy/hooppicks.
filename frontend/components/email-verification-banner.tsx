@@ -22,7 +22,7 @@ export function EmailVerificationBanner() {
       <div className="flex items-center gap-2">
         <Mail className="h-4 w-4 shrink-0 text-primary" />
         <span>
-          Vérifie ton adresse e-mail ({profile.email}) — un lien de confirmation t&apos;a été envoyé.
+          Vérifie ton adresse e-mail ({profile.email}), un lien de confirmation t&apos;a été envoyé.
         </span>
       </div>
       <Button

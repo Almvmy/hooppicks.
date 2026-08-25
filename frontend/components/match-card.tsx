@@ -75,7 +75,7 @@ export function MatchCard({ match }: { match: Match }) {
           ) : (
             // bg-secondary/30 → glass-inset-quiet
             <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
-              Paris fermés — ce match {match.status === "live" ? "est en cours" : "est terminé"}
+              paris fermés : match {match.status === "live" ? "en cours" : "terminé"}
             </p>
           )}
         </div>

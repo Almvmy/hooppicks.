@@ -90,7 +90,7 @@ export default function DashboardPage() {
           },
           {
             label: "Rang classement",
-            value: ownEntry ? `#${ownEntry.rank}` : "—",
+            value: ownEntry ? `#${ownEntry.rank}` : "-",
             hint: leaderboardQuery.data ? `sur ${leaderboardQuery.data.length} joueurs` : undefined,
             icon: Trophy,
             isLoading: statsLoading,

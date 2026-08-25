@@ -18,7 +18,7 @@ export default function AboutPage() {
           <p>
             HoopPicks est une application de pronostics sur les matchs de la saison NBA, en{" "}
             <strong className="text-foreground">points virtuels uniquement</strong>. Aucun
-            argent réel n&apos;entre ou ne sort jamais du service — le solde affiché n&apos;a
+            argent réel n&apos;entre ou ne sort jamais du service. Le solde affiché n&apos;a
             aucune valeur monétaire, ce n&apos;est ni un moyen de paiement, ni un jeu d&apos;argent.
           </p>
           <p>
@@ -36,16 +36,16 @@ export default function AboutPage() {
           <p>Pour faire fonctionner ton compte, nous conservons :</p>
           <ul className="list-inside list-disc">
             <li>ton pseudo et ton adresse e-mail ;</li>
-            <li>ton mot de passe, jamais en clair (uniquement sous forme hachée) ;</li>
+            <li>ton mot de passe, uniquement sous forme hachée ;</li>
             <li>ton historique de paris, tes ligues et tes préférences de notification.</li>
           </ul>
           <p>
             Ces informations ne sont ni vendues ni partagées avec des tiers. Tu peux
             supprimer ton compte et toutes les données associées à tout moment, depuis{" "}
             <a href="/settings" className="text-primary hover:underline">
-              Paramètres
+              Paramètres, 
             </a>{" "}
-            — l&apos;action est immédiate et irréversible.
+            l&apos;action est immédiate et irréversible.
           </p>
         </CardContent>
       </Card>

@@ -46,7 +46,7 @@ export function WalletTrend({
   return (
     <Card>
       <CardHeader className="space-y-0">
-        <CardTitle className="font-heading text-base">Solde — 7 derniers jours</CardTitle>
+        <CardTitle className="font-heading text-base">Solde : 7 derniers jours</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {isLoading ? (

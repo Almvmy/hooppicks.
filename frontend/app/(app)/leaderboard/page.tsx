@@ -25,7 +25,7 @@ export default function LeaderboardPage() {
         <h1 className="font-heading text-2xl font-bold">Classement</h1>
         <p className="mt-1 text-muted-foreground">
           Les meilleurs pronostiqueurs de la saison
-          {!isLoading && !isError && totalCount > 0 && ` — ${totalCount} joueurs`}.
+          {!isLoading && !isError && totalCount > 0 && ` : ${totalCount} joueurs`}.
         </p>
       </div>
 

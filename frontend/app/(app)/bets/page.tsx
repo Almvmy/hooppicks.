@@ -28,7 +28,7 @@ export default function BetsPage() {
         <h1 className="font-heading text-2xl font-bold">Mes paris</h1>
         <p className="mt-1 text-muted-foreground">
           Historique de tes tickets
-          {!isLoading && !isError && totalCount > 0 && ` — ${totalCount} au total`}.
+          {!isLoading && !isError && totalCount > 0 && ` : ${totalCount} au total`}.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function BetsPage() {
                 {bet.selections.map((s) => (
                   <div key={s.id} className="flex items-center justify-between text-sm">
                     <span>
-                      <span className="text-muted-foreground">{s.matchLabel} — </span>
+                      <span className="text-muted-foreground">{s.matchLabel} - </span>
                       {s.label}
                     </span>
                     <span className="font-mono">{s.odds.toFixed(2)}</span>
