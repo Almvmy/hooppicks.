@@ -44,6 +44,14 @@ Dès qu'un match se termine, le système résout automatiquement les paris conce
 - **Perdu** : au moins une sélection est incorrecte → rien n'est crédité (la mise reste débitée).
 - **Remboursé (push)** : une sélection tombe pile sur l'égalité (ex. spread exact) → la part correspondante de la mise est remboursée, sans gain.
 
+## Joueurs & équipes
+
+La page **Joueurs & équipes** te permet d'explorer les infos NBA indépendamment de tes paris :
+- **Joueurs** : cherche un joueur par nom (2 caractères min). Clique sur un résultat pour ouvrir sa **carte joueur** — photo, poste, taille/poids, statut blessure éventuel (Out, Day-To-Day...), et ses moyennes de la saison en cours (points, rebonds, passes...).
+- **Équipes** : classement des 30 équipes, en **force interne (Elo)** — celle qui sert au calcul des cotes — ou en **classement officiel NBA** par conférence (victoires/défaites, série en cours, écart au top). Déplie une équipe pour voir son effectif actuel.
+
+Sur un match terminé, la **feuille de match** (box score) détaille les statistiques de chaque joueur ayant joué (minutes, points, rebonds, passes, tirs...) — accessible depuis la page du match.
+
 ## Ligues
 
 Crée une **ligue privée** pour comparer tes pronostics avec tes amis, ou rejoins-en une avec un **code d'invitation** à 6 caractères.

@@ -8,7 +8,7 @@ Pronostics NBA en points virtuels — aucun argent réel en jeu. Les joueurs par
 |---|---|
 | **Backend** | Java 21, Spring Boot 4.1.0, Spring Data JPA, PostgreSQL |
 | **Frontend** | Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, TanStack Query |
-| **Intégrations externes** | [balldontlie.io](https://balldontlie.io) (données NBA), flux RSS ESPN (actualités), DeepL (traduction FR), Brevo (envoi d'e-mails) |
+| **Intégrations externes** | [balldontlie.io](https://balldontlie.io) (données NBA), API ESPN non-officielle (feuilles de match, effectifs, classement, stats joueurs), flux RSS ESPN (actualités), DeepL (traduction FR), Brevo (envoi d'e-mails) |
 
 Vue d'ensemble de l'architecture et des décisions de conception : voir [CLAUDE.md](CLAUDE.md).
 Référence des endpoints backend : voir [backend/API.md](backend/API.md).
@@ -74,4 +74,4 @@ cd frontend && npx tsc --noEmit && npm run lint
 
 - **Pas d'argent réel** : le solde (`walletBalance`) est un compteur de points partant à 1000, pas un moyen de paiement.
 - **Sessions en mémoire** : `SessionStore` ne persiste rien — redémarrer le backend déconnecte tout le monde (comportement volontaire pour un projet de cet ordre de grandeur, voir [CLAUDE.md](CLAUDE.md)).
-- **Synchro NBA automatique** : toutes les 5 minutes (`NbaSyncScheduler`), qui déclenche aussi la résolution des paris en attente dès qu'un match passe à `FINISHED`.
+- **Synchro NBA automatique** : toutes les 5 minutes (`NbaSyncScheduler`), qui déclenche aussi la résolution des paris en attente dès qu'un match passe à `FINISHED`, l'import des feuilles de match ESPN et un lot de stats joueurs ESPN. Effectifs et classement officiel ESPN sont resynchronisés une fois par jour (crons séparés, voir [CLAUDE.md](CLAUDE.md)).

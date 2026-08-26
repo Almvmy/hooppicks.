@@ -56,8 +56,10 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 |---|---|---|---|
 | GET | `/matches` | — (public) | Calendrier complet, toutes saisons synchronisées. |
 | GET | `/matches/{id}` | — (public) | Détail d'un match. |
-| GET | `/teams` | — (public) | Classement des équipes NBA (Elo). |
-| GET | `/players?search=...&teamId=...` | — (public) | Recherche de joueurs (3 caractères min), locale puis fallback balldontlie.io. |
+| GET | `/matches/{id}/boxscore` | — (public) | Feuille de match (stats par joueur, ESPN), triée par points décroissants. Liste vide (jamais `404`) si pas encore importée. |
+| GET | `/teams` | — (public) | Classement des 30 équipes : force Elo (calcul des cotes) + classement officiel ESPN (victoires/défaites, série, seed conférence, écart, logo). |
+| GET | `/teams/{id}/roster` | — (public) | Effectif actuel de l'équipe (ESPN), trié par nom de famille. |
+| GET | `/players?search=...&teamId=...` | — (public) | Recherche de joueurs (2 caractères min) parmi les effectifs ESPN actuels ; repli sur balldontlie.io uniquement si aucun effectif ESPN n'a jamais été synchronisé (voir [CLAUDE.md](../CLAUDE.md)). |
 
 ## Classement, profils, badges, notifications
 
@@ -97,6 +99,9 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 | POST | `/console/sync-teams` | Équivalent de `/admin/nba/sync-teams`, avec attribution de l'admin qui déclenche. |
 | POST | `/console/sync-games?daysAhead=&startDate=` | Équivalent de `/admin/nba/sync-games`. |
 | POST | `/console/resolve-bets` | Équivalent de `/admin/bets/resolve`. |
+| POST | `/console/sync-rosters` | Resynchronise les effectifs des 30 équipes depuis ESPN (normalement quotidien, cron 6h00). |
+| POST | `/console/sync-standings` | Resynchronise le classement officiel + logos depuis ESPN (normalement quotidien, cron 6h05). |
+| POST | `/console/sync-player-stats-batch` | Avance manuellement un lot (8 joueurs) de synchro des moyennes saison ESPN — le lot complet (~550 joueurs) tourne autrement en tâche de fond au fil des tick du scheduler principal. |
 | GET | `/console/users?search=` | Liste/recherche des utilisateurs (pseudo ou email), 50 résultats max, plus récents d'abord. |
 | POST | `/console/users/{id}/toggle-admin` | Bascule le statut admin d'un utilisateur. `400` si `id` = l'admin qui appelle (pas d'auto-rétrogradation ici). Rétrograder un *autre* admin reste possible — volontairement non restreint, voir [CLAUDE.md](../CLAUDE.md). |
 | POST | `/console/users/{id}/delete` | Supprime définitivement un compte (réutilise `AccountDeletionService`). `400` si `id` = l'admin qui appelle (passer par `/auth/delete-account`). |
