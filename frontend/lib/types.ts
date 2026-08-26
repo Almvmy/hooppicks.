@@ -56,6 +56,7 @@ export interface Team {
   abbreviation: string;
   conference: Conference;
   division: string;
+  logoUrl: string | null;
 }
 
 export interface TeamRank {
@@ -66,6 +67,14 @@ export interface TeamRank {
   division: string;
   rank: number;
   eloRating: number;
+  // Classement officiel (ESPN) — distinct de l'Elo, pas encore synchronisé
+  // pour toutes les équipes tant que EspnStandingsService n'a pas tourné.
+  wins: number | null;
+  losses: number | null;
+  streak: string | null;
+  conferenceSeed: number | null;
+  gamesBehind: string | null;
+  logoUrl: string | null;
 }
 
 export interface Match {
@@ -79,6 +88,51 @@ export interface Match {
   odds: MatchOdds;
 }
 
+export interface RosterPlayer {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  position: string | null;
+  jersey: string | null;
+  height: string | null; // ex: "6' 5\""
+  weight: string | null; // ex: "184 lbs"
+  headshotUrl: string | null;
+  team: Team | null;
+  injuryStatus: string | null; // ex: "Day-To-Day", "Out" — null si pas blessé
+  // Moyennes saison (ESPN) — null tant que EspnPlayerStatsService n'a pas
+  // encore traité ce joueur (synchro par petits lots, voir le backend).
+  statsSeasonLabel: string | null;
+  gamesPlayed: number | null;
+  gamesStarted: number | null;
+  minutesPerGame: number | null;
+  pointsPerGame: number | null;
+  reboundsPerGame: number | null;
+  assistsPerGame: number | null;
+  stealsPerGame: number | null;
+  blocksPerGame: number | null;
+  turnoversPerGame: number | null;
+  fieldGoalPct: number | null;
+  threePointPct: number | null;
+  freeThrowPct: number | null;
+}
+
+export interface PlayerBoxScore {
+  playerName: string;
+  teamAbbreviation: string;
+  starter: boolean;
+  minutes: string;
+  points: number;
+  rebounds: number;
+  assists: number;
+  steals: number;
+  blocks: number;
+  turnovers: number;
+  plusMinus: number;
+  fieldGoals: string; // "9-24"
+  threePoints: string;
+  freeThrows: string;
+}
+
 export interface MatchOdds {
   moneylineHome: number;
   moneylineAway: number;
@@ -90,15 +144,6 @@ export interface MatchOdds {
   totalOddsUnder: number;
 }
 
-export interface Player {
-  id: string;
-  firstName: string;
-  lastName: string;
-  position: string | null;
-  height: string | null; // format brut balldontlie, ex: "6-6" (pieds-pouces)
-  weight: string | null; // en livres
-  team: Team | null;
-}
 
 export type BetMarket = "moneyline" | "spread" | "total";
 export type BetOutcome = "home" | "away" | "over" | "under";

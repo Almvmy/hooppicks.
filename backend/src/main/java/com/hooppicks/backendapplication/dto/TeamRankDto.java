@@ -7,5 +7,11 @@ public record TeamRankDto(
         String conference,
         String division,
         int rank,
-        int eloRating
+        int eloRating,
+        Integer wins,
+        Integer losses,
+        String streak,
+        Integer conferenceSeed,
+        String gamesBehind,
+        String logoUrl
 ) {}

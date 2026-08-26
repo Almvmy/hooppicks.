@@ -2,6 +2,9 @@ package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.bet.BetResolutionService;
 import com.hooppicks.backendapplication.dto.AdminUpdateMatchRequest;
+import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
+import com.hooppicks.backendapplication.espn.EspnRosterService;
+import com.hooppicks.backendapplication.espn.EspnStandingsService;
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.entity.MatchStatus;
 import com.hooppicks.backendapplication.entity.Team;
@@ -48,13 +51,20 @@ class AdminConsoleControllerTest {
     private AdminSyncStatus adminSyncStatus;
     @Mock
     private AccountDeletionService accountDeletionService;
+    @Mock
+    private EspnRosterService espnRosterService;
+    @Mock
+    private EspnStandingsService espnStandingsService;
+    @Mock
+    private EspnPlayerStatsService espnPlayerStatsService;
 
     private AdminConsoleController controller;
 
     @BeforeEach
     void setUp() {
         controller = new AdminConsoleController(sessionStore, userRepository, matchRepository, betRepository,
-                nbaSyncService, betResolutionService, adminSyncStatus, accountDeletionService);
+                nbaSyncService, betResolutionService, adminSyncStatus, accountDeletionService, espnRosterService,
+                espnStandingsService, espnPlayerStatsService);
     }
 
     private HttpServletRequest adminRequest(String adminId) {

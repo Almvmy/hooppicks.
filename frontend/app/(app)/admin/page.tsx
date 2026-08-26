@@ -20,7 +20,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { fetchProfile } from "@/lib/api/auth";
-import { fetchAdminStatus, resolveBets, syncGames, syncTeams } from "@/lib/api/admin";
+import {
+  fetchAdminStatus,
+  resolveBets,
+  syncGames,
+  syncPlayerStatsBatch,
+  syncRosters,
+  syncStandings,
+  syncTeams,
+} from "@/lib/api/admin";
 import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
 import { AdminMatchesPanel } from "@/components/admin/admin-matches-panel";
 import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-panel";
@@ -73,6 +81,33 @@ export default function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-pending-bets"] });
     },
     onError: () => toast.error("Échec de la résolution des paris."),
+  });
+
+  const syncRostersMutation = useMutation({
+    mutationFn: syncRosters,
+    onSuccess: () => {
+      toast.success("Effectifs synchronisés.");
+      queryClient.invalidateQueries({ queryKey: ["team-roster"] });
+    },
+    onError: () => toast.error("Échec de la synchro des effectifs."),
+  });
+
+  const syncStandingsMutation = useMutation({
+    mutationFn: syncStandings,
+    onSuccess: () => {
+      toast.success("Classement synchronisé.");
+      queryClient.invalidateQueries({ queryKey: ["teams", "rankings"] });
+    },
+    onError: () => toast.error("Échec de la synchro du classement."),
+  });
+
+  const syncPlayerStatsMutation = useMutation({
+    mutationFn: syncPlayerStatsBatch,
+    onSuccess: () => {
+      toast.success("Lot de stats joueurs synchronisé.");
+      queryClient.invalidateQueries({ queryKey: ["team-roster"] });
+    },
+    onError: () => toast.error("Échec de la synchro des stats joueurs."),
   });
 
   const [confirmResolve, setConfirmResolve] = useState(false);
@@ -167,6 +202,33 @@ export default function AdminPage() {
             >
               <RefreshCw className="h-4 w-4" />
               Synchroniser les équipes
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => syncRostersMutation.mutate()}
+              disabled={syncRostersMutation.isPending}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Synchroniser les effectifs (ESPN)
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => syncStandingsMutation.mutate()}
+              disabled={syncStandingsMutation.isPending}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Synchroniser le classement (ESPN)
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => syncPlayerStatsMutation.mutate()}
+              disabled={syncPlayerStatsMutation.isPending}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Avancer un lot de stats joueurs (ESPN)
             </Button>
           </CardContent>
         </Card>

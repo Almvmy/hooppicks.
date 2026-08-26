@@ -1,6 +1,9 @@
 package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.bet.BetResolutionService;
+import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
+import com.hooppicks.backendapplication.espn.EspnRosterService;
+import com.hooppicks.backendapplication.espn.EspnStandingsService;
 import com.hooppicks.backendapplication.dto.AdminBetDto;
 import com.hooppicks.backendapplication.dto.AdminStatusDto;
 import com.hooppicks.backendapplication.dto.AdminUpdateMatchRequest;
@@ -45,11 +48,16 @@ public class AdminConsoleController {
     private final BetResolutionService betResolutionService;
     private final AdminSyncStatus adminSyncStatus;
     private final AccountDeletionService accountDeletionService;
+    private final EspnRosterService espnRosterService;
+    private final EspnStandingsService espnStandingsService;
+    private final EspnPlayerStatsService espnPlayerStatsService;
 
     public AdminConsoleController(SessionStore sessionStore, UserRepository userRepository,
                                    MatchRepository matchRepository, BetRepository betRepository,
                                    NbaSyncService nbaSyncService, BetResolutionService betResolutionService,
-                                   AdminSyncStatus adminSyncStatus, AccountDeletionService accountDeletionService) {
+                                   AdminSyncStatus adminSyncStatus, AccountDeletionService accountDeletionService,
+                                   EspnRosterService espnRosterService, EspnStandingsService espnStandingsService,
+                                   EspnPlayerStatsService espnPlayerStatsService) {
         this.sessionStore = sessionStore;
         this.userRepository = userRepository;
         this.matchRepository = matchRepository;
@@ -58,6 +66,9 @@ public class AdminConsoleController {
         this.betResolutionService = betResolutionService;
         this.adminSyncStatus = adminSyncStatus;
         this.accountDeletionService = accountDeletionService;
+        this.espnRosterService = espnRosterService;
+        this.espnStandingsService = espnStandingsService;
+        this.espnPlayerStatsService = espnPlayerStatsService;
     }
 
     @GetMapping("/status")
@@ -107,6 +118,38 @@ public class AdminConsoleController {
         if (denied != null) return denied;
 
         return ResponseEntity.ok(Map.of("resolved", betResolutionService.resolvePendingBets()));
+    }
+
+    @PostMapping("/sync-rosters")
+    public ResponseEntity<?> syncRosters(HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        espnRosterService.syncRosters();
+        return ResponseEntity.ok(Map.of("synced", true));
+    }
+
+    @PostMapping("/sync-standings")
+    public ResponseEntity<?> syncStandings(HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        espnStandingsService.syncStandings();
+        return ResponseEntity.ok(Map.of("synced", true));
+    }
+
+    // Ne traite qu'un lot (cf. EspnPlayerStatsService) — ~550 joueurs au
+    // total, un bouton "tout synchroniser maintenant" bloquerait la requête
+    // pendant des minutes. Le rafraîchissement complet se fait en tâche de
+    // fond au fil des tick du scheduler ; ce bouton sert juste à avancer
+    // manuellement un lot pour tester/accélérer sans attendre.
+    @PostMapping("/sync-player-stats-batch")
+    public ResponseEntity<?> syncPlayerStatsBatch(HttpServletRequest request) {
+        ResponseEntity<?> denied = requireAdmin(request);
+        if (denied != null) return denied;
+
+        espnPlayerStatsService.syncBatch();
+        return ResponseEntity.ok(Map.of("synced", true));
     }
 
     // --- Utilisateurs -------------------------------------------------

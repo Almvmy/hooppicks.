@@ -1,8 +1,11 @@
 package com.hooppicks.backendapplication.nba;
 
+import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
+import com.hooppicks.backendapplication.espn.EspnStatsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -10,13 +13,20 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.LongStream;
 
+// Désactivable (nba.sync.scheduler-enabled=false) : les tests avec contexte
+// Spring complet (@SpringBootTest) déclenchaient sinon ce scheduler pour de
+// vrai au démarrage, avec de vrais appels réseau (balldontlie + ESPN) —
+// lent et fragile en test, voir application-test.properties.
 @Component
+@ConditionalOnProperty(prefix = "nba.sync", name = "scheduler-enabled", havingValue = "true", matchIfMissing = true)
 public class NbaSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(NbaSyncScheduler.class);
 
     private final NbaSyncService nbaSyncService;
     private final AdminSyncStatus adminSyncStatus;
+    private final EspnStatsService espnStatsService;
+    private final EspnPlayerStatsService espnPlayerStatsService;
 
     @Value("${nba.sync.use-fixed-window:false}")
     private boolean useFixedWindow;
@@ -27,9 +37,12 @@ public class NbaSyncScheduler {
     @Value("${nba.sync.window-days:10}")
     private int windowDays;
 
-    public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus) {
+    public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus,
+                             EspnStatsService espnStatsService, EspnPlayerStatsService espnPlayerStatsService) {
         this.nbaSyncService = nbaSyncService;
         this.adminSyncStatus = adminSyncStatus;
+        this.espnStatsService = espnStatsService;
+        this.espnPlayerStatsService = espnPlayerStatsService;
     }
 
     @Scheduled(fixedRate = 5 * 60 * 1000) // toutes les 5 minutes
@@ -52,5 +65,10 @@ public class NbaSyncScheduler {
         adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
         log.info("{} match(s) synchronisé(s), {} pari(s) résolu(s) (fenêtre {})",
                 result.gamesSynced(), result.betsResolved(), mode);
+
+        // Après la synchro balldontlie, pas dedans : voir EspnStatsService
+        // pour pourquoi ce doit être un traitement séparé et borné.
+        espnStatsService.syncEspnData();
+        espnPlayerStatsService.syncBatch();
     }
 }

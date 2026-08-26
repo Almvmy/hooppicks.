@@ -8,8 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { TeamRoster } from "@/components/team-roster";
+import { MatchBoxScore } from "@/components/match-box-score";
+import { TeamLogo } from "@/components/team-logo";
 import { fetchMatchById } from "@/lib/api/matches";
-import { getTeamColor } from "@/lib/team-colors";
 
 export default function MatchDetailPage({
   params,
@@ -51,11 +52,7 @@ export default function MatchDetailPage({
 
             <div className="flex w-full items-center justify-around">
               <div className="flex flex-col items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-2.5 w-8 rounded-full"
-                  style={{ backgroundColor: getTeamColor(match.awayTeam.abbreviation) }}
-                />
+                <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={44} />
                 <span className="font-heading text-lg font-bold">
                   {match.awayTeam.name}
                 </span>
@@ -72,11 +69,7 @@ export default function MatchDetailPage({
               <span className="text-muted-foreground">@</span>
 
               <div className="flex flex-col items-center gap-2">
-                <span
-                  aria-hidden
-                  className="h-2.5 w-8 rounded-full"
-                  style={{ backgroundColor: getTeamColor(match.homeTeam.abbreviation) }}
-                />
+                <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={44} />
                 <span className="font-heading text-lg font-bold">
                   {match.homeTeam.name}
                 </span>
@@ -104,7 +97,22 @@ export default function MatchDetailPage({
         </Card>
       )}
 
-      {match && (
+      {match && match.status === "finished" && (
+        <Card>
+          <CardContent className="pt-6">
+            <h2 className="mb-4 font-heading text-base font-bold">Feuille de match</h2>
+            <MatchBoxScore
+              matchId={match.id}
+              homeTeamName={match.homeTeam.name}
+              homeTeamAbbr={match.homeTeam.abbreviation}
+              awayTeamName={match.awayTeam.name}
+              awayTeamAbbr={match.awayTeam.abbreviation}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {match && match.status !== "finished" && (
         <Card>
           <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
             <TeamRoster teamId={match.awayTeam.id} teamName={match.awayTeam.name} />

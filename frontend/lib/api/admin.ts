@@ -56,3 +56,15 @@ export async function syncGames(
 export async function resolveBets(): Promise<{ resolved: number }> {
   return apiFetch("/console/resolve-bets", { method: "POST" });
 }
+
+export async function syncRosters(): Promise<{ synced: boolean }> {
+  return apiFetch("/console/sync-rosters", { method: "POST" });
+}
+
+export async function syncStandings(): Promise<{ synced: boolean }> {
+  return apiFetch("/console/sync-standings", { method: "POST" });
+}
+
+export async function syncPlayerStatsBatch(): Promise<{ synced: boolean }> {
+  return apiFetch("/console/sync-player-stats-batch", { method: "POST" });
+}

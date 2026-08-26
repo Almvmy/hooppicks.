@@ -5,7 +5,7 @@ import { MatchStatusBadge } from "@/components/match-status-badge";
 import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { isRivalryMatchup } from "@/lib/rivalries";
-import { getTeamColor } from "@/lib/team-colors";
+import { TeamLogo } from "@/components/team-logo";
 import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
@@ -34,11 +34,7 @@ export function MatchCard({ match }: { match: Match }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between text-sm">
               <span className="flex min-w-0 items-center gap-2 font-medium">
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: getTeamColor(match.awayTeam.abbreviation) }}
-                />
+                <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={20} />
                 <span className="truncate">{match.awayTeam.name}</span>
               </span>
               {match.status !== "scheduled" && (
@@ -47,11 +43,7 @@ export function MatchCard({ match }: { match: Match }) {
             </div>
             <div className="mt-1 flex items-center justify-between text-sm">
               <span className="flex min-w-0 items-center gap-2 font-medium">
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: getTeamColor(match.homeTeam.abbreviation) }}
-                />
+                <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={20} />
                 <span className="truncate">{match.homeTeam.name}</span>
               </span>
               {match.status !== "scheduled" && (

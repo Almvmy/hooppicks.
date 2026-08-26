@@ -197,15 +197,15 @@ public class NbaSyncService {
     }
 
     /**
-     * Recherche des joueurs chez balldontlie et met en cache le résultat en
-     * base — appelée uniquement en cas de "cache miss" côté PlayerController,
-     * jamais en boucle sur toutes les équipes (c'est justement l'ancienne
-     * approche, par team_ids[], qui tronquait silencieusement les effectifs
-     * de plus de 100 joueurs et faisait rater des joueurs comme Ja Morant).
-     *
-     * Protégée par NbaRateLimiter : si le quota est déjà consommé pour cette
-     * minute, renvoie une liste vide plutôt que de risquer un 429 — l'appelant
-     * retombe alors sur ce qu'il avait déjà en cache local.
+     * Filet de secours pour PlayerController : n'est appelée que si la
+     * recherche dans RosterPlayer (effectifs ESPN, cf. EspnRosterService)
+     * ne renvoie rien — soit parce que le joueur n'y est vraiment pas, soit
+     * parce qu'ESPN nous bloque de nouveau (Akamai) et que la synchro
+     * n'a jamais tourné. Dans ce cas on retombe sur balldontlie en dernier
+     * recours, moins riche (pas de photo, pas de stats) mais qui ne dépend
+     * pas d'ESPN. Protégée par NbaRateLimiter : si le quota gratuit
+     * balldontlie est déjà consommé pour cette minute, renvoie une liste
+     * vide plutôt que de risquer un 429.
      */
     public List<Player> searchAndCachePlayers(String query, String teamId) {
         if (!rateLimiter.tryAcquire()) {

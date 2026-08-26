@@ -34,6 +34,12 @@ public class Match {
     @Column(unique = true)
     private Long externalId;
 
+    // ID de l'event ESPN correspondant (système d'identifiants totalement
+    // différent de balldontlie.io) — résolu par date + sigles d'équipe une
+    // fois le match connu, voir EspnStatsService. Nullable : ESPN n'a pas
+    // forcément indexé le match au moment de la synchro balldontlie.
+    private String espnEventId;
+
     // Cotes fixes, stockées à plat directement sur le match (cf. décision "cotes fixes" prise avec ton ami)
     private double moneylineHome;
     private double moneylineAway;
