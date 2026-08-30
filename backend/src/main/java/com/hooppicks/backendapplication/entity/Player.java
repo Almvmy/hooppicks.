@@ -22,7 +22,9 @@ public class Player {
     private String height;   // ex: "6-6" (pieds-pouces, format brut de l'API)
     private String weight;   // ex: "220" (livres)
 
-    @ManyToOne
+    // LAZY + @BatchSize sur Team (cf. Team.java) : même correctif N+1 que
+    // Match.homeTeam/awayTeam et RosterPlayer.team.
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     private Team team;
 }

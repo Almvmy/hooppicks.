@@ -22,7 +22,9 @@ public class RosterPlayer {
     @Id
     private String id; // id athlète ESPN
 
-    @ManyToOne
+    // LAZY + @BatchSize sur Team (cf. Team.java) : voir le commentaire
+    // équivalent sur Match.homeTeam/awayTeam, même correctif N+1.
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     private Team team;
 

@@ -5,8 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
+// @BatchSize : Team est référencée en LAZY par Match (home/away), RosterPlayer
+// et Player (cf. leurs entités). Sans ça, résoudre N équipes dans la même
+// requête déclenche N SELECT séparés ("SELECT ... FROM team WHERE id = ?"
+// répété) — mesuré en charge : 140k+ requêtes quasi identiques pour une
+// table de 30 lignes qui ne change qu'à la synchro classement/rosters.
+// @BatchSize regroupe les résolutions en attente dans une même session
+// Hibernate en un seul "WHERE id IN (...)", 30 suffit à couvrir toute la
+// ligue en un coup.
 @Entity
+@BatchSize(size = 30)
 @Getter
 @Setter
 @NoArgsConstructor

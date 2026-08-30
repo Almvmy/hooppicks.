@@ -15,11 +15,16 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @ManyToOne
+    // LAZY + @BatchSize sur Team (cf. Team.java) : sans ça, Hibernate charge
+    // homeTeam/awayTeam par un SELECT séparé et immédiat pour chaque match
+    // (comportement par défaut de @ManyToOne), soit jusqu'à 2 requêtes par
+    // match affiché — mesuré en charge : 140k+ requêtes "team" quasi
+    // identiques pour une table de 30 lignes qui ne change qu'à la synchro.
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "home_team_id")
     private Team homeTeam;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "away_team_id")
     private Team awayTeam;
 
