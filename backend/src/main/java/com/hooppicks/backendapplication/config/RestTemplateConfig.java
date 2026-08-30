@@ -11,7 +11,7 @@ public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate() {
         // Sans timeout explicite, un appel externe qui ne répond pas (ESPN,
-        // balldontlie...) peut bloquer le thread appelant indéfiniment —
+        // balldontlie...) peut bloquer le thread appelant indéfiniment :
         // vécu en pratique avec un "Connection timed out" qui prenait
         // plusieurs minutes à se déclencher tout seul.
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

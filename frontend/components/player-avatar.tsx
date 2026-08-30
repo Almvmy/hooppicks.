@@ -41,7 +41,7 @@ interface PlayerAvatarProps {
 /**
  * Avatar "carte joueur" généré entièrement en SVG à partir de choix
  * personnalisables (numéro, poste, palette, style de jeu). Aucune image
- * externe, aucun visage réel — donc aucun souci de droit à l'image ou de
+ * externe, aucun visage réel : donc aucun souci de droit à l'image ou de
  * copyright, contrairement à un catalogue de photos de joueurs NBA.
  */
 export function PlayerAvatar({

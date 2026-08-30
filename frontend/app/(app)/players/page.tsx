@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Shield, Trophy, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
-import { TeamRoster } from "@/components/team-roster";
 import { PlayerCardDialog } from "@/components/player-card-dialog";
 import { TeamLogo } from "@/components/team-logo";
-import { fetchPlayers } from "@/lib/api/players";
+import { fetchPlayerLeaders, fetchPlayers } from "@/lib/api/players";
 import { fetchTeamRankings } from "@/lib/api/teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { cn } from "@/lib/utils";
-import { RosterPlayer, TeamRank } from "@/lib/types";
+import { PlayerLeaders, RosterPlayer, TeamRank } from "@/lib/types";
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -28,12 +28,82 @@ function formatHeight(raw: string | null): string | null {
 
 /**
  * ESPN renvoie déjà "184 lbs" (displayWeight), balldontlie renvoie juste
- * "220" (repli, cf. NbaSyncService.searchAndCachePlayers) — on n'ajoute
+ * "220" (repli, cf. NbaSyncService.searchAndCachePlayers) : on n'ajoute
  * "lbs" que si ce n'est pas déjà là, sinon "184 lbs lbs".
  */
 function formatWeight(raw: string | null): string | null {
   if (!raw) return null;
   return raw.toLowerCase().includes("lbs") ? raw : `${raw} lbs`;
+}
+
+const LEADER_CATEGORIES: { key: keyof PlayerLeaders; label: string; stat: (p: RosterPlayer) => number | null; suffix: string }[] = [
+  { key: "points", label: "Points", stat: (p) => p.pointsPerGame, suffix: "pts" },
+  { key: "rebounds", label: "Rebonds", stat: (p) => p.reboundsPerGame, suffix: "reb" },
+  { key: "assists", label: "Passes", stat: (p) => p.assistsPerGame, suffix: "pd" },
+];
+
+/**
+ * Affiché par défaut sur l'onglet Joueurs avant toute recherche : sinon il
+ * n'y a qu'un champ de saisie vide à l'écran tant qu'on n'a rien tapé.
+ */
+function PlayerLeadersSection({ onSelect }: { onSelect: (player: RosterPlayer) => void }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["players", "leaders"],
+    queryFn: fetchPlayerLeaders,
+    staleTime: 15 * 60 * 1000,
+  });
+
+  if (isLoading) return <BasketballLoader label="Chargement des meneurs..." />;
+  if (isError || !data) return null;
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-3">
+      {LEADER_CATEGORIES.map(({ key, label, stat, suffix }) => (
+        <Card key={key}>
+          <CardContent className="flex flex-col gap-1 pt-6">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Meilleurs : {label}
+            </p>
+            {data[key].length === 0 && (
+              <p className="text-sm text-muted-foreground">Pas encore de stats.</p>
+            )}
+            {data[key].map((player, i) => (
+              <button
+                key={player.id}
+                type="button"
+                onClick={() => onSelect(player)}
+                className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-white/5"
+              >
+                <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">{i + 1}</span>
+                {player.headshotUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={player.headshotUrl}
+                    alt={`${player.firstName} ${player.lastName}`}
+                    className="h-8 w-8 shrink-0 rounded-full bg-white/10 object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="h-8 w-8 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: player.team ? getTeamColor(player.team.abbreviation) : "#6B7280",
+                    }}
+                  />
+                )}
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {player.firstName} {player.lastName}
+                </span>
+                <span className="shrink-0 font-mono text-xs font-bold text-primary">
+                  {stat(player)?.toFixed(1)} {suffix}
+                </span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
 }
 
 function PlayersTab() {
@@ -56,7 +126,7 @@ function PlayersTab() {
     staleTime: 60 * 60 * 1000,
   });
 
-  // Postes réellement présents dans les résultats — balldontlie ne renvoie pas
+  // Postes réellement présents dans les résultats : balldontlie ne renvoie pas
   // toujours PG/SG/SF/PF/C proprement (parfois "G", "G-F"...), donc on
   // construit le filtre à partir de ce qui existe vraiment plutôt que d'une
   // liste figée.
@@ -92,9 +162,13 @@ function PlayersTab() {
       </div>
 
       {!isSearchValid && (
-        <p className="text-sm text-muted-foreground">
-          Tape au moins {MIN_SEARCH_LENGTH} caractères pour lancer la recherche.
-        </p>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Tape au moins {MIN_SEARCH_LENGTH} caractères pour lancer la recherche, ou parcours les meneurs
+            statistiques actuels.
+          </p>
+          <PlayerLeadersSection onSelect={setSelectedPlayer} />
+        </div>
       )}
 
       {isSearchValid && isLoading && <BasketballLoader label="Recherche en cours..." />}
@@ -195,10 +269,11 @@ function PlayersTab() {
 }
 
 type TeamSortMode = "elo" | "official";
+type ConferenceFilter = "Est" | "Ouest" | "Toutes";
 
 function TeamsTab() {
-  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<TeamSortMode>("elo");
+  const [conferenceFilter, setConferenceFilter] = useState<ConferenceFilter>("Est");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["teams", "rankings"],
     queryFn: fetchTeamRankings,
@@ -206,7 +281,7 @@ function TeamsTab() {
   });
 
   // En mode "officiel", le seed n'a de sens que par conférence (deux équipes
-  // de conférences différentes peuvent toutes les deux être "seed #1") — donc
+  // de conférences différentes peuvent toutes les deux être "seed #1") : donc
   // on groupe Est/Ouest plutôt qu'une seule liste mélangée triée par Elo.
   const sortedData = useMemo(() => {
     if (!data) return null;
@@ -256,40 +331,54 @@ function TeamsTab() {
       {isError && <p className="text-destructive">Impossible de charger les équipes.</p>}
 
       {sortedData && sortMode === "official" && (
-        <div className="flex flex-col gap-6">
-          {(["Est", "Ouest"] as const).map((conf) => (
-            <div key={conf} className="flex flex-col gap-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Conférence {conf}
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {sortedData
-                  .filter((team) => team.conference === conf)
-                  .map((team) => (
-                    <TeamCard
-                      key={team.id}
-                      team={team}
-                      badge={team.conferenceSeed !== null ? `#${team.conferenceSeed}` : "—"}
-                      isExpanded={expandedTeamId === team.id}
-                      onToggle={() => setExpandedTeamId(expandedTeamId === team.id ? null : team.id)}
-                    />
-                  ))}
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-2">
+            {(["Est", "Ouest", "Toutes"] as const).map((conf) => (
+              <button key={conf} type="button" onClick={() => setConferenceFilter(conf)}>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "cursor-pointer border-transparent px-3 py-1.5 transition-colors",
+                    conferenceFilter === conf ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {conf}
+                </Badge>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-6">
+            {(["Est", "Ouest"] as const)
+              .filter((conf) => conferenceFilter === "Toutes" || conferenceFilter === conf)
+              .map((conf) => (
+                <div key={conf} className="flex flex-col gap-3">
+                  {conferenceFilter === "Toutes" && (
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Conférence {conf}
+                    </p>
+                  )}
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {sortedData
+                      .filter((team) => team.conference === conf)
+                      .map((team) => (
+                        <TeamCard
+                          key={team.id}
+                          team={team}
+                          badge={team.conferenceSeed !== null ? `#${team.conferenceSeed}` : "-"}
+                        />
+                      ))}
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       )}
 
       {sortedData && sortMode === "elo" && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {sortedData.map((team) => (
-            <TeamCard
-              key={team.id}
-              team={team}
-              badge={`#${team.rank}`}
-              isExpanded={expandedTeamId === team.id}
-              onToggle={() => setExpandedTeamId(expandedTeamId === team.id ? null : team.id)}
-            />
+            <TeamCard key={team.id} team={team} badge={`#${team.rank}`} />
           ))}
         </div>
       )}
@@ -297,21 +386,11 @@ function TeamsTab() {
   );
 }
 
-function TeamCard({
-  team,
-  badge,
-  isExpanded,
-  onToggle,
-}: {
-  team: TeamRank;
-  badge: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
+function TeamCard({ team, badge }: { team: TeamRank; badge: string }) {
   return (
-    <Card>
-      <CardContent className="flex flex-col gap-3 pt-6">
-        <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 text-left">
+    <Link href={`/teams/${team.id}`}>
+      <Card className="transition-colors hover:bg-white/5">
+        <CardContent className="flex items-center gap-3 pt-6">
           <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={36} />
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{team.name}</p>
@@ -329,15 +408,9 @@ function TeamCard({
           <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary">
             {badge}
           </span>
-        </button>
-
-        {isExpanded && (
-          <div className="border-t border-border pt-3">
-            <TeamRoster teamId={team.id} teamName={team.name} />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }
 

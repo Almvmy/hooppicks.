@@ -5,7 +5,7 @@ import com.hooppicks.backendapplication.entity.User;
 import java.util.List;
 
 /**
- * Sous-ensemble "sûr à montrer à n'importe qui" de User — jamais l'email,
+ * Sous-ensemble "sûr à montrer à n'importe qui" de User : jamais l'email,
  * jamais isAdmin/notifyXxx. Contrairement à UserProfileDto (réservé au
  * propriétaire du compte via /auth/me).
  */

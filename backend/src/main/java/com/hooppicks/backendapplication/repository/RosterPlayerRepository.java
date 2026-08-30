@@ -13,7 +13,15 @@ public interface RosterPlayerRepository extends JpaRepository<RosterPlayer, Stri
     List<RosterPlayer> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrderByLastNameAsc(
             String firstName, String lastName);
 
-    // Jamais synchronisé (null) en premier, puis le plus ancien synchronisé —
+    // Meneurs statistiques actuels : affichés par défaut sur la page joueurs,
+    // avant toute recherche (cf. PlayerController.leaders).
+    List<RosterPlayer> findTop5ByPointsPerGameIsNotNullOrderByPointsPerGameDesc();
+
+    List<RosterPlayer> findTop5ByReboundsPerGameIsNotNullOrderByReboundsPerGameDesc();
+
+    List<RosterPlayer> findTop5ByAssistsPerGameIsNotNullOrderByAssistsPerGameDesc();
+
+    // Jamais synchronisé (null) en premier, puis le plus ancien synchronisé :
     // fait tourner un rafraîchissement continu sur l'ensemble de l'effectif
     // au fil des passages du batch (cf. EspnPlayerStatsService).
     @Query("SELECT r FROM RosterPlayer r ORDER BY r.statsUpdatedAt ASC NULLS FIRST")

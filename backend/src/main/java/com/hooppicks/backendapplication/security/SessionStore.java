@@ -40,7 +40,7 @@ public class SessionStore {
     }
 
     /**
-     * Invalide toutes les sessions actives d'un utilisateur — utilisé après un
+     * Invalide toutes les sessions actives d'un utilisateur : utilisé après un
      * changement de mot de passe (reset), pour ne pas laisser valide une session
      * déjà ouverte par quelqu'un d'autre si le compte a été compromis.
      */

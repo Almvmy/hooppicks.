@@ -29,7 +29,7 @@ export function FavoriteTeamPicker({ currentTeam }: { currentTeam: string }) {
         onChange={(e) => setTeam(e.target.value)}
         className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
       >
-        <option value="">— Aucune —</option>
+        <option value="">- Aucune -</option>
         {NBA_TEAM_NAMES.map((name) => (
           <option key={name} value={name} className="bg-background">
             {name}

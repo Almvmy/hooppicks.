@@ -51,7 +51,7 @@ export function Topbar() {
       </Link>
 
       {/* Centré sur toute la largeur de la barre (pas juste dans l'espace
-          restant entre logo et actions) — sinon le titre penche visuellement
+          restant entre logo et actions) : sinon le titre penche visuellement
           vers la gauche dès que le logo prend de la place. Caché sur mobile
           où la topbar est déjà pleine. */}
       {pageTitle && (

@@ -27,7 +27,7 @@ export function DashboardStats({ items }: { items: StatItem[] }) {
                 <Skeleton className="mt-2 h-7 w-20" />
               ) : (
                 <p className="mt-1 font-heading text-2xl font-bold">
-                  {item.value ?? "—"}
+                  {item.value ?? "-"}
                 </p>
               )}
               {!item.isLoading && item.hint && (

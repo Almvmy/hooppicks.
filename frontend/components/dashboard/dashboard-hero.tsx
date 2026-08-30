@@ -20,11 +20,16 @@ function subtitleFor(streak: number, pendingCount: number): string {
   if (pendingCount > 0) {
     return `${pendingCount} ticket${pendingCount > 1 ? "s" : ""} en attente de résultat.`;
   }
-  if (streak >= 3) {
+  if (streak >= 5) {
     return `${streak} pronostics gagnés d'affilée. Reste chaud.`;
   }
+  if (streak >= 3) {
+    // Badge "Sur un nuage" débloqué à 5 (cf. BadgeService côté backend) :
+    // signaler la proximité incite à revenir parier plutôt que de s'arrêter.
+    return `${streak} pronostics gagnés d'affilée, encore ${5 - streak} pour "Sur un nuage".`;
+  }
   if (streak > 0) {
-    return `${streak} pronostic${streak > 1 ? "s" : ""} gagné${streak > 1 ? "s" : ""} d'affilée.`;
+    return `${streak} pronostic${streak > 1 ? "s" : ""} gagné${streak > 1 ? "s" : ""} d'affilée, encore ${3 - streak} pour "Main chaude".`;
   }
   return "Prêt à lancer un nouveau pronostic ?";
 }

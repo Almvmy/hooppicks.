@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { AlertTriangle, Swords } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { isRivalryMatchup } from "@/lib/rivalries";
 import { TeamLogo } from "@/components/team-logo";
-import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
+import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
   const date = new Date(match.date);
   const isRivalry = isRivalryMatchup(match.homeTeam.abbreviation, match.awayTeam.abbreviation);
+  const countdown = match.status === "scheduled" ? formatKickoffCountdown(match.date) : null;
 
   return (
     <Link href={`/matches/${match.id}`}>
@@ -36,6 +37,15 @@ export function MatchCard({ match }: { match: Match }) {
               <span className="flex min-w-0 items-center gap-2 font-medium">
                 <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={20} />
                 <span className="truncate">{match.awayTeam.name}</span>
+                {!!match.awayTeam.outPlayersCount && (
+                  <span
+                    className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-amber-500"
+                    title={`${match.awayTeam.outPlayersCount} joueur(s) indisponible(s) (Out)`}
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    {match.awayTeam.outPlayersCount}
+                  </span>
+                )}
               </span>
               {match.status !== "scheduled" && (
                 <span className="font-mono font-bold">{match.awayScore}</span>
@@ -45,6 +55,15 @@ export function MatchCard({ match }: { match: Match }) {
               <span className="flex min-w-0 items-center gap-2 font-medium">
                 <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={20} />
                 <span className="truncate">{match.homeTeam.name}</span>
+                {!!match.homeTeam.outPlayersCount && (
+                  <span
+                    className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-amber-500"
+                    title={`${match.homeTeam.outPlayersCount} joueur(s) indisponible(s) (Out)`}
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    {match.homeTeam.outPlayersCount}
+                  </span>
+                )}
               </span>
               {match.status !== "scheduled" && (
                 <span className="font-mono font-bold">{match.homeScore}</span>
@@ -59,6 +78,11 @@ export function MatchCard({ match }: { match: Match }) {
               {" · "}
               {formatMatchTime(date)}
             </span>
+            {countdown && (
+              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-500">
+                {countdown}
+              </span>
+            )}
           </div>
         </CardContent>
         <div className="px-6 pb-4">

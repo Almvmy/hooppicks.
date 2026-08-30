@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Halo lumineux orange — le seul endroit où la marque s'autorise du
+ * Halo lumineux orange : le seul endroit où la marque s'autorise du
  * brillant (cf. doc de marque, section système visuel). Purement
  * décoratif, à positionner en absolute derrière un élément clé.
  */

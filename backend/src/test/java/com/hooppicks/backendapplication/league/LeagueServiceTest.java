@@ -1,9 +1,15 @@
 package com.hooppicks.backendapplication.league;
 
+import com.hooppicks.backendapplication.dto.LeagueActivityDto;
 import com.hooppicks.backendapplication.dto.LeagueDto;
+import com.hooppicks.backendapplication.entity.ActivityReaction;
+import com.hooppicks.backendapplication.entity.Bet;
+import com.hooppicks.backendapplication.entity.BetSelection;
+import com.hooppicks.backendapplication.entity.BetStatus;
 import com.hooppicks.backendapplication.entity.League;
 import com.hooppicks.backendapplication.entity.LeagueMembership;
 import com.hooppicks.backendapplication.entity.User;
+import com.hooppicks.backendapplication.repository.ActivityReactionRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.LeagueMembershipRepository;
 import com.hooppicks.backendapplication.repository.LeagueRepository;
@@ -24,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,13 +46,15 @@ class LeagueServiceTest {
     private BetRepository betRepository;
     @Mock
     private NotificationRepository notificationRepository;
+    @Mock
+    private ActivityReactionRepository activityReactionRepository;
 
     private LeagueService leagueService;
 
     @BeforeEach
     void setUp() {
         leagueService = new LeagueService(leagueRepository, membershipRepository, userRepository, betRepository,
-                notificationRepository);
+                notificationRepository, activityReactionRepository);
     }
 
     @Test
@@ -225,5 +234,116 @@ class LeagueServiceTest {
         User user = new User();
         user.setId(id);
         return user;
+    }
+
+    @Test
+    void le_fil_d_activite_affiche_les_paris_en_cours_pas_seulement_les_gains() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of());
+
+        User bettor = userWithId("user-2");
+        bettor.setUsername("Marc");
+        Bet pending = new Bet();
+        pending.setId("bet-1");
+        pending.setUser(bettor);
+        pending.setStake(150);
+        pending.setStatus(BetStatus.PENDING);
+        pending.setPlacedAt(Instant.now());
+        BetSelection selection = new BetSelection();
+        selection.setLabel("Knicks (V)");
+        pending.setSelections(List.of(selection));
+
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(any(), eq(BetStatus.PENDING)))
+                .thenReturn(List.of(pending));
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByResolvedAtDesc(any(), eq(BetStatus.WON)))
+                .thenReturn(List.of());
+        when(activityReactionRepository.findByTargetTypeInAndTargetIdIn(any(), any())).thenReturn(List.of());
+
+        List<LeagueActivityDto> activity = leagueService.getRecentActivity("league-1", "user-1");
+
+        assertThat(activity).hasSize(1);
+        assertThat(activity.get(0).message()).isEqualTo("a misé 150 pts sur Knicks (V)");
+        assertThat(activity.get(0).targetType()).isEqualTo("BET");
+        assertThat(activity.get(0).targetId()).isEqualTo("bet-1");
+    }
+
+    @Test
+    void un_pari_gagne_sans_resolvedAt_ne_plante_pas_le_fil_et_retombe_sur_placedAt() {
+        // Régression : des paris WON existants n'ont pas tous resolvedAt
+        // renseigné (résolution manuelle ancienne côté admin) : le tri du fil
+        // plantait dessus avec une NullPointerException plutôt que d'afficher
+        // l'item avec une date de repli.
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of());
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(any(), eq(BetStatus.PENDING)))
+                .thenReturn(List.of());
+
+        User bettor = userWithId("user-2");
+        bettor.setUsername("Marc");
+        Bet wonWithoutResolvedAt = new Bet();
+        wonWithoutResolvedAt.setId("bet-2");
+        wonWithoutResolvedAt.setUser(bettor);
+        wonWithoutResolvedAt.setPotentialPayout(300);
+        wonWithoutResolvedAt.setStatus(BetStatus.WON);
+        wonWithoutResolvedAt.setPlacedAt(Instant.parse("2026-07-30T10:00:00Z"));
+        wonWithoutResolvedAt.setResolvedAt(null);
+
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByResolvedAtDesc(any(), eq(BetStatus.WON)))
+                .thenReturn(List.of(wonWithoutResolvedAt));
+        when(activityReactionRepository.findByTargetTypeInAndTargetIdIn(any(), any())).thenReturn(List.of());
+
+        List<LeagueActivityDto> activity = leagueService.getRecentActivity("league-1", "user-1");
+
+        assertThat(activity).hasSize(1);
+        assertThat(activity.get(0).occurredAt()).isEqualTo(Instant.parse("2026-07-30T10:00:00Z"));
+    }
+
+    @Test
+    void reagir_une_premiere_fois_cree_la_reaction() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_IdAndEmoji("BET", "bet-1", "user-1", "🔥"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(userWithId("user-1")));
+
+        leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "🔥");
+
+        verify(activityReactionRepository).save(any(ActivityReaction.class));
+        verify(activityReactionRepository, never()).delete(any());
+    }
+
+    @Test
+    void reagir_une_deuxieme_fois_avec_le_meme_emoji_retire_la_reaction() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        ActivityReaction existing = new ActivityReaction();
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_IdAndEmoji("BET", "bet-1", "user-1", "🔥"))
+                .thenReturn(Optional.of(existing));
+
+        leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "🔥");
+
+        verify(activityReactionRepository).delete(existing);
+        verify(activityReactionRepository, never()).save(any());
+    }
+
+    @Test
+    void un_emoji_hors_liste_est_refuse() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+
+        assertThatThrownBy(() -> leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "💩"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(activityReactionRepository);
+    }
+
+    @Test
+    void reagir_est_refuse_a_qui_n_est_pas_membre_de_la_ligue() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "intrus")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> leagueService.toggleReaction("league-1", "intrus", "BET", "bet-1", "🔥"))
+                .isInstanceOf(IllegalStateException.class);
+        verifyNoInteractions(activityReactionRepository);
     }
 }

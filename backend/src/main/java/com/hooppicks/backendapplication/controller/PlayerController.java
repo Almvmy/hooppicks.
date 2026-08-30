@@ -1,10 +1,14 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.dto.PlayerLeadersDto;
+import com.hooppicks.backendapplication.dto.PlayerRecentGameDto;
 import com.hooppicks.backendapplication.dto.RosterPlayerDto;
 import com.hooppicks.backendapplication.entity.RosterPlayer;
+import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import com.hooppicks.backendapplication.nba.NbaSyncService;
 import com.hooppicks.backendapplication.repository.RosterPlayerRepository;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +20,7 @@ import java.util.List;
  * pour consulter des infos joueurs, ce n'est pas une donnée sensible.
  *
  * Cherche d'abord dans RosterPlayer (effectifs actuels, synchronisés depuis
- * ESPN — cf. EspnRosterService) : contrairement à l'ancienne version qui
+ * ESPN : cf. EspnRosterService) : contrairement à l'ancienne version qui
  * cherchait chez balldontlie, dont le free tier ne distingue pas les joueurs
  * actifs des retraités (une recherche "LeBron" y remontait des homonymes
  * vieux de plusieurs décennies), RosterPlayer ne contient que l'effectif du
@@ -27,7 +31,7 @@ import java.util.List;
  * (Akamai) et la synchro n'a jamais tourné, mieux vaut un résultat incomplet
  * (balldontlie n'a ni photo ni stats saison) qu'une recherche qui ne renvoie
  * jamais rien tant qu'ESPN est indisponible. Important : ce n'est PAS "cette
- * recherche précise n'a rien trouvé" qui déclenche le repli — sinon chercher
+ * recherche précise n'a rien trouvé" qui déclenche le repli : sinon chercher
  * un joueur retraité redonnerait exactement le bug qu'on corrige ici. Le
  * signal, c'est l'absence totale de données ESPN, vérifié une fois via
  * count() plutôt qu'à chaque recherche sans résultat.
@@ -40,10 +44,13 @@ public class PlayerController {
 
     private final RosterPlayerRepository rosterPlayerRepository;
     private final NbaSyncService nbaSyncService;
+    private final EspnStatsClient espnStatsClient;
 
-    public PlayerController(RosterPlayerRepository rosterPlayerRepository, NbaSyncService nbaSyncService) {
+    public PlayerController(RosterPlayerRepository rosterPlayerRepository, NbaSyncService nbaSyncService,
+                             EspnStatsClient espnStatsClient) {
         this.rosterPlayerRepository = rosterPlayerRepository;
         this.nbaSyncService = nbaSyncService;
+        this.espnStatsClient = espnStatsClient;
     }
 
     @GetMapping
@@ -56,7 +63,7 @@ public class PlayerController {
         }
 
         // RosterPlayer vide = ESPN n'a jamais réussi à synchroniser (Akamai,
-        // panne...), pas juste "cette recherche n'a rien donné" — sinon
+        // panne...), pas juste "cette recherche n'a rien donné" : sinon
         // chercher un joueur retraité retomberait sur balldontlie et
         // réintroduirait le bug qu'on corrige ici.
         if (rosterPlayerRepository.count() == 0) {
@@ -75,5 +82,28 @@ public class PlayerController {
         }
 
         return local.stream().map(RosterPlayerDto::from).toList();
+    }
+
+    // Affiché par défaut sur la page joueurs avant toute recherche : pour
+    // qu'il y ait autre chose à voir qu'un champ de saisie vide.
+    @GetMapping("/leaders")
+    public PlayerLeadersDto leaders() {
+        return new PlayerLeadersDto(
+                rosterPlayerRepository.findTop5ByPointsPerGameIsNotNullOrderByPointsPerGameDesc()
+                        .stream().map(RosterPlayerDto::from).toList(),
+                rosterPlayerRepository.findTop5ByReboundsPerGameIsNotNullOrderByReboundsPerGameDesc()
+                        .stream().map(RosterPlayerDto::from).toList(),
+                rosterPlayerRepository.findTop5ByAssistsPerGameIsNotNullOrderByAssistsPerGameDesc()
+                        .stream().map(RosterPlayerDto::from).toList()
+        );
+    }
+
+    // Appel ESPN en direct, pas de synchro en tâche de fond comme les
+    // moyennes saison : présynchroniser le gamelog des ~550 joueurs de
+    // l'effectif serait disproportionné pour une info consultée seulement
+    // quand on ouvre la fiche d'un joueur précis (cf. PlayerCardDialog).
+    @GetMapping("/{id}/recent-games")
+    public List<PlayerRecentGameDto> recentGames(@PathVariable String id) {
+        return espnStatsClient.fetchRecentGames(id).stream().map(PlayerRecentGameDto::from).toList();
     }
 }

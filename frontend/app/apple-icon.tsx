@@ -17,7 +17,7 @@ export default function AppleIcon() {
         }}
       >
         {/* Pas de cercle : le fond orange plein du tile EST le ballon (iOS
-            arrondit lui-même les coins), coutures + monogramme HP dessus —
+            arrondit lui-même les coins), coutures + monogramme HP dessus :
             même artwork que LogoSymbol/icon.svg. */}
         <svg width="144" height="144" viewBox="0 0 184 184" fill="none">
           <path d="M92,0 V184" stroke="#0B1120" strokeWidth={5} opacity={0.54} />

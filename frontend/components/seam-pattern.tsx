@@ -1,5 +1,5 @@
 /**
- * Filigrane de coutures de ballon — courbes répétées en fond de carte.
+ * Filigrane de coutures de ballon : courbes répétées en fond de carte.
  * Purement décoratif et vectoriel, cf. CourtWatermark.
  */
 export function SeamPattern({ className }: { className?: string }) {

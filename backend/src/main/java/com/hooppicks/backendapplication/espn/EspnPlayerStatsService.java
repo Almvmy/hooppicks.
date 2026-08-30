@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Moyennes saison par joueur — un appel ESPN par joueur (~550 au total),
+ * Moyennes saison par joueur : un appel ESPN par joueur (~550 au total),
  * donc traité par petits lots à chaque tick du scheduler principal
- * (NbaSyncScheduler, seul appelant) plutôt que d'un coup — même précaution
+ * (NbaSyncScheduler, seul appelant) plutôt que d'un coup : même précaution
  * mémoire que EspnStatsService pour les feuilles de match. Pas de @Scheduled
  * ici volontairement : appelé depuis NbaSyncScheduler pour hériter de son
  * garde-fou de test (nba.sync.scheduler-enabled=false), sinon ce lot partirait

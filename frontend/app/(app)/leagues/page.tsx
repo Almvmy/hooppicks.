@@ -28,7 +28,7 @@ export default function LeaguesPage() {
         league,
       ]);
       setName("");
-      toast.success(`Ligue "${league.name}" créée — code ${league.inviteCode}`);
+      toast.success(`Ligue "${league.name}" créée · code ${league.inviteCode}`);
     },
     onError: () => toast.error("Impossible de créer la ligue. Réessaie."),
   });

@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
     try {
       await requestPasswordReset(email);
     } finally {
-      // Toujours le même message, que le compte existe ou non — pas d'énumération.
+      // Toujours le même message, que le compte existe ou non : pas d'énumération.
       setIsSubmitting(false);
       setSubmitted(true);
     }

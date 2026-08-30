@@ -10,7 +10,7 @@ import java.util.Deque;
  * Garde-fou pour ne jamais dépasser le quota gratuit balldontlie
  * (5 req/min), même si plusieurs recherches "cache miss" arrivent en même
  * temps côté utilisateurs. Fenêtre glissante de 60s ; au-delà de la limite,
- * on refuse l'appel externe plutôt que de faire attendre l'utilisateur —
+ * on refuse l'appel externe plutôt que de faire attendre l'utilisateur :
  * l'appelant retombe alors sur le cache local (potentiellement incomplet).
  */
 @Component

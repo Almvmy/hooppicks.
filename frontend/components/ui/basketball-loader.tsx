@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Loader "ballon qui rebondit" pour les états de chargement pleine page —
+ * Loader "ballon qui rebondit" pour les états de chargement pleine page :
  * plus fun que des skeletons génériques pour un site NBA, à réserver aux
  * chargements de listes/pages entières (les skeletons en shimmer restent
  * préférables pour prévisualiser la forme d'un contenu précis).

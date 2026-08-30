@@ -6,7 +6,7 @@ import org.springframework.test.context.TestPropertySource;
 
 // scheduler-enabled=false : sans ça, ce test à contexte Spring complet
 // déclenche pour de vrai NbaSyncScheduler au démarrage (appels réseau
-// balldontlie + ESPN) — lent et fragile, voir NbaSyncScheduler.
+// balldontlie + ESPN) : lent et fragile, voir NbaSyncScheduler.
 @SpringBootTest
 @TestPropertySource(properties = "nba.sync.scheduler-enabled=false")
 class BackendApplicationTests {

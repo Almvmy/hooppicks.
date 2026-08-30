@@ -62,7 +62,13 @@ public class BadgeService {
         return badges;
     }
 
-    private int computeWinStreak(List<Bet> betsOrderedMostRecentFirst) {
+    /**
+     * Série de victoires en cours (0 si le dernier pari résolu est perdu, ou
+     * si aucun pari n'est encore résolu). Exposée à part de computeBadges
+     * pour l'afficher en direct sur le dashboard (cf. AuthController) : un
+     * badge est un simple booléen "débloqué", pas le compteur vivant.
+     */
+    public int computeWinStreak(List<Bet> betsOrderedMostRecentFirst) {
         int streak = 0;
         for (Bet bet : betsOrderedMostRecentFirst) {
             if (bet.getStatus() == BetStatus.PENDING || bet.getStatus() == BetStatus.VOID) {

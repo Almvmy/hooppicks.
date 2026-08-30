@@ -10,15 +10,19 @@ import { cn } from "@/lib/utils";
 import { LogoSymbol } from "@/app/LogoSymbol";
 import { fetchProfile } from "@/lib/api/auth";
 import { NAV_ITEMS } from "@/lib/nav";
+import { BOTTOM_NAV_HREFS } from "@/components/layout/bottom-nav";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
-  const items = profile?.isAdmin
-    ? NAV_ITEMS
-    : NAV_ITEMS.filter((item) => item.href !== "/admin");
+  // Exclut les routes déjà accessibles depuis la bottom nav (Accueil, Matchs,
+  // Mes picks, Classement, Profil) : sinon le menu hamburger les affichait en
+  // double, sous un libellé différent en plus (ex. "Mes paris" ici vs
+  // "Mes picks" dans la bottom nav pour la même route /bets).
+  const items = (profile?.isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/admin"))
+    .filter((item) => !BOTTOM_NAV_HREFS.includes(item.href));
 
   // Ferme le panneau dès que la route change, sans passer par un effet
   // (ajustement d'état pendant le rendu, cf. recommandation React).
@@ -42,7 +46,7 @@ export function MobileNav() {
     <div
       // bg-background backdrop-blur-xl → glass-overlay : le flou est le même,
       // mais le fond est franchement opaque (94 %). Un panneau de navigation
-      // translucide sur une page dense est illisible — ici le verre sert la
+      // translucide sur une page dense est illisible : ici le verre sert la
       // continuité visuelle, pas la transparence.
       className="glass-overlay fixed inset-0 z-[100] flex flex-col"
       role="dialog"

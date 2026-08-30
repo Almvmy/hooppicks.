@@ -241,7 +241,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LIQUID GLASS — à coller à la FIN de app/globals.css
+   LIQUID GLASS : à coller à la FIN de app/globals.css
    (après le bloc @layer base, avant ou après les @keyframes existants)
 
    Aucun token existant n'est modifié. On ajoute :
@@ -252,7 +252,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Fond de scène — plus sombre et moins bleu que --background,
+  /* Fond de scène : plus sombre et moins bleu que --background,
      pour laisser respirer les halos colorés. */
   --field-base: #0A0F1C;
   --field-1: rgba(145, 132, 217, 0.26); /* halo indigo, haut gauche */
@@ -306,10 +306,10 @@
 
 /* ── 2. Les surfaces ─────────────────────────────────────────────────
    .glass         cartes de contenu
-   .glass-chrome  barres fixes (topbar, sidebar) — plus transparent
-   .glass-strong  îles flottantes (bottom nav, bet slip) — plus dense
+   .glass-chrome  barres fixes (topbar, sidebar) : plus transparent
+   .glass-strong  îles flottantes (bottom nav, bet slip) : plus dense
    .glass-inset   petites tuiles pressables (cotes, lignes)
-   .glass-accent  état actif / CTA — l'orange en lumière */
+   .glass-accent  état actif / CTA : l'orange en lumière */
 
 .glass {
   background: var(--glass-tint);
@@ -367,7 +367,7 @@
   border: 0;
 }
 
-/* Hover / pressed — le verre s'éclaire, il ne change pas de couleur. */
+/* Hover / pressed : le verre s'éclaire, il ne change pas de couleur. */
 .glass-inset:hover,
 .glass-inset-quiet:hover {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05));
@@ -446,7 +446,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   LOT 2 — à coller à la suite du bloc liquid glass dans globals.css
+   LOT 2 : à coller à la suite du bloc liquid glass dans globals.css
 
    Trois utilitaires manquants, révélés en traitant les surfaces
    flottantes (menus, panneau mobile) et les tableaux.
@@ -455,7 +455,7 @@
 /* ── .glass-overlay ─────────────────────────────────────────────────
    Pour les couches qui recouvrent TOUT l'écran (panneau de nav mobile,
    modales plein écran). Différence avec .glass-strong : bien plus
-   opaque, parce qu'il faut que le contenu dessous devienne illisible —
+   opaque, parce qu'il faut que le contenu dessous devienne illisible :
    un overlay translucide sur une page dense est un piège
    d'accessibilité, pas un effet. Le flou reste, pour la continuité. */
 .glass-overlay {

@@ -79,7 +79,7 @@ export function WeeklyRecapCard({
             </div>
           </div>
           <div>
-            <div className="font-mono text-xl font-bold">{rank ? `#${rank}` : "—"}</div>
+            <div className="font-mono text-xl font-bold">{rank ? `#${rank}` : "-"}</div>
             <div className="mt-1 font-mono text-[9px] font-medium tracking-wider text-muted-foreground">
               CLASSEMENT{totalPlayers ? ` / ${totalPlayers}` : ""}
             </div>

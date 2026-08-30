@@ -23,7 +23,7 @@ nba.sync.window-days=10
 admin.api-key=change-moi-en-dev
 
 # Optionnel : uniquement nécessaire pour tester le reset de mot de passe et
-# la vérification d'email (envoi via l'API HTTP de Brevo, pas le SMTP —
+# la vérification d'email (envoi via l'API HTTP de Brevo, pas le SMTP :
 # beaucoup d'hébergeurs bloquent les ports SMTP sortants)
 brevo.api-key=TA_CLE_API_BREVO_ICI
 app.mail-from=TON_ADRESSE_EXPEDITEUR

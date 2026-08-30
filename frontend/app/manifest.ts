@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "HoopPicks — Pronostics NBA",
+    name: "HoopPicks - Pronostics NBA",
     short_name: "HoopPicks",
     description:
       "Pronostique sur chaque match de la saison NBA en points virtuels, grimpe dans le classement, aucun argent réel en jeu.",

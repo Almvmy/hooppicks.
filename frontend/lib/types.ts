@@ -21,6 +21,7 @@ export interface UserProfile {
   email: string;
   winRate: number;
   totalBets: number;
+  currentWinStreak: number;
   favoriteTeam: string;
   avatarNumber: number;
   avatarPosition: AvatarPosition;
@@ -57,6 +58,7 @@ export interface Team {
   conference: Conference;
   division: string;
   logoUrl: string | null;
+  outPlayersCount: number | null;
 }
 
 export interface TeamRank {
@@ -67,7 +69,7 @@ export interface TeamRank {
   division: string;
   rank: number;
   eloRating: number;
-  // Classement officiel (ESPN) — distinct de l'Elo, pas encore synchronisé
+  // Classement officiel (ESPN) : distinct de l'Elo, pas encore synchronisé
   // pour toutes les équipes tant que EspnStandingsService n'a pas tourné.
   wins: number | null;
   losses: number | null;
@@ -75,6 +77,16 @@ export interface TeamRank {
   conferenceSeed: number | null;
   gamesBehind: string | null;
   logoUrl: string | null;
+}
+
+export interface PickPercentages {
+  // null = personne n'a encore parié sur ce marché (distinct de 0%).
+  moneylineHomePct: number | null;
+  moneylineAwayPct: number | null;
+  spreadHomePct: number | null;
+  spreadAwayPct: number | null;
+  totalOverPct: number | null;
+  totalUnderPct: number | null;
 }
 
 export interface Match {
@@ -86,6 +98,7 @@ export interface Match {
   homeScore?: number;
   awayScore?: number;
   odds: MatchOdds;
+  pickPercentages: PickPercentages | null;
 }
 
 export interface RosterPlayer {
@@ -98,8 +111,8 @@ export interface RosterPlayer {
   weight: string | null; // ex: "184 lbs"
   headshotUrl: string | null;
   team: Team | null;
-  injuryStatus: string | null; // ex: "Day-To-Day", "Out" — null si pas blessé
-  // Moyennes saison (ESPN) — null tant que EspnPlayerStatsService n'a pas
+  injuryStatus: string | null; // ex: "Day-To-Day", "Out" (null si pas blessé)
+  // Moyennes saison (ESPN) : null tant que EspnPlayerStatsService n'a pas
   // encore traité ce joueur (synchro par petits lots, voir le backend).
   statsSeasonLabel: string | null;
   gamesPlayed: number | null;
@@ -114,6 +127,23 @@ export interface RosterPlayer {
   fieldGoalPct: number | null;
   threePointPct: number | null;
   freeThrowPct: number | null;
+}
+
+export interface PlayerLeaders {
+  points: RosterPlayer[];
+  rebounds: RosterPlayer[];
+  assists: RosterPlayer[];
+}
+
+export interface PlayerRecentGame {
+  date: string; // ISO
+  opponentAbbreviation: string | null;
+  result: string | null; // "W" ou "L"
+  score: string | null;
+  minutes: string;
+  points: number;
+  rebounds: number;
+  assists: number;
 }
 
 export interface PlayerBoxScore {
@@ -215,6 +245,8 @@ export interface LeagueMember {
 }
 
 export interface LeagueActivity {
+  targetType: "BET" | "MEMBERSHIP";
+  targetId: string;
   username: string;
   message: string;
   occurredAt: string;
@@ -222,6 +254,8 @@ export interface LeagueActivity {
   avatarPosition: AvatarPosition;
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
+  reactionCounts: Record<string, number>;
+  myReactions: string[];
 }
 
 export interface AdminStatus {

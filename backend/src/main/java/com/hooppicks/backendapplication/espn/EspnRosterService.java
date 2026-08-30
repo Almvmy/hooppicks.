@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Synchro des effectifs ESPN, séparée de NbaSyncScheduler (5 min) : un
  * roster NBA ne change pas d'une minute à l'autre comme un score, une
- * fois par jour suffit largement. 30 équipes, petits payloads — pas le
+ * fois par jour suffit largement. 30 équipes, petits payloads : pas le
  * même risque mémoire que l'import des feuilles de match (EspnStatsService).
  *
  * Upsert par id ESPN plutôt que delete-and-recreate : un joueur qui reste
@@ -37,7 +37,7 @@ public class EspnRosterService {
     private static final Logger log = LoggerFactory.getLogger(EspnRosterService.class);
 
     // ESPN renvoie les dates de blessure sans les secondes (ex.
-    // "2026-07-27T16:11Z"), qu'Instant.parse() rejette tel quel — vérifié en
+    // "2026-07-27T16:11Z"), qu'Instant.parse() rejette tel quel : vérifié en
     // direct, pas une supposition.
     private static final DateTimeFormatter INJURY_DATE_FORMAT = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm")
@@ -85,6 +85,7 @@ public class EspnRosterService {
                 }
             }
 
+            int outCount = 0;
             for (EspnRosterRow row : rows) {
                 if (row.espnId() == null) continue;
 
@@ -101,7 +102,11 @@ public class EspnRosterService {
                 player.setInjuryStatus(row.injuryStatus());
                 player.setInjuryDate(parseInjuryDate(row.injuryDate()));
                 rosterPlayerRepository.save(player);
+
+                if ("Out".equals(row.injuryStatus())) outCount++;
             }
+            team.setOutPlayersCount(outCount);
+            teamRepository.save(team);
         } catch (Exception e) {
             log.warn("Synchro roster ESPN échouée pour {} : {}", team.getAbbreviation(), e.getMessage());
         }

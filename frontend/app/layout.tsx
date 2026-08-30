@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "HoopPicks — Pronostics NBA",
+    title: "HoopPicks - Pronostics NBA",
     description:
       "Pronostique sur chaque match de la saison NBA en points virtuels, grimpe dans le classement.",
   },

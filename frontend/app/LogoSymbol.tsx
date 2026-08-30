@@ -2,7 +2,7 @@ type LogoSymbolProps = {
   className?: string;
   /** Historique : "full" ajoutait 2 coutures de plus que "compact" au check.
    *  Le monogramme HP reste lisible avec les 4 coutures même à 20-28px (testé),
-   *  donc les deux variantes rendent désormais la même chose — le prop reste
+   *  donc les deux variantes rendent désormais la même chose : le prop reste
    *  pour ne pas casser les appelants existants. */
   variant?: "full" | "compact";
 };

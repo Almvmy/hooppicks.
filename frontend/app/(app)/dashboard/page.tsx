@@ -9,6 +9,7 @@ import { fetchBets } from "@/lib/api/bets";
 import { fetchMatches } from "@/lib/api/matches";
 import { fetchLeaderboard } from "@/lib/api/leaderboard";
 import { fetchNews } from "@/lib/api/news";
+import { fetchMyLeagues } from "@/lib/api/leagues";
 
 import {
   buildDashboardSlate,
@@ -27,6 +28,7 @@ import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { WalletTrend } from "@/components/dashboard/wallet-trend";
 import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
+import { LeaguesPreview } from "@/components/dashboard/leagues-preview";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 
@@ -52,6 +54,11 @@ export default function DashboardPage() {
     queryKey: ["news"],
     queryFn: fetchNews,
     staleTime: 10 * 60 * 1000,
+  });
+  const leaguesQuery = useQuery({
+    queryKey: ["leagues"],
+    queryFn: fetchMyLeagues,
+    staleTime: 5 * 60 * 1000,
   });
 
   const streak = computeWinStreak(betsQuery.data);
@@ -125,6 +132,7 @@ export default function DashboardPage() {
             currentUsername={profileQuery.data?.username}
             isLoading={leaderboardQuery.isLoading}
           />
+          <LeaguesPreview leagues={leaguesQuery.data ?? []} isLoading={leaguesQuery.isLoading} />
           <NewsPreview items={newsQuery.data ?? []} isLoading={newsQuery.isLoading} />
           <FunFactCard />
         </div>

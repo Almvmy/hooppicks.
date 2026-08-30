@@ -127,7 +127,7 @@ export default function AdminPage() {
 
       {statusQuery.isError && (
         <p className="text-sm text-destructive">
-          Impossible de charger le statut — les tirets ci-dessous ne veulent pas dire "zéro", la donnée n&apos;a simplement pas pu être récupérée.
+          Impossible de charger le statut : les tirets ci-dessous ne veulent pas dire "zéro", la donnée n&apos;a simplement pas pu être récupérée.
         </p>
       )}
 
@@ -138,7 +138,7 @@ export default function AdminPage() {
             {statusQuery.isLoading ? (
               <Skeleton className="h-7 w-12" />
             ) : (
-              <p className="font-mono text-2xl font-bold">{status?.totalUsers ?? "—"}</p>
+              <p className="font-mono text-2xl font-bold">{status?.totalUsers ?? "-"}</p>
             )}
           </CardContent>
         </Card>
@@ -148,7 +148,7 @@ export default function AdminPage() {
             {statusQuery.isLoading ? (
               <Skeleton className="h-7 w-12" />
             ) : (
-              <p className="font-mono text-2xl font-bold">{status?.totalMatches ?? "—"}</p>
+              <p className="font-mono text-2xl font-bold">{status?.totalMatches ?? "-"}</p>
             )}
           </CardContent>
         </Card>
@@ -158,7 +158,7 @@ export default function AdminPage() {
             {statusQuery.isLoading ? (
               <Skeleton className="h-7 w-12" />
             ) : (
-              <p className="font-mono text-2xl font-bold">{status?.pendingBets ?? "—"}</p>
+              <p className="font-mono text-2xl font-bold">{status?.pendingBets ?? "-"}</p>
             )}
           </CardContent>
         </Card>
@@ -177,7 +177,7 @@ export default function AdminPage() {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
-              {" — "}
+              {" · "}
               <span className="font-mono">{status.lastGamesSynced}</span> match(s),{" "}
               <span className="font-mono">{status.lastBetsResolved}</span> pari(s) résolu(s)
               {" ("}

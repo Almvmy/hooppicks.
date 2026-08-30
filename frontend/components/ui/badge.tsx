@@ -22,7 +22,7 @@ const badgeVariants = cva(
           "text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] [a]:hover:bg-white/[0.06]",
         ghost: "hover:bg-white/[0.06] hover:text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // Nouvelles variantes sémantiques, alignées sur les tokens existants —
+        // Nouvelles variantes sémantiques, alignées sur les tokens existants :
         // elles remplacent les `bg-*/10 border-*/30` recopiés à la main dans
         // match-status-badge.tsx et recent-activity.tsx.
         lit: "glass-accent",

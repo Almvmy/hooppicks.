@@ -26,7 +26,7 @@ export function TeamRoster({ teamId, teamName }: { teamId: string; teamName: str
     <div className="flex flex-col gap-2">
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <Users className="h-3.5 w-3.5" />
-        Effectif — {teamName}
+        Effectif : {teamName}
       </p>
 
       {isLoading && (

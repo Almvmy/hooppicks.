@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * Classement officiel (victoires/défaites) + logo d'équipe, séparé de l'Elo
- * interne (cf. commentaire sur Team.wins) — un seul appel ESPN pour toute la
+ * interne (cf. commentaire sur Team.wins) : un seul appel ESPN pour toute la
  * ligue, donc pas besoin d'un traitement par lot comme EspnRosterService/
  * EspnStatsService. Le logo n'a rien à voir avec le classement, mais on le
  * récupère ici en passant : c'est le seul appel qui renvoie déjà les 30

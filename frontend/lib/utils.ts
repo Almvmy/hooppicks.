@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** "Aujourd'hui", "Demain", "Hier", ou la date formatée sinon — pour grouper une liste par jour. */
+/** "Aujourd'hui", "Demain", "Hier", ou la date formatée sinon : pour grouper une liste par jour. */
 export function getDayLabel(date: Date): string {
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const today = startOfDay(new Date());
@@ -18,14 +18,30 @@ export function getDayLabel(date: Date): string {
   return date.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
 }
 
-/** "22 août" — date courte d'un match, pour les cartes/lignes de calendrier. */
+/** "22 août" : date courte d'un match, pour les cartes/lignes de calendrier. */
 export function formatMatchDate(date: Date): string {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
 
-/** "20:30" — heure d'un match, pour les cartes/lignes de calendrier. */
+/** "20:30" : heure d'un match, pour les cartes/lignes de calendrier. */
 export function formatMatchTime(date: Date): string {
   return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/**
+ * "Commence dans 45 min" pour un match SCHEDULED proche du coup d'envoi :
+ * null au-delà de 3h (pas d'urgence à créer artificiellement) ou une fois le
+ * match démarré (le badge de statut suffit alors). Volontairement discret :
+ * juste de quoi inciter à décider maintenant plutôt qu'oublier, pas un
+ * décompte seconde par seconde.
+ */
+export function formatKickoffCountdown(iso: string): string | null {
+  const diffMinutes = Math.round((new Date(iso).getTime() - Date.now()) / 60000);
+  if (diffMinutes <= 0 || diffMinutes > 180) return null;
+  if (diffMinutes < 60) return `Commence dans ${diffMinutes} min`;
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  return `Commence dans ${hours} h${minutes > 0 ? ` ${minutes}` : ""}`;
 }
 
 /** "il y a 2j", "à l'instant"... pour les fils d'activité. */

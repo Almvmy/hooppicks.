@@ -73,7 +73,7 @@ public class NbaSyncService {
         for (NbaTeamDto t : teams) {
             // Ignore les franchises historiques disparues (ids 37+, ville vide) et les
             // clubs hors NBA (EuroLeague etc.) que l'API renvoie mélangés dans la même
-            // liste — repérables par une conference qui n'est ni "East" ni "West".
+            // liste : repérables par une conference qui n'est ni "East" ni "West".
             boolean isRealNbaConference = "East".equals(t.conference()) || "West".equals(t.conference());
             if (t.city() == null || t.city().isBlank() || !isRealNbaConference) continue;
 
@@ -134,7 +134,7 @@ public class NbaSyncService {
             match.setStatus(newStatus);
 
             // Cotes dynamiques (Elo) : recalculées à chaque synchro tant que le
-            // match n'a pas commencé ET qu'aucun pari n'est encore posé dessus —
+            // match n'a pas commencé ET qu'aucun pari n'est encore posé dessus :
             // sinon la ligne resterait injuste pour qui a déjà parié dessus
             // (cf. BetResolutionService.evaluateSelection, qui relit spreadValue/
             // totalValue en direct sur le match au moment de la résolution).
@@ -163,7 +163,7 @@ public class NbaSyncService {
 
         // Dès que des matchs sont synchronisés (et donc potentiellement
         // passés à FINISHED), on résout tout de suite les paris en attente
-        // qui les concernent — plus besoin d'appeler /admin/bets/resolve à la main.
+        // qui les concernent : plus besoin d'appeler /admin/bets/resolve à la main.
         int resolved = betResolutionService.resolvePendingBets();
 
         return new SyncResult(count, resolved);
@@ -171,7 +171,7 @@ public class NbaSyncService {
 
     /**
      * Prévient les utilisateurs qui ont un pari en attente sur ce match qu'il
-     * vient de démarrer — déclenché une seule fois, au moment où le statut
+     * vient de démarrer : déclenché une seule fois, au moment où le statut
      * calculé passe de SCHEDULED à LIVE (cf. justWentLive dans syncGames).
      */
     private void notifyMatchStarting(Match match, Team home, Team away) {
@@ -199,7 +199,7 @@ public class NbaSyncService {
     /**
      * Filet de secours pour PlayerController : n'est appelée que si la
      * recherche dans RosterPlayer (effectifs ESPN, cf. EspnRosterService)
-     * ne renvoie rien — soit parce que le joueur n'y est vraiment pas, soit
+     * ne renvoie rien : soit parce que le joueur n'y est vraiment pas, soit
      * parce qu'ESPN nous bloque de nouveau (Akamai) et que la synchro
      * n'a jamais tourné. Dans ce cas on retombe sur balldontlie en dernier
      * recours, moins riche (pas de photo, pas de stats) mais qui ne dépend

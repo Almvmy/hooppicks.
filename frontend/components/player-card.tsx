@@ -12,7 +12,7 @@ interface PlayerCardProps {
 }
 
 /**
- * "Vraie" carte de joueur — format portrait façon carte à collectionner,
+ * "Vraie" carte de joueur : format portrait façon carte à collectionner,
  * contrairement à PlayerAvatar (le cercle compact utilisé dans les listes
  * et la barre du haut). Même filet de sécurité sur les valeurs (voir
  * PlayerAvatar) puisqu'elle affiche les mêmes données personnalisables.

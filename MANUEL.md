@@ -1,4 +1,4 @@
-# Manuel d'utilisation — HoopPicks
+# Manuel d'utilisation : HoopPicks
 
 HoopPicks te fait pronostiquer sur les matchs de la saison NBA avec des **points virtuels** (aucun argent réel n'est en jeu). Grimpe dans le classement, débloque des badges, et défie tes amis dans des ligues privées.
 
@@ -8,7 +8,7 @@ Depuis la page d'accueil, clique sur **Créer un compte** et renseigne un pseudo
 
 Si tu as déjà un compte, **Se connecter** avec ton e-mail et ton mot de passe. En cas de mot de passe oublié, un lien **Mot de passe oublié** t'envoie un e-mail de réinitialisation (valable 30 minutes).
 
-À l'inscription, un e-mail de confirmation t'est envoyé. Tant que tu n'as pas cliqué sur le lien, une bannière te le rappelle en haut de l'app — ça ne bloque rien, tu peux utiliser HoopPicks normalement en attendant. Le lien "Renvoyer le lien" dans la bannière permet de le redemander si besoin.
+À l'inscription, un e-mail de confirmation t'est envoyé. Tant que tu n'as pas cliqué sur le lien, une bannière te le rappelle en haut de l'app : ça ne bloque rien, tu peux utiliser HoopPicks normalement en attendant. Le lien "Renvoyer le lien" dans la bannière permet de le redemander si besoin.
 
 ## Le tableau de bord
 
@@ -23,16 +23,16 @@ Ta page d'accueil une fois connecté. Tu y retrouves :
 
 1. Va dans **Matchs** pour voir le calendrier de la saison.
 2. Sur un match pas encore commencé, choisis une cote parmi les marchés proposés :
-   - **Moneyline** — qui gagne le match.
-   - **Spread** — qui gagne avec un écart de points donné.
-   - **Total** — si le score cumulé des deux équipes sera au-dessus (over) ou en dessous (under) d'une ligne fixée.
-3. Chaque sélection s'ajoute à ton **ticket** (visible dans un panneau dédié). Tu peux combiner plusieurs matchs différents dans un même ticket (un **pari combiné**) — les cotes se multiplient entre elles.
+   - **Moneyline** : qui gagne le match.
+   - **Spread** : qui gagne avec un écart de points donné.
+   - **Total** : si le score cumulé des deux équipes sera au-dessus (over) ou en dessous (under) d'une ligne fixée.
+3. Chaque sélection s'ajoute à ton **ticket** (visible dans un panneau dédié). Tu peux combiner plusieurs matchs différents dans un même ticket (un **pari combiné**) : les cotes se multiplient entre elles.
 4. Indique ta **mise** en points, vérifie le gain potentiel affiché, puis valide.
 
 **Règles importantes :**
 - Un même match ne peut apparaître qu'une seule fois par ticket.
 - Une fois un match commencé, il n'est plus possible de parier dessus.
-- Les cotes affichées au moment où tu valides sont celles réellement appliquées — pas de mauvaise surprise après coup.
+- Les cotes affichées au moment où tu valides sont celles réellement appliquées : pas de mauvaise surprise après coup.
 - Ta mise est débitée de ton solde immédiatement ; le gain (mise × cote totale) est crédité seulement si tout le ticket est gagnant.
 
 Retrouve l'historique de tous tes tickets (en attente, gagnés, perdus, remboursés) dans **Mes paris**.
@@ -47,10 +47,10 @@ Dès qu'un match se termine, le système résout automatiquement les paris conce
 ## Joueurs & équipes
 
 La page **Joueurs & équipes** te permet d'explorer les infos NBA indépendamment de tes paris :
-- **Joueurs** : cherche un joueur par nom (2 caractères min). Clique sur un résultat pour ouvrir sa **carte joueur** — photo, poste, taille/poids, statut blessure éventuel (Out, Day-To-Day...), et ses moyennes de la saison en cours (points, rebonds, passes...).
-- **Équipes** : classement des 30 équipes, en **force interne (Elo)** — celle qui sert au calcul des cotes — ou en **classement officiel NBA** par conférence (victoires/défaites, série en cours, écart au top). Déplie une équipe pour voir son effectif actuel.
+- **Joueurs** : cherche un joueur par nom (2 caractères min). Clique sur un résultat pour ouvrir sa **carte joueur** : photo, poste, taille/poids, statut blessure éventuel (Out, Day-To-Day...), et ses moyennes de la saison en cours (points, rebonds, passes...).
+- **Équipes** : classement des 30 équipes, en **force interne (Elo, celle qui sert au calcul des cotes)** ou en **classement officiel NBA** par conférence (victoires/défaites, série en cours, écart au top). Déplie une équipe pour voir son effectif actuel.
 
-Sur un match terminé, la **feuille de match** (box score) détaille les statistiques de chaque joueur ayant joué (minutes, points, rebonds, passes, tirs...) — accessible depuis la page du match.
+Sur un match terminé, la **feuille de match** (box score) détaille les statistiques de chaque joueur ayant joué (minutes, points, rebonds, passes, tirs...) : accessible depuis la page du match.
 
 ## Ligues
 
@@ -61,7 +61,7 @@ Dans une ligue, tu retrouves :
 - La liste des **membres**.
 - Le **fil d'activité récente** (arrivées, départs...).
 
-Le code d'invitation de ta ligue est visible sur sa page — partage-le pour inviter du monde. Tu peux **quitter** une ligue à tout moment.
+Le code d'invitation de ta ligue est visible sur sa page : partage-le pour inviter du monde. Tu peux **quitter** une ligue à tout moment.
 
 ## Classement
 
@@ -102,11 +102,11 @@ Une cloche dans la navigation t'alerte : match sur le point de commencer, résul
 ## Paramètres du compte
 
 Depuis **Paramètres**, tu peux :
-- Changer ton **pseudo** (avec confirmation du mot de passe) — le changement est immédiat et se répercute partout dans l'app (classement, ligues...). Un ancien lien de profil vers ton pseudo précédent ne fonctionnera plus après le changement.
+- Changer ton **pseudo** (avec confirmation du mot de passe) : le changement est immédiat et se répercute partout dans l'app (classement, ligues...). Un ancien lien de profil vers ton pseudo précédent ne fonctionnera plus après le changement.
 - Changer ton mot de passe (avec confirmation de l'ancien).
-- Changer ton adresse e-mail (avec confirmation du mot de passe) — la nouvelle adresse redevient à vérifier.
+- Changer ton adresse e-mail (avec confirmation du mot de passe) : la nouvelle adresse redevient à vérifier.
 - Activer/désactiver chaque type de notification.
-- **Supprimer définitivement ton compte** (irréversible — demande confirmation par mot de passe).
+- **Supprimer définitivement ton compte** (irréversible : demande confirmation par mot de passe).
 
 Changer ton mot de passe ou en réinitialiser un déconnecte automatiquement toutes tes autres sessions actives, par sécurité.
 

@@ -18,7 +18,7 @@ public class Player {
 
     private String firstName;
     private String lastName;
-    private String position; // ex: "G", "F", "C" — tel que renvoyé par balldontlie, pas toujours normalisé
+    private String position; // ex: "G", "F", "C" (tel que renvoyé par balldontlie, pas toujours normalisé)
     private String height;   // ex: "6-6" (pieds-pouces, format brut de l'API)
     private String weight;   // ex: "220" (livres)
 

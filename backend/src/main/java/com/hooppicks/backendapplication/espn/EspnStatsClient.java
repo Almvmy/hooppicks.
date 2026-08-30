@@ -18,12 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Client pour l'API (non officielle, non documentée) d'ESPN — pas de clé,
+ * Client pour l'API (non officielle, non documentée) d'ESPN : pas de clé,
  * pas de contrat de stabilité garanti, mais c'est la seule source qui donne
  * la feuille de match par joueur gratuitement (balldontlie la verrouille
  * derrière un tier payant). Akamai (le CDN d'ESPN) bloque en 403 tout
  * User-Agent qui ressemble à un navigateur, voir le commentaire sur
- * fetchWithRetry — le vrai correctif est là, pas dans les tentatives. On
+ * fetchWithRetry : le vrai correctif est là, pas dans les tentatives. On
  * garde quand même la retry (espacée de plus de networkaddress.cache.ttl,
  * 10s, pour retirer une IP différente du DNS) en filet de sécurité pour
  * d'éventuels vrais problèmes réseau transitoires.
@@ -43,6 +43,8 @@ public class EspnStatsClient {
             "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
     private static final String ATHLETE_STATS_URL =
             "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/%s/stats";
+    private static final String ATHLETE_GAMELOG_URL =
+            "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/%s/gamelog";
 
     // balldontlie -> ESPN : seules ces 6 franchises ont un sigle différent
     // entre les deux APIs (vérifié en comparant les deux listes d'équipes),
@@ -68,7 +70,7 @@ public class EspnStatsClient {
 
     /**
      * Cherche, parmi les matchs NBA de ce jour-là côté ESPN, celui qui
-     * oppose ces deux équipes — c'est le seul moyen de relier un match
+     * oppose ces deux équipes : c'est le seul moyen de relier un match
      * balldontlie à son event ESPN, les deux APIs n'ayant aucun ID en commun.
      */
     public Optional<String> findEventId(LocalDate date, String homeAbbreviation, String awayAbbreviation) {
@@ -97,7 +99,7 @@ public class EspnStatsClient {
     /**
      * Feuille de match complète (les deux équipes) pour un event ESPN déjà
      * identifié. Une ligne "athlete" ignorée (DNP, données incomplètes) ne
-     * fait pas échouer le reste — on récupère ce qu'on peut plutôt que rien.
+     * fait pas échouer le reste : on récupère ce qu'on peut plutôt que rien.
      */
     public List<PlayerBoxScoreRow> fetchBoxScore(String eventId) {
         JsonNode root = fetchWithRetry(String.format(SUMMARY_URL, eventId));
@@ -130,7 +132,7 @@ public class EspnStatsClient {
     /**
      * Effectif actuel d'une équipe. L'URL ESPN attend le sigle en minuscules
      * (ex. "lal"), contrairement au scoreboard/summary qui l'attendent en
-     * majuscules — vérifié en direct, pas une supposition.
+     * majuscules : vérifié en direct, pas une supposition.
      */
     public List<EspnRosterRow> fetchRoster(String balldontlieAbbreviation) {
         String espnAbbr = toEspnAbbreviation(balldontlieAbbreviation).toLowerCase();
@@ -140,7 +142,7 @@ public class EspnStatsClient {
         List<EspnRosterRow> result = new ArrayList<>();
         for (JsonNode athlete : root.path("athletes")) {
             // Le tableau "injuries" ne contient qu'une entrée à la fois côté
-            // ESPN (le statut courant), pas un historique — la première (et
+            // ESPN (le statut courant), pas un historique : la première (et
             // seule) suffit.
             JsonNode injury = athlete.path("injuries").path(0);
             result.add(new EspnRosterRow(
@@ -161,7 +163,7 @@ public class EspnStatsClient {
 
     /**
      * Classement officiel (victoires/défaites, série en cours, seed
-     * conférence) des 30 équipes — un seul appel pour toute la ligue,
+     * conférence) des 30 équipes : un seul appel pour toute la ligue,
      * contrairement au roster qui en coûte un par équipe. Purement
      * informatif côté app : distinct de l'Elo utilisé pour les cotes.
      */
@@ -199,14 +201,14 @@ public class EspnStatsClient {
     }
 
     /**
-     * Moyennes saison d'un joueur, à partir de son id athlète ESPN — celui
+     * Moyennes saison d'un joueur, à partir de son id athlète ESPN : celui
      * déjà stocké sur RosterPlayer (cf. EspnRosterService), pas besoin de
      * rapprocher par nom. On prend la dernière entrée de la catégorie
      * "averages" : les saisons y sont dans l'ordre chronologique, donc la
      * plus récente est toujours en dernier (vérifié en direct sur un joueur
      * avec un historique multi-saisons). Si le joueur n'a pas encore joué
      * cette saison (blessure, recrue en attente), c'est alors la dernière
-     * saison jouée qui ressort — le seasonLabel renvoyé permet à l'appelant
+     * saison jouée qui ressort : le seasonLabel renvoyé permet à l'appelant
      * de savoir laquelle.
      */
     public Optional<PlayerSeasonStatsRow> fetchSeasonStats(String espnAthleteId) {
@@ -253,6 +255,63 @@ public class EspnStatsClient {
         ));
     }
 
+    /**
+     * Les 5 derniers matchs joués par un joueur (forme récente) : saison la
+     * plus récente uniquement (seasonTypes[0]), qui regroupe elle-même les
+     * matchs par mois (categories[]) plutôt qu'en une seule liste plate. Le
+     * détail par match (date, adversaire, résultat) est dans un dictionnaire
+     * "events" séparé côté ESPN, à corréler par eventId avec la ligne de
+     * stats : les deux ne sont pas au même endroit dans la réponse.
+     */
+    public List<PlayerRecentGameRow> fetchRecentGames(String espnAthleteId) {
+        JsonNode root = fetchWithRetry(String.format(ATHLETE_GAMELOG_URL, espnAthleteId));
+        if (root == null) return List.of();
+
+        List<String> labels = new ArrayList<>();
+        root.path("labels").forEach(l -> labels.add(l.asText()));
+        if (labels.isEmpty()) return List.of();
+
+        JsonNode seasonTypes = root.path("seasonTypes");
+        if (!seasonTypes.isArray() || seasonTypes.isEmpty()) return List.of();
+        JsonNode latestSeason = seasonTypes.get(0);
+
+        JsonNode eventsById = root.path("events");
+        List<PlayerRecentGameRow> result = new ArrayList<>();
+
+        for (JsonNode category : latestSeason.path("categories")) {
+            for (JsonNode eventStat : category.path("events")) {
+                String eventId = eventStat.path("eventId").asText(null);
+                if (eventId == null) continue;
+                JsonNode eventInfo = eventsById.path(eventId);
+                if (eventInfo.isMissingNode()) continue;
+
+                List<String> values = new ArrayList<>();
+                eventStat.path("stats").forEach(v -> values.add(v.asText()));
+                if (values.size() < labels.size()) continue;
+
+                Map<String, String> byLabel = new HashMap<>();
+                for (int i = 0; i < labels.size(); i++) byLabel.put(labels.get(i), values.get(i));
+
+                result.add(new PlayerRecentGameRow(
+                        eventInfo.path("gameDate").asText(null),
+                        eventInfo.path("opponent").path("abbreviation").asText(null),
+                        eventInfo.path("gameResult").asText(null),
+                        eventInfo.path("score").asText(null),
+                        byLabel.getOrDefault("MIN", "0"),
+                        parseInt(byLabel.get("PTS")),
+                        parseInt(byLabel.get("REB")),
+                        parseInt(byLabel.get("AST"))
+                ));
+            }
+        }
+
+        result.sort((a, b) -> {
+            if (a.date() == null || b.date() == null) return 0;
+            return b.date().compareTo(a.date()); // ISO-8601 se compare lexicographiquement dans l'ordre chronologique
+        });
+        return result.stream().limit(5).toList();
+    }
+
     private double parseDouble(String raw) {
         if (raw == null) return 0;
         try {
@@ -292,7 +351,7 @@ public class EspnStatsClient {
         // Contre-intuitif mais vérifié à la main (curl, plusieurs User-Agent
         // testés un par un) : Akamai bloque ici un User-Agent de navigateur
         // (Chrome/Firefox), un User-Agent vide, et même le UA par défaut de
-        // Java — mais laisse passer un UA de la forme "curl/x.y.z". Le 403
+        // Java : mais laisse passer un UA de la forme "curl/x.y.z". Le 403
         // n'est donc pas du rate-limiting ponctuel, c'est un filtre sur le
         // contenu du User-Agent qui punit justement l'usurpation d'un
         // navigateur. On imite curl plutôt qu'un navigateur.

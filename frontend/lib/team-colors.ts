@@ -1,9 +1,9 @@
 /**
- * Couleur d'identité par équipe (abréviation NBA standard) — donnée factuelle
+ * Couleur d'identité par équipe (abréviation NBA standard) : donnée factuelle
  * d'association couleur/équipe, comme les noms de franchise déjà listés dans
  * nba-teams.ts. Choisie pour rester lisible sur fond sombre plutôt que pour
  * matcher au pixel près une charte officielle (certaines équipes ont une
- * couleur principale trop sombre pour ressortir — on prend alors leur accent
+ * couleur principale trop sombre pour ressortir : on prend alors leur accent
  * le plus vif).
  */
 export const TEAM_COLORS: Record<string, string> = {

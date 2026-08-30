@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Envoi via l'API HTTP de Brevo plutôt que le SMTP classique : Railway (et
  * pas mal d'hébergeurs PaaS) bloque les ports SMTP sortants (587/465) pour
- * limiter le spam — timeout systématique constaté en prod. L'API HTTP passe
+ * limiter le spam : timeout systématique constaté en prod. L'API HTTP passe
  * par le port 443 comme n'importe quel appel externe (balldontlie, DeepL),
  * donc jamais bloquée de la même façon.
  */
@@ -37,17 +37,17 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String to, String username, String resetLink) {
-        send(to, "HoopPicks — Réinitialisation de ton mot de passe",
+        send(to, "HoopPicks : Réinitialisation de ton mot de passe",
                 "Salut " + username + ",\n\n"
                         + "Tu as demandé à réinitialiser ton mot de passe HoopPicks.\n"
                         + "Clique sur ce lien pour en choisir un nouveau (valable 30 minutes) :\n\n"
                         + resetLink + "\n\n"
-                        + "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail — ton mot de passe reste inchangé."
+                        + "Si tu n'es pas à l'origine de cette demande, ignore cet e-mail. Ton mot de passe reste inchangé."
         );
     }
 
     public void sendVerificationEmail(String to, String username, String verifyLink) {
-        send(to, "HoopPicks — Confirme ton adresse e-mail",
+        send(to, "HoopPicks : Confirme ton adresse e-mail",
                 "Salut " + username + ",\n\n"
                         + "Bienvenue sur HoopPicks ! Confirme ton adresse e-mail en cliquant sur ce lien (valable 24 heures) :\n\n"
                         + verifyLink + "\n\n"
@@ -70,7 +70,7 @@ public class EmailService {
 
         // Laisse l'exception remonter : les deux appelants (reset mot de passe,
         // vérification email) attrapent déjà l'échec pour ne jamais bloquer le
-        // flux principal — même comportement qu'avec l'ancien JavaMailSender.
+        // flux principal : même comportement qu'avec l'ancien JavaMailSender.
         restTemplate.postForEntity(apiUrl, new HttpEntity<>(body, headers), String.class);
     }
 

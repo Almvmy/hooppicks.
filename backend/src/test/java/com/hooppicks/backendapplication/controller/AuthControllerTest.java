@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.badge.BadgeService;
 import com.hooppicks.backendapplication.dto.*;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
@@ -48,14 +49,18 @@ class AuthControllerTest {
     private AccountDeletionService accountDeletionService;
     @Mock
     private EmailVerificationService emailVerificationService;
+    @Mock
+    private BadgeService badgeService;
 
     private AuthController controller;
 
     @BeforeEach
     void setUp() {
         controller = new AuthController(userRepository, passwordEncoder, sessionStore, betRepository,
-                loginAttemptService, passwordResetService, accountDeletionService, emailVerificationService);
+                loginAttemptService, passwordResetService, accountDeletionService, emailVerificationService,
+                badgeService);
         lenient().when(betRepository.getUserStats(any())).thenReturn(Collections.emptyList());
+        lenient().when(betRepository.findByUserIdOrderByPlacedAtDesc(any())).thenReturn(Collections.emptyList());
     }
 
     private User user(String id, String email, String username, String passwordHash) {

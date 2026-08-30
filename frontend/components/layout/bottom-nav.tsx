@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, CalendarDays, Ticket, Trophy, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// 5 items max (repère UX standard pour une bottom nav) : Ligues et Joueurs
-// restent dans le menu hamburger (mobile-nav.tsx) plutôt que de pousser
-// cette barre à 6 ou 7 icônes.
+// 5 items max (repère UX standard pour une bottom nav) : le reste de
+// NAV_ITEMS (Actualités, Joueurs, Ligues, Paramètres, Admin) reste dans le
+// menu hamburger (mobile-nav.tsx), qui exclut ces hrefs pour ne pas les
+// dupliquer : voir BOTTOM_NAV_HREFS.
+export const BOTTOM_NAV_HREFS = ["/dashboard", "/matches", "/bets", "/leaderboard", "/profile"];
+
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
   { href: "/matches", label: "Matchs", icon: CalendarDays },

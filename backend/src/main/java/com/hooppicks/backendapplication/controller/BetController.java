@@ -71,7 +71,7 @@ public class BetController {
 
         // Verrou pessimiste sur la ligne utilisateur : empêche deux requêtes
         // concurrentes (double-clic, deux onglets) de lire le même solde avant
-        // que l'une des deux ne l'ait débité — la seconde attend la fin de la
+        // que l'une des deux ne l'ait débité : la seconde attend la fin de la
         // transaction de la première et voit le solde déjà à jour.
         User user = userRepository.findByIdForUpdate(userId).orElse(null);
         if (user == null) return ResponseEntity.status(401).build();
@@ -82,7 +82,7 @@ public class BetController {
 
         // On garde les matchs déjà chargés pour la validation : la cote appliquée au
         // pari vient de là (autoritaire, côté serveur), jamais de request.selections().odds()
-        // — sinon un client pourrait renvoyer une ancienne cote plus favorable
+        // : sinon un client pourrait renvoyer une ancienne cote plus favorable
         // maintenant que les cotes bougent (cf. OddsService).
         Map<String, Match> matchesById = new HashMap<>();
         for (PlaceBetRequest.SelectionInput s : request.selections()) {
@@ -124,7 +124,7 @@ public class BetController {
 
         betRepository.save(bet);
 
-        // Débit du solde + trace de la transaction — deux opérations liées, jamais l'une sans l'autre
+        // Débit du solde + trace de la transaction : deux opérations liées, jamais l'une sans l'autre
         user.setWalletBalance(user.getWalletBalance() - request.stake());
         userRepository.save(user);
 

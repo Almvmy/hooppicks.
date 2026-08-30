@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, LogOut, Shield, Trophy, UserPlus } from "lucide-react";
+import { ArrowLeft, LogOut, Shield, Ticket, Trophy, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,9 +17,14 @@ import {
   fetchLeagueMembers,
   fetchMyLeagues,
   leaveLeague,
+  reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
 import { formatRelativeTime } from "@/lib/utils";
+
+// Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
+// libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
+const REACTION_EMOJIS = ["👍", "🔥", "👎"];
 
 export default function LeagueDetailPage({
   params,
@@ -50,6 +55,15 @@ export default function LeagueDetailPage({
   });
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+
+  const reactMutation = useMutation({
+    mutationFn: ({ targetType, targetId, emoji }: { targetType: string; targetId: string; emoji: string }) =>
+      reactToActivity(id, targetType, targetId, emoji),
+    onSuccess: (freshActivity) => {
+      queryClient.setQueryData(["league-activity", id], freshActivity);
+    },
+    onError: () => toast.error("Impossible d'envoyer la réaction. Réessaie."),
+  });
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveLeague(id),
@@ -84,7 +98,7 @@ export default function LeagueDetailPage({
           </div>
           {league && (
             <p className="mt-1 text-muted-foreground">
-              {league.memberCount} membre{league.memberCount > 1 ? "s" : ""} — code{" "}
+              {league.memberCount} membre{league.memberCount > 1 ? "s" : ""} · code{" "}
               <span className="font-mono font-bold text-foreground">{league.inviteCode}</span>
             </p>
           )}
@@ -177,15 +191,16 @@ export default function LeagueDetailPage({
               <p className="text-sm text-muted-foreground">Pas encore d&apos;activité.</p>
             )}
 
-            {activityQuery.data?.map((event, i) => {
+            {activityQuery.data?.map((event) => {
               const isWin = event.message.startsWith("a gagné");
-              const Icon = isWin ? Trophy : UserPlus;
+              const isPick = event.message.startsWith("a misé");
+              const Icon = isWin ? Trophy : isPick ? Ticket : UserPlus;
               return (
-                <div key={i} className="flex items-start gap-2 text-sm">
+                <div key={`${event.targetType}-${event.targetId}-${event.occurredAt}`} className="flex items-start gap-2 text-sm">
                   <Icon
                     className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isWin ? "text-primary" : "text-muted-foreground"}`}
                   />
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <Link
                       href={`/u/${encodeURIComponent(event.username)}`}
                       className="font-medium hover:underline"
@@ -196,6 +211,28 @@ export default function LeagueDetailPage({
                     <p className="font-mono text-[11px] text-muted-foreground">
                       {formatRelativeTime(event.occurredAt)}
                     </p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {REACTION_EMOJIS.map((emoji) => {
+                        const count = event.reactionCounts[emoji] ?? 0;
+                        const mine = event.myReactions.includes(emoji);
+                        return (
+                          <button
+                            key={emoji}
+                            type="button"
+                            disabled={reactMutation.isPending}
+                            onClick={() =>
+                              reactMutation.mutate({ targetType: event.targetType, targetId: event.targetId, emoji })
+                            }
+                            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                              mine ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <span>{emoji}</span>
+                            {count > 0 && <span className="font-mono text-[10px]">{count}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               );

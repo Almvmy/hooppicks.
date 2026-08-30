@@ -1,5 +1,5 @@
 /**
- * Noms des 30 franchises NBA — donnée factuelle et organisationnelle
+ * Noms des 30 franchises NBA : donnée factuelle et organisationnelle
  * (comme un annuaire), pas une reproduction de contenu protégé. Utilisé
  * uniquement pour peupler le sélecteur d'équipe favorite.
  */

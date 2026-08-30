@@ -18,7 +18,7 @@ import java.util.List;
 
 /**
  * Profil consultable par n'importe quel utilisateur connecté (classement,
- * membres de ligue, fil d'activité) — jamais anonyme, contrairement à
+ * membres de ligue, fil d'activité) : jamais anonyme, contrairement à
  * /matches ou /leaderboard. Ne renvoie que le sous-ensemble public de User,
  * voir PublicProfileDto.
  */

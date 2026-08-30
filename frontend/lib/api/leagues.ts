@@ -17,6 +17,18 @@ export async function fetchLeagueActivity(id: string): Promise<LeagueActivity[]>
   return apiFetch<LeagueActivity[]>(`/leagues/${id}/activity`);
 }
 
+export async function reactToActivity(
+  leagueId: string,
+  targetType: string,
+  targetId: string,
+  emoji: string
+): Promise<LeagueActivity[]> {
+  return apiFetch<LeagueActivity[]>(`/leagues/${leagueId}/activity/react`, {
+    method: "POST",
+    body: JSON.stringify({ targetType, targetId, emoji }),
+  });
+}
+
 export async function createLeague(name: string): Promise<League> {
   return apiFetch<League>("/leagues", {
     method: "POST",

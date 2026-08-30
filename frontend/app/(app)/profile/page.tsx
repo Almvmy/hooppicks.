@@ -49,7 +49,7 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-6">
       {profileQuery.isError && (
         <p className="text-sm text-destructive">
-          Impossible de charger ton profil. Certaines sections ci-dessous peuvent manquer — réessaie plus tard.
+          Impossible de charger ton profil. Certaines sections ci-dessous peuvent manquer. Réessaie plus tard.
         </p>
       )}
 
@@ -100,7 +100,7 @@ export default function ProfilePage() {
               <p className="mt-1 text-sm text-destructive">Indisponible</p>
             ) : (
               <p className="mt-1 font-mono text-2xl font-bold">
-                {walletQuery.data?.balance.toLocaleString("fr-FR") ?? "—"} pts
+                {walletQuery.data?.balance.toLocaleString("fr-FR") ?? "-"} pts
               </p>
             )}
           </CardContent>

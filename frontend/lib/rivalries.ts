@@ -1,6 +1,6 @@
 /**
  * Grandes rivalités historiques de la NBA, par paire d'abréviations
- * d'équipe (ordre indifférent). Purement éditorial — sert uniquement à
+ * d'équipe (ordre indifférent). Purement éditorial : sert uniquement à
  * mettre en valeur certains matchs sur le calendrier, aucune donnée
  * propriétaire ni logo impliqué.
  */

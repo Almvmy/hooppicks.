@@ -1,6 +1,6 @@
 /**
  * Filigrane discret d'un morceau de terrain (arc + raquette) en fond de
- * carte. Purement décoratif et vectoriel — aucun logo, aucune marque.
+ * carte. Purement décoratif et vectoriel : aucun logo, aucune marque.
  * Réutilisé sur le hero du dashboard, le profil et le classement pour une
  * identité visuelle cohérente.
  */

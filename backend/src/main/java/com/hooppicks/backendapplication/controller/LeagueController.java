@@ -7,6 +7,7 @@ import com.hooppicks.backendapplication.dto.LeagueActivityDto;
 import com.hooppicks.backendapplication.dto.LeagueDto;
 import com.hooppicks.backendapplication.dto.LeagueMemberDto;
 import com.hooppicks.backendapplication.dto.LeaguePreviewDto;
+import com.hooppicks.backendapplication.dto.ReactRequest;
 import com.hooppicks.backendapplication.league.LeagueService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,6 +81,22 @@ public class LeagueController {
             return ResponseEntity.ok(activity);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/activity/react")
+    public ResponseEntity<?> reactToActivity(@PathVariable String id, @Valid @RequestBody ReactRequest body,
+                                              HttpServletRequest request) {
+        String userId = sessionStore.getUserIdFromRequest(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        try {
+            leagueService.toggleReaction(id, userId, body.targetType(), body.targetId(), body.emoji());
+            return ResponseEntity.ok(leagueService.getRecentActivity(id, userId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

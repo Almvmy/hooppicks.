@@ -85,7 +85,7 @@ export default function PublicProfilePage({
           )}
         </div>
         {/* Contrairement à la page Profil (BadgeGrid), on ne montre ici que
-            les badges débloqués — les verrouillés servent d'objectif perso,
+            les badges débloqués : les verrouillés servent d'objectif perso,
             pas d'intérêt à les exposer sur le profil de quelqu'un d'autre. */}
         {unlockedBadges.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun badge débloqué pour l&apos;instant.</p>

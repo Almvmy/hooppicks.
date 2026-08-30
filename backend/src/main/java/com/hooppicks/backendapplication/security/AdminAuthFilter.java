@@ -16,7 +16,7 @@ import java.io.IOException;
  * Protège tout endpoint sous /admin/** avec une clé secrète partagée,
  * transmise dans l'en-tête X-Admin-Key. Volontairement simple (pas de
  * système de rôles) : un seul secret à connaître, à ne jamais exposer côté
- * frontend — seulement toi (curl/Postman) ou un futur job externe l'utilisent.
+ * frontend : seulement toi (curl/Postman) ou un futur job externe l'utilisent.
  *
  * Fail-safe : si admin.api-key n'est pas configurée (ou vide), TOUT accès à
  * /admin/** est refusé plutôt qu'ouvert par défaut.
@@ -43,7 +43,7 @@ public class AdminAuthFilter extends OncePerRequestFilter {
                 response.getWriter().write("{\"error\":\"Clé admin invalide ou manquante.\"}");
                 return;
             }
-            // Pas d'identité d'utilisateur ici (clé statique partagée, pas de session) —
+            // Pas d'identité d'utilisateur ici (clé statique partagée, pas de session) :
             // seule trace d'audit possible pour ce chemin : qui a appelé quoi, depuis où.
             log.info("Accès /admin/** autorisé : {} {} depuis {}",
                     request.getMethod(), request.getRequestURI(), request.getRemoteAddr());

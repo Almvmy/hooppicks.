@@ -12,6 +12,8 @@ import com.hooppicks.backendapplication.dto.ChangeUsernameRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
 import com.hooppicks.backendapplication.dto.VerifyEmailRequest;
+import com.hooppicks.backendapplication.badge.BadgeService;
+import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.User;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
@@ -52,6 +54,7 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final AccountDeletionService accountDeletionService;
     private final EmailVerificationService emailVerificationService;
+    private final BadgeService badgeService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
     private String cookieSameSite;
@@ -62,7 +65,8 @@ public class AuthController {
     public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder,
                           SessionStore sessionStore, BetRepository betRepository,
                           LoginAttemptService loginAttemptService, PasswordResetService passwordResetService,
-                          AccountDeletionService accountDeletionService, EmailVerificationService emailVerificationService) {
+                          AccountDeletionService accountDeletionService, EmailVerificationService emailVerificationService,
+                          BadgeService badgeService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionStore = sessionStore;
@@ -71,6 +75,7 @@ public class AuthController {
         this.passwordResetService = passwordResetService;
         this.accountDeletionService = accountDeletionService;
         this.emailVerificationService = emailVerificationService;
+        this.badgeService = badgeService;
     }
 
     @PostMapping("/register")
@@ -171,7 +176,7 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestReset(request.email());
-        // Toujours 200, que l'email corresponde à un compte ou non — pas d'énumération.
+        // Toujours 200, que l'email corresponde à un compte ou non : pas d'énumération.
         return ResponseEntity.ok().build();
     }
 
@@ -321,7 +326,11 @@ public class AuthController {
             wonBets = stats.get(0)[1] != null ? (Long) stats.get(0)[1] : 0;
         }
         int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
-        return UserProfileDto.from(user, winRate, (int) totalBets);
+
+        List<Bet> orderedBets = betRepository.findByUserIdOrderByPlacedAtDesc(user.getId());
+        int currentWinStreak = badgeService.computeWinStreak(orderedBets);
+
+        return UserProfileDto.from(user, winRate, (int) totalBets, currentWinStreak);
     }
 
     private void setSessionCookie(HttpServletResponse response, String userId) {

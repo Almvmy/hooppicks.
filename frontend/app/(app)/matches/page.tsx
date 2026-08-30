@@ -17,7 +17,7 @@ export default function MatchesPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["matches"],
     queryFn: fetchMatches,
-    refetchInterval: 60 * 1000, // les cotes bougent en continu côté serveur (cf. OddsService) — on suit
+    refetchInterval: 60 * 1000, // les cotes bougent en continu côté serveur (cf. OddsService) : on suit
   });
 
   const filteredMatches = useMemo(() => {
@@ -31,7 +31,7 @@ export default function MatchesPage() {
               m.awayTeam.conference === conferenceFilter
           );
     // En direct/à venir d'abord (le plus imminent en tête), matchs terminés
-    // ensuite (le plus récent en tête) — sinon un vieux match terminé remonte
+    // ensuite (le plus récent en tête) : sinon un vieux match terminé remonte
     // avant le prochain match à jouer, ce qui n'a pas de sens pour parier.
     return [...base].sort((a, b) => {
       const aUpcoming = a.status !== "finished";

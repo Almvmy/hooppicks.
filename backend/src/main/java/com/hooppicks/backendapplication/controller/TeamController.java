@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Les 30 équipes classées par force Elo (cf. EloService/OddsService, jusqu'ici
  * un signal purement interne au calcul des cotes, jamais exposé), plus
- * l'effectif actuel de chaque équipe (cf. EspnRosterService/RosterPlayer) —
+ * l'effectif actuel de chaque équipe (cf. EspnRosterService/RosterPlayer) :
  * balldontlie gratuit ne donnait ni l'un ni l'autre de façon fiable.
  */
 @RestController

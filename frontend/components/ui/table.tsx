@@ -40,7 +40,7 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
     <tbody
       data-slot="table-body"
       // glass-rows porte les séparateurs + le hover (voir globals.css lot 2).
-      // Note : on ne peut PAS mettre .glass sur un <tr> — un backdrop-filter
+      // Note : on ne peut PAS mettre .glass sur un <tr> : un backdrop-filter
       // sur un élément de tableau crée un containing block et casse la mise
       // en page. D'où des fonds translucides sans flou.
       className={cn("glass-rows", className)}

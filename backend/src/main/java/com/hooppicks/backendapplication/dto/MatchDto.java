@@ -10,9 +10,14 @@ public record MatchDto(
         String status,
         Integer homeScore,
         Integer awayScore,
-        MatchOddsDto odds
+        MatchOddsDto odds,
+        PickPercentagesDto pickPercentages
 ) {
     public static MatchDto from(Match match) {
+        return from(match, null);
+    }
+
+    public static MatchDto from(Match match, PickPercentagesDto pickPercentages) {
         return new MatchDto(
                 match.getId(),
                 TeamDto.from(match.getHomeTeam()),
@@ -21,7 +26,8 @@ public record MatchDto(
                 match.getStatus().name().toLowerCase(), // "SCHEDULED" -> "scheduled", pour matcher ton type MatchStatus TS
                 match.getHomeScore(),
                 match.getAwayScore(),
-                MatchOddsDto.from(match)
+                MatchOddsDto.from(match),
+                pickPercentages
         );
     }
 }

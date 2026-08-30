@@ -32,7 +32,7 @@ import java.util.stream.LongStream;
 
 /**
  * Console admin de l'app : auth par cookie de session + flag User.isAdmin,
- * comme le reste de l'app — volontairement distincte de /admin/** (protégé
+ * comme le reste de l'app : volontairement distincte de /admin/** (protégé
  * par une clé statique, cf. AdminAuthFilter) pour ne pas avoir à embarquer un
  * secret serveur côté frontend.
  */
@@ -138,7 +138,7 @@ public class AdminConsoleController {
         return ResponseEntity.ok(Map.of("synced", true));
     }
 
-    // Ne traite qu'un lot (cf. EspnPlayerStatsService) — ~550 joueurs au
+    // Ne traite qu'un lot (cf. EspnPlayerStatsService) : ~550 joueurs au
     // total, un bouton "tout synchroniser maintenant" bloquerait la requête
     // pendant des minutes. Le rafraîchissement complet se fait en tâche de
     // fond au fil des tick du scheduler ; ce bouton sert juste à avancer
@@ -171,7 +171,7 @@ public class AdminConsoleController {
         ResponseEntity<?> denied = requireAdmin(request);
         if (denied != null) return denied;
 
-        // On ne se retire jamais soi-même le statut admin depuis ici — sinon un
+        // On ne se retire jamais soi-même le statut admin depuis ici : sinon un
         // admin seul peut se verrouiller hors de la console par erreur de clic.
         if (id.equals(sessionStore.getUserIdFromRequest(request))) {
             return ResponseEntity.badRequest().body("Impossible de modifier ton propre statut admin ici.");
@@ -191,7 +191,7 @@ public class AdminConsoleController {
         if (denied != null) return denied;
 
         // La suppression de son propre compte passe par /auth/delete-account
-        // (avec confirmation de mot de passe) — pas par cette voie admin.
+        // (avec confirmation de mot de passe) : pas par cette voie admin.
         if (id.equals(sessionStore.getUserIdFromRequest(request))) {
             return ResponseEntity.badRequest().body("Utilise la suppression de compte depuis tes paramètres.");
         }
@@ -270,7 +270,7 @@ public class AdminConsoleController {
     }
 
     /**
-     * 401 si pas connecté, 403 si connecté mais pas admin, null si tout va bien —
+     * 401 si pas connecté, 403 si connecté mais pas admin, null si tout va bien :
      * à appeler en tête de chaque méthode plutôt que de dupliquer les deux checks.
      */
     private ResponseEntity<?> requireAdmin(HttpServletRequest request) {

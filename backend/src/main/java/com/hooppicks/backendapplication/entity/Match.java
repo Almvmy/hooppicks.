@@ -35,7 +35,7 @@ public class Match {
     private Long externalId;
 
     // ID de l'event ESPN correspondant (système d'identifiants totalement
-    // différent de balldontlie.io) — résolu par date + sigles d'équipe une
+    // différent de balldontlie.io) : résolu par date + sigles d'équipe une
     // fois le match connu, voir EspnStatsService. Nullable : ESPN n'a pas
     // forcément indexé le match au moment de la synchro balldontlie.
     private String espnEventId;

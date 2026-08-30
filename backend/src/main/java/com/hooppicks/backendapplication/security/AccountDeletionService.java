@@ -50,7 +50,7 @@ public class AccountDeletionService {
     @Transactional
     public void deleteAccount(String userId) {
         // Ligues possédées : pas de transfert de propriété possible (fonctionnalité
-        // inexistante), donc la ligue ne peut pas survivre sans son créateur —
+        // inexistante), donc la ligue ne peut pas survivre sans son créateur :
         // on la supprime entièrement plutôt que de laisser ownerId orphelin.
         for (League league : leagueRepository.findByOwnerId(userId)) {
             membershipRepository.deleteByLeagueId(league.getId());

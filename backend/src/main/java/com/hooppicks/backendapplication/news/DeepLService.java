@@ -31,7 +31,7 @@ public class DeepLService {
     /**
      * Traduit une liste de textes EN -> FR en un seul appel (DeepL accepte
      * plusieurs "text" par requête). Si la clé n'est pas configurée ou que
-     * l'appel échoue, renvoie les textes originaux tels quels — l'app doit
+     * l'appel échoue, renvoie les textes originaux tels quels : l'app doit
      * rester utilisable (en anglais) plutôt que de casser la page actus.
      */
     public List<String> translateToFrench(List<String> texts) {
@@ -45,7 +45,7 @@ public class DeepLService {
         HttpEntity<DeepLTranslateRequest> entity =
                 new HttpEntity<>(new DeepLTranslateRequest(texts, "FR", "EN"), headers);
 
-        // Même instabilité réseau observée que pour ESPN (cf. NewsService) —
+        // Même instabilité réseau observée que pour ESPN (cf. NewsService) :
         // même remède : quelques tentatives espacées plutôt qu'un abandon
         // immédiat sur une IP malchanceuse.
         for (int attempt = 1; attempt <= 3; attempt++) {

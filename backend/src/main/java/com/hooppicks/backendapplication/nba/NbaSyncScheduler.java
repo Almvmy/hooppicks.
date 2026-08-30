@@ -15,7 +15,7 @@ import java.util.stream.LongStream;
 
 // Désactivable (nba.sync.scheduler-enabled=false) : les tests avec contexte
 // Spring complet (@SpringBootTest) déclenchaient sinon ce scheduler pour de
-// vrai au démarrage, avec de vrais appels réseau (balldontlie + ESPN) —
+// vrai au démarrage, avec de vrais appels réseau (balldontlie + ESPN) :
 // lent et fragile en test, voir application-test.properties.
 @Component
 @ConditionalOnProperty(prefix = "nba.sync", name = "scheduler-enabled", havingValue = "true", matchIfMissing = true)

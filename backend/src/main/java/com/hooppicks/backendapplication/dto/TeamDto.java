@@ -8,7 +8,8 @@ public record TeamDto(
         String abbreviation,
         String conference,
         String division,
-        String logoUrl
+        String logoUrl,
+        Integer outPlayersCount
 ) {
     public static TeamDto from(Team team) {
         return new TeamDto(
@@ -17,7 +18,8 @@ public record TeamDto(
                 team.getAbbreviation(),
                 team.getConference(),
                 team.getDivision(),
-                team.getLogoUrl()
+                team.getLogoUrl(),
+                team.getOutPlayersCount()
         );
     }
 }

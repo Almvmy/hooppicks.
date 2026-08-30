@@ -6,7 +6,7 @@ import java.time.Instant;
 
 /**
  * État en mémoire du dernier passage de synchro NBA, pour l'interface admin.
- * Pas de persistance DB — se vide au redémarrage, comme SessionStore, c'est
+ * Pas de persistance DB : se vide au redémarrage, comme SessionStore, c'est
  * juste un instantané de ce que le process a fait récemment.
  */
 @Component

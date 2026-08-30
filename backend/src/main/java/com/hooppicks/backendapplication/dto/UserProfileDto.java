@@ -7,6 +7,7 @@ public record UserProfileDto(
         String email,
         int winRate,
         int totalBets,
+        int currentWinStreak,
         String favoriteTeam,
         int avatarNumber,
         String avatarPosition,
@@ -18,12 +19,13 @@ public record UserProfileDto(
         boolean notifyLeagueActivity,
         boolean emailVerified
 ) {
-    public static UserProfileDto from(User user, int winRate, int totalBets) {
+    public static UserProfileDto from(User user, int winRate, int totalBets, int currentWinStreak) {
         return new UserProfileDto(
                 user.getUsername(),
                 user.getEmail(),
                 winRate,
                 totalBets,
+                currentWinStreak,
                 user.getFavoriteTeam(),
                 user.getAvatarNumber(),
                 user.getAvatarPosition(),

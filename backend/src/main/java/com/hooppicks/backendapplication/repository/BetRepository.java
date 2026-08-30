@@ -64,5 +64,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
 
     List<Bet> findTop10ByUser_IdInAndStatusOrderByResolvedAtDesc(List<String> userIds, BetStatus status);
 
+    List<Bet> findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(List<String> userIds, BetStatus status);
+
     void deleteByUserId(String userId);
 }

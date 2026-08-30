@@ -57,7 +57,7 @@ public record RosterPlayerDto(
     }
 
     /**
-     * Résultat de secours balldontlie (cf. NbaSyncService.searchAndCachePlayers) —
+     * Résultat de secours balldontlie (cf. NbaSyncService.searchAndCachePlayers) :
      * même forme que la réponse normale pour que le frontend n'ait rien de
      * spécial à gérer, juste beaucoup plus de champs à null (pas de photo,
      * pas de blessure, pas de stats saison : balldontlie free tier ne les a pas).

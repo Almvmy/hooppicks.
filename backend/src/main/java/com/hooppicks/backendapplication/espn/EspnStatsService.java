@@ -18,7 +18,7 @@ import java.util.List;
  * Enrichissement ESPN (ID d'event + feuille de match), volontairement tenu à
  * l'écart de la grosse transaction de NbaSyncService.doSyncGames : chaque
  * appel ESPN peut prendre jusqu'à ~22s en cas de retry, et le lot pourrait
- * grossir sans borne si on le laissait tourner dans la même boucle — c'est
+ * grossir sans borne si on le laissait tourner dans la même boucle : c'est
  * exactement ce type de traitement en un seul gros paquet qui avait fait
  * dépasser la mémoire allouée sur Railway. Ici, un nombre fixe et petit de
  * matchs traités par appel, quel que soit le nombre de matchs en attente.
@@ -62,7 +62,7 @@ public class EspnStatsService {
                 });
             } catch (Exception e) {
                 // Un match qu'on n'arrive pas à relier à ESPN reste juste sans
-                // feuille de match — jamais bloquant pour le reste de l'app.
+                // feuille de match : jamais bloquant pour le reste de l'app.
                 log.warn("Liaison ESPN échouée pour le match {} : {}", match.getId(), e.getMessage());
             }
         }

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Calcule des cotes plausibles à partir de la force Elo des deux équipes
- * (cf. EloService). L'API gratuite ne fournit pas de vraies cotes — celles-ci
+ * (cf. EloService). L'API gratuite ne fournit pas de vraies cotes : celles-ci
  * sont donc synthétiques mais varient selon les équipes, contrairement aux
  * anciennes cotes fixes identiques pour tous les matchs.
  */
@@ -21,7 +21,7 @@ public class OddsService {
     /**
      * Calcule et pose les cotes (moneyline, spread, total) sur le match à
      * partir des Elo actuels des deux équipes. N'appeler que sur un match
-     * SCHEDULED sans pari en attente dessus (cf. NbaSyncService) — sinon on
+     * SCHEDULED sans pari en attente dessus (cf. NbaSyncService) : sinon on
      * risque de faire bouger une ligne sur laquelle un pari a déjà été posé.
      */
     public void applyOdds(Match match, Team home, Team away) {

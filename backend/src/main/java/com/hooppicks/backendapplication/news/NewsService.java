@@ -14,10 +14,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -27,15 +31,18 @@ public class NewsService {
     private static final String FEED_URL = "https://www.espn.com/espn/rss/nba/news";
     private static final Duration CACHE_TTL = Duration.ofMinutes(15);
 
-    // RFC_1123_DATE_TIME ne comprend que les décalages numériques ("+0000") —
-    // ESPN envoie des abréviations de fuseaux US ("EST") qu'il faut substituer
-    // avant de parser, sinon toutes les dates tombent sur le fallback "now".
-    private static final Map<String, String> US_ZONE_OFFSETS = Map.of(
-            "EST", "-0500", "EDT", "-0400",
-            "CST", "-0600", "CDT", "-0500",
-            "MST", "-0700", "MDT", "-0600",
-            "PST", "-0800", "PDT", "-0700"
-    );
+    // ESPN étiquette toujours ses pubDate "EST" (UTC-5), y compris en plein
+    // été quand l'heure réelle de l'Est américain est EDT (UTC-4) : un quirk
+    // du flux jamais corrigé côté ESPN. Se fier à l'abréviation décale donc
+    // tout d'1h en heure d'été (articles affichés dans le futur). On ignore
+    // l'abréviation et on interprète la date/heure locale comme un vrai
+    // horaire America/New_York, qui applique lui-même la bonne règle EST/EDT
+    // selon le calendrier.
+    private static final Pattern PUB_DATE_PATTERN =
+            Pattern.compile("^(.*\\d{2}:\\d{2}:\\d{2})\\s+[A-Z]{2,4}$");
+    private static final DateTimeFormatter PUB_DATE_LOCAL_FORMAT =
+            DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss", java.util.Locale.US);
+    private static final ZoneId EASTERN = ZoneId.of("America/New_York");
 
     private final RestTemplate restTemplate;
     private final DeepLService deepLService;
@@ -50,7 +57,7 @@ public class NewsService {
     }
 
     /**
-     * Rafraîchit depuis ESPN au plus toutes les {@link #CACHE_TTL} — sinon
+     * Rafraîchit depuis ESPN au plus toutes les {@link #CACHE_TTL} : sinon
      * chaque visite de la page actus ferait un aller-retour externe. Si ESPN
      * est indisponible, on garde le dernier cache connu (même périmé) plutôt
      * que de vider la page.
@@ -61,7 +68,7 @@ public class NewsService {
         }
 
         // Un seul appelant effectue le rafraîchissement à la fois (les tentatives
-        // + pauses réseau peuvent tenir ~35s) — les autres reçoivent le cache
+        // + pauses réseau peuvent tenir ~35s) : les autres reçoivent le cache
         // existant immédiatement plutôt que d'attendre en file derrière un
         // verrou. Même principe de dégradation gracieuse que pour ESPN indisponible.
         if (!refreshing.compareAndSet(false, true)) {
@@ -72,7 +79,7 @@ public class NewsService {
             // (Akamai) ; certaines peuvent être injoignables depuis un réseau
             // donné pendant que d'autres répondent normalement. Java ne bascule
             // pas automatiquement d'une IP à l'autre comme le font curl/les
-            // navigateurs — on retente donc quelques fois plutôt que d'abandonner
+            // navigateurs : on retente donc quelques fois plutôt que d'abandonner
             // à la première IP malchanceuse.
             Exception lastError = null;
             for (int attempt = 1; attempt <= 3; attempt++) {
@@ -125,12 +132,18 @@ public class NewsService {
             result.add(new NewsItemDto(title, link, description, "ESPN", parseDate(pubDate)));
         }
 
+        // Le flux ESPN n'est pas garanti strictement chronologique (des items
+        // partagent parfois le même pubDate, ou remontent des "top stories"
+        // avant les plus récentes) : trié explicitement plutôt que de se fier
+        // à l'ordre du flux, pour un fil vraiment du plus récent au plus ancien.
+        result.sort(Comparator.comparing(NewsItemDto::publishedAt).reversed());
+
         return translate(result);
     }
 
     /**
      * Traduit titre + description en un seul appel DeepL (2 textes par
-     * article) plutôt qu'un appel par champ — le flux entier tient dans une
+     * article) plutôt qu'un appel par champ : le flux entier tient dans une
      * seule requête, ce qui compte vu que ça tourne à chaque rafraîchissement
      * de cache (15 min), pas par visite de page.
      */
@@ -169,18 +182,15 @@ public class NewsService {
         return content == null ? null : content.trim();
     }
 
-    private Instant parseDate(String raw) {
+    // Package-privé pour être testable directement (voir NewsServiceTest).
+    Instant parseDate(String raw) {
         if (raw == null) return Instant.now();
         String normalized = raw.trim();
-        for (Map.Entry<String, String> zone : US_ZONE_OFFSETS.entrySet()) {
-            if (normalized.endsWith(zone.getKey())) {
-                normalized = normalized.substring(0, normalized.length() - zone.getKey().length()).trim()
-                        + " " + zone.getValue();
-                break;
-            }
-        }
+        Matcher matcher = PUB_DATE_PATTERN.matcher(normalized);
+        if (!matcher.matches()) return Instant.now();
         try {
-            return DateTimeFormatter.RFC_1123_DATE_TIME.parse(normalized, Instant::from);
+            LocalDateTime local = LocalDateTime.parse(matcher.group(1), PUB_DATE_LOCAL_FORMAT);
+            return local.atZone(EASTERN).toInstant();
         } catch (Exception e) {
             return Instant.now();
         }

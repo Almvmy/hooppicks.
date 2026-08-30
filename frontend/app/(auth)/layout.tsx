@@ -12,7 +12,7 @@ export default function AuthLayout({
     // n'héritaient pas du champ lumineux. Sans lui, la carte de login en verre
     // (Card → .glass) floute un fond uni et rend gris.
     // On garde la photo de terrain : elle passe AU-DESSUS du champ, et c'est
-    // elle que le verre de la carte va flouter — l'effet y est plus lisible
+    // elle que le verre de la carte va flouter : l'effet y est plus lisible
     // que partout ailleurs dans le produit.
     <div className="app-field relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
       <Image

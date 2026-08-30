@@ -226,7 +226,7 @@ function ChangePasswordForm() {
   const mutation = useMutation({
     mutationFn: () => changePassword(currentPassword, newPassword),
     onSuccess: async () => {
-      toast.success("Mot de passe changé — reconnecte-toi.");
+      toast.success("Mot de passe changé. Reconnecte-toi.");
       await logoutUser();
       router.push("/login");
     },

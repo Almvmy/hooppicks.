@@ -1,7 +1,10 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { fetchPlayerRecentGames } from "@/lib/api/players";
 import { RosterPlayer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +21,58 @@ const INJURY_BADGE_STYLE: Record<string, string> = {
   Out: "border-destructive/40 text-destructive",
   "Day-To-Day": "border-amber-500/40 text-amber-500",
 };
+
+function RecentForm({ playerId }: { playerId: string }) {
+  // Appel ESPN en direct à l'ouverture de la carte, pas de pré-synchro (voir
+  // PlayerController.recentGames côté backend) : d'où le chargement notable
+  // ici, contrairement aux moyennes saison déjà en base.
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["player-recent-games", playerId],
+    queryFn: () => fetchPlayerRecentGames(playerId),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 flex flex-col gap-1.5">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-full" />
+      </div>
+    );
+  }
+
+  if (isError || !data || data.length === 0) return null;
+
+  return (
+    <div className="mt-4">
+      <p className="mb-2 text-xs text-muted-foreground">Forme récente (5 derniers matchs)</p>
+      <ul className="flex flex-col gap-1">
+        {data.map((g) => (
+          <li
+            key={g.date}
+            className="flex items-center justify-between gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs"
+          >
+            <span className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "font-mono font-bold",
+                  g.result === "W" ? "text-emerald-500" : g.result === "L" ? "text-destructive" : "text-muted-foreground"
+                )}
+              >
+                {g.result ?? "?"}
+              </span>
+              <span className="text-muted-foreground">vs {g.opponentAbbreviation ?? "?"}</span>
+            </span>
+            <span className="font-mono">
+              {g.points} pts · {g.rebounds} reb · {g.assists} pd
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export function PlayerCardDialog({
   player,
@@ -77,15 +132,15 @@ export function PlayerCardDialog({
               </p>
               <div className="grid grid-cols-4 gap-2">
                 <StatCell label="Pts" value={player.pointsPerGame.toFixed(1)} />
-                <StatCell label="Reb" value={player.reboundsPerGame?.toFixed(1) ?? "—"} />
-                <StatCell label="Pd" value={player.assistsPerGame?.toFixed(1) ?? "—"} />
-                <StatCell label="Min" value={player.minutesPerGame?.toFixed(1) ?? "—"} />
-                <StatCell label="Int" value={player.stealsPerGame?.toFixed(1) ?? "—"} />
-                <StatCell label="Ctr" value={player.blocksPerGame?.toFixed(1) ?? "—"} />
-                <StatCell label="Perte" value={player.turnoversPerGame?.toFixed(1) ?? "—"} />
+                <StatCell label="Reb" value={player.reboundsPerGame?.toFixed(1) ?? "-"} />
+                <StatCell label="Pd" value={player.assistsPerGame?.toFixed(1) ?? "-"} />
+                <StatCell label="Min" value={player.minutesPerGame?.toFixed(1) ?? "-"} />
+                <StatCell label="Int" value={player.stealsPerGame?.toFixed(1) ?? "-"} />
+                <StatCell label="Ctr" value={player.blocksPerGame?.toFixed(1) ?? "-"} />
+                <StatCell label="Perte" value={player.turnoversPerGame?.toFixed(1) ?? "-"} />
                 <StatCell
                   label="%Tirs"
-                  value={player.fieldGoalPct !== null ? `${player.fieldGoalPct.toFixed(0)}%` : "—"}
+                  value={player.fieldGoalPct !== null ? `${player.fieldGoalPct.toFixed(0)}%` : "-"}
                 />
               </div>
             </div>
@@ -94,6 +149,8 @@ export function PlayerCardDialog({
               Pas encore de statistiques pour cette saison.
             </p>
           )}
+
+          <RecentForm playerId={player.id} />
         </DialogContent>
       )}
     </Dialog>

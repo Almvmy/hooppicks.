@@ -54,7 +54,7 @@ public class PasswordResetService {
     }
 
     /**
-     * Ne révèle jamais si l'email correspond à un compte — même comportement
+     * Ne révèle jamais si l'email correspond à un compte : même comportement
      * qu'un email inconnu ou connu, pour ne pas permettre l'énumération de
      * comptes via ce formulaire (contrairement à /register, où c'est accepté).
      */
@@ -79,7 +79,7 @@ public class PasswordResetService {
             emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), resetLink);
         } catch (Exception e) {
             // Ne jamais laisser un échec d'envoi (SMTP mal configuré, panne du
-            // fournisseur...) se distinguer d'un email inconnu côté client —
+            // fournisseur...) se distinguer d'un email inconnu côté client :
             // sinon le code de réponse redevient un oracle d'énumération.
             log.warn("Échec d'envoi de l'e-mail de reset mot de passe", e);
         }

@@ -4,7 +4,7 @@ import { PlacedBet } from "@/lib/types";
 
 /**
  * Met en avant le ticket gagnant au plus gros gain, façon carte à
- * collectionner holographique — n'affiche rien tant qu'aucun pari n'est
+ * collectionner holographique : n'affiche rien tant qu'aucun pari n'est
  * encore gagné (pas de contenu vide à montrer).
  */
 export function BestBetTrophy({ bets }: { bets: PlacedBet[] | undefined }) {

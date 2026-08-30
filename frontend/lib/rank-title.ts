@@ -1,6 +1,6 @@
 /**
  * Traduit une position au classement en titre évocateur plutôt qu'un
- * simple numéro — gamifie la progression sans ajouter de donnée backend.
+ * simple numéro : gamifie la progression sans ajouter de donnée backend.
  */
 export function rankTitle(rank: number | undefined, totalPlayers: number | undefined): string {
   if (!rank || !totalPlayers || totalPlayers === 0) return "Rookie";

@@ -1,5 +1,5 @@
 /**
- * Filigrane de filet — lignes en éventail traversées de deux courbes.
+ * Filigrane de filet : lignes en éventail traversées de deux courbes.
  * Purement décoratif et vectoriel, cf. CourtWatermark.
  */
 export function NetPattern({ className }: { className?: string }) {

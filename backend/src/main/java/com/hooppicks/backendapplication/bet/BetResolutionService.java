@@ -74,7 +74,7 @@ public class BetResolutionService {
                 user.setWalletBalance(user.getWalletBalance() + bet.getStake());
                 userRepository.save(user);
                 logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
-                notify(user, NotificationType.SYSTEM, "Ton pari a été annulé (égalité sur le seuil) — mise remboursée : +" + bet.getStake() + " pts");
+                notify(user, NotificationType.SYSTEM, "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
             } else {
                 bet.setStatus(BetStatus.WON);
                 user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());

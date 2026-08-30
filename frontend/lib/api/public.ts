@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.BACKEND_API_URL ?? "http://localhost:3001";
  * Pour les Server Components uniquement : appelle le backend directement
  * (pas de session à transmettre, ces routes sont publiques), avec un cache
  * ISR léger. En cas d'échec, renvoie `undefined` plutôt que de faire planter
- * la page — ces données ne sont qu'un bonus d'accueil, pas un contenu
+ * la page : ces données ne sont qu'un bonus d'accueil, pas un contenu
  * critique.
  */
 async function fetchPublic<T>(path: string): Promise<T | undefined> {

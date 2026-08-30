@@ -151,7 +151,7 @@ class BetControllerTest {
         Match match = scheduledMatch("m1"); // cote serveur réelle : 1.8
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
 
-        // Le client envoie une ancienne cote plus favorable (5.0) — doit être ignorée.
+        // Le client envoie une ancienne cote plus favorable (5.0) : doit être ignorée.
         PlaceBetRequest.SelectionInput staleOdds =
                 new PlaceBetRequest.SelectionInput("m1", "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 5.0);
         PlaceBetRequest body = new PlaceBetRequest(List.of(staleOdds), 10);

@@ -1,5 +1,5 @@
 /**
- * Détection best-effort d'une équipe mentionnée dans un titre d'actu — les
+ * Détection best-effort d'une équipe mentionnée dans un titre d'actu : les
  * flux d'actus utilisent des surnoms ("Cavs", "Wolves", "Sixers"), pas les
  * abréviations officielles de team-colors.ts, d'où cette table à part.
  * Sert uniquement à choisir un repère couleur ; un faux positif occasionnel

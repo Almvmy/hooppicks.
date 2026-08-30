@@ -8,11 +8,21 @@ import { fetchMatchBoxScore } from "@/lib/api/matches";
 import { PlayerBoxScore } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+function leaderName<T extends PlayerBoxScore>(players: T[], stat: (p: T) => number): string | undefined {
+  return players.reduce((best, p) => (!best || stat(p) > stat(best) ? p : best), undefined as T | undefined)
+    ?.playerName;
+}
+
 function TeamBoxScore({ teamName, players }: { teamName: string; players: PlayerBoxScore[] }) {
   // Déjà trié par points côté serveur, mais on le refait ici : le tableau
   // peut contenir les deux équipes mélangées avant filtrage par team.
   const sorted = [...players].sort((a, b) => b.points - a.points);
   const topScorerName = sorted[0]?.playerName;
+  // Leaders rebonds/passes calculés côté client à partir des mêmes données
+  // (déjà en base via PlayerMatchStat) : pas besoin d'appeler le endpoint
+  // "leaders" séparé d'ESPN, on a déjà tout ce qu'il faut.
+  const topRebounderName = leaderName(players, (p) => p.rebounds);
+  const topAssisterName = leaderName(players, (p) => p.assists);
 
   return (
     <div className="overflow-x-auto">
@@ -41,8 +51,22 @@ function TeamBoxScore({ teamName, players }: { teamName: string; players: Player
               </TableCell>
               <TableCell className="text-right font-mono text-xs text-muted-foreground">{p.minutes}</TableCell>
               <TableCell className="text-right font-mono font-bold">{p.points}</TableCell>
-              <TableCell className="text-right font-mono text-xs">{p.rebounds}</TableCell>
-              <TableCell className="text-right font-mono text-xs">{p.assists}</TableCell>
+              <TableCell
+                className={cn(
+                  "text-right font-mono text-xs",
+                  p.playerName === topRebounderName && "font-bold text-primary"
+                )}
+              >
+                {p.rebounds}
+              </TableCell>
+              <TableCell
+                className={cn(
+                  "text-right font-mono text-xs",
+                  p.playerName === topAssisterName && "font-bold text-primary"
+                )}
+              >
+                {p.assists}
+              </TableCell>
               <TableCell className="text-right font-mono text-xs text-muted-foreground">{p.fieldGoals}</TableCell>
             </TableRow>
           ))}
@@ -95,9 +119,19 @@ export function MatchBoxScore({
   const awayPlayers = data.filter((p) => p.teamAbbreviation === awayTeamAbbr);
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
-      <TeamBoxScore teamName={awayTeamName} players={awayPlayers} />
-      <TeamBoxScore teamName={homeTeamName} players={homePlayers} />
+    <div className="flex flex-col gap-3">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1">
+          <Star className="h-3 w-3 fill-primary text-primary" /> meilleur marqueur
+        </span>
+        <span>
+          <span className="font-bold text-primary">chiffre en gras</span> = leader rebonds/passes de l&apos;équipe
+        </span>
+      </p>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <TeamBoxScore teamName={awayTeamName} players={awayPlayers} />
+        <TeamBoxScore teamName={homeTeamName} players={homePlayers} />
+      </div>
     </div>
   );
 }

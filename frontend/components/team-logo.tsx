@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Logo officiel (CDN ESPN) quand disponible, sinon le disque de couleur +
- * sigle qu'on utilisait déjà avant — jamais bloquant si logoUrl est encore
+ * sigle qu'on utilisait déjà avant : jamais bloquant si logoUrl est encore
  * null (équipe pas encore synchronisée, cf. EspnStandingsService).
  */
 export function TeamLogo({
