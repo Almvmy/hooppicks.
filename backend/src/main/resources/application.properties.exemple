@@ -31,3 +31,9 @@ app.mail-from=TON_ADRESSE_EXPEDITEUR
 # Optionnel : uniquement nécessaire pour la traduction des actualités
 deepl.api-key=TA_CLE_API_ICI
 deepl.api-url=https://api-free.deepl.com/v2/translate
+
+# Optionnel : laisse vide en local, Sentry.init() avec un DSN vide désactive
+# le SDK proprement (cf. SentryConfig). Utile seulement pour tester
+# l'intégration Sentry elle-même en développement.
+sentry.dsn=
+sentry.environment=local

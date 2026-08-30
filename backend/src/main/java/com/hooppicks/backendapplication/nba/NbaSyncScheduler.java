@@ -2,6 +2,7 @@ package com.hooppicks.backendapplication.nba;
 
 import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
 import com.hooppicks.backendapplication.espn.EspnStatsService;
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,14 +62,47 @@ public class NbaSyncScheduler {
         }
 
         String mode = useFixedWindow ? "fixe " + windowStart : "glissante";
-        NbaSyncService.SyncResult result = nbaSyncService.syncGames(dates);
-        adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
-        log.info("{} match(s) synchronisé(s), {} pari(s) résolu(s) (fenêtre {})",
-                result.gamesSynced(), result.betsResolved(), mode);
+
+        // Chaque phase isolée dans son propre try/catch : ce sont trois
+        // intégrations externes indépendantes (balldontlie, puis deux appels
+        // ESPN), sans lien de dépendance entre elles. Avant ce correctif, une
+        // erreur balldontlie (ex. 429 quota dépassé) faisait remonter
+        // l'exception hors de cette méthode et annulait silencieusement les
+        // deux phases ESPN suivantes pour tout le tick : un souci sur l'une
+        // n'a aucune raison de priver les deux autres de leur rafraîchissement.
+        try {
+            NbaSyncService.SyncResult result = nbaSyncService.syncGames(dates);
+            adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
+            log.info("{} match(s) synchronisé(s), {} pari(s) résolu(s) (fenêtre {})",
+                    result.gamesSynced(), result.betsResolved(), mode);
+        } catch (Exception e) {
+            log.warn("Synchro balldontlie (matchs) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
 
         // Après la synchro balldontlie, pas dedans : voir EspnStatsService
-        // pour pourquoi ce doit être un traitement séparé et borné.
-        espnStatsService.syncEspnData();
-        espnPlayerStatsService.syncBatch();
+        // pour pourquoi ce doit être un traitement séparé et borné. Les deux
+        // méthodes sont appelées ici directement (pas via un wrapper interne
+        // à EspnStatsService) pour que leur @Transactional respectif
+        // s'applique réellement : un appel depuis l'intérieur de la classe ne
+        // passe pas par le proxy Spring (cf. commentaire sur linkEventIds).
+        try {
+            espnStatsService.linkEventIds();
+        } catch (Exception e) {
+            log.warn("Synchro ESPN (liaison des ids d'event) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
+        try {
+            espnStatsService.importBoxScores();
+        } catch (Exception e) {
+            log.warn("Synchro ESPN (import des feuilles de match) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
+        try {
+            espnPlayerStatsService.syncBatch();
+        } catch (Exception e) {
+            log.warn("Synchro ESPN (stats joueurs par lot) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
     }
 }

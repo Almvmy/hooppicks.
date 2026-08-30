@@ -89,6 +89,17 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- SDK Sentry "cœur", pas sentry-spring-boot-starter : ce dernier n'a
+             pas encore de version stable publiée sur Maven Central pour
+             Spring Boot 4 (vérifié : seule une variante alpha existe). Le SDK
+             cœur est stable et agnostique du framework ; branché à la main
+             dans SentryConfig + GlobalExceptionHandler plutôt que via
+             l'auto-configuration Spring Boot qu'on n'a pas. -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry</artifactId>
+            <version>8.16.0</version>
+        </dependency>
 
     </dependencies>
 

@@ -40,13 +40,16 @@ public class EspnStatsService {
         this.playerMatchStatRepository = playerMatchStatRepository;
     }
 
-    public void syncEspnData() {
-        linkEventIds();
-        importBoxScores();
-    }
-
+    // Pas de méthode syncEspnData() qui enchaîne les deux ci-dessous en
+    // interne : un appel this.linkEventIds() depuis l'intérieur de la classe
+    // ne passe pas par le proxy Spring, donc @Transactional n'a aucun effet
+    // (auto-invocation, piège classique de Spring AOP) — la session Hibernate
+    // se refermait avant que match.getHomeTeam() ne soit lu plus loin dans la
+    // boucle (LazyInitializationException depuis le passage de Match.homeTeam/
+    // awayTeam en LAZY). NbaSyncScheduler appelle donc chaque méthode
+    // directement, en tant qu'appelant externe, pour que le proxy s'applique.
     @Transactional
-    void linkEventIds() {
+    public void linkEventIds() {
         List<Match> matches = matchRepository.findByEspnEventIdIsNull(PageRequest.of(0, BATCH_SIZE));
         for (Match match : matches) {
             if (match.getHomeTeam() == null || match.getAwayTeam() == null || match.getDate() == null) continue;
@@ -69,7 +72,7 @@ public class EspnStatsService {
     }
 
     @Transactional
-    void importBoxScores() {
+    public void importBoxScores() {
         List<Match> matches = matchRepository.findFinishedWithoutBoxScore(
                 MatchStatus.FINISHED, PageRequest.of(0, BATCH_SIZE));
 

@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.config;
 
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleUnexpected(Exception e) {
         log.error("Exception non gérée", e); // reste dans les logs serveur, jamais renvoyé au client
+        Sentry.captureException(e); // no-op si sentry.dsn n'est pas configuré, cf. SentryConfig
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Une erreur est survenue."));
     }
