@@ -37,3 +37,10 @@ deepl.api-url=https://api-free.deepl.com/v2/translate
 # l'intégration Sentry elle-même en développement.
 sentry.dsn=
 sentry.environment=local
+# Notifications push (Web Push / VAPID). Optionnel : vide = push desactive,
+# l'app garde ses notifications dans la cloche. Generer une paire de cles :
+#   npx web-push generate-vapid-keys
+push.vapid.public-key=
+push.vapid.private-key=
+# Contact transmis aux services push (defaut : mailto:<app.mail-from>)
+push.vapid.subject=

@@ -31,6 +31,7 @@ import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
 import { LeaguesPreview } from "@/components/dashboard/leagues-preview";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
+import { CountUp } from "@/components/motion/count-up";
 
 export default function DashboardPage() {
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -84,13 +85,17 @@ export default function DashboardPage() {
         items={[
           {
             label: "Solde actuel",
-            value: walletQuery.data ? `${walletQuery.data.balance.toLocaleString("fr-FR")} pts` : undefined,
+            value: walletQuery.data ? (
+              <CountUp value={walletQuery.data.balance} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
+            ) : undefined,
             icon: Wallet,
             isLoading: statsLoading,
           },
           {
             label: "Taux de réussite",
-            value: profileQuery.data ? `${profileQuery.data.winRate}%` : undefined,
+            value: profileQuery.data ? (
+              <CountUp value={profileQuery.data.winRate} format={(n) => `${n}%`} />
+            ) : undefined,
             hint: profileQuery.data ? `sur ${profileQuery.data.totalBets} paris` : undefined,
             icon: Target,
             isLoading: statsLoading,
@@ -100,6 +105,7 @@ export default function DashboardPage() {
             value: ownEntry ? `#${ownEntry.rank}` : "-",
             hint: leaderboardQuery.data ? `sur ${leaderboardQuery.data.length} joueurs` : undefined,
             icon: Trophy,
+            tone: "paint",
             isLoading: statsLoading,
           },
           {
@@ -113,13 +119,13 @@ export default function DashboardPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="reveal-children flex flex-col gap-6 lg:col-span-2">
           <PickOfDay match={slate.spotlight} />
           <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
           <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="reveal-children flex flex-col gap-6">
           <WalletTrend
             series={walletSeries}
             weeklyDelta={weeklyDelta}

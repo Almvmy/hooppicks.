@@ -40,11 +40,17 @@ export function NewsPreview({
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col gap-0.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
+              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-tint/[0.06]"
             >
-              <span className="line-clamp-2 text-sm font-medium leading-snug">{item.title}</span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {formatRelativeTime(item.publishedAt)}
+              {item.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.imageUrl} alt="" loading="lazy" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
+              )}
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="line-clamp-2 text-sm font-medium leading-snug">{item.title}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {formatRelativeTime(item.publishedAt)}
+                </span>
               </span>
             </a>
           ))}

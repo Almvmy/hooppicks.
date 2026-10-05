@@ -6,7 +6,8 @@ import { AlertTriangle, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchTeamRoster } from "@/lib/api/teams";
 import { PlayerCardDialog } from "@/components/player-card-dialog";
-import { RosterPlayer } from "@/lib/types";
+import { TeamLogo } from "@/components/team-logo";
+import { RosterPlayer, Team } from "@/lib/types";
 
 /**
  * Effectif actuel de l'équipe, sourcé depuis ESPN (voir EspnRosterService
@@ -14,7 +15,8 @@ import { RosterPlayer } from "@/lib/types";
  * balldontlie : son free tier ne distingue pas actif/retraité, un listing
  * brut aurait mélangé l'effectif du moment avec des décennies d'historique.
  */
-export function TeamRoster({ teamId, teamName }: { teamId: string; teamName: string }) {
+export function TeamRoster({ team }: { team: Pick<Team, "id" | "name" | "abbreviation" | "logoUrl"> }) {
+  const teamId = team.id;
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["team-roster", teamId],
@@ -25,8 +27,9 @@ export function TeamRoster({ teamId, teamName }: { teamId: string; teamName: str
   return (
     <div className="flex flex-col gap-2">
       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={22} />
         <Users className="h-3.5 w-3.5" />
-        Effectif : {teamName}
+        Effectif : {team.name}
       </p>
 
       {isLoading && (
@@ -50,17 +53,17 @@ export function TeamRoster({ teamId, teamName }: { teamId: string; teamName: str
               <button
                 type="button"
                 onClick={() => setSelectedPlayer(player)}
-                className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-tint/5"
               >
                 {player.headshotUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={player.headshotUrl}
                     alt=""
-                    className="h-7 w-7 shrink-0 rounded-full bg-white/10 object-cover"
+                    className="h-7 w-7 shrink-0 rounded-full bg-tint/10 object-cover"
                   />
                 ) : (
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-[10px] text-muted-foreground">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-tint/10 font-mono text-[10px] text-muted-foreground">
                     {player.jersey ?? ""}
                   </span>
                 )}
@@ -73,7 +76,7 @@ export function TeamRoster({ teamId, teamName }: { teamId: string; teamName: str
                       {player.firstName} {player.lastName}
                       {player.injuryStatus && (
                         <AlertTriangle
-                          className="ml-1.5 inline-block h-3 w-3 text-amber-500"
+                          className="ml-1.5 inline-block h-3 w-3 text-amber-500 light:text-amber-800"
                           aria-label={player.injuryStatus}
                         />
                       )}

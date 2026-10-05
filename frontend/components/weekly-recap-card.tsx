@@ -28,7 +28,9 @@ export function WeeklyRecapCard({
   const headline = headlineFor(streak, weeklyDelta);
 
   return (
-    <div className="recap-sheen relative w-full max-w-[420px] overflow-hidden rounded-xl border border-border bg-gradient-to-br from-[#1A2440] to-background p-6">
+    // island : la carte à partager garde son look Nuit (marine) en thème
+    // clair aussi, pour qu'une capture partagée ressemble toujours à HoopPicks.
+    <div className="recap-sheen island relative w-full max-w-[420px] overflow-hidden rounded-xl border border-border bg-gradient-to-br from-secondary to-background p-6">
       <svg
         aria-hidden
         viewBox="0 0 300 200"

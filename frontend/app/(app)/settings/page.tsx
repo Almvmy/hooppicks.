@@ -20,6 +20,8 @@ import {
   updateNotificationPreferences,
 } from "@/lib/api/auth";
 import { NotificationPreferences } from "@/lib/types";
+import { DisplaySettingsCard } from "@/components/settings/display-settings-card";
+import { PushDeviceSetting } from "@/components/settings/push-device-setting";
 
 const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; description: string }[] = [
   {
@@ -80,6 +82,9 @@ function NotificationsCard() {
               />
             </div>
           ))}
+        </div>
+        <div className="glass-hairline-t pt-4">
+          <PushDeviceSetting />
         </div>
       </CardContent>
     </Card>
@@ -369,7 +374,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold">Paramètres</h1>
-        <p className="mt-1 text-muted-foreground">Compte et notifications.</p>
+        <p className="mt-1 text-muted-foreground">Compte, notifications et affichage.</p>
       </div>
 
       <Card>
@@ -385,6 +390,8 @@ export default function SettingsPage() {
       </Card>
 
       <NotificationsCard />
+
+      <DisplaySettingsCard />
 
       <Card className="shadow-[inset_0_0_0_1px_rgba(239,68,68,0.3)]">
         <CardContent className="flex flex-col gap-3 pt-6">

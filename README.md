@@ -44,6 +44,7 @@ Renseigne dans ce fichier :
 - `admin.api-key` : un secret arbitraire pour toi seul (protège `/admin/**`, voir [CLAUDE.md](CLAUDE.md))
 - `brevo.api-key` / `app.mail-from` : optionnel, seulement nécessaire pour tester le reset de mot de passe et la vérification d'email à l'inscription (API HTTP Brevo, pas SMTP : beaucoup d'hébergeurs bloquent les ports SMTP sortants)
 - `deepl.api-key` : optionnel, seulement nécessaire pour la traduction des actualités (clé gratuite sur DeepL)
+- `push.vapid.public-key` / `push.vapid.private-key` : optionnel, active les notifications push (vide = désactivé). Générer une paire avec `npx web-push generate-vapid-keys`
 
 Puis lance :
 

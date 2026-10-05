@@ -15,12 +15,12 @@ const badgeVariants = cva(
         // fort du système (compteur de notifications), il doit rester opaque.
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         secondary:
-          "bg-white/[0.06] text-secondary-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] [a]:hover:bg-white/[0.10]",
+          "bg-tint/[0.06] text-secondary-foreground shadow-[inset_0_0_0_1px_var(--hairline-strong)] [a]:hover:bg-tint/[0.10]",
         destructive:
           "bg-destructive/10 text-destructive shadow-[inset_0_0_0_1px_rgba(239,68,68,0.35)] focus-visible:ring-destructive/20 [a]:hover:bg-destructive/20",
         outline:
-          "text-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] [a]:hover:bg-white/[0.06]",
-        ghost: "hover:bg-white/[0.06] hover:text-muted-foreground",
+          "text-foreground shadow-[inset_0_0_0_1px_var(--hairline-strong)] [a]:hover:bg-tint/[0.06]",
+        ghost: "hover:bg-tint/[0.06] hover:text-muted-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Nouvelles variantes sémantiques, alignées sur les tokens existants :
         // elles remplacent les `bg-*/10 border-*/30` recopiés à la main dans

@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api/http";
 import { NotificationPreferences, UpdateProfileInput, UserProfile } from "@/lib/types";
+import { forgetPushOnThisDevice } from "@/lib/push";
 
 export async function registerUser(username: string, email: string, password: string): Promise<UserProfile> {
   return apiFetch<UserProfile>("/auth/register", {
@@ -16,6 +17,8 @@ export async function loginUser(email: string, password: string): Promise<UserPr
 }
 
 export async function logoutUser(): Promise<void> {
+  // Avant la déconnexion (la désinscription a encore besoin de la session).
+  await forgetPushOnThisDevice();
   return apiFetch<void>("/auth/logout", { method: "POST" });
 }
 

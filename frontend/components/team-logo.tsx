@@ -1,5 +1,27 @@
+import { ViewTransition } from "react";
 import { getTeamColor } from "@/lib/team-colors";
 import { cn } from "@/lib/utils";
+
+/**
+ * Variante qui "vole" d'une page à l'autre : deux MorphingTeamLogo de même
+ * morphName, l'un sur la page quittée et l'autre sur la page d'arrivée, sont
+ * animés par le navigateur comme un seul objet qui change de taille et de
+ * place. morphName doit être unique sur une même page (React avertit sinon).
+ */
+export function MorphingTeamLogo({
+  morphName,
+  ...props
+}: React.ComponentProps<typeof TeamLogo> & { morphName: string }) {
+  return (
+    <ViewTransition name={morphName} share="team-morph">
+      <TeamLogo {...props} />
+    </ViewTransition>
+  );
+}
+
+export function teamLogoMorphName(matchId: string, side: "home" | "away") {
+  return `team-logo-${matchId}-${side}`;
+}
 
 /**
  * Logo officiel (CDN ESPN) quand disponible, sinon le disque de couleur +

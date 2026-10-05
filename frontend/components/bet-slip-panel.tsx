@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Ticket as TicketIcon } from "lucide-react";
+import { ChevronDown, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { useBetSlip } from "@/components/bet-slip-provider";
 import { fetchWallet } from "@/lib/api/wallet";
 import { placeBet } from "@/lib/api/bets";
 import type { BetSelection } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 
 export function BetSlipPanel() {
   const { selections, stake, setStake, toggleSelection, clear, totalOdds, potentialPayout } =
@@ -16,6 +19,19 @@ export function BetSlipPanel() {
   const queryClient = useQueryClient();
 
   const { data: wallet } = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
+  const matchesById = useMatchesById();
+
+  // Mobile uniquement : le ticket déplié recouvre la bottom nav (une seule
+  // île marine à l'écran), réduit il devient une pastille au-dessus d'elle.
+  // Il se redéplie à chaque sélection ajoutée : c'est le moment où on veut
+  // voir la cote totale et saisir sa mise. Ajusté pendant le rendu (et pas
+  // dans un effet) pour ne pas afficher une image intermédiaire.
+  const [expanded, setExpanded] = useState(true);
+  const [previousCount, setPreviousCount] = useState(selections.length);
+  if (selections.length !== previousCount) {
+    setPreviousCount(selections.length);
+    if (selections.length > previousCount) setExpanded(true);
+  }
 
     const mutation = useMutation({
     mutationFn: ({ selections, stake }: { selections: BetSelection[]; stake: number }) =>
@@ -42,76 +58,106 @@ export function BetSlipPanel() {
   }
 
   return (
-    <div className="glass fixed bottom-20 left-4 right-4 z-50 w-auto overflow-hidden rounded-2xl sm:bottom-4 sm:left-auto sm:w-80">
-      {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-primary via-live to-primary" />
-
-      <div className="flex items-center justify-between px-4 py-3 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]">
-        <div className="flex items-center gap-2 font-heading font-bold">
-          <TicketIcon className="h-4 w-4 text-primary" />
-          Ticket ({selections.length})
-        </div>
-        <button onClick={clear} aria-label="Vider le ticket">
-          <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-        </button>
-      </div>
-
-      <div className="flex max-h-56 flex-col gap-2 overflow-y-auto p-4">
-        {selections.map((s) => (
-          <div
-            key={s.id}
-            className="glass-inset-quiet flex items-center justify-between rounded-xl px-3 py-2 text-sm"
-          >
-            <div>
-              <p className="text-xs text-muted-foreground">{s.matchLabel}</p>
-              <p className="font-medium">{s.label}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-primary">{s.odds.toFixed(2)}</span>
-              <button onClick={() => toggleSelection(s)} aria-label="Retirer">
-                <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-3 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Cote totale</span>
-          <span className="font-mono font-bold">{totalOdds.toFixed(2)}</span>
-        </div>
-
-        <Input
-          type="number"
-          min={1}
-          placeholder="Mise en points"
-          value={stake || ""}
-          onChange={(e) => setStake(Number(e.target.value))}
-        />
-
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Gain potentiel</span>
-          <span className="font-mono font-bold text-success">
-            {potentialPayout.toLocaleString("fr-FR")} pts
-          </span>
-        </div>
-
-        {stake > balance && (
-          <p className="text-xs text-destructive">
-            Solde insuffisant ({balance.toLocaleString("fr-FR")} pts disponibles).
-          </p>
-        )}
-
-        <Button
-          variant="lit"
-          onClick={handleSubmit}
-          disabled={!isStakeValid || mutation.isPending}
-          className="w-full"
+    <>
+      {!expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="fixed right-4 z-50 flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-[var(--lift-strong)] md:hidden"
+          // Juste au-dessus de la bottom nav (14px + ~68px de haut + marge).
+          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+          aria-label={`Ouvrir le ticket (${selections.length} sélection${selections.length > 1 ? "s" : ""})`}
         >
-          {mutation.isPending ? "Validation..." : "Valider le ticket"}
-        </Button>
+          <TicketIcon className="h-4 w-4" />
+          Ticket ({selections.length})
+          <span className="font-mono">{totalOdds.toFixed(2)}</span>
+        </button>
+      )}
+      <div
+        className={cn(
+          "glass island fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl pb-[env(safe-area-inset-bottom)]",
+          "md:inset-x-auto md:bottom-4 md:right-4 md:w-80 md:rounded-2xl md:pb-0",
+          !expanded && "hidden md:block"
+        )}
+      >
+        {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
+        <div className="h-[3px] w-full bg-gradient-to-r from-primary via-live to-primary" />
+
+        <div className="flex items-center justify-between px-4 py-3 shadow-[inset_0_-1px_0_var(--hairline)]">
+          <div className="flex items-center gap-2 font-heading font-bold">
+            <TicketIcon className="h-4 w-4 text-primary" />
+            Ticket ({selections.length})
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setExpanded(false)} aria-label="Réduire le ticket" className="md:hidden">
+              <ChevronDown className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+            <button onClick={clear} aria-label="Vider le ticket">
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex max-h-56 flex-col gap-2 overflow-y-auto p-4">
+          {selections.map((s) => (
+            <div
+              key={s.id}
+              className="glass-inset-quiet flex items-center justify-between rounded-xl px-3 py-2 text-sm"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <SelectionTeamLogo selection={s} matchesById={matchesById} size={28} />
+                <div className="min-w-0">
+                  <p className="truncate text-xs text-muted-foreground">{s.matchLabel}</p>
+                  <p className="font-medium">{s.label}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-primary">{s.odds.toFixed(2)}</span>
+                <button onClick={() => toggleSelection(s)} aria-label="Retirer">
+                  <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 p-4 shadow-[inset_0_1px_0_var(--hairline)]">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Cote totale</span>
+            <span className="font-mono font-bold">{totalOdds.toFixed(2)}</span>
+          </div>
+
+          <Input
+            type="number"
+            min={1}
+            placeholder="Mise en points"
+            value={stake || ""}
+            onChange={(e) => setStake(Number(e.target.value))}
+          />
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Gain potentiel</span>
+            <span className="font-mono font-bold text-success">
+              {potentialPayout.toLocaleString("fr-FR")} pts
+            </span>
+          </div>
+
+          {stake > balance && (
+            <p className="text-xs text-destructive">
+              Solde insuffisant ({balance.toLocaleString("fr-FR")} pts disponibles).
+            </p>
+          )}
+
+          <Button
+            variant="lit"
+            onClick={handleSubmit}
+            disabled={!isStakeValid || mutation.isPending}
+            className="w-full"
+          >
+            {mutation.isPending ? "Validation..." : "Valider le ticket"}
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

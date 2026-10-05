@@ -40,9 +40,9 @@ export function LeaguesPreview({
             <Link
               key={league.id}
               href={`/leagues/${league.id}`}
-              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-white/[0.06]"
+              className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-tint/[0.06]"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-paint/10 text-paint">
                 <Shield className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -53,7 +53,7 @@ export function LeaguesPreview({
                 </p>
               </div>
               {league.isOwner && (
-                <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                <span className="shrink-0 rounded-full bg-paint/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-paint">
                   Créateur
                 </span>
               )}

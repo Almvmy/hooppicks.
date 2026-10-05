@@ -72,7 +72,7 @@ function PlayerLeadersSection({ onSelect }: { onSelect: (player: RosterPlayer) =
                 key={player.id}
                 type="button"
                 onClick={() => onSelect(player)}
-                className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-white/5"
+                className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left transition-colors hover:bg-tint/5"
               >
                 <span className="w-4 shrink-0 font-mono text-xs text-muted-foreground">{i + 1}</span>
                 {player.headshotUrl ? (
@@ -80,7 +80,7 @@ function PlayerLeadersSection({ onSelect }: { onSelect: (player: RosterPlayer) =
                   <img
                     src={player.headshotUrl}
                     alt={`${player.firstName} ${player.lastName}`}
-                    className="h-8 w-8 shrink-0 rounded-full bg-white/10 object-cover"
+                    className="h-8 w-8 shrink-0 rounded-full bg-tint/10 object-cover"
                   />
                 ) : (
                   <span
@@ -221,14 +221,14 @@ function PlayersTab() {
               <button
                 type="button"
                 onClick={() => setSelectedPlayer(player)}
-                className="flex w-full items-center gap-3 px-(--card-spacing) pt-6 text-left transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-3 px-(--card-spacing) pt-6 text-left transition-colors hover:bg-tint/5"
               >
                 {player.headshotUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={player.headshotUrl}
                     alt={`${player.firstName} ${player.lastName}`}
-                    className="h-10 w-10 shrink-0 rounded-full bg-white/10 object-cover"
+                    className="h-10 w-10 shrink-0 rounded-full bg-tint/10 object-cover"
                   />
                 ) : (
                   <span
@@ -389,7 +389,7 @@ function TeamsTab() {
 function TeamCard({ team, badge }: { team: TeamRank; badge: string }) {
   return (
     <Link href={`/teams/${team.id}`}>
-      <Card className="transition-colors hover:bg-white/5">
+      <Card className="transition-colors hover:bg-tint/5">
         <CardContent className="flex items-center gap-3 pt-6">
           <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={36} />
           <div className="min-w-0 flex-1">

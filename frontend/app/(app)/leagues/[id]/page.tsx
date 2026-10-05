@@ -93,7 +93,7 @@ export default function LeagueDetailPage({
             Mes ligues
           </Link>
           <div className="mt-2 flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
+            <Shield className="h-6 w-6 text-paint" />
             <h1 className="font-heading text-2xl font-bold">{league?.name ?? "Ligue"}</h1>
           </div>
           {league && (
@@ -161,7 +161,7 @@ export default function LeagueDetailPage({
                   {member.username}
                 </Link>
                 {member.isOwner && (
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                  <span className="shrink-0 rounded-full bg-paint/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-paint">
                     Créateur
                   </span>
                 )}

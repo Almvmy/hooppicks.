@@ -182,4 +182,61 @@ class EspnStatsClientTest {
         assertThat(rows).hasSize(1);
         assertThat(rows.get(0).plusMinus()).isEqualTo(-6);
     }
+
+    @Test
+    void fetchNews_extrait_photo_equipes_aux_sigles_de_notre_base_et_type_video() throws Exception {
+        mockResponse("""
+            {
+              "articles": [
+                {
+                  "type": "HeadlineNews",
+                  "headline": "Knicks' Towns not expecting extension soon",
+                  "description": "Karl-Anthony Towns...",
+                  "published": "2026-10-05T17:11:40Z",
+                  "links": { "web": { "href": "https://www.espn.com/nba/story/_/id/1" } },
+                  "images": [
+                    { "type": "Media", "url": "https://img/media.jpg" },
+                    { "type": "header", "url": "https://img/header.jpg" }
+                  ],
+                  "categories": [
+                    { "type": "league", "description": "NBA" },
+                    { "type": "team", "team": { "abbreviation": "NY" } },
+                    { "type": "team", "team": { "abbreviation": "BOS" } },
+                    { "type": "athlete", "description": "Karl-Anthony Towns" }
+                  ]
+                },
+                {
+                  "type": "Media",
+                  "headline": "Highlights",
+                  "published": "2026-10-05T16:00:00Z",
+                  "links": { "web": { "href": "https://www.espn.com/video/2" } },
+                  "images": [ { "type": "Media", "url": "https://img/video.jpg" } ],
+                  "categories": [ { "type": "team", "team": { "abbreviation": "GS" } } ]
+                },
+                { "headline": "Sans lien : ignoré" }
+              ]
+            }
+            """);
+
+        List<EspnNewsRow> rows = client.fetchNews(30);
+
+        assertThat(rows).hasSize(2);
+        EspnNewsRow story = rows.get(0);
+        assertThat(story.imageUrl()).isEqualTo("https://img/header.jpg"); // la photo "header" passe devant
+        assertThat(story.teamAbbreviations()).containsExactly("NYK", "BOS"); // NY (ESPN) -> NYK (balldontlie)
+        assertThat(story.video()).isFalse();
+        assertThat(story.publishedAt()).isEqualTo(java.time.Instant.parse("2026-10-05T17:11:40Z"));
+
+        EspnNewsRow video = rows.get(1);
+        assertThat(video.video()).isTrue();
+        assertThat(video.imageUrl()).isEqualTo("https://img/video.jpg");
+        assertThat(video.teamAbbreviations()).containsExactly("GSW");
+    }
+
+    @Test
+    void fromEspnAbbreviation_est_l_inverse_de_toEspnAbbreviation() {
+        for (String ours : List.of("GSW", "NOP", "NYK", "SAS", "UTA", "WAS", "LAL", "BOS")) {
+            assertThat(EspnStatsClient.fromEspnAbbreviation(EspnStatsClient.toEspnAbbreviation(ours))).isEqualTo(ours);
+        }
+    }
 }

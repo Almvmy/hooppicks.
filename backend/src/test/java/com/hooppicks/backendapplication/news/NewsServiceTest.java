@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.news;
 
+import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestTemplate;
 
@@ -9,7 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class NewsServiceTest {
 
-    private final NewsService service = new NewsService(new RestTemplate(), new DeepLService(new RestTemplate()));
+    private final NewsService service = new NewsService(new RestTemplate(), new DeepLService(new RestTemplate()),
+            new EspnStatsClient(new RestTemplate()));
 
     /**
      * ESPN étiquette toujours ses pubDate "EST" (UTC-5), même en plein été

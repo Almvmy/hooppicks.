@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Transitions de page natives (API View Transitions du navigateur via le
+    // <ViewTransition> de React) : zéro dépendance d'animation, et un
+    // navigateur qui ne la supporte pas affiche simplement la page sans animer.
+    viewTransition: true,
+  },
 };
 
 // org/project/authToken absents = pas de credentials Sentry configurés :

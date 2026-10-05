@@ -3,6 +3,7 @@ package com.hooppicks.backendapplication.security;
 import com.hooppicks.backendapplication.entity.League;
 import com.hooppicks.backendapplication.entity.LeagueMembership;
 import com.hooppicks.backendapplication.league.LeagueService;
+import com.hooppicks.backendapplication.push.PushSubscriptionRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.LeagueMembershipRepository;
 import com.hooppicks.backendapplication.repository.LeagueRepository;
@@ -26,6 +27,7 @@ public class AccountDeletionService {
     private final NotificationRepository notificationRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final EmailVerificationTokenRepository verificationTokenRepository;
+    private final PushSubscriptionRepository pushSubscriptionRepository;
     private final SessionStore sessionStore;
 
     public AccountDeletionService(UserRepository userRepository, LeagueRepository leagueRepository,
@@ -34,6 +36,7 @@ public class AccountDeletionService {
                                    NotificationRepository notificationRepository,
                                    PasswordResetTokenRepository tokenRepository,
                                    EmailVerificationTokenRepository verificationTokenRepository,
+                                   PushSubscriptionRepository pushSubscriptionRepository,
                                    SessionStore sessionStore) {
         this.userRepository = userRepository;
         this.leagueRepository = leagueRepository;
@@ -44,6 +47,7 @@ public class AccountDeletionService {
         this.notificationRepository = notificationRepository;
         this.tokenRepository = tokenRepository;
         this.verificationTokenRepository = verificationTokenRepository;
+        this.pushSubscriptionRepository = pushSubscriptionRepository;
         this.sessionStore = sessionStore;
     }
 
@@ -68,6 +72,7 @@ public class AccountDeletionService {
         notificationRepository.deleteByUserId(userId);
         tokenRepository.deleteByUserId(userId);
         verificationTokenRepository.deleteByUserId(userId);
+        pushSubscriptionRepository.deleteByUserId(userId);
 
         userRepository.deleteById(userId);
         sessionStore.invalidateAllForUser(userId);

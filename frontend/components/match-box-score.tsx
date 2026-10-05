@@ -5,7 +5,8 @@ import { Star } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchMatchBoxScore } from "@/lib/api/matches";
-import { PlayerBoxScore } from "@/lib/types";
+import { PlayerBoxScore, Team } from "@/lib/types";
+import { TeamLogo } from "@/components/team-logo";
 import { cn } from "@/lib/utils";
 
 function leaderName<T extends PlayerBoxScore>(players: T[], stat: (p: T) => number): string | undefined {
@@ -13,7 +14,7 @@ function leaderName<T extends PlayerBoxScore>(players: T[], stat: (p: T) => numb
     ?.playerName;
 }
 
-function TeamBoxScore({ teamName, players }: { teamName: string; players: PlayerBoxScore[] }) {
+function TeamBoxScore({ team, players }: { team: Team; players: PlayerBoxScore[] }) {
   // Déjà trié par points côté serveur, mais on le refait ici : le tableau
   // peut contenir les deux équipes mélangées avant filtrage par team.
   const sorted = [...players].sort((a, b) => b.points - a.points);
@@ -26,7 +27,10 @@ function TeamBoxScore({ teamName, players }: { teamName: string; players: Player
 
   return (
     <div className="overflow-x-auto">
-      <p className="mb-2 font-heading text-sm font-bold">{teamName}</p>
+      <p className="mb-2 flex items-center gap-2 font-heading text-sm font-bold">
+        <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={24} />
+        {team.name}
+      </p>
       <Table>
         <TableHeader>
           <TableRow>
@@ -78,16 +82,12 @@ function TeamBoxScore({ teamName, players }: { teamName: string; players: Player
 
 export function MatchBoxScore({
   matchId,
-  homeTeamName,
-  homeTeamAbbr,
-  awayTeamName,
-  awayTeamAbbr,
+  homeTeam,
+  awayTeam,
 }: {
   matchId: string;
-  homeTeamName: string;
-  homeTeamAbbr: string;
-  awayTeamName: string;
-  awayTeamAbbr: string;
+  homeTeam: Team;
+  awayTeam: Team;
 }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["match-boxscore", matchId],
@@ -115,8 +115,8 @@ export function MatchBoxScore({
     );
   }
 
-  const homePlayers = data.filter((p) => p.teamAbbreviation === homeTeamAbbr);
-  const awayPlayers = data.filter((p) => p.teamAbbreviation === awayTeamAbbr);
+  const homePlayers = data.filter((p) => p.teamAbbreviation === homeTeam.abbreviation);
+  const awayPlayers = data.filter((p) => p.teamAbbreviation === awayTeam.abbreviation);
 
   return (
     <div className="flex flex-col gap-3">
@@ -129,8 +129,8 @@ export function MatchBoxScore({
         </span>
       </p>
       <div className="grid gap-6 sm:grid-cols-2">
-        <TeamBoxScore teamName={awayTeamName} players={awayPlayers} />
-        <TeamBoxScore teamName={homeTeamName} players={homePlayers} />
+        <TeamBoxScore team={awayTeam} players={awayPlayers} />
+        <TeamBoxScore team={homeTeam} players={homePlayers} />
       </div>
     </div>
   );

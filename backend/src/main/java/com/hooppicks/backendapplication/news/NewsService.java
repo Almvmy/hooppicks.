@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.news;
 
+import com.hooppicks.backendapplication.espn.EspnNewsRow;
+import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,16 +46,21 @@ public class NewsService {
             DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss", java.util.Locale.US);
     private static final ZoneId EASTERN = ZoneId.of("America/New_York");
 
+    // Assez d'articles pour remplir la page (une trentaine), en un seul appel.
+    private static final int ARTICLE_LIMIT = 30;
+
     private final RestTemplate restTemplate;
     private final DeepLService deepLService;
+    private final EspnStatsClient espnStatsClient;
 
     private volatile List<NewsItemDto> cache = List.of();
     private volatile Instant cachedAt = Instant.EPOCH;
     private final AtomicBoolean refreshing = new AtomicBoolean(false);
 
-    public NewsService(RestTemplate restTemplate, DeepLService deepLService) {
+    public NewsService(RestTemplate restTemplate, DeepLService deepLService, EspnStatsClient espnStatsClient) {
         this.restTemplate = restTemplate;
         this.deepLService = deepLService;
+        this.espnStatsClient = espnStatsClient;
     }
 
     /**
@@ -75,6 +82,15 @@ public class NewsService {
             return cache;
         }
         try {
+            // Source principale : l'API JSON d'ESPN (photo, équipes étiquetées,
+            // vidéos). Le flux RSS, plus pauvre, ne sert plus que de repli.
+            List<NewsItemDto> fromApi = fetchFromApi();
+            if (!fromApi.isEmpty()) {
+                cache = fromApi;
+                cachedAt = Instant.now();
+                return cache;
+            }
+
             // ESPN sert son flux depuis plusieurs IP en répartition de charge
             // (Akamai) ; certaines peuvent être injoignables depuis un réseau
             // donné pendant que d'autres répondent normalement. Java ne bascule
@@ -107,6 +123,21 @@ public class NewsService {
         }
     }
 
+    private List<NewsItemDto> fetchFromApi() {
+        try {
+            List<NewsItemDto> items = new ArrayList<>();
+            for (EspnNewsRow row : espnStatsClient.fetchNews(ARTICLE_LIMIT)) {
+                items.add(new NewsItemDto(row.headline(), row.link(), row.description(), "ESPN",
+                        row.publishedAt(), row.imageUrl(), row.teamAbbreviations(), row.video()));
+            }
+            items.sort(Comparator.comparing(NewsItemDto::publishedAt).reversed());
+            return translate(items);
+        } catch (Exception e) {
+            log.warn("API actualités ESPN inexploitable, repli sur le flux RSS", e);
+            return List.of();
+        }
+    }
+
     private List<NewsItemDto> parse(String xml) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         // Contenu XML externe : on désactive DOCTYPE/entités externes pour se
@@ -129,7 +160,7 @@ public class NewsService {
             String pubDate = text(item, "pubDate");
             if (title == null || link == null) continue;
 
-            result.add(new NewsItemDto(title, link, description, "ESPN", parseDate(pubDate)));
+            result.add(NewsItemDto.fromRss(title, link, description, parseDate(pubDate)));
         }
 
         // Le flux ESPN n'est pas garanti strictement chronologique (des items
@@ -163,12 +194,9 @@ public class NewsService {
         for (int i = 0; i < items.size(); i++) {
             NewsItemDto item = items.get(i);
             String translatedDescription = translated.get(i * 2 + 1);
-            result.add(new NewsItemDto(
+            result.add(item.withText(
                     translated.get(i * 2),
-                    item.link(),
-                    translatedDescription.isBlank() ? null : translatedDescription,
-                    item.source(),
-                    item.publishedAt()
+                    translatedDescription.isBlank() ? null : translatedDescription
             ));
         }
         return result;

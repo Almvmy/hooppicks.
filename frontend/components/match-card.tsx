@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { AlertTriangle, Swords } from "lucide-react";
+import { Swords } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
+import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
+import { NbaLogo } from "@/components/nba-logo";
 import { isRivalryMatchup } from "@/lib/rivalries";
-import { TeamLogo } from "@/components/team-logo";
 import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
@@ -16,81 +17,54 @@ export function MatchCard({ match }: { match: Match }) {
   return (
     <Link href={`/matches/${match.id}`}>
       <Card
+        style={faceOffBackground(match)}
         className={cn(
-          // border-* retirés : le Card porte maintenant son liseré via .glass.
           // Le hover éclaircit le verre au lieu de changer la bordure.
-          "relative overflow-hidden transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,122,26,0.30),0_18px_44px_rgba(3,7,18,0.55)]",
-          isRivalry && "shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,122,26,0.35),0_18px_44px_rgba(3,7,18,0.55)]"
+          "relative overflow-hidden transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,122,26,0.30),var(--lift)]",
+          isRivalry && "shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,122,26,0.35),var(--lift)]"
         )}
       >
+        <TeamWatermarks match={match} />
+
         {isRivalry && (
-          <div className="flex items-center gap-1.5 bg-primary/[0.12] px-4 py-1.5 shadow-[inset_0_-1px_0_rgba(255,122,26,0.25)]">
+          <div className="relative flex items-center gap-1.5 bg-primary/[0.12] px-4 py-1.5 shadow-[inset_0_-1px_0_rgba(255,122,26,0.25)]">
             <Swords className="h-3 w-3 text-primary" />
             <span className="font-mono text-[10px] font-bold tracking-wide uppercase text-[var(--primary-lit)]">
               Rivalité historique
             </span>
           </div>
         )}
-        <CardContent className="flex items-center justify-between gap-4 pt-6">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="flex min-w-0 items-center gap-2 font-medium">
-                <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={20} />
-                <span className="truncate">{match.awayTeam.name}</span>
-                {!!match.awayTeam.outPlayersCount && (
-                  <span
-                    className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-amber-500"
-                    title={`${match.awayTeam.outPlayersCount} joueur(s) indisponible(s) (Out)`}
-                  >
-                    <AlertTriangle className="h-3 w-3" />
-                    {match.awayTeam.outPlayersCount}
-                  </span>
-                )}
-              </span>
-              {match.status !== "scheduled" && (
-                <span className="font-mono font-bold">{match.awayScore}</span>
-              )}
+
+        <CardContent className="relative pt-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <NbaLogo size={18} />
+              <MatchStatusBadge status={match.status} />
             </div>
-            <div className="mt-1 flex items-center justify-between text-sm">
-              <span className="flex min-w-0 items-center gap-2 font-medium">
-                <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={20} />
-                <span className="truncate">{match.homeTeam.name}</span>
-                {!!match.homeTeam.outPlayersCount && (
-                  <span
-                    className="flex shrink-0 items-center gap-0.5 text-[10px] font-bold text-amber-500"
-                    title={`${match.homeTeam.outPlayersCount} joueur(s) indisponible(s) (Out)`}
-                  >
-                    <AlertTriangle className="h-3 w-3" />
-                    {match.homeTeam.outPlayersCount}
-                  </span>
-                )}
+            <div className="flex flex-col items-end gap-1">
+              <span className="font-mono text-xs text-muted-foreground">
+                {formatMatchDate(date)}
+                {" · "}
+                {formatMatchTime(date)}
               </span>
-              {match.status !== "scheduled" && (
-                <span className="font-mono font-bold">{match.homeScore}</span>
+              {countdown && (
+                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-500 light:text-amber-800">
+                  {countdown}
+                </span>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
-            <MatchStatusBadge status={match.status} />
-            <span className="font-mono text-xs text-muted-foreground">
-              {formatMatchDate(date)}
-              {" · "}
-              {formatMatchTime(date)}
-            </span>
-            {countdown && (
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-500">
-                {countdown}
-              </span>
-            )}
+          <div className="mt-3">
+            <FaceOffTeams match={match} morph />
           </div>
         </CardContent>
-        <div className="px-6 pb-4">
+
+        <div className="relative px-6 pb-4">
           {match.status === "scheduled" ? (
             <MatchOddsRow match={match} />
           ) : (
-            // bg-secondary/30 → glass-inset-quiet
-            <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
+            <p className="glass-inset-quiet mt-3 rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
               paris fermés : match {match.status === "live" ? "en cours" : "terminé"}
             </p>
           )}

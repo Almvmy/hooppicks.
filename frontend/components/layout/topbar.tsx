@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircle, LogOut, Settings } from "lucide-react";
+import { HelpCircle, Info, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -62,6 +62,16 @@ export function Topbar() {
 
       <div className="ml-auto flex items-center gap-4">
         <WalletBalance />
+        {/* Masqué sous md : la barre mobile est déjà pleine, l'aide reste
+            accessible depuis le menu du profil. */}
+        <Link
+          href="/help"
+          aria-label="Aide et support"
+          title="Aide et support"
+          className="hidden h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-tint/[0.06] hover:text-foreground md:flex"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </Link>
         <NotificationsDropdown />
 
         <DropdownMenu>
@@ -85,8 +95,12 @@ export function Topbar() {
               <Settings className="mr-2 h-4 w-4" />
               Paramètres
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/about")}>
+            <DropdownMenuItem onClick={() => router.push("/help")}>
               <HelpCircle className="mr-2 h-4 w-4" />
+              Aide et support
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/about")}>
+              <Info className="mr-2 h-4 w-4" />
               À propos
             </DropdownMenuItem>
             <DropdownMenuItem

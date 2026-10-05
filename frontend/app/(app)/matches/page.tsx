@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchCard } from "@/components/match-card";
+import { NbaLogo } from "@/components/nba-logo";
 import { fetchMatches } from "@/lib/api/matches";
 import { Conference, Match } from "@/lib/types";
 import { cn, getDayLabel } from "@/lib/utils";
@@ -60,7 +61,10 @@ export default function MatchesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold">Matchs</h1>
+        <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
+          <NbaLogo size={30} />
+          Matchs
+        </h1>
         <p className="mt-1 text-muted-foreground">
           Calendrier de la saison régulière NBA.
         </p>
@@ -109,7 +113,7 @@ export default function MatchesPage() {
         {!isLoading &&
           !isError &&
           groupedByDay.map((group) => (
-            <div key={group.label} className="flex flex-col gap-3">
+            <div key={group.label} className="stagger-children flex flex-col gap-3">
               <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-muted-foreground">
                 {group.label}
               </h2>

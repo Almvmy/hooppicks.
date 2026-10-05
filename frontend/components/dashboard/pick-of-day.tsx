@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Radio, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchOddsRow } from "@/components/match-odds-row";
+import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
+import { NbaLogo } from "@/components/nba-logo";
 import { Match } from "@/lib/types";
 import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
@@ -23,8 +25,10 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
   const date = new Date(match.date);
 
   return (
-    <Card>
-      <CardContent className="pt-6">
+    // Le match phare du jour en grand : logos 72 px et filigranes plus présents.
+    <Card style={faceOffBackground(match, 18)} className="relative overflow-hidden">
+      <TeamWatermarks match={match} size={260} opacity={0.12} />
+      <CardContent className="relative pt-6">
         <div className="flex items-center justify-between">
           <span
             className={cn(
@@ -39,6 +43,7 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
               </>
             ) : (
               <>
+                <NbaLogo size={18} />
                 <Radio className="h-3.5 w-3.5" />
                 Prochain coup d&apos;envoi
               </>
@@ -52,28 +57,8 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
           </span>
         </div>
 
-        <Link
-          href={`/matches/${match.id}`}
-          className="mt-4 flex items-center justify-between gap-4"
-        >
-          <div className="flex-1">
-            <div className="flex items-baseline justify-between">
-              <span className="font-heading text-lg font-bold">
-                {match.awayTeam.name}
-              </span>
-              {match.status !== "scheduled" && (
-                <span className="font-mono text-lg font-bold">{match.awayScore}</span>
-              )}
-            </div>
-            <div className="mt-1 flex items-baseline justify-between">
-              <span className="font-heading text-lg font-bold">
-                {match.homeTeam.name}
-              </span>
-              {match.status !== "scheduled" && (
-                <span className="font-mono text-lg font-bold">{match.homeScore}</span>
-              )}
-            </div>
-          </div>
+        <Link href={`/matches/${match.id}`} className="mt-5 block">
+          <FaceOffTeams match={match} logoSize={72} morph nameClassName="text-lg" scoreClassName="text-3xl" />
         </Link>
 
         {match.status === "scheduled" && (

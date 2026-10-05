@@ -15,6 +15,8 @@ public interface MatchRepository extends JpaRepository<Match, String> {
 
     List<Match> findTop100ByOrderByDateDesc();
 
+    long countByStatus(MatchStatus status);
+
     // Bornées par Pageable plutôt qu'un findTopN fixe : le nombre à traiter
     // par tick de synchro doit rester ajustable sans recompiler (cf. l'OOM
     // Railway causé par un lot trop gros traité d'un coup).

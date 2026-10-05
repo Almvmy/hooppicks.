@@ -1,31 +1,50 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { resolveTimeZone } from "@/lib/time-zone"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Toutes les dates affichées passent par ces helpers avec le fuseau choisi
+// (lib/time-zone.ts) : paramètre explicite pour les composants réactifs
+// (useTimeZone), sinon résolu à l'appel.
+
+/** Jour calendaire (aaaa-mm-jj) d'un instant dans un fuseau donné. */
+function calendarDay(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(date);
+  return Date.parse(`${parts}T00:00:00Z`);
+}
+
 /** "Aujourd'hui", "Demain", "Hier", ou la date formatée sinon : pour grouper une liste par jour. */
-export function getDayLabel(date: Date): string {
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const today = startOfDay(new Date());
-  const target = startOfDay(date);
-  const diffDays = Math.round((target - today) / 86400000);
+export function getDayLabel(date: Date, timeZone = resolveTimeZone()): string {
+  const diffDays = Math.round((calendarDay(date, timeZone) - calendarDay(new Date(), timeZone)) / 86400000);
 
   if (diffDays === 0) return "Aujourd'hui";
   if (diffDays === 1) return "Demain";
   if (diffDays === -1) return "Hier";
-  return date.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" });
+  return date.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", timeZone });
 }
 
 /** "22 août" : date courte d'un match, pour les cartes/lignes de calendrier. */
-export function formatMatchDate(date: Date): string {
-  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+export function formatMatchDate(date: Date, timeZone = resolveTimeZone()): string {
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", timeZone });
 }
 
 /** "20:30" : heure d'un match, pour les cartes/lignes de calendrier. */
-export function formatMatchTime(date: Date): string {
-  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+export function formatMatchTime(date: Date, timeZone = resolveTimeZone()): string {
+  return date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone });
+}
+
+/** "05 oct., 14:30" : horodatage court (notifications, synchro admin). */
+export function formatShortDateTime(date: Date, timeZone = resolveTimeZone()): string {
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone });
+}
+
+/** "05 oct. 2026" : date avec année (historique des paris et transactions). */
+export function formatLongDate(date: Date, timeZone = resolveTimeZone()): string {
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", timeZone });
 }
 
 /**

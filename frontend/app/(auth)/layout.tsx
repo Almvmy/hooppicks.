@@ -26,7 +26,7 @@ export default function AuthLayout({
       {/* Dégradé de lisibilité allégé (55 % → 40 % au centre) : la carte porte
           maintenant son propre verre, le fond n'a plus besoin d'être aussi
           couvrant. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[rgba(10,15,28,0.3)] via-[rgba(10,15,28,0.4)] to-[rgba(10,15,28,0.75)]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[color-mix(in_srgb,var(--field-base)_30%,transparent)] via-[color-mix(in_srgb,var(--field-base)_40%,transparent)] to-[color-mix(in_srgb,var(--field-base)_75%,transparent)]" />
 
       <Link
         href="/"

@@ -27,7 +27,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
       data-slot="table-header"
       // [&_tr]:border-b → liseré lumineux
       className={cn(
-        "[&_tr]:border-b-0 [&_tr]:shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)]",
+        "[&_tr]:border-b-0 [&_tr]:shadow-[inset_0_-1px_0_var(--hairline)]",
         className
       )}
       {...props}
@@ -54,7 +54,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
     <tfoot
       data-slot="table-footer"
       className={cn(
-        "bg-white/[0.04] font-medium shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] [&>tr]:last:border-b-0",
+        "bg-tint/[0.04] font-medium shadow-[inset_0_1px_0_var(--hairline)] [&>tr]:last:border-b-0",
         className
       )}
       {...props}
@@ -67,7 +67,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "transition-colors has-aria-expanded:bg-white/[0.06] data-[state=selected]:bg-white/[0.08]",
+        "transition-colors has-aria-expanded:bg-tint/[0.06] data-[state=selected]:bg-tint/[0.08]",
         className
       )}
       {...props}

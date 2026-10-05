@@ -42,7 +42,8 @@ Retrouve l'historique de tous tes tickets (en attente, gagnés, perdus, rembours
 Dès qu'un match se termine, le système résout automatiquement les paris concernés (pas besoin de rien faire) :
 - **Gagné** : toutes les sélections du ticket sont correctes → le gain potentiel est crédité.
 - **Perdu** : au moins une sélection est incorrecte → rien n'est crédité (la mise reste débitée).
-- **Remboursé (push)** : une sélection tombe pile sur l'égalité (ex. spread exact) → la part correspondante de la mise est remboursée, sans gain.
+- **Remboursé (push)** : toutes les sélections du ticket tombent pile sur la ligne (ex. spread exact) → la mise est remboursée, sans gain.
+- Dans un **combiné**, une sélection qui tombe pile sur la ligne compte pour une cote de 1,00 : le ticket reste gagnant si les autres le sont, et le gain est recalculé sans elle (ex. 100 pts sur 1,50 × 2,00 × 1,91 avec la dernière à égalité → 100 × 1,50 × 2,00 = 300 pts).
 
 ## Joueurs & équipes
 
@@ -110,6 +111,13 @@ Depuis **Paramètres**, tu peux :
 
 Changer ton mot de passe ou en réinitialiser un déconnecte automatiquement toutes tes autres sessions actives, par sécurité.
 
+## Aide et support
+
+L'icône **?** en haut à droite (ou **Aide et support** dans le menu de ton avatar, sur mobile) ouvre la page d'aide :
+- les **règles** du jeu (types de paris, combinés, résultat d'un ticket, badges) ;
+- les **questions fréquentes**, avec une recherche (pas besoin des accents : « rembourse » trouve « remboursé ») ;
+- un **contact** par e-mail pour signaler un problème.
+
 ## À propos
 
-Une icône **?** dans le menu (à côté de ton avatar, en haut à droite) ouvre la page **À propos** : rappel qu'aucun argent réel n'est en jeu, résumé des données conservées sur ton compte, et un contact pour signaler un problème.
+La page **À propos** (menu de ton avatar) rappelle qu'aucun argent réel n'est en jeu et résume les données conservées sur ton compte.

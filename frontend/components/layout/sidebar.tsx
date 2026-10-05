@@ -34,7 +34,7 @@ export function Sidebar() {
                 // bg-sidebar-accent.
                 isActive
                   ? "glass-accent"
-                  : "text-sidebar-foreground/70 hover:bg-white/[0.06] hover:text-sidebar-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-tint/[0.06] hover:text-sidebar-foreground"
               )}
             >
               <Icon className="h-4 w-4" />

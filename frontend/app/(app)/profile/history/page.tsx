@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { fetchWalletTransactions } from "@/lib/api/wallet";
 import { TransactionType, WalletTransaction } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatLongDate } from "@/lib/utils";
 
 const TYPE_LABELS: Record<TransactionType, string> = {
   bet_win: "Pari gagné",
@@ -40,7 +40,7 @@ export default function HistoryPage() {
       <div className="glass rounded-2xl">
         <Table>
           <TableHeader>
-            <TableRow className="border-b-0 shadow-[inset_0_-1px_0_rgba(255,255,255,0.08)] hover:bg-transparent">
+            <TableRow className="border-b-0 shadow-[inset_0_-1px_0_var(--hairline)] hover:bg-transparent">
               <TableHead>Description</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Date</TableHead>
@@ -74,11 +74,7 @@ export default function HistoryPage() {
                     <Badge variant="outline">{TYPE_LABELS[tx.type]}</Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(tx.date).toLocaleDateString("fr-FR", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatLongDate(new Date(tx.date))}
                   </TableCell>
                   <TableCell
                     className={cn(

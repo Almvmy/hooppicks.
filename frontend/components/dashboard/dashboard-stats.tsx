@@ -7,15 +7,17 @@ import { cn } from "@/lib/utils";
 
 interface StatItem {
   label: string;
-  value?: string;
+  value?: React.ReactNode;
   hint?: string;
   icon: React.ElementType;
+  /** "paint" : l'indigo d'appoint (classement, ligues), sinon l'orange. */
+  tone?: "primary" | "paint";
   isLoading: boolean;
 }
 
 export function DashboardStats({ items }: { items: StatItem[] }) {
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="stagger-children grid grid-cols-2 gap-4 lg:grid-cols-4">
       {items.map((item) => (
         <Card key={item.label}>
           <CardContent className="flex items-start justify-between gap-3 pt-6">
@@ -36,7 +38,8 @@ export function DashboardStats({ items }: { items: StatItem[] }) {
             </div>
             <div
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                item.tone === "paint" ? "bg-paint/10 text-paint" : "bg-primary/10 text-primary"
               )}
             >
               <item.icon className="h-4.5 w-4.5" />

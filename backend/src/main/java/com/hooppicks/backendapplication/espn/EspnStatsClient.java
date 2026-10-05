@@ -9,6 +9,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -43,6 +44,8 @@ public class EspnStatsClient {
             "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
     private static final String ATHLETE_STATS_URL =
             "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/%s/stats";
+    private static final String NEWS_URL =
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=%d";
     private static final String ATHLETE_GAMELOG_URL =
             "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/%s/gamelog";
 
@@ -66,6 +69,70 @@ public class EspnStatsClient {
 
     public static String toEspnAbbreviation(String balldontlieAbbreviation) {
         return ABBREVIATION_OVERRIDES.getOrDefault(balldontlieAbbreviation, balldontlieAbbreviation);
+    }
+
+    /** Sens inverse de {@link #toEspnAbbreviation} : sigle ESPN -> sigle balldontlie (le nôtre). */
+    public static String fromEspnAbbreviation(String espnAbbreviation) {
+        return ABBREVIATION_OVERRIDES.entrySet().stream()
+                .filter(e -> e.getValue().equals(espnAbbreviation))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(espnAbbreviation);
+    }
+
+    /**
+     * Dernières actualités NBA (API JSON, bien plus riche que le flux RSS :
+     * photo, équipes étiquetées par ESPN, distinction article/vidéo). Liste
+     * vide si ESPN ne répond pas : l'appelant garde alors son cache ou se
+     * replie sur le RSS.
+     */
+    public List<EspnNewsRow> fetchNews(int limit) {
+        JsonNode root = fetchWithRetry(String.format(NEWS_URL, limit));
+        if (root == null) return List.of();
+
+        List<EspnNewsRow> rows = new ArrayList<>();
+        for (JsonNode article : root.path("articles")) {
+            String headline = article.path("headline").asText(null);
+            String link = article.path("links").path("web").path("href").asText(null);
+            if (headline == null || link == null) continue;
+
+            String published = article.path("published").asText(null);
+            Instant publishedAt;
+            try {
+                publishedAt = published != null ? Instant.parse(published) : Instant.now();
+            } catch (Exception e) {
+                publishedAt = Instant.now();
+            }
+
+            // La photo "header" (16:9, ~1296 px) en priorité, sinon la première disponible.
+            String imageUrl = null;
+            for (JsonNode image : article.path("images")) {
+                if (imageUrl == null || "header".equals(image.path("type").asText())) {
+                    imageUrl = image.path("url").asText(null);
+                }
+                if ("header".equals(image.path("type").asText())) break;
+            }
+
+            List<String> teams = new ArrayList<>();
+            for (JsonNode category : article.path("categories")) {
+                if (!"team".equals(category.path("type").asText())) continue;
+                String espnAbbr = category.path("team").path("abbreviation").asText(null);
+                if (espnAbbr != null && !teams.contains(fromEspnAbbreviation(espnAbbr))) {
+                    teams.add(fromEspnAbbreviation(espnAbbr));
+                }
+            }
+
+            rows.add(new EspnNewsRow(
+                    headline,
+                    article.path("description").asText(null),
+                    link,
+                    publishedAt,
+                    imageUrl,
+                    teams,
+                    "Media".equals(article.path("type").asText())
+            ));
+        }
+        return rows;
     }
 
     /**

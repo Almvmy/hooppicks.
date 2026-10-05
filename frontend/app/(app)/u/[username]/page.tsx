@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerCard } from "@/components/player-card";
 import { fetchPublicProfile } from "@/lib/api/users";
 import { badgeIcon } from "@/lib/badges";
+import { FavoriteTeamLogo } from "@/components/favorite-team-logo";
 
 export default function PublicProfilePage({
   params,
@@ -55,7 +56,10 @@ export default function PublicProfilePage({
         <div>
           <h1 className="font-heading text-2xl font-bold">@{profile.username}</h1>
           {profile.favoriteTeam && (
-            <p className="mt-1 text-sm text-muted-foreground">Supporter des {profile.favoriteTeam}</p>
+            <p className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
+              <FavoriteTeamLogo teamName={profile.favoriteTeam} size={28} />
+              Supporter des {profile.favoriteTeam}
+            </p>
           )}
         </div>
       </div>

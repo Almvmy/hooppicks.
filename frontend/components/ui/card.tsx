@@ -88,7 +88,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="card-footer"
       // bg-muted/50 → une strate de verre un cran plus claire
       className={cn(
-        "flex items-center rounded-b-2xl bg-white/[0.04] p-(--card-spacing) shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]",
+        "flex items-center rounded-b-2xl bg-tint/[0.04] p-(--card-spacing) shadow-[inset_0_1px_0_var(--hairline)]",
         className
       )}
       {...props}

@@ -2,15 +2,18 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { TeamRoster } from "@/components/team-roster";
 import { MatchBoxScore } from "@/components/match-box-score";
-import { TeamLogo } from "@/components/team-logo";
+import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
+import { NbaLogo } from "@/components/nba-logo";
+import { formatMatchTime, getDayLabel } from "@/lib/utils";
 import { fetchMatchById } from "@/lib/api/matches";
+import type { Match } from "@/lib/types";
 
 export default function MatchDetailPage({
   params,
@@ -19,10 +22,18 @@ export default function MatchDetailPage({
 }) {
   const { id } = use(params);
 
+  const queryClient = useQueryClient();
+
   const { data: match, isLoading, isError } = useQuery({
     queryKey: ["match", id],
     queryFn: () => fetchMatchById(id),
     refetchInterval: 60 * 1000,
+    // Arrivée depuis la liste : le match y est déjà, on l'affiche tout de
+    // suite (puis on le rafraîchit en arrière-plan) au lieu d'un squelette.
+    // C'est aussi ce qui permet au logo d'exister dès la transition de page,
+    // donc de "voler" depuis la carte au lieu d'apparaître après coup.
+    initialData: () => queryClient.getQueryData<Match[]>(["matches"])?.find((m) => m.id === id),
+    initialDataUpdatedAt: () => queryClient.getQueryState(["matches"])?.dataUpdatedAt,
   });
 
   return (
@@ -46,52 +57,24 @@ export default function MatchDetailPage({
       )}
 
       {match && (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-6 pt-6 text-center">
-            <MatchStatusBadge status={match.status} />
-
-            <div className="flex w-full items-center justify-around">
-              <div className="flex flex-col items-center gap-2">
-                <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={44} />
-                <span className="font-heading text-lg font-bold">
-                  {match.awayTeam.name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {match.awayTeam.conference} · {match.awayTeam.division}
-                </span>
-                {match.status !== "scheduled" && (
-                  <span className="font-mono text-3xl font-bold">
-                    {match.awayScore}
-                  </span>
-                )}
-              </div>
-
-              <span className="text-muted-foreground">@</span>
-
-              <div className="flex flex-col items-center gap-2">
-                <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={44} />
-                <span className="font-heading text-lg font-bold">
-                  {match.homeTeam.name}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {match.homeTeam.conference} · {match.homeTeam.division}
-                </span>
-                {match.status !== "scheduled" && (
-                  <span className="font-mono text-3xl font-bold">
-                    {match.homeScore}
-                  </span>
-                )}
-              </div>
+        <Card style={faceOffBackground(match, 18)} className="relative overflow-hidden">
+          <TeamWatermarks match={match} size={320} opacity={0.12} />
+          <CardContent className="relative flex flex-col gap-5 pt-6">
+            <div className="flex items-center justify-center gap-2">
+              <NbaLogo size={24} />
+              <MatchStatusBadge status={match.status} />
             </div>
 
-            <p className="font-mono text-sm text-muted-foreground">
-              {new Date(match.date).toLocaleString("fr-FR", {
-                weekday: "long",
-                day: "2-digit",
-                month: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+            <FaceOffTeams match={match} logoSize={88} morph nameClassName="text-xl" scoreClassName="text-4xl" />
+
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 text-center text-xs text-muted-foreground">
+              <span>{match.awayTeam.conference} · {match.awayTeam.division}</span>
+              <span />
+              <span>{match.homeTeam.conference} · {match.homeTeam.division}</span>
+            </div>
+
+            <p className="text-center font-mono text-sm text-muted-foreground">
+              {getDayLabel(new Date(match.date))} · {formatMatchTime(new Date(match.date))}
             </p>
           </CardContent>
         </Card>
@@ -103,10 +86,8 @@ export default function MatchDetailPage({
             <h2 className="mb-4 font-heading text-base font-bold">Feuille de match</h2>
             <MatchBoxScore
               matchId={match.id}
-              homeTeamName={match.homeTeam.name}
-              homeTeamAbbr={match.homeTeam.abbreviation}
-              awayTeamName={match.awayTeam.name}
-              awayTeamAbbr={match.awayTeam.abbreviation}
+              homeTeam={match.homeTeam}
+              awayTeam={match.awayTeam}
             />
           </CardContent>
         </Card>
@@ -115,8 +96,8 @@ export default function MatchDetailPage({
       {match && match.status !== "finished" && (
         <Card>
           <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
-            <TeamRoster teamId={match.awayTeam.id} teamName={match.awayTeam.name} />
-            <TeamRoster teamId={match.homeTeam.id} teamName={match.homeTeam.name} />
+            <TeamRoster team={match.awayTeam} />
+            <TeamRoster team={match.homeTeam} />
           </CardContent>
         </Card>
       )}

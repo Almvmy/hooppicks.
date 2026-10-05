@@ -23,6 +23,7 @@ import { HaloGlow } from "@/components/halo-glow";
 import { WeeklyRecapCard } from "@/components/weekly-recap-card";
 import { computeWinStreak, findLeaderboardEntry, weeklyWalletDelta } from "@/lib/dashboard";
 import { rankTitle } from "@/lib/rank-title";
+import { FavoriteTeamLogo } from "@/components/favorite-team-logo";
 
 export default function ProfilePage() {
   const [showRecap, setShowRecap] = useState(true);
@@ -175,7 +176,8 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Équipe favorite</p>
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-3">
+              {profile?.favoriteTeam && <FavoriteTeamLogo teamName={profile.favoriteTeam} size={32} />}
               {profile && <FavoriteTeamPicker currentTeam={profile.favoriteTeam} />}
             </div>
           </div>

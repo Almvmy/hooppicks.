@@ -66,6 +66,10 @@ Base URL locale : `http://localhost:3001`. Toutes les réponses sont en JSON.
 | Méthode | Route | Auth | Description |
 |---|---|---|---|
 | GET | `/leaderboard` | : (public) | Classement global toutes ligues confondues. |
+| GET | `/stats/public` | : (public) | Totaux de la communauté pour la page d'accueil (joueurs, tickets, ligues, matchs terminés). Aucune donnée individuelle. |
+| GET | `/push/public-key` | : (public) | Clé publique VAPID pour l'abonnement push du navigateur. `404` si le push n'est pas configuré. |
+| POST | `/push/subscribe` | 🔒 | Abonne l'appareil (`{endpoint, keys:{p256dh, auth}}`, sortie de `PushSubscription.toJSON()`). Endpoint limité aux services push des navigateurs. Envoie une notification de confirmation au premier abonnement. |
+| POST | `/push/unsubscribe` | 🔒 | Désabonne l'appareil (`{endpoint}`), uniquement parmi ses propres abonnements. |
 | GET | `/users/{username}` | 🔒 | Profil public d'un joueur (carte, stats, **badges débloqués uniquement**) : jamais l'email. `404` si le pseudo n'existe pas. |
 | GET | `/badges` | 🔒 | Tous les badges (débloqués et verrouillés) de l'utilisateur connecté, avec une clé `icon`. |
 | GET | `/notifications` | 🔒 | Notifications de l'utilisateur. |

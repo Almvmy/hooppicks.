@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center gap-0.5 rounded-lg bg-white/5 px-2 py-2 text-center">
+    <div className="flex flex-col items-center gap-0.5 rounded-lg bg-tint/5 px-2 py-2 text-center">
       <span className="font-mono text-base font-bold">{value}</span>
       <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
     </div>
@@ -19,7 +19,7 @@ function StatCell({ label, value }: { label: string; value: string }) {
 
 const INJURY_BADGE_STYLE: Record<string, string> = {
   Out: "border-destructive/40 text-destructive",
-  "Day-To-Day": "border-amber-500/40 text-amber-500",
+  "Day-To-Day": "border-amber-500/40 text-amber-500 light:text-amber-800",
 };
 
 function RecentForm({ playerId }: { playerId: string }) {
@@ -51,13 +51,13 @@ function RecentForm({ playerId }: { playerId: string }) {
         {data.map((g) => (
           <li
             key={g.date}
-            className="flex items-center justify-between gap-2 rounded-lg bg-white/5 px-2.5 py-1.5 text-xs"
+            className="flex items-center justify-between gap-2 rounded-lg bg-tint/5 px-2.5 py-1.5 text-xs"
           >
             <span className="flex items-center gap-1.5">
               <span
                 className={cn(
                   "font-mono font-bold",
-                  g.result === "W" ? "text-emerald-500" : g.result === "L" ? "text-destructive" : "text-muted-foreground"
+                  g.result === "W" ? "text-emerald-500 light:text-emerald-800" : g.result === "L" ? "text-destructive" : "text-muted-foreground"
                 )}
               >
                 {g.result ?? "?"}
@@ -91,10 +91,10 @@ export function PlayerCardDialog({
               <img
                 src={player.headshotUrl}
                 alt={`${player.firstName} ${player.lastName}`}
-                className="h-16 w-16 shrink-0 rounded-full bg-white/10 object-cover"
+                className="h-16 w-16 shrink-0 rounded-full bg-tint/10 object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-lg font-bold text-muted-foreground">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-tint/10 font-mono text-lg font-bold text-muted-foreground">
                 {player.jersey ?? "?"}
               </div>
             )}

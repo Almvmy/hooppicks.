@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.nba;
 
+
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.bet.BetResolutionService;
 import com.hooppicks.backendapplication.entity.AppNotification;
 import com.hooppicks.backendapplication.entity.Match;
@@ -48,12 +50,14 @@ public class NbaSyncService {
     private final NbaRateLimiter rateLimiter;
     private final EloService eloService;
     private final OddsService oddsService;
+    private final PushService pushService;
 
     public NbaSyncService(NbaApiClient nbaApiClient, TeamRepository teamRepository,
                           MatchRepository matchRepository, PlayerRepository playerRepository,
                           BetRepository betRepository, NotificationRepository notificationRepository,
                           BetResolutionService betResolutionService,
-                          NbaRateLimiter rateLimiter, EloService eloService, OddsService oddsService) {
+                          NbaRateLimiter rateLimiter, EloService eloService, OddsService oddsService,
+                          PushService pushService) {
         this.nbaApiClient = nbaApiClient;
         this.teamRepository = teamRepository;
         this.matchRepository = matchRepository;
@@ -64,6 +68,7 @@ public class NbaSyncService {
         this.rateLimiter = rateLimiter;
         this.eloService = eloService;
         this.oddsService = oddsService;
+        this.pushService = pushService;
     }
 
     @Transactional
@@ -186,6 +191,8 @@ public class NbaSyncService {
             notification.setType(NotificationType.MATCH_STARTING);
             notification.setMessage(message);
             notificationRepository.save(notification);
+            pushService.sendToUser(user.getId(),
+                    new PushService.PushMessage("Coup d'envoi", message, "/matches/" + match.getId()));
         }
     }
 

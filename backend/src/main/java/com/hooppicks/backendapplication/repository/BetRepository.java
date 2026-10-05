@@ -15,11 +15,12 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                COUNT(b) as totalBets,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
                b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
-               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon
+               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
+               b.user.favoriteTeam as favoriteTeam
         FROM Bet b
         WHERE b.status IN ('WON', 'LOST')
         GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
-                 b.user.avatarColorway, b.user.avatarIcon
+                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
         ORDER BY points DESC
     """)
     List<Object[]> getLeaderboardRaw();
@@ -46,11 +47,12 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                COUNT(b) as totalBets,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
                b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
-               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon
+               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
+               b.user.favoriteTeam as favoriteTeam
         FROM Bet b
         WHERE b.status IN ('WON', 'LOST') AND b.user.id IN :memberIds
         GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
-                 b.user.avatarColorway, b.user.avatarIcon
+                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
         ORDER BY points DESC
     """)
     List<Object[]> getLeaderboardRawForUsers(List<String> memberIds);

@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.bet;
 
+
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
@@ -32,13 +34,15 @@ class BetResolutionServiceTest {
     private WalletTransactionRepository transactionRepository;
     @Mock
     private NotificationRepository notificationRepository;
+    @Mock
+    private PushService pushService;
 
     private BetResolutionService service;
 
     @BeforeEach
     void setUp() {
         service = new BetResolutionService(betRepository, matchRepository, userRepository,
-                transactionRepository, notificationRepository);
+                transactionRepository, notificationRepository, pushService);
     }
 
     private Match finishedMatch(String id, int homeScore, int awayScore, double spreadValue, double totalValue) {
@@ -202,14 +206,17 @@ class BetResolutionServiceTest {
     }
 
     @Test
-    void une_selection_push_n_empeche_pas_les_autres_de_faire_gagner_le_ticket() {
+    void une_selection_push_compte_pour_une_cote_de_1_dans_un_combine_gagnant() {
         Match matchWin = finishedMatch("m1", 100, 90, -2.5, 220.5);
         Match matchPush = finishedMatch("m2", 100, 97, -3, 220.5); // push sur le spread
         User user = user(1000);
+        // Pose : 10 × 1,9 × 1,9 = 36. À la résolution, la sélection remboursée
+        // sort du calcul : 10 × 1,9 = 19, et non plus 36.
         Bet bet = pendingBet(user, 10, 36,
                 selection("m1", "moneyline", "home"), // gagnant
                 selection("m2", "spread", "home")      // push
         );
+        bet.setTotalOdds(3.61);
 
         when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
         when(matchRepository.findAllById(any())).thenReturn(List.of(matchWin, matchPush));
@@ -217,7 +224,54 @@ class BetResolutionServiceTest {
         service.resolvePendingBets();
 
         assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
+        assertThat(user.getWalletBalance()).isEqualTo(1019);
+        // Le ticket affiche ce qui a réellement été payé.
+        assertThat(bet.getPotentialPayout()).isEqualTo(19);
+        assertThat(bet.getTotalOdds()).isEqualTo(1.9);
+    }
+
+    @Test
+    void combine_de_trois_avec_un_push_paie_le_produit_des_deux_cotes_gagnantes() {
+        Match win1 = finishedMatch("m1", 100, 90, -2.5, 220.5);
+        Match win2 = finishedMatch("m2", 120, 110, -2.5, 220.5); // total 230 > 220.5
+        Match push = finishedMatch("m3", 110, 110, -2.5, 220); // total pile sur 220
+        User user = user(1000);
+        BetSelection leg1 = selection("m1", "moneyline", "home");
+        leg1.setOdds(1.5);
+        BetSelection leg2 = selection("m2", "total", "over");
+        leg2.setOdds(2.0);
+        BetSelection leg3 = selection("m3", "total", "over");
+        leg3.setOdds(1.91);
+        Bet bet = pendingBet(user, 100, 573, leg1, leg2, leg3); // 100 × 1,5 × 2 × 1,91
+
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(win1, win2, push));
+
+        service.resolvePendingBets();
+
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
+        assertThat(user.getWalletBalance()).isEqualTo(1300); // 100 × 1,5 × 2
+        assertThat(bet.getPotentialPayout()).isEqualTo(300);
+    }
+
+    @Test
+    void sans_aucun_push_le_gain_reste_celui_calcule_a_la_pose() {
+        Match win1 = finishedMatch("m1", 100, 90, -2.5, 220.5);
+        Match win2 = finishedMatch("m2", 120, 110, -2.5, 220.5);
+        User user = user(1000);
+        // 36 et pas 10 × 1,9 × 1,9 = 36,1 recalculé : le montant affiché à la
+        // pose est exactement celui versé, aucun écart d'arrondi possible.
+        Bet bet = pendingBet(user, 10, 36,
+                selection("m1", "moneyline", "home"),
+                selection("m2", "total", "over"));
+
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(win1, win2));
+
+        service.resolvePendingBets();
+
         assertThat(user.getWalletBalance()).isEqualTo(1036);
+        assertThat(bet.getPotentialPayout()).isEqualTo(36);
     }
 
     @Test

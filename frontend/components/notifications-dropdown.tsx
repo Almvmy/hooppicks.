@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fetchNotifications, markNotificationRead } from "@/lib/api/notifications";
-import { cn } from "@/lib/utils";
+import { cn, formatShortDateTime } from "@/lib/utils";
 
 export function NotificationsDropdown() {
   const queryClient = useQueryClient();
@@ -56,12 +56,7 @@ export function NotificationsDropdown() {
             <div className={cn(notif.read && "pl-3.5")}>
               <p className="text-sm">{notif.message}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {new Date(notif.date).toLocaleDateString("fr-FR", {
-                  day: "2-digit",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatShortDateTime(new Date(notif.date))}
               </p>
             </div>
           </DropdownMenuItem>

@@ -163,14 +163,14 @@ export default function LeaguesPage() {
           <Card key={league.id}>
             <CardContent className="flex items-center justify-between gap-4 pt-6">
               <Link href={`/leagues/${league.id}`} className="flex flex-1 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paint/10 text-paint">
                   <Shield className="h-5 w-5" />
                 </div>
                 <div>
                   <p className="font-medium">
                     {league.name}
                     {league.isOwner && (
-                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      <span className="ml-2 rounded-full bg-paint/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-paint">
                         Créateur
                       </span>
                     )}

@@ -6,8 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { fetchBets } from "@/lib/api/bets";
+import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 import { BetStatus } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatLongDate } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
 
@@ -20,6 +21,7 @@ const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "
 
 export default function BetsPage() {
   const { data, isLoading, isError } = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
+  const matchesById = useMatchesById();
   const { page, pageCount, pageItems, setPage, totalCount } = usePagination(data, PAGE_SIZE);
 
   return (
@@ -51,17 +53,18 @@ export default function BetsPage() {
                     {STATUS_CONFIG[bet.status].label}
                   </Badge>
                   <span className="font-mono text-xs text-muted-foreground">
-                    {new Date(bet.placedAt).toLocaleDateString("fr-FR", {
-                      day: "2-digit", month: "short", year: "numeric",
-                    })}
+                    {formatLongDate(new Date(bet.placedAt))}
                   </span>
                 </div>
 
                 {bet.selections.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-sm">
-                    <span>
-                      <span className="text-muted-foreground">{s.matchLabel} - </span>
-                      {s.label}
+                  <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <SelectionTeamLogo selection={s} matchesById={matchesById} size={28} />
+                      <span className="min-w-0">
+                        <span className="text-muted-foreground">{s.matchLabel} - </span>
+                        {s.label}
+                      </span>
                     </span>
                     <span className="font-mono">{s.odds.toFixed(2)}</span>
                   </div>

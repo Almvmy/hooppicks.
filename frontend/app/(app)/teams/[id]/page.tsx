@@ -91,7 +91,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
       {team && (
         <Card>
           <CardContent className="pt-6">
-            <TeamRoster teamId={team.id} teamName={team.name} />
+            <TeamRoster team={team} />
           </CardContent>
         </Card>
       )}

@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.league;
 
+
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.dto.LeaderboardEntryDto;
 import com.hooppicks.backendapplication.dto.LeagueActivityDto;
 import com.hooppicks.backendapplication.dto.LeagueDto;
@@ -51,17 +53,19 @@ public class LeagueService {
     private final BetRepository betRepository;
     private final NotificationRepository notificationRepository;
     private final ActivityReactionRepository activityReactionRepository;
+    private final PushService pushService;
 
     public LeagueService(LeagueRepository leagueRepository, LeagueMembershipRepository membershipRepository,
                           UserRepository userRepository, BetRepository betRepository,
                           NotificationRepository notificationRepository,
-                          ActivityReactionRepository activityReactionRepository) {
+                          ActivityReactionRepository activityReactionRepository, PushService pushService) {
         this.leagueRepository = leagueRepository;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
         this.betRepository = betRepository;
         this.notificationRepository = notificationRepository;
         this.activityReactionRepository = activityReactionRepository;
+        this.pushService = pushService;
     }
 
     @Transactional
@@ -284,21 +288,7 @@ public class LeagueService {
                 .map(m -> m.getUser().getId())
                 .toList();
 
-        List<Object[]> rows = betRepository.getLeaderboardRawForUsers(memberIds);
-        List<LeaderboardEntryDto> result = new ArrayList<>();
-
-        int rank = 1;
-        for (Object[] row : rows) {
-            String username = (String) row[1];
-            long points = (Long) row[2];
-            long totalBets = (Long) row[3];
-            long wonBets = (Long) row[4];
-            int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
-
-            result.add(new LeaderboardEntryDto(rank++, username, (int) points, winRate, (int) totalBets,
-                    (Integer) row[5], (String) row[6], (String) row[7], (String) row[8]));
-        }
-        return result;
+        return LeaderboardEntryDto.fromRows(betRepository.getLeaderboardRawForUsers(memberIds));
     }
 
     @Transactional
@@ -349,6 +339,8 @@ public class LeagueService {
             notification.setType(NotificationType.SYSTEM);
             notification.setMessage(joiningUser.getUsername() + " a rejoint ta ligue \"" + league.getName() + "\" !");
             notificationRepository.save(notification);
+            pushService.sendToUser(membership.getUser().getId(), new PushService.PushMessage(
+                    "Ta ligue s'agrandit", notification.getMessage(), "/leagues/" + league.getId()));
         }
     }
 

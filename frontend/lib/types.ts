@@ -205,6 +205,10 @@ export interface NewsItem {
   description: string;
   source: string;
   publishedAt: string; // ISO
+  // Renseignés par l'API JSON d'ESPN ; null / [] / false en repli sur le RSS.
+  imageUrl: string | null;
+  teams: string[]; // sigles de notre base (BOS, NYK…)
+  video: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -217,6 +221,7 @@ export interface LeaderboardEntry {
   avatarPosition: AvatarPosition;
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
+  favoriteTeam: string | null; // nom complet ("Boston Celtics"), null si aucune
 }
 
 export interface League {

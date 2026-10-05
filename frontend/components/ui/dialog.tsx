@@ -19,7 +19,7 @@ function DialogBackdrop({ className, ...props }: DialogPrimitive.Backdrop.Props)
     <DialogPrimitive.Backdrop
       data-slot="dialog-backdrop"
       className={cn(
-        "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm light:bg-slate-900/30 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -42,7 +42,7 @@ function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.
         {children}
         <DialogPrimitive.Close
           data-slot="dialog-close"
-          className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+          className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-tint/10 hover:text-foreground"
           aria-label="Fermer"
         >
           <X className="h-4 w-4" />

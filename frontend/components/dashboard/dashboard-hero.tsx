@@ -51,7 +51,7 @@ export function DashboardHero({
       />
       {/* Dégradé translucide (et non opaque à --card) : le champ lumineux de
           .app-field doit rester visible derrière le verre. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[rgba(10,15,28,0.62)] to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[color-mix(in_srgb,var(--field-base)_62%,transparent)] to-transparent" />
       {/* Signature : tracé de terrain de basket en filigrane, ancré à droite */}
       <CourtWatermark />
 

@@ -64,7 +64,7 @@ export function MobileNav() {
           onClick={() => setOpen(false)}
           aria-label="Fermer le menu"
           // min-h-11 min-w-11 : cible tactile 44px (elle était à 36px).
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-white/[0.06]"
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-xl hover:bg-tint/[0.06]"
         >
           <X className="h-5 w-5" />
         </button>
@@ -80,7 +80,7 @@ export function MobileNav() {
               onClick={() => setOpen(false)}
               className={cn(
                 "flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium",
-                isActive ? "glass-accent" : "text-foreground/70 hover:bg-white/[0.06]"
+                isActive ? "glass-accent" : "text-foreground/70 hover:bg-tint/[0.06]"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function MobileNav() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Ouvrir le menu"
-        className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground hover:bg-white/[0.06]"
+        className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground hover:bg-tint/[0.06]"
       >
         <Menu className="h-5 w-5" />
       </button>

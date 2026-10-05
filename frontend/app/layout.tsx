@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallPromptCapture } from "@/components/install-app";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,6 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Valeur initiale avant que le JS ne prenne la main (ThemeColorSync).
   themeColor: "#0B1120",
 };
 
@@ -55,14 +57,18 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`dark ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body className="antialiased" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
+        {/* Sombre par défaut (l'identité de l'app), clair ou système au choix
+            dans Paramètres. disableTransitionOnChange : sans ça, chaque
+            élément animerait sa couleur pendant la bascule. */}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <QueryProvider>
             {children}
             <Toaster />
+            <InstallPromptCapture />
           </QueryProvider>
         </ThemeProvider>
       </body>

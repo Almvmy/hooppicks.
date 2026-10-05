@@ -28,3 +28,14 @@ export function fetchPublicLeaderboard() {
 export function fetchPublicMatches() {
   return fetchPublic<Match[]>("/matches");
 }
+
+export interface PublicStats {
+  players: number;
+  bets: number;
+  leagues: number;
+  matchesFinished: number;
+}
+
+export function fetchPublicStats() {
+  return fetchPublic<PublicStats>("/stats/public");
+}

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BetStatus, PlacedBet } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 
 const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "success" | "destructive" }> = {
   pending: { label: "En attente", variant: "secondary" },
@@ -19,6 +20,8 @@ export function RecentActivity({
   bets: PlacedBet[];
   isLoading: boolean;
 }) {
+  const matchesById = useMatchesById();
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between space-y-0">
@@ -56,9 +59,16 @@ export function RecentActivity({
                   {bet.potentialPayout.toLocaleString("fr-FR")} pts
                 </span>
               </div>
-              <p className="mt-1.5 truncate text-sm text-muted-foreground">
-                {bet.selections.map((s) => s.label).join(" · ")}
-              </p>
+              <div className="mt-1.5 flex min-w-0 items-center gap-2">
+                <span className="flex shrink-0 items-center gap-1">
+                  {bet.selections.slice(0, 4).map((s) => (
+                    <SelectionTeamLogo key={s.id} selection={s} matchesById={matchesById} size={20} />
+                  ))}
+                </span>
+                <p className="truncate text-sm text-muted-foreground">
+                  {bet.selections.map((s) => s.label).join(" · ")}
+                </p>
+              </div>
             </div>
           ))}
       </CardContent>

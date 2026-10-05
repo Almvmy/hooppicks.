@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchWallet } from "@/lib/api/wallet";
+import { CountUp } from "@/components/motion/count-up";
 
 export function WalletBalance() {
   const { data, isLoading, isError } = useQuery({
@@ -30,7 +31,9 @@ export function WalletBalance() {
       variant="outline"
       className="border-primary/30 bg-primary/10 font-mono text-sm text-primary"
     >
-      {data.balance.toLocaleString("fr-FR")} pts
+      {/* animateOnMount=false : la topbar est montée à chaque chargement de
+          page, seul un vrai changement de solde mérite d'être animé. */}
+      <CountUp value={data.balance} format={(n) => `${n.toLocaleString("fr-FR")} pts`} animateOnMount={false} />
     </Badge>
   );
 }

@@ -32,6 +32,7 @@ import {
 import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
 import { AdminMatchesPanel } from "@/components/admin/admin-matches-panel";
 import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-panel";
+import { formatShortDateTime } from "@/lib/utils";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -171,12 +172,7 @@ export default function AdminPage() {
             <Skeleton className="h-5 w-64" />
           ) : status?.lastSyncAt ? (
             <p className="text-sm">
-              {new Date(status.lastSyncAt).toLocaleDateString("fr-FR", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {formatShortDateTime(new Date(status.lastSyncAt))}
               {" · "}
               <span className="font-mono">{status.lastGamesSynced}</span> match(s),{" "}
               <span className="font-mono">{status.lastBetsResolved}</span> pari(s) résolu(s)

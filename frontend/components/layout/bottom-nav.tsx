@@ -27,7 +27,7 @@ export function BottomNav() {
     // bottom = safe-area + 14px, donc l'île se dégage du home indicator iOS.
     // Nécessite pb-32 sur le <main> de l'AppShell.
     <nav
-      className="glass-strong fixed inset-x-3.5 z-40 flex items-stretch justify-around gap-0.5 rounded-[26px] p-2 md:hidden"
+      className="glass-strong island fixed inset-x-3.5 z-40 flex items-stretch justify-around gap-0.5 rounded-[26px] p-2 md:hidden"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}
     >
       {navItems.map((item) => {

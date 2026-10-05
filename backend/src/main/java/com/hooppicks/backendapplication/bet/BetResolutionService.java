@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.bet;
 
+
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
@@ -22,15 +24,17 @@ public class BetResolutionService {
     private final UserRepository userRepository;
     private final WalletTransactionRepository transactionRepository;
     private final NotificationRepository notificationRepository;
+    private final PushService pushService;
 
     public BetResolutionService(BetRepository betRepository, MatchRepository matchRepository,
                                 UserRepository userRepository, WalletTransactionRepository transactionRepository,
-                                NotificationRepository notificationRepository) {
+                                NotificationRepository notificationRepository, PushService pushService) {
         this.betRepository = betRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.notificationRepository = notificationRepository;
+        this.pushService = pushService;
     }
 
     private enum LegResult { WIN, LOSE, PUSH }
@@ -52,12 +56,20 @@ public class BetResolutionService {
 
             boolean anyLoss = false;
             boolean allPush = true;
+            boolean anyPush = false;
+            // Produit des cotes des seules sélections gagnantes : une sélection
+            // remboursée (égalité pile sur la ligne) compte pour une cote de 1,00,
+            // comme chez n'importe quel bookmaker. Avant, elle gardait sa cote
+            // et le combiné était payé comme si elle avait gagné.
+            double winningOdds = 1.0;
 
             for (BetSelection selection : bet.getSelections()) {
                 Match match = matchesById.get(selection.getMatchId());
                 LegResult result = evaluateSelection(selection, match);
                 if (result == LegResult.LOSE) anyLoss = true;
                 if (result != LegResult.PUSH) allPush = false;
+                if (result == LegResult.PUSH) anyPush = true;
+                if (result == LegResult.WIN) winningOdds *= selection.getOdds();
             }
 
             User user = bet.getUser();
@@ -67,21 +79,28 @@ public class BetResolutionService {
                 bet.setStatus(BetStatus.LOST);
                 logTransaction(user, TransactionType.BET_LOSS, 0,
                         "Pari perdu (" + bet.getSelections().size() + " sélection(s))");
-                notify(user, NotificationType.BET_LOST, "Ton pari n'est pas gagnant.");
+                notify(user, NotificationType.BET_LOST, "Ticket perdu", "Ton pari n'est pas gagnant.");
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
                 user.setWalletBalance(user.getWalletBalance() + bet.getStake());
                 userRepository.save(user);
                 logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
-                notify(user, NotificationType.SYSTEM, "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
+                notify(user, NotificationType.SYSTEM, "Ticket remboursé", "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
             } else {
+                if (anyPush) {
+                    // Gain recalculé sans les sélections remboursées. Le ticket est
+                    // mis à jour pour que "Mes paris" affiche ce qui a réellement
+                    // été crédité (mise × cote = gain reste cohérent à l'écran).
+                    bet.setTotalOdds(Math.round(winningOdds * 100) / 100.0);
+                    bet.setPotentialPayout((int) Math.round(bet.getStake() * winningOdds));
+                }
                 bet.setStatus(BetStatus.WON);
                 user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());
                 userRepository.save(user);
                 logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
                         "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
-                notify(user, NotificationType.BET_WON, "Ton pari est gagnant : +" + bet.getPotentialPayout() + " pts");
+                notify(user, NotificationType.BET_WON, "Ticket gagnant", "Ton pari est gagnant : +" + bet.getPotentialPayout() + " pts");
             }
 
             betRepository.save(bet);
@@ -128,7 +147,7 @@ public class BetResolutionService {
         transactionRepository.save(tx);
     }
 
-    private void notify(User user, NotificationType type, String message) {
+    private void notify(User user, NotificationType type, String title, String message) {
         if (!user.isNotifyBetResults()) return;
 
         AppNotification notification = new AppNotification();
@@ -136,5 +155,6 @@ public class BetResolutionService {
         notification.setType(type);
         notification.setMessage(message);
         notificationRepository.save(notification);
+        pushService.sendToUser(user.getId(), new PushService.PushMessage(title, message, "/bets"));
     }
 }

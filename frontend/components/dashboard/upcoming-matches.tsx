@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Match } from "@/lib/types";
+import { TeamLogo } from "@/components/team-logo";
 import { formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function UpcomingMatches({
@@ -42,15 +43,17 @@ export function UpcomingMatches({
               <Link
                 key={match.id}
                 href={`/matches/${match.id}`}
-                className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm transition-colors hover:bg-white/[0.06]"
+                className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm transition-colors hover:bg-tint/[0.06]"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-mono text-xs text-muted-foreground">
                     {formatMatchDate(date)}
                   </span>
-                  <span className="truncate font-medium">
+                  <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                    <TeamLogo abbreviation={match.awayTeam.abbreviation} logoUrl={match.awayTeam.logoUrl} size={26} />
                     {match.awayTeam.abbreviation}
-                    <span className="mx-1 text-muted-foreground">@</span>
+                    <span className="mx-0.5 text-muted-foreground">@</span>
+                    <TeamLogo abbreviation={match.homeTeam.abbreviation} logoUrl={match.homeTeam.logoUrl} size={26} />
                     {match.homeTeam.abbreviation}
                   </span>
                 </div>

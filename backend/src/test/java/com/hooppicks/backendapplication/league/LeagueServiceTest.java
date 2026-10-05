@@ -1,5 +1,7 @@
 package com.hooppicks.backendapplication.league;
 
+
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.dto.LeagueActivityDto;
 import com.hooppicks.backendapplication.dto.LeagueDto;
 import com.hooppicks.backendapplication.entity.ActivityReaction;
@@ -48,13 +50,15 @@ class LeagueServiceTest {
     private NotificationRepository notificationRepository;
     @Mock
     private ActivityReactionRepository activityReactionRepository;
+    @Mock
+    private PushService pushService;
 
     private LeagueService leagueService;
 
     @BeforeEach
     void setUp() {
         leagueService = new LeagueService(leagueRepository, membershipRepository, userRepository, betRepository,
-                notificationRepository, activityReactionRepository);
+                notificationRepository, activityReactionRepository, pushService);
     }
 
     @Test
