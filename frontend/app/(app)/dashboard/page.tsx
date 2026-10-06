@@ -30,6 +30,7 @@ import { WalletTrend } from "@/components/dashboard/wallet-trend";
 import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
 import { LeaguesPreview } from "@/components/dashboard/leagues-preview";
 import { NewsPreview } from "@/components/dashboard/news-preview";
+import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 import { CountUp } from "@/components/motion/count-up";
 
@@ -48,7 +49,7 @@ export default function DashboardPage() {
   });
   const leaderboardQuery = useQuery({
     queryKey: ["leaderboard"],
-    queryFn: fetchLeaderboard,
+    queryFn: () => fetchLeaderboard(),
     staleTime: 2 * 60 * 1000,
   });
   const newsQuery = useQuery({
@@ -120,6 +121,12 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="reveal-children flex flex-col gap-6 lg:col-span-2">
+          <FavoriteTeamCard
+            matches={matchesQuery.data}
+            leaderboard={leaderboardQuery.data ?? []}
+            username={profileQuery.data?.username}
+            favoriteTeamName={profileQuery.data?.favoriteTeam}
+          />
           <PickOfDay match={slate.spotlight} />
           <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
           <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />

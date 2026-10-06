@@ -16,6 +16,20 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByUsername(String username);
 
+    // Supporters d'une équipe : l'équipe favorite est stockée en nom complet
+    // ("Charlotte Hornets") et Team n'a que le surnom ("Hornets"). Appelé avec
+    // " " + surnom, pour que " Nets" ne corresponde pas à "Hornets".
+    List<User> findByFavoriteTeamEndingWith(String suffix);
+
+    // --- Vue d'ensemble de la console admin ---
+    long countByCreatedAtAfter(java.time.Instant since);
+
+    @Query("SELECT COALESCE(SUM(u.walletBalance), 0) FROM User u")
+    long sumWalletBalances();
+
+    @Query("SELECT u.createdAt FROM User u WHERE u.createdAt >= :since")
+    List<java.time.Instant> findCreatedAtSince(java.time.Instant since);
+
     List<User> findTop50ByOrderByCreatedAtDesc();
 
     List<User> findTop50ByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCreatedAtDesc(

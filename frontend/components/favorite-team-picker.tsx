@@ -15,6 +15,8 @@ export function FavoriteTeamPicker({ currentTeam }: { currentTeam: string }) {
     mutationFn: () => updateProfile({ favoriteTeam: team }),
     onSuccess: (updated) => {
       queryClient.setQueryData(["profile"], updated);
+      // Les badges « Fidèle » / « Lucide » dépendent de l'équipe favorite.
+      queryClient.invalidateQueries({ queryKey: ["badges"] });
       toast.success("Équipe favorite mise à jour !");
     },
     onError: () => {

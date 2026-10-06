@@ -4,6 +4,7 @@ import com.hooppicks.backendapplication.badge.BadgeService;
 import com.hooppicks.backendapplication.dto.PublicProfileDto;
 import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.User;
+import com.hooppicks.backendapplication.favorite.FavoriteTeamService;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
 import com.hooppicks.backendapplication.security.SessionStore;
@@ -30,13 +31,16 @@ public class PublicProfileController {
     private final BetRepository betRepository;
     private final BadgeService badgeService;
     private final SessionStore sessionStore;
+    private final FavoriteTeamService favoriteTeamService;
 
     public PublicProfileController(UserRepository userRepository, BetRepository betRepository,
-                                    BadgeService badgeService, SessionStore sessionStore) {
+                                    BadgeService badgeService, SessionStore sessionStore,
+                                    FavoriteTeamService favoriteTeamService) {
         this.userRepository = userRepository;
         this.betRepository = betRepository;
         this.badgeService = badgeService;
         this.sessionStore = sessionStore;
+        this.favoriteTeamService = favoriteTeamService;
     }
 
     @GetMapping("/{username}")
@@ -56,6 +60,7 @@ public class PublicProfileController {
         }
         int winRate = totalBets == 0 ? 0 : (int) Math.round((wonBets * 100.0) / totalBets);
 
-        return ResponseEntity.ok(PublicProfileDto.from(user, winRate, (int) totalBets, badgeService.computeBadges(bets)));
+        return ResponseEntity.ok(PublicProfileDto.from(user, winRate, (int) totalBets, badgeService.computeBadges(bets,
+                favoriteTeamService.badgeFacts(user.getFavoriteTeam(), bets))));
     }
 }

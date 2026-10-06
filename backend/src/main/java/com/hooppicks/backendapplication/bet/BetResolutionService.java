@@ -1,6 +1,6 @@
 package com.hooppicks.backendapplication.bet;
 
-
+import com.hooppicks.backendapplication.bet.LegEvaluator.LegResult;
 import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.BetRepository;
@@ -37,7 +37,6 @@ public class BetResolutionService {
         this.pushService = pushService;
     }
 
-    private enum LegResult { WIN, LOSE, PUSH }
 
     @Transactional
     public int resolvePendingBets() {
@@ -65,7 +64,7 @@ public class BetResolutionService {
 
             for (BetSelection selection : bet.getSelections()) {
                 Match match = matchesById.get(selection.getMatchId());
-                LegResult result = evaluateSelection(selection, match);
+                LegResult result = LegEvaluator.evaluate(selection, match);
                 if (result == LegResult.LOSE) anyLoss = true;
                 if (result != LegResult.PUSH) allPush = false;
                 if (result == LegResult.PUSH) anyPush = true;
@@ -108,34 +107,6 @@ public class BetResolutionService {
         }
 
         return resolvedCount;
-    }
-
-    private LegResult evaluateSelection(BetSelection selection, Match match) {
-        int home = match.getHomeScore() != null ? match.getHomeScore() : 0;
-        int away = match.getAwayScore() != null ? match.getAwayScore() : 0;
-        boolean selectionIsHome = "home".equals(selection.getOutcome());
-
-        return switch (selection.getMarket()) {
-            case "moneyline" -> {
-                if (home == away) yield LegResult.PUSH; // n'arrive jamais au basket (pas de match nul), gardé par sécurité
-                boolean homeWins = home > away;
-                yield (homeWins == selectionIsHome) ? LegResult.WIN : LegResult.LOSE;
-            }
-            case "spread" -> {
-                double homeAdjusted = home + match.getSpreadValue();
-                if (homeAdjusted == away) yield LegResult.PUSH;
-                boolean homeCovers = homeAdjusted > away;
-                yield (homeCovers == selectionIsHome) ? LegResult.WIN : LegResult.LOSE;
-            }
-            case "total" -> {
-                int total = home + away;
-                if (total == match.getTotalValue()) yield LegResult.PUSH;
-                boolean overWins = total > match.getTotalValue();
-                boolean selectionIsOver = "over".equals(selection.getOutcome());
-                yield (overWins == selectionIsOver) ? LegResult.WIN : LegResult.LOSE;
-            }
-            default -> throw new IllegalStateException("Marché inconnu : " + selection.getMarket());
-        };
     }
 
     private void logTransaction(User user, TransactionType type, int amount, String description) {

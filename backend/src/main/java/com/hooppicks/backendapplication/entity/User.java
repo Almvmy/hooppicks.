@@ -60,6 +60,10 @@ public class User {
     @Column(columnDefinition = "boolean default true")
     private boolean notifyLeagueActivity = true;
 
+    // Ton équipe favorite joue dans l'heure / son résultat final.
+    @Column(columnDefinition = "boolean default true")
+    private boolean notifyFavoriteTeam = true;
+
     // columnDefinition sans "not null" : @CreationTimestamp force sinon une
     // contrainte NOT NULL, que Postgres refuse d'ajouter tant que les comptes
     // créés avant ce champ n'ont pas de valeur rétroactive à lui donner.

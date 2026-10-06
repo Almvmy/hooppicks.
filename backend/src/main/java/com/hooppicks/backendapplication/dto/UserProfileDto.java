@@ -17,6 +17,7 @@ public record UserProfileDto(
         boolean notifyMatchStarting,
         boolean notifyBetResults,
         boolean notifyLeagueActivity,
+        boolean notifyFavoriteTeam,
         boolean emailVerified
 ) {
     public static UserProfileDto from(User user, int winRate, int totalBets, int currentWinStreak) {
@@ -35,6 +36,7 @@ public record UserProfileDto(
                 user.isNotifyMatchStarting(),
                 user.isNotifyBetResults(),
                 user.isNotifyLeagueActivity(),
+                user.isNotifyFavoriteTeam(),
                 user.isEmailVerified()
         );
     }

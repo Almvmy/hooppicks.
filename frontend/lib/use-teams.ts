@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTeamRankings } from "@/lib/api/teams";
+import { fetchProfile } from "@/lib/api/auth";
 import { TeamRank } from "@/lib/types";
 
 /** Les 30 équipes indexées par sigle (même cache que la page Équipes). */
@@ -22,7 +23,17 @@ export function useTeamsByAbbreviation(): Map<string, TeamRank> {
 export function favoriteTeamAbbreviation(favoriteTeam: string | undefined, teams: Map<string, TeamRank>): string | null {
   if (!favoriteTeam) return null;
   for (const team of teams.values()) {
-    if (favoriteTeam.endsWith(team.name)) return team.abbreviation;
+    // Même règle que le backend (FavoriteTeamService.matchesTeam) : le nom
+    // court précédé d'une espace, pour que "Nets" ne réponde pas à "Hornets".
+    if (favoriteTeam === team.name || favoriteTeam.endsWith(` ${team.name}`)) return team.abbreviation;
   }
   return null;
+}
+
+/** L'équipe favorite du joueur connecté (undefined si aucune, ou pas encore chargée). */
+export function useFavoriteTeam(): { team: TeamRank | undefined; isLoading: boolean } {
+  const { data: profile, isLoading } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+  const teams = useTeamsByAbbreviation();
+  const abbreviation = favoriteTeamAbbreviation(profile?.favoriteTeam, teams);
+  return { team: abbreviation ? teams.get(abbreviation) : undefined, isLoading: isLoading || (!!profile?.favoriteTeam && teams.size === 0) };
 }

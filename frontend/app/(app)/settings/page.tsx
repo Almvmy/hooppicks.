@@ -39,6 +39,11 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
     label: "Activité de ligue",
     description: "Quelqu'un rejoint une ligue dont tu es membre.",
   },
+  {
+    key: "notifyFavoriteTeam",
+    label: "Ton équipe favorite",
+    description: "Elle joue dans moins d'une heure, puis son résultat final.",
+  },
 ];
 
 function NotificationsCard() {
@@ -60,6 +65,7 @@ function NotificationsCard() {
       notifyMatchStarting: profile.notifyMatchStarting,
       notifyBetResults: profile.notifyBetResults,
       notifyLeagueActivity: profile.notifyLeagueActivity,
+      notifyFavoriteTeam: profile.notifyFavoriteTeam,
       [key]: value,
     });
   }

@@ -3,6 +3,7 @@ package com.hooppicks.backendapplication.badge;
 import com.hooppicks.backendapplication.dto.BadgeDto;
 import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.BetStatus;
+import com.hooppicks.backendapplication.favorite.FavoriteTeamService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class BadgeService {
     private static final int BIG_WIN_THRESHOLD = 500;
     private static final int GRINDER_STAKE_THRESHOLD = 2000;
     private static final int PARLAY_MIN_SELECTIONS = 3;
+    private static final int LOYAL_FAN_SELECTIONS = 10;
 
     /**
      * Calcule le catalogue de badges pour un utilisateur à partir de ses paris.
@@ -24,6 +26,16 @@ public class BadgeService {
      * dépend de cet ordre.
      */
     public List<BadgeDto> computeBadges(List<Bet> bets) {
+        return computeBadges(bets, FavoriteTeamService.BadgeFacts.NONE);
+    }
+
+    /**
+     * Variante avec les faits liés à l'équipe favorite (cf.
+     * FavoriteTeamService#badgeFacts), calculés sur l'équipe favorite
+     * actuelle : en changer peut donc reverrouiller ces deux badges, ce qui
+     * est cohérent avec leur intitulé (« ton équipe favorite »).
+     */
+    public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite) {
         long totalPlaced = bets.size();
         long totalResolved = bets.stream()
                 .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST)
@@ -58,6 +70,12 @@ public class BadgeService {
         badges.add(new BadgeDto("grinder", "Gros joueur",
                 "Mise un total de 2000 pts sur l'ensemble de tes tickets.",
                 totalStaked >= GRINDER_STAKE_THRESHOLD, "coins"));
+        badges.add(new BadgeDto("loyal_fan", "Fidèle",
+                "Place 10 sélections en faveur de ton équipe favorite.",
+                favorite.forSelections() >= LOYAL_FAN_SELECTIONS, "heart"));
+        badges.add(new BadgeDto("clear_eyed", "Lucide",
+                "Gagne un ticket en pariant contre ton équipe favorite.",
+                favorite.wonTicketAgainst(), "eye"));
 
         return badges;
     }

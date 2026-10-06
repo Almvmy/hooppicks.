@@ -3,6 +3,8 @@ package com.hooppicks.backendapplication.controller;
 import com.hooppicks.backendapplication.badge.BadgeService;
 import com.hooppicks.backendapplication.dto.BadgeDto;
 import com.hooppicks.backendapplication.entity.Bet;
+import com.hooppicks.backendapplication.favorite.FavoriteTeamService;
+import com.hooppicks.backendapplication.repository.UserRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,11 +22,16 @@ public class BadgeController {
     private final BetRepository betRepository;
     private final SessionStore sessionStore;
     private final BadgeService badgeService;
+    private final UserRepository userRepository;
+    private final FavoriteTeamService favoriteTeamService;
 
-    public BadgeController(BetRepository betRepository, SessionStore sessionStore, BadgeService badgeService) {
+    public BadgeController(BetRepository betRepository, SessionStore sessionStore, BadgeService badgeService,
+                           UserRepository userRepository, FavoriteTeamService favoriteTeamService) {
         this.betRepository = betRepository;
         this.sessionStore = sessionStore;
         this.badgeService = badgeService;
+        this.userRepository = userRepository;
+        this.favoriteTeamService = favoriteTeamService;
     }
 
     @GetMapping
@@ -33,6 +40,7 @@ public class BadgeController {
         if (userId == null) return ResponseEntity.status(401).build();
 
         List<Bet> bets = betRepository.findByUserIdOrderByPlacedAtDesc(userId);
-        return ResponseEntity.ok(badgeService.computeBadges(bets));
+        String favoriteTeam = userRepository.findById(userId).map(u -> u.getFavoriteTeam()).orElse(null);
+        return ResponseEntity.ok(badgeService.computeBadges(bets, favoriteTeamService.badgeFacts(favoriteTeam, bets)));
     }
 }
