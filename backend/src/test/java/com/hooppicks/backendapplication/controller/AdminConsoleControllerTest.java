@@ -1,5 +1,8 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.admin.AdminActionsService;
+import com.hooppicks.backendapplication.admin.AdminAuditService;
+import com.hooppicks.backendapplication.admin.AdminOverviewService;
 import com.hooppicks.backendapplication.bet.BetResolutionService;
 import com.hooppicks.backendapplication.dto.AdminUpdateMatchRequest;
 import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
@@ -30,6 +33,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,6 +63,12 @@ class AdminConsoleControllerTest {
     private EspnStandingsService espnStandingsService;
     @Mock
     private EspnPlayerStatsService espnPlayerStatsService;
+    @Mock
+    private AdminAuditService auditService;
+    @Mock
+    private AdminActionsService actionsService;
+    @Mock
+    private AdminOverviewService overviewService;
 
     private AdminConsoleController controller;
 
@@ -64,7 +76,7 @@ class AdminConsoleControllerTest {
     void setUp() {
         controller = new AdminConsoleController(sessionStore, userRepository, matchRepository, betRepository,
                 nbaSyncService, betResolutionService, adminSyncStatus, accountDeletionService, espnRosterService,
-                espnStandingsService, espnPlayerStatsService);
+                espnStandingsService, espnPlayerStatsService, auditService, actionsService, overviewService);
     }
 
     private HttpServletRequest adminRequest(String adminId) {
@@ -174,17 +186,25 @@ class AdminConsoleControllerTest {
     }
 
     @Test
-    void getMatches_filtre_par_recherche_sur_le_nom_d_equipe() {
+    void getMatches_filtre_en_base_par_statut_et_recherche() {
         HttpServletRequest request = adminRequest("admin1");
-        when(matchRepository.findTop100ByOrderByDateDesc()).thenReturn(List.of(
-                match("Lakers", "Celtics", MatchStatus.FINISHED),
-                match("Knicks", "Nets", MatchStatus.FINISHED)
-        ));
+        when(matchRepository.searchForAdmin(eq(MatchStatus.FINISHED), eq("%lakers%"), any()))
+                .thenReturn(List.of(match("Lakers", "Celtics", MatchStatus.FINISHED)));
 
-        ResponseEntity<?> response = controller.getMatches("lakers", null, request);
+        ResponseEntity<?> response = controller.getMatches(" Lakers ", "finished", request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat((List<?>) response.getBody()).hasSize(1);
+    }
+
+    @Test
+    void getMatches_sans_filtre_ni_statut_connu() {
+        HttpServletRequest request = adminRequest("admin1");
+        when(matchRepository.searchForAdmin(isNull(), isNull(), any())).thenReturn(List.of());
+
+        ResponseEntity<?> response = controller.getMatches(null, "pas_un_statut", request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
     }
 
     @Test
@@ -214,5 +234,58 @@ class AdminConsoleControllerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         verify(matchRepository, never()).save(any());
+    }
+
+    @Test
+    void updateMatch_verrouille_le_match_et_trace_l_action() {
+        HttpServletRequest request = adminRequest("admin1");
+        Match match = match("Lakers", "Celtics", MatchStatus.LIVE);
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+
+        controller.updateMatch("m1", new AdminUpdateMatchRequest("finished", 110, 102), request);
+
+        // Verrouillé : la synchro suivante ne doit pas écraser la correction.
+        assertThat(match.getAdminLocked()).isTrue();
+        verify(auditService).log(any(User.class), eq("UPDATE_MATCH"), anyString(), contains("finished 102-110"));
+    }
+
+    @Test
+    void unlockMatch_rend_le_match_a_la_synchro() {
+        HttpServletRequest request = adminRequest("admin1");
+        Match match = match("Lakers", "Celtics", MatchStatus.FINISHED);
+        match.setAdminLocked(true);
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+
+        controller.unlockMatch("m1", request);
+
+        assertThat(match.getAdminLocked()).isFalse();
+        verify(auditService).log(any(User.class), eq("UNLOCK_MATCH"), anyString(), anyString());
+    }
+
+    @Test
+    void action_refusee_par_le_service_renvoie_son_statut_et_son_message() {
+        HttpServletRequest request = adminRequest("admin1");
+        when(actionsService.adjustWallet(eq("u2"), eq(-5000), anyString(), any(User.class)))
+                .thenThrow(new com.hooppicks.backendapplication.admin.AdminActionException(400, "Le solde deviendrait négatif."));
+
+        ResponseEntity<?> response = controller.adjustWallet("u2",
+                new AdminConsoleController.WalletAdjustRequest(-5000, "Correction"), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(response.getBody()).isEqualTo("Le solde deviendrait négatif.");
+    }
+
+    @Test
+    void nouvelles_routes_refusees_aux_non_admins() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        when(sessionStore.getUserIdFromRequest(request)).thenReturn("u1");
+        User user = new User();
+        user.setId("u1");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+
+        assertThat(controller.voidBet("b1", new AdminConsoleController.ReasonRequest("x"), request).getStatusCode().value()).isEqualTo(403);
+        assertThat(controller.announce(new AdminConsoleController.AnnouncementRequest("x", false), request).getStatusCode().value()).isEqualTo(403);
+        assertThat(controller.getAudit(10, request).getStatusCode().value()).isEqualTo(403);
+        verifyNoInteractions(actionsService, auditService);
     }
 }

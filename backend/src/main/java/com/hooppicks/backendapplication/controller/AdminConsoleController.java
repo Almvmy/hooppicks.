@@ -1,10 +1,15 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.admin.AdminActionException;
+import com.hooppicks.backendapplication.admin.AdminActionsService;
+import com.hooppicks.backendapplication.admin.AdminAuditService;
+import com.hooppicks.backendapplication.admin.AdminOverviewService;
 import com.hooppicks.backendapplication.bet.BetResolutionService;
 import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
 import com.hooppicks.backendapplication.espn.EspnRosterService;
 import com.hooppicks.backendapplication.espn.EspnStandingsService;
 import com.hooppicks.backendapplication.dto.AdminBetDto;
+import com.hooppicks.backendapplication.dto.AdminMatchDto;
 import com.hooppicks.backendapplication.dto.AdminStatusDto;
 import com.hooppicks.backendapplication.dto.AdminUpdateMatchRequest;
 import com.hooppicks.backendapplication.dto.AdminUserDto;
@@ -21,12 +26,15 @@ import com.hooppicks.backendapplication.repository.UserRepository;
 import com.hooppicks.backendapplication.security.AccountDeletionService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -34,11 +42,18 @@ import java.util.stream.LongStream;
  * Console admin de l'app : auth par cookie de session + flag User.isAdmin,
  * comme le reste de l'app : volontairement distincte de /admin/** (protégé
  * par une clé statique, cf. AdminAuthFilter) pour ne pas avoir à embarquer un
- * secret serveur côté frontend.
+ * secret serveur côté frontend. Chaque action qui modifie quelque chose est
+ * tracée dans le journal d'audit (AdminAuditService) avec l'admin exact.
  */
 @RestController
 @RequestMapping("/console")
 public class AdminConsoleController {
+
+    public record ReasonRequest(String reason) {}
+
+    public record WalletAdjustRequest(Integer amount, String reason) {}
+
+    public record AnnouncementRequest(String message, Boolean push) {}
 
     private final SessionStore sessionStore;
     private final UserRepository userRepository;
@@ -51,13 +66,17 @@ public class AdminConsoleController {
     private final EspnRosterService espnRosterService;
     private final EspnStandingsService espnStandingsService;
     private final EspnPlayerStatsService espnPlayerStatsService;
+    private final AdminAuditService auditService;
+    private final AdminActionsService actionsService;
+    private final AdminOverviewService overviewService;
 
     public AdminConsoleController(SessionStore sessionStore, UserRepository userRepository,
                                    MatchRepository matchRepository, BetRepository betRepository,
                                    NbaSyncService nbaSyncService, BetResolutionService betResolutionService,
                                    AdminSyncStatus adminSyncStatus, AccountDeletionService accountDeletionService,
                                    EspnRosterService espnRosterService, EspnStandingsService espnStandingsService,
-                                   EspnPlayerStatsService espnPlayerStatsService) {
+                                   EspnPlayerStatsService espnPlayerStatsService, AdminAuditService auditService,
+                                   AdminActionsService actionsService, AdminOverviewService overviewService) {
         this.sessionStore = sessionStore;
         this.userRepository = userRepository;
         this.matchRepository = matchRepository;
@@ -69,12 +88,15 @@ public class AdminConsoleController {
         this.espnRosterService = espnRosterService;
         this.espnStandingsService = espnStandingsService;
         this.espnPlayerStatsService = espnPlayerStatsService;
+        this.auditService = auditService;
+        this.actionsService = actionsService;
+        this.overviewService = overviewService;
     }
 
     @GetMapping("/status")
     public ResponseEntity<?> getStatus(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         AdminStatusDto status = new AdminStatusDto(
                 adminSyncStatus.getLastSyncAt(),
@@ -88,12 +110,30 @@ public class AdminConsoleController {
         return ResponseEntity.ok(status);
     }
 
+    @GetMapping("/overview")
+    public ResponseEntity<?> getOverview(HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return ResponseEntity.ok(overviewService.overview());
+    }
+
+    @GetMapping("/audit")
+    public ResponseEntity<?> getAudit(@RequestParam(defaultValue = "100") int limit, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return ResponseEntity.ok(auditService.recent(limit));
+    }
+
+    // --- Synchros -----------------------------------------------------
+
     @PostMapping("/sync-teams")
     public ResponseEntity<?> syncTeams(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
-        return ResponseEntity.ok(Map.of("teamsSynced", nbaSyncService.syncTeams()));
+        int synced = nbaSyncService.syncTeams();
+        auditService.log(access.admin(), "SYNC_TEAMS", "balldontlie", synced + " équipe(s)");
+        return ResponseEntity.ok(Map.of("teamsSynced", synced));
     }
 
     @PostMapping("/sync-games")
@@ -102,39 +142,46 @@ public class AdminConsoleController {
             @RequestParam(required = false) String startDate,
             HttpServletRequest request
     ) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : LocalDate.now().minusDays(1);
         List<LocalDate> dates = LongStream.rangeClosed(0, daysAhead)
                 .mapToObj(start::plusDays)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(Map.of("gamesSynced", nbaSyncService.syncGames(dates).gamesSynced()));
+        int synced = nbaSyncService.syncGames(dates).gamesSynced();
+        auditService.log(access.admin(), "SYNC_GAMES", "balldontlie",
+                synced + " match(s), du " + start + " sur " + (daysAhead + 1) + " jour(s)");
+        return ResponseEntity.ok(Map.of("gamesSynced", synced));
     }
 
     @PostMapping("/resolve-bets")
     public ResponseEntity<?> resolveBets(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
-        return ResponseEntity.ok(Map.of("resolved", betResolutionService.resolvePendingBets()));
+        int resolved = betResolutionService.resolvePendingBets();
+        auditService.log(access.admin(), "RESOLVE_BETS", "paris en attente", resolved + " pari(s) résolu(s)");
+        return ResponseEntity.ok(Map.of("resolved", resolved));
     }
 
     @PostMapping("/sync-rosters")
     public ResponseEntity<?> syncRosters(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         espnRosterService.syncRosters();
+        auditService.log(access.admin(), "SYNC_ROSTERS", "ESPN", null);
         return ResponseEntity.ok(Map.of("synced", true));
     }
 
     @PostMapping("/sync-standings")
     public ResponseEntity<?> syncStandings(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         espnStandingsService.syncStandings();
+        auditService.log(access.admin(), "SYNC_STANDINGS", "ESPN", null);
         return ResponseEntity.ok(Map.of("synced", true));
     }
 
@@ -145,10 +192,11 @@ public class AdminConsoleController {
     // manuellement un lot pour tester/accélérer sans attendre.
     @PostMapping("/sync-player-stats-batch")
     public ResponseEntity<?> syncPlayerStatsBatch(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         espnPlayerStatsService.syncBatch();
+        auditService.log(access.admin(), "SYNC_PLAYER_STATS", "ESPN", "un lot");
         return ResponseEntity.ok(Map.of("synced", true));
     }
 
@@ -156,24 +204,32 @@ public class AdminConsoleController {
 
     @GetMapping("/users")
     public ResponseEntity<?> getUsers(@RequestParam(required = false) String search, HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         List<User> users = (search == null || search.isBlank())
                 ? userRepository.findTop50ByOrderByCreatedAtDesc()
                 : userRepository.findTop50ByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCreatedAtDesc(search, search);
 
-        return ResponseEntity.ok(users.stream().map(AdminUserDto::from).toList());
+        Map<String, Long> betCounts = new HashMap<>();
+        if (!users.isEmpty()) {
+            for (Object[] row : betRepository.countBetsByUser(users.stream().map(User::getId).toList())) {
+                betCounts.put((String) row[0], (Long) row[1]);
+            }
+        }
+        return ResponseEntity.ok(users.stream()
+                .map(u -> AdminUserDto.from(u, betCounts.getOrDefault(u.getId(), 0L)))
+                .toList());
     }
 
     @PostMapping("/users/{id}/toggle-admin")
     public ResponseEntity<?> toggleAdmin(@PathVariable String id, HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         // On ne se retire jamais soi-même le statut admin depuis ici : sinon un
         // admin seul peut se verrouiller hors de la console par erreur de clic.
-        if (id.equals(sessionStore.getUserIdFromRequest(request))) {
+        if (id.equals(access.admin().getId())) {
             return ResponseEntity.badRequest().body("Impossible de modifier ton propre statut admin ici.");
         }
 
@@ -182,23 +238,37 @@ public class AdminConsoleController {
 
         target.setAdmin(!target.isAdmin());
         userRepository.save(target);
+        auditService.log(access.admin(), target.isAdmin() ? "PROMOTE_ADMIN" : "DEMOTE_ADMIN", target.getUsername(), null);
         return ResponseEntity.ok(AdminUserDto.from(target));
     }
 
     @PostMapping("/users/{id}/delete")
     public ResponseEntity<?> deleteUser(@PathVariable String id, HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         // La suppression de son propre compte passe par /auth/delete-account
         // (avec confirmation de mot de passe) : pas par cette voie admin.
-        if (id.equals(sessionStore.getUserIdFromRequest(request))) {
+        if (id.equals(access.admin().getId())) {
             return ResponseEntity.badRequest().body("Utilise la suppression de compte depuis tes paramètres.");
         }
-        if (userRepository.findById(id).isEmpty()) return ResponseEntity.notFound().build();
+        User target = userRepository.findById(id).orElse(null);
+        if (target == null) return ResponseEntity.notFound().build();
 
+        // Pseudo et email relevés avant suppression : le journal doit rester lisible après.
+        String label = target.getUsername() + " (" + target.getEmail() + ")";
         accountDeletionService.deleteAccount(id);
+        auditService.log(access.admin(), "DELETE_USER", label, null);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/users/{id}/adjust-wallet")
+    public ResponseEntity<?> adjustWallet(@PathVariable String id, @RequestBody WalletAdjustRequest body,
+                                          HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> Map.of("balance", actionsService.adjustWallet(id,
+                body.amount() == null ? 0 : body.amount(), body.reason(), access.admin())));
     }
 
     // --- Matchs ---------------------------------------------------------
@@ -209,40 +279,45 @@ public class AdminConsoleController {
             @RequestParam(required = false) String status,
             HttpServletRequest request
     ) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
-        List<Match> matches = matchRepository.findTop100ByOrderByDateDesc();
-
+        MatchStatus wanted = null;
         if (status != null && !status.isBlank()) {
             try {
-                MatchStatus wanted = MatchStatus.valueOf(status.toUpperCase());
-                matches = matches.stream().filter(m -> m.getStatus() == wanted).toList();
+                wanted = MatchStatus.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException ignored) {
                 // statut inconnu dans la query string : on ignore le filtre plutôt que de 400
             }
         }
-        if (search != null && !search.isBlank()) {
-            String needle = search.toLowerCase();
-            matches = matches.stream()
-                    .filter(m -> m.getHomeTeam().getName().toLowerCase().contains(needle)
-                            || m.getAwayTeam().getName().toLowerCase().contains(needle))
-                    .toList();
-        }
+        String q = search == null || search.isBlank() ? null : "%" + search.trim().toLowerCase() + "%";
+        List<Match> matches = matchRepository.searchForAdmin(wanted, q, PageRequest.of(0, 100));
 
-        return ResponseEntity.ok(matches.stream().map(MatchDto::from).toList());
+        Map<String, long[]> counts = new HashMap<>();
+        if (!matches.isEmpty()) {
+            for (Object[] row : betRepository.countBetsByMatchAndStatus(matches.stream().map(Match::getId).toList())) {
+                long[] c = counts.computeIfAbsent((String) row[0], k -> new long[2]);
+                if (row[1] == BetStatus.PENDING) c[0] += (Long) row[2];
+                else c[1] += (Long) row[2];
+            }
+        }
+        return ResponseEntity.ok(matches.stream().map(m -> {
+            long[] c = counts.getOrDefault(m.getId(), new long[2]);
+            return new AdminMatchDto(MatchDto.from(m), Boolean.TRUE.equals(m.getAdminLocked()), c[0], c[1]);
+        }).toList());
     }
 
     @PatchMapping("/matches/{id}")
     public ResponseEntity<?> updateMatch(
             @PathVariable String id, @RequestBody AdminUpdateMatchRequest body, HttpServletRequest request
     ) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         Match match = matchRepository.findById(id).orElse(null);
         if (match == null) return ResponseEntity.notFound().build();
 
+        String before = describe(match);
         if (body.status() != null) {
             try {
                 match.setStatus(MatchStatus.valueOf(body.status().toUpperCase()));
@@ -252,34 +327,100 @@ public class AdminConsoleController {
         }
         if (body.homeScore() != null) match.setHomeScore(body.homeScore());
         if (body.awayScore() != null) match.setAwayScore(body.awayScore());
+        // Verrouillé : la synchro suivante n'écrasera pas cette correction.
+        match.setAdminLocked(true);
 
         matchRepository.save(match);
+        auditService.log(access.admin(), "UPDATE_MATCH", matchLabel(match), before + " → " + describe(match));
         return ResponseEntity.ok(MatchDto.from(match));
     }
 
-    // --- Paris en attente -------------------------------------------------
+    @PostMapping("/matches/{id}/unlock")
+    public ResponseEntity<?> unlockMatch(@PathVariable String id, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+
+        Match match = matchRepository.findById(id).orElse(null);
+        if (match == null) return ResponseEntity.notFound().build();
+
+        match.setAdminLocked(false);
+        matchRepository.save(match);
+        auditService.log(access.admin(), "UNLOCK_MATCH", matchLabel(match), "rendu à la synchro");
+        return ResponseEntity.ok(MatchDto.from(match));
+    }
+
+    @PostMapping("/matches/{id}/void-bets")
+    public ResponseEntity<?> voidMatchBets(@PathVariable String id, @RequestBody ReasonRequest body,
+                                           HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> Map.of("voided", actionsService.voidPendingBetsForMatch(id, body.reason(), access.admin())));
+    }
+
+    // --- Paris -------------------------------------------------------------
 
     @GetMapping("/bets/pending")
     public ResponseEntity<?> getPendingBets(HttpServletRequest request) {
-        ResponseEntity<?> denied = requireAdmin(request);
-        if (denied != null) return denied;
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
 
         return ResponseEntity.ok(betRepository.findByStatus(BetStatus.PENDING).stream()
                 .map(AdminBetDto::from)
                 .toList());
     }
 
+    @PostMapping("/bets/{id}/void")
+    public ResponseEntity<?> voidBet(@PathVariable String id, @RequestBody ReasonRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> {
+            actionsService.voidBet(id, body.reason(), access.admin());
+            return Map.of("voided", true);
+        });
+    }
+
+    // --- Annonces ------------------------------------------------------------
+
+    @PostMapping("/announcements")
+    public ResponseEntity<?> announce(@RequestBody AnnouncementRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> Map.of("recipients",
+                actionsService.announce(body.message(), Boolean.TRUE.equals(body.push()), access.admin())));
+    }
+
+    // --------------------------------------------------------------------------
+
+    private record Access(ResponseEntity<?> denied, User admin) {}
+
     /**
-     * 401 si pas connecté, 403 si connecté mais pas admin, null si tout va bien :
-     * à appeler en tête de chaque méthode plutôt que de dupliquer les deux checks.
+     * 401 si pas connecté, 403 si connecté mais pas admin ; sinon l'admin
+     * connecté (pour le journal d'audit). À appeler en tête de chaque méthode.
      */
-    private ResponseEntity<?> requireAdmin(HttpServletRequest request) {
+    private Access access(HttpServletRequest request) {
         String userId = sessionStore.getUserIdFromRequest(request);
-        if (userId == null) return ResponseEntity.status(401).build();
+        if (userId == null) return new Access(ResponseEntity.status(401).build(), null);
 
         User user = userRepository.findById(userId).orElse(null);
-        if (user == null || !user.isAdmin()) return ResponseEntity.status(403).build();
+        if (user == null || !user.isAdmin()) return new Access(ResponseEntity.status(403).build(), null);
 
-        return null;
+        return new Access(null, user);
+    }
+
+    private static ResponseEntity<?> run(Supplier<Object> action) {
+        try {
+            return ResponseEntity.ok(action.get());
+        } catch (AdminActionException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getMessage());
+        }
+    }
+
+    private static String matchLabel(Match match) {
+        return match.getAwayTeam().getAbbreviation() + " @ " + match.getHomeTeam().getAbbreviation();
+    }
+
+    private static String describe(Match match) {
+        String score = match.getHomeScore() == null ? "-" : match.getAwayScore() + "-" + match.getHomeScore();
+        return match.getStatus().name().toLowerCase() + " " + score;
     }
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
+import { Coins, Search, ShieldCheck, ShieldOff, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +19,9 @@ import {
   AlertDialogFooter,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteAdminUser, fetchAdminUsers, toggleAdminStatus } from "@/lib/api/admin";
+import { adjustWallet, deleteAdminUser, fetchAdminUsers, toggleAdminStatus } from "@/lib/api/admin";
+import { ReasonDialog } from "@/components/admin/reason-dialog";
+import { formatRelativeTime } from "@/lib/utils";
 import { AdminUser } from "@/lib/types";
 
 type PendingAction = { type: "toggle" | "delete"; user: AdminUser };
@@ -28,13 +31,32 @@ export function AdminUsersPanel() {
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const [adjusting, setAdjusting] = useState<AdminUser | null>(null);
+  const [amount, setAmount] = useState("");
 
   const { data: users, isLoading, isError } = useQuery({
     queryKey: ["admin-users", submittedSearch],
     queryFn: () => fetchAdminUsers(submittedSearch || undefined),
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-audit"] });
+  };
+
+  const adjustMutation = useMutation({
+    mutationFn: ({ id, value, reason }: { id: string; value: number; reason: string }) => adjustWallet(id, value, reason),
+    onSuccess: (r) => {
+      toast.success(`Solde ajusté : ${r.balance.toLocaleString("fr-FR")} pts.`);
+      invalidate();
+    },
+    onError: (err: Error) => toast.error(err.message || "Ajustement impossible."),
+  });
+
+  const parsedAmount = Number(amount);
+  const amountValid = Number.isInteger(parsedAmount) && parsedAmount !== 0 && Math.abs(parsedAmount) <= 100000;
+  const newBalance = adjusting && amountValid ? adjusting.walletBalance + parsedAmount : null;
 
   const toggleMutation = useMutation({
     mutationFn: toggleAdminStatus,
@@ -97,6 +119,7 @@ export function AdminUsersPanel() {
                   <TableHead>Pseudo</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead className="text-right">Solde</TableHead>
+                  <TableHead className="text-right">Paris</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -104,14 +127,22 @@ export function AdminUsersPanel() {
               <TableBody>
                 {users.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
                       Aucun utilisateur trouvé.
                     </TableCell>
                   </TableRow>
                 )}
                 {users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">@{user.username}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/u/${encodeURIComponent(user.username)}`} className="hover:underline">
+                        @{user.username}
+                      </Link>
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {user.favoriteTeam ?? "Sans équipe"}
+                        {user.createdAt && ` · inscrit ${formatRelativeTime(user.createdAt)}`}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {user.email}
                       {!user.emailVerified && (
@@ -121,6 +152,7 @@ export function AdminUsersPanel() {
                     <TableCell className="text-right font-mono">
                       {user.walletBalance.toLocaleString("fr-FR")} pts
                     </TableCell>
+                    <TableCell className="text-right font-mono text-muted-foreground">{user.totalBets}</TableCell>
                     <TableCell>
                       {user.isAdmin && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
@@ -130,6 +162,17 @@ export function AdminUsersPanel() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          title="Ajuster le solde"
+                          onClick={() => {
+                            setAmount("");
+                            setAdjusting(user);
+                          }}
+                        >
+                          <Coins className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="icon"
@@ -183,6 +226,39 @@ export function AdminUsersPanel() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ReasonDialog
+        open={adjusting !== null}
+        onOpenChange={(open) => !open && setAdjusting(null)}
+        title={adjusting ? `Ajuster le solde de @${adjusting.username}` : ""}
+        description={
+          <>
+            Solde actuel : {adjusting?.walletBalance.toLocaleString("fr-FR")} pts. Montant positif pour créditer,
+            négatif pour débiter (jamais en dessous de 0). Le joueur est prévenu.
+          </>
+        }
+        confirmLabel="Ajuster"
+        canConfirm={amountValid && newBalance !== null && newBalance >= 0}
+        onConfirm={(reason) => {
+          if (adjusting) adjustMutation.mutate({ id: adjusting.id, value: parsedAmount, reason });
+          setAdjusting(null);
+        }}
+      >
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium">Montant (pts)</span>
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Ex. : 500 ou -200"
+          />
+          {newBalance !== null && (
+            <span className={newBalance < 0 ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+              Nouveau solde : {newBalance.toLocaleString("fr-FR")} pts
+            </span>
+          )}
+        </label>
+      </ReasonDialog>
     </Card>
   );
 }

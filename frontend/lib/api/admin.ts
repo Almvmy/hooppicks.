@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import { AdminBet, AdminStatus, AdminUser, Match } from "@/lib/types";
+import { AdminAuditEntry, AdminBet, AdminMatch, AdminOverview, AdminStatus, AdminUser, Match } from "@/lib/types";
 
 export async function fetchAdminStatus(): Promise<AdminStatus> {
   return apiFetch<AdminStatus>("/console/status");
@@ -18,12 +18,12 @@ export async function deleteAdminUser(userId: string): Promise<void> {
   return apiFetch<void>(`/console/users/${userId}/delete`, { method: "POST" });
 }
 
-export async function fetchAdminMatches(search?: string, status?: string): Promise<Match[]> {
+export async function fetchAdminMatches(search?: string, status?: string): Promise<AdminMatch[]> {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
   if (status) params.set("status", status);
   const qs = params.toString();
-  return apiFetch<Match[]>(`/console/matches${qs ? `?${qs}` : ""}`);
+  return apiFetch<AdminMatch[]>(`/console/matches${qs ? `?${qs}` : ""}`);
 }
 
 export async function updateAdminMatch(
@@ -67,4 +67,35 @@ export async function syncStandings(): Promise<{ synced: boolean }> {
 
 export async function syncPlayerStatsBatch(): Promise<{ synced: boolean }> {
   return apiFetch("/console/sync-player-stats-batch", { method: "POST" });
+}
+
+export async function fetchAdminOverview(): Promise<AdminOverview> {
+  return apiFetch<AdminOverview>("/console/overview");
+}
+
+export async function fetchAdminAudit(limit = 100): Promise<AdminAuditEntry[]> {
+  return apiFetch<AdminAuditEntry[]>(`/console/audit?limit=${limit}`);
+}
+
+export async function unlockAdminMatch(matchId: string): Promise<Match> {
+  return apiFetch<Match>(`/console/matches/${matchId}/unlock`, { method: "POST" });
+}
+
+export async function voidMatchBets(matchId: string, reason: string): Promise<{ voided: number }> {
+  return apiFetch(`/console/matches/${matchId}/void-bets`, { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export async function voidBet(betId: string, reason: string): Promise<{ voided: boolean }> {
+  return apiFetch(`/console/bets/${betId}/void`, { method: "POST", body: JSON.stringify({ reason }) });
+}
+
+export async function adjustWallet(userId: string, amount: number, reason: string): Promise<{ balance: number }> {
+  return apiFetch(`/console/users/${userId}/adjust-wallet`, {
+    method: "POST",
+    body: JSON.stringify({ amount, reason }),
+  });
+}
+
+export async function sendAnnouncement(message: string, push: boolean): Promise<{ recipients: number }> {
+  return apiFetch("/console/announcements", { method: "POST", body: JSON.stringify({ message, push }) });
 }

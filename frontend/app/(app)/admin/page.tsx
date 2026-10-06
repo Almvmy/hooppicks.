@@ -1,44 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { RefreshCw, ShieldCheck, Users2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, LayoutDashboard, Megaphone, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { fetchProfile } from "@/lib/api/auth";
-import {
-  fetchAdminStatus,
-  resolveBets,
-  syncGames,
-  syncPlayerStatsBatch,
-  syncRosters,
-  syncStandings,
-  syncTeams,
-} from "@/lib/api/admin";
-import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
+import { AdminOverview } from "@/components/admin/admin-overview";
+import { AdminSyncPanel } from "@/components/admin/admin-sync-panel";
 import { AdminMatchesPanel } from "@/components/admin/admin-matches-panel";
 import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-panel";
-import { formatShortDateTime } from "@/lib/utils";
+import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
+import { AdminAnnouncements } from "@/components/admin/admin-announcements";
+import { AdminAuditLog } from "@/components/admin/admin-audit-log";
+import { fetchProfile } from "@/lib/api/auth";
+import { cn } from "@/lib/utils";
 
-export default function AdminPage() {
+const TABS = [
+  { value: "apercu", label: "Vue d'ensemble", icon: LayoutDashboard },
+  { value: "synchros", label: "Synchros", icon: RefreshCw },
+  { value: "matchs", label: "Matchs", icon: CalendarDays },
+  { value: "paris", label: "Paris", icon: Ticket },
+  { value: "utilisateurs", label: "Utilisateurs", icon: Users },
+  { value: "annonces", label: "Annonces", icon: Megaphone },
+  { value: "journal", label: "Journal", icon: ScrollText },
+] as const;
+
+type Tab = (typeof TABS)[number]["value"];
+
+export default function AdminPage({ searchParams }: { searchParams: Promise<{ onglet?: string }> }) {
+  // Onglet dans l'adresse (?onglet=paris) : on y revient après un rechargement.
+  const { onglet } = use(searchParams);
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [daysAhead, setDaysAhead] = useState(3);
-  const [startDate, setStartDate] = useState("");
+  const [tab, setTabState] = useState<Tab>(TABS.some((t) => t.value === onglet) ? (onglet as Tab) : "apercu");
 
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
@@ -48,251 +41,58 @@ export default function AdminPage() {
     }
   }, [profileQuery.data, router]);
 
-  const statusQuery = useQuery({
-    queryKey: ["admin-status"],
-    queryFn: fetchAdminStatus,
-    enabled: profileQuery.data?.isAdmin === true,
-  });
+  function setTab(next: Tab) {
+    setTabState(next);
+    router.replace(next === "apercu" ? "/admin" : `/admin?onglet=${next}`, { scroll: false });
+  }
 
-  const refreshStatus = () => queryClient.invalidateQueries({ queryKey: ["admin-status"] });
-
-  const syncTeamsMutation = useMutation({
-    mutationFn: syncTeams,
-    onSuccess: (r) => {
-      toast.success(`${r.teamsSynced} équipe(s) synchronisée(s).`);
-      refreshStatus();
-    },
-    onError: () => toast.error("Échec de la synchro des équipes."),
-  });
-
-  const syncGamesMutation = useMutation({
-    mutationFn: () => syncGames(daysAhead, startDate || undefined),
-    onSuccess: (r) => {
-      toast.success(`${r.gamesSynced} match(s) synchronisé(s).`);
-      refreshStatus();
-    },
-    onError: () => toast.error("Échec de la synchro des matchs."),
-  });
-
-  const resolveBetsMutation = useMutation({
-    mutationFn: resolveBets,
-    onSuccess: (r) => {
-      toast.success(`${r.resolved} pari(s) résolu(s).`);
-      refreshStatus();
-      queryClient.invalidateQueries({ queryKey: ["admin-pending-bets"] });
-    },
-    onError: () => toast.error("Échec de la résolution des paris."),
-  });
-
-  const syncRostersMutation = useMutation({
-    mutationFn: syncRosters,
-    onSuccess: () => {
-      toast.success("Effectifs synchronisés.");
-      queryClient.invalidateQueries({ queryKey: ["team-roster"] });
-    },
-    onError: () => toast.error("Échec de la synchro des effectifs."),
-  });
-
-  const syncStandingsMutation = useMutation({
-    mutationFn: syncStandings,
-    onSuccess: () => {
-      toast.success("Classement synchronisé.");
-      queryClient.invalidateQueries({ queryKey: ["teams", "rankings"] });
-    },
-    onError: () => toast.error("Échec de la synchro du classement."),
-  });
-
-  const syncPlayerStatsMutation = useMutation({
-    mutationFn: syncPlayerStatsBatch,
-    onSuccess: () => {
-      toast.success("Lot de stats joueurs synchronisé.");
-      queryClient.invalidateQueries({ queryKey: ["team-roster"] });
-    },
-    onError: () => toast.error("Échec de la synchro des stats joueurs."),
-  });
-
-  const [confirmResolve, setConfirmResolve] = useState(false);
-
+  if (profileQuery.isError) {
+    return <p className="text-destructive">Impossible de vérifier tes accès. Recharge la page ou reconnecte-toi.</p>;
+  }
   if (profileQuery.isLoading || !profileQuery.data?.isAdmin) {
     return <BasketballLoader label="Vérification des accès..." />;
   }
 
-  const status = statusQuery.data;
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <ShieldCheck className="h-6 w-6 text-primary" />
-        <h1 className="font-heading text-2xl font-bold">Console admin</h1>
-      </div>
-
-      {statusQuery.isError && (
-        <p className="text-sm text-destructive">
-          Impossible de charger le statut : les tirets ci-dessous ne veulent pas dire "zéro", la donnée n&apos;a simplement pas pu être récupérée.
+      <div>
+        <h1 className="flex items-center gap-2 font-heading text-2xl font-bold">
+          <ShieldCheck className="h-6 w-6 text-primary" />
+          Console admin
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Chaque action qui modifie quelque chose est enregistrée dans le journal, avec ton pseudo.
         </p>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="flex flex-col gap-1 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Utilisateurs</p>
-            {statusQuery.isLoading ? (
-              <Skeleton className="h-7 w-12" />
-            ) : (
-              <p className="font-mono text-2xl font-bold">{status?.totalUsers ?? "-"}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col gap-1 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Matchs en base</p>
-            {statusQuery.isLoading ? (
-              <Skeleton className="h-7 w-12" />
-            ) : (
-              <p className="font-mono text-2xl font-bold">{status?.totalMatches ?? "-"}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex flex-col gap-1 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris en attente</p>
-            {statusQuery.isLoading ? (
-              <Skeleton className="h-7 w-12" />
-            ) : (
-              <p className="font-mono text-2xl font-bold">{status?.pendingBets ?? "-"}</p>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col gap-2 pt-6">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Dernière synchro</p>
-          {statusQuery.isLoading ? (
-            <Skeleton className="h-5 w-64" />
-          ) : status?.lastSyncAt ? (
-            <p className="text-sm">
-              {formatShortDateTime(new Date(status.lastSyncAt))}
-              {" · "}
-              <span className="font-mono">{status.lastGamesSynced}</span> match(s),{" "}
-              <span className="font-mono">{status.lastBetsResolved}</span> pari(s) résolu(s)
-              {" ("}
-              {status.syncMode}
-              {")"}
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground">Aucune synchro depuis le démarrage du serveur.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Équipes</p>
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => syncTeamsMutation.mutate()}
-              disabled={syncTeamsMutation.isPending}
+      <div className="glass-chrome -mx-6 px-6 py-3 md:sticky md:top-16 md:z-20">
+        <div className="glass-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Sections de la console">
+          {TABS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={tab === value}
+              onClick={() => setTab(value)}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors",
+                tab === value ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+              )}
             >
-              <RefreshCw className="h-4 w-4" />
-              Synchroniser les équipes
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => syncRostersMutation.mutate()}
-              disabled={syncRostersMutation.isPending}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Synchroniser les effectifs (ESPN)
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => syncStandingsMutation.mutate()}
-              disabled={syncStandingsMutation.isPending}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Synchroniser le classement (ESPN)
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => syncPlayerStatsMutation.mutate()}
-              disabled={syncPlayerStatsMutation.isPending}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Avancer un lot de stats joueurs (ESPN)
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Matchs</p>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                min={0}
-                max={30}
-                value={daysAhead}
-                onChange={(e) => setDaysAhead(Number(e.target.value))}
-                className="w-20"
-              />
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Date de départ"
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="gap-1.5"
-              onClick={() => syncGamesMutation.mutate()}
-              disabled={syncGamesMutation.isPending}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Synchroniser les matchs
-            </Button>
-          </CardContent>
-        </Card>
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-6">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris</p>
-          <Button
-            variant="outline"
-            className="w-fit gap-1.5"
-            onClick={() => setConfirmResolve(true)}
-            disabled={resolveBetsMutation.isPending}
-          >
-            <Users2 className="h-4 w-4" />
-            Résoudre les paris en attente
-          </Button>
-        </CardContent>
-      </Card>
-
-      <AdminPendingBetsPanel />
-      <AdminMatchesPanel />
-      <AdminUsersPanel />
-
-      <AlertDialog open={confirmResolve} onOpenChange={setConfirmResolve}>
-        <AlertDialogContent>
-          <AlertDialogTitle>Résoudre les paris en attente ?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tous les paris en attente dont le match est terminé seront réglés immédiatement (gains crédités,
-            mises perdues débitées). Cette action est immédiate et ne peut pas être annulée.
-          </AlertDialogDescription>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={() => resolveBetsMutation.mutate()}>Confirmer</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {tab === "apercu" && <AdminOverview />}
+      {tab === "synchros" && <AdminSyncPanel />}
+      {tab === "matchs" && <AdminMatchesPanel />}
+      {tab === "paris" && <AdminPendingBetsPanel />}
+      {tab === "utilisateurs" && <AdminUsersPanel />}
+      {tab === "annonces" && <AdminAnnouncements />}
+      {tab === "journal" && <AdminAuditLog />}
     </div>
   );
 }

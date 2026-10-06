@@ -11,9 +11,15 @@ public record AdminUserDto(
         boolean isAdmin,
         boolean emailVerified,
         int walletBalance,
-        Instant createdAt
+        Instant createdAt,
+        long totalBets,
+        String favoriteTeam
 ) {
     public static AdminUserDto from(User user) {
+        return from(user, 0);
+    }
+
+    public static AdminUserDto from(User user, long totalBets) {
         return new AdminUserDto(
                 user.getId(),
                 user.getUsername(),
@@ -21,7 +27,9 @@ public record AdminUserDto(
                 user.isAdmin(),
                 user.isEmailVerified(),
                 user.getWalletBalance(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                totalBets,
+                user.getFavoriteTeam() == null || user.getFavoriteTeam().isBlank() ? null : user.getFavoriteTeam()
         );
     }
 }
