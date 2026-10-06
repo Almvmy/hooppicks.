@@ -13,7 +13,8 @@ import { MatchBoxScore } from "@/components/match-box-score";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
 import { TeamNews } from "@/components/news/team-news";
-import { formatMatchTime, getDayLabel } from "@/lib/utils";
+import { formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
+import { MatchOddsRow } from "@/components/match-odds-row";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
 
@@ -81,6 +82,27 @@ export default function MatchDetailPage({
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Les cotes juste sous l'affiche : c'est ici qu'on arrive depuis une
+          carte de match, une actu ou la page équipe, et la fiche ne
+          permettait pas de parier. */}
+      {match && isBettable(match) && (
+        <Card>
+          <CardContent className="pt-6">
+            <h2 className="font-heading text-base font-bold">Parier sur ce match</h2>
+            <p className="text-xs text-muted-foreground">
+              Vainqueur, écart ou total : une sélection par match et par ticket.
+            </p>
+            <MatchOddsRow match={match} />
+          </CardContent>
+        </Card>
+      )}
+
+      {match && match.status === "scheduled" && !isBettable(match) && (
+        <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground">
+          Paris fermés : le coup d&apos;envoi est passé.
+        </p>
       )}
 
       {match && match.status !== "finished" && (
