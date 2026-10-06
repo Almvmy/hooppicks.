@@ -13,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
@@ -56,49 +55,45 @@ class EspnStatsClientTest {
     }
 
     @Test
-    void findEventId_trouve_le_match_correspondant_par_date_et_equipes() throws Exception {
+    void fetchScoreboard_lit_equipes_score_statut_et_phase() throws Exception {
         mockResponse("""
             {
               "events": [
                 {
-                  "id": "400878160",
+                  "id": "401869999",
+                  "date": "2026-04-21T23:30Z",
+                  "season": { "type": 3 },
                   "competitions": [
-                    { "competitors": [
-                        { "team": { "abbreviation": "GS" }, "homeAway": "home" },
-                        { "team": { "abbreviation": "CLE" }, "homeAway": "away" }
-                    ] }
+                    {
+                      "type": { "abbreviation": "RD16" },
+                      "status": { "type": { "state": "post", "completed": true } },
+                      "notes": [ { "headline": "East 1st Round - Game 2" } ],
+                      "series": { "summary": "NY leads series 2-0" },
+                      "competitors": [
+                        { "team": { "abbreviation": "NY" }, "homeAway": "home", "score": "112" },
+                        { "team": { "abbreviation": "ATL" }, "homeAway": "away", "score": "104" }
+                      ]
+                    }
                   ]
                 }
               ]
             }
         """);
 
-        Optional<String> result = client.findEventId(LocalDate.of(2016, 6, 19), "GSW", "CLE");
+        List<EspnGameRow> rows = client.fetchScoreboard(LocalDate.of(2026, 4, 21)).orElseThrow();
 
-        assertThat(result).contains("400878160");
-    }
-
-    @Test
-    void findEventId_renvoie_vide_si_aucun_match_ne_correspond() throws Exception {
-        mockResponse("""
-            {
-              "events": [
-                {
-                  "id": "999",
-                  "competitions": [
-                    { "competitors": [
-                        { "team": { "abbreviation": "BOS" }, "homeAway": "home" },
-                        { "team": { "abbreviation": "MIA" }, "homeAway": "away" }
-                    ] }
-                  ]
-                }
-              ]
-            }
-        """);
-
-        Optional<String> result = client.findEventId(LocalDate.of(2016, 6, 19), "GSW", "CLE");
-
-        assertThat(result).isEmpty();
+        assertThat(rows).hasSize(1);
+        EspnGameRow row = rows.get(0);
+        assertThat(row.eventId()).isEqualTo("401869999");
+        assertThat(row.date()).isEqualTo(java.time.Instant.parse("2026-04-21T23:30:00Z"));
+        // Sigles ESPN reconvertis aux nôtres (NY -> NYK).
+        assertThat(row.homeAbbreviation()).isEqualTo("NYK");
+        assertThat(row.awayAbbreviation()).isEqualTo("ATL");
+        assertThat(row.homeScore()).isEqualTo(112);
+        assertThat(row.matchStatus()).isEqualTo(com.hooppicks.backendapplication.entity.MatchStatus.FINISHED);
+        assertThat(row.seasonType()).isEqualTo(3);
+        assertThat(row.note()).isEqualTo("East 1st Round - Game 2");
+        assertThat(row.seriesSummary()).isEqualTo("NY leads series 2-0");
     }
 
     @Test

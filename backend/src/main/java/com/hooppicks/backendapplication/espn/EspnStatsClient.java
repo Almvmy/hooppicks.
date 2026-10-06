@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,31 +137,63 @@ public class EspnStatsClient {
     }
 
     /**
-     * Cherche, parmi les matchs NBA de ce jour-là côté ESPN, celui qui
-     * oppose ces deux équipes : c'est le seul moyen de relier un match
-     * balldontlie à son event ESPN, les deux APIs n'ayant aucun ID en commun.
+     * Tous les matchs d'une journée ESPN (journée à l'heure de la côte Est,
+     * comme le calendrier NBA) : sert à relier nos matchs à leur event ESPN
+     * (les deux APIs n'ont aucun ID en commun, seuls date + équipes les
+     * relient), à lire leur phase, et à créer les matchs de présaison que
+     * balldontlie ne connaît pas. Optional vide = ESPN injoignable, à
+     * distinguer d'une journée sans match (liste vide).
      */
-    public Optional<String> findEventId(LocalDate date, String homeAbbreviation, String awayAbbreviation) {
-        String espnHome = toEspnAbbreviation(homeAbbreviation);
-        String espnAway = toEspnAbbreviation(awayAbbreviation);
-        String url = String.format(SCOREBOARD_URL, date.format(DateTimeFormatter.BASIC_ISO_DATE));
-
-        JsonNode root = fetchWithRetry(url);
+    public Optional<List<EspnGameRow>> fetchScoreboard(LocalDate date) {
+        JsonNode root = fetchWithRetry(String.format(SCOREBOARD_URL, date.format(DateTimeFormatter.BASIC_ISO_DATE)));
         if (root == null) return Optional.empty();
 
+        List<EspnGameRow> rows = new ArrayList<>();
         for (JsonNode event : root.path("events")) {
+            JsonNode competition = event.path("competitions").path(0);
             String home = null;
             String away = null;
-            for (JsonNode competitor : event.path("competitions").path(0).path("competitors")) {
-                String abbr = competitor.path("team").path("abbreviation").asText();
-                if ("home".equals(competitor.path("homeAway").asText())) home = abbr;
-                else away = abbr;
+            Integer homeScore = null;
+            Integer awayScore = null;
+            for (JsonNode competitor : competition.path("competitors")) {
+                String abbr = fromEspnAbbreviation(competitor.path("team").path("abbreviation").asText());
+                Integer score = competitor.hasNonNull("score") ? parseInt(competitor.path("score").asText()) : null;
+                if ("home".equals(competitor.path("homeAway").asText())) {
+                    home = abbr;
+                    homeScore = score;
+                } else {
+                    away = abbr;
+                    awayScore = score;
+                }
             }
-            if (espnHome.equalsIgnoreCase(home) && espnAway.equalsIgnoreCase(away)) {
-                return Optional.of(event.path("id").asText());
-            }
+            JsonNode statusType = competition.path("status").path("type");
+            String series = competition.path("series").path("summary").asText("");
+            rows.add(new EspnGameRow(
+                    event.path("id").asText(),
+                    parseEventDate(event.path("date").asText("")),
+                    home,
+                    away,
+                    homeScore,
+                    awayScore,
+                    statusType.path("state").asText(""),
+                    statusType.path("completed").asBoolean(false),
+                    event.path("season").path("type").asInt(0),
+                    competition.path("type").path("abbreviation").asText(""),
+                    competition.path("notes").path(0).path("headline").asText(""),
+                    series.isBlank() ? null : series
+            ));
         }
-        return Optional.empty();
+        return Optional.of(rows);
+    }
+
+    // ESPN écrit ses dates sans secondes ("2026-10-05T23:00Z"), format
+    // qu'Instant.parse refuse mais qu'OffsetDateTime accepte.
+    private static Instant parseEventDate(String raw) {
+        try {
+            return OffsetDateTime.parse(raw).toInstant();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**

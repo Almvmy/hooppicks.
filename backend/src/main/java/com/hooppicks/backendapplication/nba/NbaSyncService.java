@@ -123,6 +123,8 @@ public class NbaSyncService {
         for (NbaGameDto g : games) {
             Match match = matchRepository.findByExternalId(g.id()).orElseGet(Match::new);
             boolean isNew = match.getId() == null;
+            // Corrigé à la main (console admin) : la synchro ne l'écrase pas.
+            if (!isNew && Boolean.TRUE.equals(match.getAdminLocked())) continue;
             MatchStatus previousStatus = match.getStatus();
 
             Team home = teamRepository.findById(String.valueOf(g.homeTeam().id())).orElse(null);
@@ -160,7 +162,7 @@ public class NbaSyncService {
             }
 
             if (justWentLive) {
-                notifyMatchStarting(match, home, away);
+                notifyMatchStarting(match);
             }
 
             count++;
@@ -179,7 +181,9 @@ public class NbaSyncService {
      * vient de démarrer : déclenché une seule fois, au moment où le statut
      * calculé passe de SCHEDULED à LIVE (cf. justWentLive dans syncGames).
      */
-    private void notifyMatchStarting(Match match, Team home, Team away) {
+    public void notifyMatchStarting(Match match) {
+        Team home = match.getHomeTeam();
+        Team away = match.getAwayTeam();
         List<User> users = betRepository.findUsersWithPendingBetOnMatch(match.getId());
         String message = "Ça démarre : " + home.getName() + " vs " + away.getName() + " !";
 
@@ -193,6 +197,22 @@ public class NbaSyncService {
             notificationRepository.save(notification);
             pushService.sendToUser(user.getId(),
                     new PushService.PushMessage("Coup d'envoi", message, "/matches/" + match.getId()));
+        }
+    }
+
+    /**
+     * Exécute une mise à jour de matchs sous le même verrou que la synchro
+     * balldontlie (utilisé par la synchro ESPN des matchs de présaison) :
+     * deux résolutions de paris en parallèle pourraient sinon payer deux
+     * fois le même ticket. false si une synchro tourne déjà.
+     */
+    public boolean tryRunExclusive(Runnable work) {
+        if (!syncLock.tryLock()) return false;
+        try {
+            work.run();
+            return true;
+        } finally {
+            syncLock.unlock();
         }
     }
 

@@ -1,18 +1,25 @@
+"use client";
+
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { Heart, Swords } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatchStatusBadge } from "@/components/match-status-badge";
+import { MatchStageBadge } from "@/components/match-stage-badge";
 import { Match } from "@/lib/types";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
 import { isRivalryMatchup } from "@/lib/rivalries";
+import { useFavoriteTeam } from "@/lib/use-teams";
 import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
   const date = new Date(match.date);
   const isRivalry = isRivalryMatchup(match.homeTeam.abbreviation, match.awayTeam.abbreviation);
   const countdown = match.status === "scheduled" ? formatKickoffCountdown(match.date) : null;
+  const { team: favorite } = useFavoriteTeam();
+  const isFavorite =
+    !!favorite && (match.homeTeam.abbreviation === favorite.abbreviation || match.awayTeam.abbreviation === favorite.abbreviation);
 
   return (
     <Link href={`/matches/${match.id}`}>
@@ -36,12 +43,14 @@ export function MatchCard({ match }: { match: Match }) {
         )}
 
         <CardContent className="relative pt-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <NbaLogo size={18} />
+          {/* Trois colonnes égales sur les côtés : le logo NBA reste pile au
+              centre, aligné sur le « VS » du face-à-face en dessous. */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+            <div className="flex items-center">
               <MatchStatusBadge status={match.status} />
             </div>
-            <div className="flex flex-col items-end gap-1">
+            <NbaLogo size={22} className="mt-0.5" />
+            <div className="flex flex-col items-end gap-1 text-right">
               <span className="font-mono text-xs text-muted-foreground">
                 {formatMatchDate(date)}
                 {" · "}
@@ -54,6 +63,18 @@ export function MatchCard({ match }: { match: Match }) {
               )}
             </div>
           </div>
+
+          {(isFavorite || (match.type && match.type !== "regular")) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <MatchStageBadge match={match} />
+              {isFavorite && (
+                <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                  <Heart className="h-3 w-3 fill-current" />
+                  Ton équipe
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="mt-3">
             <FaceOffTeams match={match} morph />

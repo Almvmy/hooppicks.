@@ -45,6 +45,26 @@ public class Match {
     // forcément indexé le match au moment de la synchro balldontlie.
     private String espnEventId;
 
+    // Phase (présaison, Coupe NBA, playoffs…), intitulé traduit ("1er tour
+    // Est · Match 2") et état de la série en playoffs ("NYK mène 2-0") : lus
+    // sur ESPN, voir EspnMatchStage. Null tant que le match n'y est pas relié.
+    @Enumerated(EnumType.STRING)
+    private MatchType type;
+    private String stageLabel;
+    private String seriesSummary;
+
+    // Notifications « ton équipe favorite » déjà envoyées pour ce match (une
+    // seule fois chacune, cf. FavoriteTeamNotifier). Boolean nullable : une
+    // colonne NOT NULL ne s'ajoute pas à une table qui a déjà des lignes.
+    private Boolean favoriteKickoffNotified;
+    private Boolean favoriteResultNotified;
+
+    // Corrigé à la main depuis la console admin : les synchros (balldontlie,
+    // ESPN) ne touchent plus à son statut ni à son score, sinon la
+    // correction serait écrasée au tick suivant par la donnée externe fausse
+    // qu'elle venait justement rattraper. Levé par « Déverrouiller ».
+    private Boolean adminLocked;
+
     // Cotes fixes, stockées à plat directement sur le match (cf. décision "cotes fixes" prise avec ton ami)
     private double moneylineHome;
     private double moneylineAway;

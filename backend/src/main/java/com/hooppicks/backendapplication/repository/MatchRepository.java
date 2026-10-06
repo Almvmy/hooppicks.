@@ -2,10 +2,12 @@ package com.hooppicks.backendapplication.repository;
 
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.entity.MatchStatus;
+import com.hooppicks.backendapplication.entity.Team;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,7 +22,13 @@ public interface MatchRepository extends JpaRepository<Match, String> {
     // Bornées par Pageable plutôt qu'un findTopN fixe : le nombre à traiter
     // par tick de synchro doit rester ajustable sans recompiler (cf. l'OOM
     // Railway causé par un lot trop gros traité d'un coup).
-    List<Match> findByEspnEventIdIsNull(Pageable pageable);
+    List<Match> findByTypeIsNullOrderByDateDesc(Pageable pageable);
+
+    Optional<Match> findFirstByEspnEventId(String espnEventId);
+
+    List<Match> findByStatusAndDateBetween(MatchStatus status, Instant from, Instant to);
+
+    Optional<Match> findFirstByHomeTeamAndAwayTeamAndDateBetween(Team homeTeam, Team awayTeam, Instant from, Instant to);
 
     @Query("""
         SELECT m FROM Match m
@@ -28,4 +36,26 @@ public interface MatchRepository extends JpaRepository<Match, String> {
         AND NOT EXISTS (SELECT 1 FROM PlayerMatchStat s WHERE s.match = m)
     """)
     List<Match> findFinishedWithoutBoxScore(MatchStatus status, Pageable pageable);
+
+    // Liste des matchs de la console admin : filtres appliqués en base, sur
+    // tous les matchs. Filtrer après un « top 100 par date » ratait les matchs
+    // passés dès que le calendrier à venir dépassait 100 matchs : justement
+    // ceux qu'on corrige. q = motif LIKE déjà en minuscules ("%nyk%").
+    @Query("""
+        SELECT m FROM Match m
+        WHERE (:status IS NULL OR m.status = :status)
+          AND (:q IS NULL
+               OR LOWER(m.homeTeam.name) LIKE :q OR LOWER(m.awayTeam.name) LIKE :q
+               OR LOWER(m.homeTeam.abbreviation) LIKE :q OR LOWER(m.awayTeam.abbreviation) LIKE :q)
+        ORDER BY m.date DESC
+    """)
+    List<Match> searchForAdmin(MatchStatus status, String q, Pageable pageable);
+
+    // --- Vue d'ensemble de la console admin ---
+    long countByAdminLockedTrue();
+
+    long countByEspnEventIdIsNull();
+
+    @Query("SELECT m.type, COUNT(m) FROM Match m GROUP BY m.type")
+    List<Object[]> countByType();
 }

@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.nba;
 
 import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
+import com.hooppicks.backendapplication.espn.EspnScheduleService;
 import com.hooppicks.backendapplication.espn.EspnStatsService;
 import io.sentry.Sentry;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class NbaSyncScheduler {
     private final AdminSyncStatus adminSyncStatus;
     private final EspnStatsService espnStatsService;
     private final EspnPlayerStatsService espnPlayerStatsService;
+    private final EspnScheduleService espnScheduleService;
 
     @Value("${nba.sync.use-fixed-window:false}")
     private boolean useFixedWindow;
@@ -39,11 +41,13 @@ public class NbaSyncScheduler {
     private int windowDays;
 
     public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus,
-                             EspnStatsService espnStatsService, EspnPlayerStatsService espnPlayerStatsService) {
+                             EspnStatsService espnStatsService, EspnPlayerStatsService espnPlayerStatsService,
+                             EspnScheduleService espnScheduleService) {
         this.nbaSyncService = nbaSyncService;
         this.adminSyncStatus = adminSyncStatus;
         this.espnStatsService = espnStatsService;
         this.espnPlayerStatsService = espnPlayerStatsService;
+        this.espnScheduleService = espnScheduleService;
     }
 
     @Scheduled(fixedRate = 5 * 60 * 1000) // toutes les 5 minutes
@@ -63,7 +67,7 @@ public class NbaSyncScheduler {
 
         String mode = useFixedWindow ? "fixe " + windowStart : "glissante";
 
-        // Chaque phase isolée dans son propre try/catch : ce sont trois
+        // Chaque phase isolée dans son propre try/catch : ce sont plusieurs
         // intégrations externes indépendantes (balldontlie, puis deux appels
         // ESPN), sans lien de dépendance entre elles. Avant ce correctif, une
         // erreur balldontlie (ex. 429 quota dépassé) faisait remonter
@@ -86,6 +90,16 @@ public class NbaSyncScheduler {
         // à EspnStatsService) pour que leur @Transactional respectif
         // s'applique réellement : un appel depuis l'intérieur de la classe ne
         // passe pas par le proxy Spring (cf. commentaire sur linkEventIds).
+        // ESPN, source secondaire : phase des matchs de la fenêtre, et matchs
+        // de présaison (absents de balldontlie). Une panne ici n'affecte pas
+        // la synchro balldontlie ci-dessus, déjà terminée et indépendante.
+        try {
+            int espnGames = espnScheduleService.syncWindow(dates);
+            if (espnGames > 0) log.info("{} match(s) mis à jour depuis ESPN", espnGames);
+        } catch (Exception e) {
+            log.warn("Synchro ESPN (matchs de la fenêtre) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
         try {
             espnStatsService.linkEventIds();
         } catch (Exception e) {
