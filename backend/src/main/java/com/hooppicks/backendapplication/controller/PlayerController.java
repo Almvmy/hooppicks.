@@ -94,8 +94,28 @@ public class PlayerController {
                 rosterPlayerRepository.findTop5ByReboundsPerGameIsNotNullOrderByReboundsPerGameDesc()
                         .stream().map(RosterPlayerDto::from).toList(),
                 rosterPlayerRepository.findTop5ByAssistsPerGameIsNotNullOrderByAssistsPerGameDesc()
+                        .stream().map(RosterPlayerDto::from).toList(),
+                rosterPlayerRepository.findTop5ByStealsPerGameIsNotNullOrderByStealsPerGameDesc()
+                        .stream().map(RosterPlayerDto::from).toList(),
+                rosterPlayerRepository.findTop5ByBlocksPerGameIsNotNullOrderByBlocksPerGameDesc()
                         .stream().map(RosterPlayerDto::from).toList()
         );
+    }
+
+    /**
+     * Rapport des blessures : tous les joueurs avec un statut (Out,
+     * Day-To-Day...), triés par équipe puis par nom. L'info la plus utile
+     * avant de parier, déjà présente en base via la synchro des effectifs.
+     * Les joueurs « Out » passent avant les simples incertains d'une même équipe.
+     */
+    @GetMapping("/injuries")
+    public List<RosterPlayerDto> injuries() {
+        return rosterPlayerRepository.findByInjuryStatusIsNotNullOrderByLastNameAsc().stream()
+                .sorted(java.util.Comparator
+                        .comparing((RosterPlayer p) -> p.getTeam() == null ? "~" : p.getTeam().getName())
+                        .thenComparing(p -> "Out".equalsIgnoreCase(p.getInjuryStatus()) ? 0 : 1))
+                .map(RosterPlayerDto::from)
+                .toList();
     }
 
     // Appel ESPN en direct, pas de synchro en tâche de fond comme les

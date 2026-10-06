@@ -21,9 +21,19 @@ public interface RosterPlayerRepository extends JpaRepository<RosterPlayer, Stri
 
     List<RosterPlayer> findTop5ByAssistsPerGameIsNotNullOrderByAssistsPerGameDesc();
 
+    List<RosterPlayer> findTop5ByStealsPerGameIsNotNullOrderByStealsPerGameDesc();
+
+    List<RosterPlayer> findTop5ByBlocksPerGameIsNotNullOrderByBlocksPerGameDesc();
+
+    // Rapport des blessures (cf. PlayerController.injuries) : statut renseigné
+    // par la synchro des effectifs ESPN, null = joueur disponible.
+    List<RosterPlayer> findByInjuryStatusIsNotNullOrderByLastNameAsc();
+
     // Jamais synchronisé (null) en premier, puis le plus ancien synchronisé :
     // fait tourner un rafraîchissement continu sur l'ensemble de l'effectif
     // au fil des passages du batch (cf. EspnPlayerStatsService).
     @Query("SELECT r FROM RosterPlayer r ORDER BY r.statsUpdatedAt ASC NULLS FIRST")
     List<RosterPlayer> findAllOrderByStatsUpdatedAtAscNullsFirst(Pageable pageable);
+
+    long countByStatsUpdatedAtIsNull();
 }

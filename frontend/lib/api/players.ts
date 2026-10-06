@@ -13,6 +13,11 @@ export async function fetchPlayerLeaders(): Promise<PlayerLeaders> {
   return apiFetch<PlayerLeaders>("/players/leaders");
 }
 
+/** Joueurs avec un statut de blessure (Out, Day-To-Day…), triés par équipe. */
+export async function fetchPlayerInjuries(): Promise<RosterPlayer[]> {
+  return apiFetch<RosterPlayer[]>("/players/injuries");
+}
+
 export async function fetchPlayerRecentGames(id: string): Promise<PlayerRecentGame[]> {
   return apiFetch<PlayerRecentGame[]>(`/players/${id}/recent-games`);
 }

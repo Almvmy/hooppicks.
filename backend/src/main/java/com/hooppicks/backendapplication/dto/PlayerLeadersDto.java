@@ -6,6 +6,8 @@ import java.util.List;
 public record PlayerLeadersDto(
         List<RosterPlayerDto> points,
         List<RosterPlayerDto> rebounds,
-        List<RosterPlayerDto> assists
+        List<RosterPlayerDto> assists,
+        List<RosterPlayerDto> steals,
+        List<RosterPlayerDto> blocks
 ) {
 }
