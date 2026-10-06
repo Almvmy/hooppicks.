@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, Crown, Search, TrendingUp, Trophy } from "lucide-react";
+import { ArrowDown, CalendarRange, Crown, Heart, Search, Shield, TrendingUp, Trophy, Users } from "lucide-react";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,15 +15,24 @@ import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { TeamLogo } from "@/components/team-logo";
 import { CountUp } from "@/components/motion/count-up";
-import { fetchLeaderboard } from "@/lib/api/leaderboard";
+import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/trends";
+import { FanTeams } from "@/components/leaderboard/fan-teams";
+import { MyLeagues } from "@/components/leaderboard/my-leagues";
+import { fetchLeaderboard, leaderboardQueryKey } from "@/lib/api/leaderboard";
 import { fetchProfile } from "@/lib/api/auth";
 import { normalizeForSearch } from "@/lib/help-content";
 import { rankTitle } from "@/lib/rank-title";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
-import { LeaderboardEntry } from "@/lib/types";
+import { LeaderboardEntry, LeaderboardPeriod } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
+
+const PERIODS: { value: LeaderboardPeriod; label: string; scope: string }[] = [
+  { value: "season", label: "Saison", scope: "de la saison" },
+  { value: "month", label: "Ce mois-ci", scope: "du mois" },
+  { value: "week", label: "Cette semaine", scope: "de la semaine" },
+];
 
 // Or, argent, bronze : en accent (trophée, liseré, marche du podium), jamais
 // en couleur de texte, pour rester lisibles dans les deux thèmes.
@@ -31,6 +41,13 @@ const MEDALS: Record<number, { color: string; label: string }> = {
   2: { color: "#A8B3C2", label: "Argent" },
   3: { color: "#CD7F32", label: "Bronze" },
 };
+
+function chipClass(active: boolean) {
+  return cn(
+    "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors",
+    active ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+  );
+}
 
 function PodiumSpot({
   entry,
@@ -67,6 +84,7 @@ function PodiumSpot({
             size={place === 1 ? "lg" : "md"}
           />
         </div>
+        <StreakBadge streak={entry.streak} className="absolute -bottom-1 -right-2" />
       </div>
       <span className="flex max-w-full items-center gap-1.5 font-heading text-sm font-bold group-hover:underline sm:text-base">
         <span className="truncate">{entry.username}</span>
@@ -76,7 +94,10 @@ function PodiumSpot({
       <span className="mt-0.5 font-mono text-sm font-bold">
         <CountUp value={entry.points} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
       </span>
-      <span className="text-xs text-muted-foreground">{entry.winRate}% de réussite</span>
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {entry.winRate}% de réussite
+        <RankChange entry={entry} />
+      </span>
 
       <div
         className={cn("mt-3 flex w-full items-start justify-center rounded-t-2xl pt-2", stepHeight)}
@@ -121,13 +142,17 @@ function MyPosition({
     <Card className="glass-accent">
       <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
         <div className="flex items-center gap-4">
-          <span className="font-heading text-4xl font-bold tabular-nums">#{me.rank}</span>
+          <span className="flex flex-col items-center">
+            <span className="font-heading text-4xl font-bold tabular-nums">#{me.rank}</span>
+            <RankChange entry={me} />
+          </span>
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Ta position · {rankTitle(me.rank, total)}
             </p>
-            <p className="font-mono text-lg font-bold text-foreground">
+            <p className="flex items-center gap-2 font-mono text-lg font-bold text-foreground">
               <CountUp value={me.points} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
+              <StreakBadge streak={me.streak} />
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -139,28 +164,37 @@ function MyPosition({
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={onShow}>
-          <ArrowDown className="h-4 w-4" />
-          Voir ma ligne
-        </Button>
+        <div className="flex flex-col items-end gap-2">
+          {me.recentForm.length > 0 && (
+            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+              Ta forme
+              <RecentForm form={me.recentForm} />
+            </span>
+          )}
+          <Button variant="outline" size="sm" onClick={onShow}>
+            <ArrowDown className="h-4 w-4" />
+            Voir ma ligne
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-export default function LeaderboardPage() {
+function PlayersRanking({ username }: { username: string | undefined }) {
+  const [period, setPeriod] = useState<LeaderboardPeriod>("season");
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["leaderboard"],
-    queryFn: fetchLeaderboard,
+    queryKey: leaderboardQueryKey(period),
+    queryFn: () => fetchLeaderboard(period),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const teams = useTeamsByAbbreviation();
   const [query, setQuery] = useState("");
 
   const all = data ?? [];
   const normalizedQuery = normalizeForSearch(query.trim());
   const isSearching = normalizedQuery.length > 0;
+  const scope = PERIODS.find((p) => p.value === period)!.scope;
 
   // Podium = les 3 premières places (hors recherche) ; le tableau reprend à la 4e.
   const showPodium = !isSearching && all.length > 0;
@@ -171,7 +205,7 @@ export default function LeaderboardPage() {
 
   const { page, pageCount, pageItems, setPage, totalCount } = usePagination(tableEntries, PAGE_SIZE);
 
-  const myIndex = all.findIndex((e) => e.username === profile?.username);
+  const myIndex = all.findIndex((e) => e.username === username);
   const me = myIndex >= 0 ? all[myIndex] : undefined;
   const above = myIndex > 0 ? all.slice(0, myIndex).reverse().find((e) => e.points > (me?.points ?? 0)) : undefined;
 
@@ -205,15 +239,21 @@ export default function LeaderboardPage() {
     }
   }
 
+  function choosePeriod(next: LeaderboardPeriod) {
+    setPeriod(next);
+    setPage(1);
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-2xl font-bold">Classement</h1>
-          <p className="mt-1 text-muted-foreground">
-            Les meilleurs pronostiqueurs de la saison
-            {!isLoading && !isError && all.length > 0 && ` : ${all.length} joueurs classés`}.
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Période">
+          <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+          {PERIODS.map((p) => (
+            <button key={p.value} type="button" className={chipClass(period === p.value)} onClick={() => choosePeriod(p.value)}>
+              {p.label}
+            </button>
+          ))}
         </div>
         {all.length > 3 && (
           <div className="relative w-full sm:w-64">
@@ -233,18 +273,40 @@ export default function LeaderboardPage() {
         )}
       </div>
 
+      {!isLoading && !isError && (
+        <p className="-mt-3 text-sm text-muted-foreground">
+          {all.length > 0
+            ? `${all.length} joueur${all.length > 1 ? "s" : ""} classé${all.length > 1 ? "s" : ""} au classement ${scope}.`
+            : null}
+          {period !== "season" && " Points des tickets résolus sur la période : tout le monde repart de zéro."}
+        </p>
+      )}
+
       {me && !isSearching && <MyPosition me={me} above={above} total={all.length} onShow={showMyRow} />}
 
-      {!isLoading && !isError && profile && !me && (
+      {!isLoading && !isError && username && !me && all.length > 0 && (
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">
-            Tu n&apos;apparais pas encore au classement : il compte les tickets résolus. Dès que ton premier ticket
-            sera gagné ou perdu, tu y entreras.{" "}
+            {period === "season"
+              ? "Tu n'apparais pas encore au classement : il compte les tickets résolus. Dès que ton premier ticket sera gagné ou perdu, tu y entreras."
+              : `Aucun de tes tickets n'a été résolu sur cette période : un ticket résolu suffit pour entrer au classement ${scope}.`}{" "}
             <Link href="/matches" className="font-medium text-primary hover:underline">
               Voir les matchs
             </Link>
           </CardContent>
         </Card>
+      )}
+
+      {!isLoading && !isError && all.length === 0 && (
+        <div className="glass flex flex-col items-center gap-3 rounded-2xl py-10 text-center">
+          <Trophy className="h-8 w-8 text-muted-foreground" />
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Personne n&apos;est encore au classement {scope} : le premier ticket résolu prend la tête.
+          </p>
+          <Link href="/matches" className="text-sm font-medium text-primary hover:underline">
+            Voir les matchs
+          </Link>
+        </div>
       )}
 
       {showPodium && (
@@ -257,7 +319,7 @@ export default function LeaderboardPage() {
                 entry={entry}
                 place={(i + 1) as 1 | 2 | 3}
                 teams={teams}
-                isMe={entry.username === profile?.username}
+                isMe={entry.username === username}
               />
             ))}
             {podium.length < 2 && <PodiumGhost place={2} />}
@@ -273,7 +335,8 @@ export default function LeaderboardPage() {
             entries={pageItems}
             isLoading={isLoading}
             isError={isError}
-            currentUsername={profile?.username}
+            currentUsername={username}
+            showTrends
             emptyMessage={isSearching ? `Aucun joueur ne correspond à « ${query.trim()} ».` : undefined}
           />
         </div>
@@ -282,6 +345,74 @@ export default function LeaderboardPage() {
       {!isLoading && !isError && totalCount > PAGE_SIZE && (
         <PaginationControls page={page} pageCount={pageCount} onPageChange={setPage} />
       )}
+    </div>
+  );
+}
+
+/** Fans par équipe : toujours sur la saison, le classement le plus représentatif. */
+function FansRanking({ favoriteTeam }: { favoriteTeam: string | undefined }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: leaderboardQueryKey("season"),
+    queryFn: () => fetchLeaderboard("season"),
+    staleTime: 2 * 60 * 1000,
+  });
+  const teams = useTeamsByAbbreviation();
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Chargement…</p>;
+  if (isError || !data) return <p className="text-destructive">Impossible de charger le classement.</p>;
+  return <FanTeams entries={data} myTeam={favoriteTeamAbbreviation(favoriteTeam, teams)} />;
+}
+
+type View = "joueurs" | "fans" | "ligues";
+
+const VIEWS: { value: View; label: string; icon: typeof Users }[] = [
+  { value: "joueurs", label: "Joueurs", icon: Users },
+  { value: "fans", label: "Fans par équipe", icon: Heart },
+  { value: "ligues", label: "Mes ligues", icon: Shield },
+];
+
+export default function LeaderboardPage({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
+  // Onglet dans l'adresse (?vue=fans) : retrouvé au retour sur la page et partageable.
+  const { vue } = use(searchParams);
+  const router = useRouter();
+  const [view, setViewState] = useState<View>(VIEWS.some((v) => v.value === vue) ? (vue as View) : "joueurs");
+  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+
+  // « Mes ligues » n'a de sens que connecté (le classement, lui, est public).
+  const views = profile ? VIEWS : VIEWS.filter((v) => v.value !== "ligues");
+  const activeView = views.some((v) => v.value === view) ? view : "joueurs";
+
+  function setView(next: View) {
+    setViewState(next);
+    router.replace(next === "joueurs" ? "/leaderboard" : `/leaderboard?vue=${next}`, { scroll: false });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="font-heading text-2xl font-bold">Classement</h1>
+        <p className="mt-1 text-muted-foreground">Les meilleurs pronostiqueurs, leurs séries et leurs communautés.</p>
+      </div>
+
+      <div className="glass-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist">
+        {views.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={activeView === value}
+            className={chipClass(activeView === value)}
+            onClick={() => setView(value)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeView === "joueurs" && <PlayersRanking username={profile?.username} />}
+      {activeView === "fans" && <FansRanking favoriteTeam={profile?.favoriteTeam} />}
+      {activeView === "ligues" && <MyLeagues username={profile?.username} />}
     </div>
   );
 }

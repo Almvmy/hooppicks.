@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { prefersReducedMotion } from "@/lib/motion";
 import { TeamLogo } from "@/components/team-logo";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
+import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/trends";
 
 const RANK_COLORS: Record<number, string> = {
   1: "text-primary",
@@ -60,12 +61,15 @@ export function LeaderboardTable({
   isError,
   emptyMessage = "Aucun joueur pour l'instant.",
   currentUsername,
+  showTrends = false,
 }: {
   entries: LeaderboardEntry[] | undefined;
   isLoading: boolean;
   isError: boolean;
   emptyMessage?: string;
   currentUsername?: string;
+  /** Évolution du rang, forme récente et série (classement général). */
+  showTrends?: boolean;
 }) {
   const bodyRef = useRef<HTMLTableSectionElement>(null);
   const teams = useTeamsByAbbreviation();
@@ -96,12 +100,15 @@ export function LeaderboardTable({
     previousTops.current = tops;
   }, [entries]);
 
+  const columns = showTrends ? 6 : 5;
+
   return (
     <Table>
       <TableHeader>
         <TableRow className="border-b-0 shadow-[inset_0_-1px_0_var(--hairline)] hover:bg-transparent">
           <TableHead className="w-16">Rang</TableHead>
           <TableHead>Joueur</TableHead>
+          {showTrends && <TableHead className="hidden md:table-cell">Forme</TableHead>}
           <TableHead className="text-right">Taux de réussite</TableHead>
           <TableHead className="text-right">Paris joués</TableHead>
           <TableHead className="text-right">Points</TableHead>
@@ -110,7 +117,7 @@ export function LeaderboardTable({
       <TableBody ref={bodyRef} className="stagger-children">
         {isLoading && (
           <TableRow>
-            <TableCell colSpan={5}>
+            <TableCell colSpan={columns}>
               <BasketballLoader label="Chargement du classement..." />
             </TableCell>
           </TableRow>
@@ -118,7 +125,7 @@ export function LeaderboardTable({
 
         {isError && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-destructive">
+            <TableCell colSpan={columns} className="text-center text-destructive">
               Impossible de charger le classement.
             </TableCell>
           </TableRow>
@@ -126,7 +133,7 @@ export function LeaderboardTable({
 
         {!isLoading && !isError && entries?.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">
+            <TableCell colSpan={columns} className="text-center text-muted-foreground">
               {emptyMessage}
             </TableCell>
           </TableRow>
@@ -150,6 +157,7 @@ export function LeaderboardTable({
                   <span className={cn("font-mono font-bold", RANK_COLORS[entry.rank])}>
                     #{entry.rank}
                   </span>
+                  {showTrends && <RankChange entry={entry} />}
                 </div>
               </TableCell>
               <TableCell className="font-medium">
@@ -166,8 +174,14 @@ export function LeaderboardTable({
                   />
                   {entry.username}
                   <FavoriteTeamBadge favoriteTeam={entry.favoriteTeam} teams={teams} />
+                  {showTrends && <StreakBadge streak={entry.streak} />}
                 </Link>
               </TableCell>
+              {showTrends && (
+                <TableCell className="hidden md:table-cell">
+                  <RecentForm form={entry.recentForm} />
+                </TableCell>
+              )}
               <TableCell className="text-right text-muted-foreground">
                 <WinRate value={entry.winRate} />
               </TableCell>

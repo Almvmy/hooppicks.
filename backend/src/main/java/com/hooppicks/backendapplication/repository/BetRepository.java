@@ -25,6 +25,41 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     List<Object[]> getLeaderboardRaw();
 
+    // Même calcul que getLeaderboardRaw, limité aux tickets résolus depuis
+    // `since` (classements de la semaine / du mois).
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT b.user.id as userId, b.user.username as username,
+               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout ELSE 0 END) as points,
+               COUNT(b) as totalBets,
+               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
+               b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
+               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
+               b.user.favoriteTeam as favoriteTeam
+        FROM Bet b
+        WHERE b.status IN ('WON', 'LOST') AND b.resolvedAt >= :since
+        GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
+                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
+        ORDER BY points DESC
+    """)
+    List<Object[]> getLeaderboardRawSince(java.time.Instant since);
+
+    // Les 10 derniers tickets résolus (gagnés/perdus) de chaque joueur, du
+    // plus récent au plus ancien : forme récente et série en cours. En SQL
+    // natif pour la fonction de fenêtre : une seule requête pour tout le
+    // classement plutôt qu'une par joueur.
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+        SELECT user_id, status FROM (
+            SELECT b.user_id, b.status,
+                   ROW_NUMBER() OVER (PARTITION BY b.user_id
+                                      ORDER BY b.resolved_at DESC NULLS LAST, b.placed_at DESC) AS rn
+            FROM bet b
+            WHERE b.status IN ('WON', 'LOST')
+        ) recent
+        WHERE rn <= 10
+        ORDER BY user_id, rn
+    """)
+    List<Object[]> getRecentResultsPerUser();
+
     List<Bet> findByStatus(BetStatus status);
 
     @org.springframework.data.jpa.repository.Query("""
@@ -40,6 +75,28 @@ public interface BetRepository extends JpaRepository<Bet, String> {
         WHERE s.matchId = :matchId AND b.status = 'PENDING'
     """)
     List<com.hooppicks.backendapplication.entity.User> findUsersWithPendingBetOnMatch(String matchId);
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT DISTINCT b
+        FROM Bet b JOIN b.selections s
+        WHERE s.matchId = :matchId AND b.status = 'PENDING'
+    """)
+    List<Bet> findPendingBetsForMatch(String matchId);
+
+    // Paris par match et par statut, pour la liste des matchs de la console
+    // admin : une seule requête pour les 100 matchs affichés.
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT s.matchId, b.status, COUNT(DISTINCT b)
+        FROM Bet b JOIN b.selections s
+        WHERE s.matchId IN :matchIds
+        GROUP BY s.matchId, b.status
+    """)
+    List<Object[]> countBetsByMatchAndStatus(List<String> matchIds);
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT b.user.id, COUNT(b) FROM Bet b WHERE b.user.id IN :userIds GROUP BY b.user.id
+    """)
+    List<Object[]> countBetsByUser(List<String> userIds);
 
     @org.springframework.data.jpa.repository.Query("""
         SELECT b.user.id as userId, b.user.username as username,
@@ -69,4 +126,18 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     List<Bet> findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(List<String> userIds, BetStatus status);
 
     void deleteByUserId(String userId);
+
+    // --- Vue d'ensemble de la console admin ---
+    long countByPlacedAtAfter(java.time.Instant since);
+
+    long countByStatus(BetStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(DISTINCT b.user.id) FROM Bet b WHERE b.placedAt >= :since")
+    long countDistinctBettorsSince(java.time.Instant since);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(b.stake), 0) FROM Bet b WHERE b.placedAt >= :since")
+    long sumStakesSince(java.time.Instant since);
+
+    @org.springframework.data.jpa.repository.Query("SELECT b.placedAt FROM Bet b WHERE b.placedAt >= :since")
+    List<java.time.Instant> findPlacedAtSince(java.time.Instant since);
 }
