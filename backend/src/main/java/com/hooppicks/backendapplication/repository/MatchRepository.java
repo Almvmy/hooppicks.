@@ -58,4 +58,15 @@ public interface MatchRepository extends JpaRepository<Match, String> {
 
     @Query("SELECT m.type, COUNT(m) FROM Match m GROUP BY m.type")
     List<Object[]> countByType();
+
+    // Derniers matchs terminés d'une équipe (ligne des totaux, OddsService).
+    @Query("""
+        SELECT m FROM Match m
+        WHERE (m.homeTeam = :team OR m.awayTeam = :team)
+          AND m.status = com.hooppicks.backendapplication.entity.MatchStatus.FINISHED
+          AND m.homeScore IS NOT NULL AND m.awayScore IS NOT NULL
+          AND (m.type IS NULL OR m.type <> :excluded)
+        ORDER BY m.date DESC
+    """)
+    List<Match> findRecentFinishedForTeam(Team team, com.hooppicks.backendapplication.entity.MatchType excluded, Pageable pageable);
 }

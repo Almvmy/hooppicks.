@@ -6,6 +6,8 @@ Pronostics NBA en points virtuels (pas d'argent réel). Monorepo `backend/` (Spr
 
 **Cotes fixes, pas de marché dynamique.** Les cotes (`moneylineHome`, `spreadOddsHome`, `totalOddsOver`, etc.) sont stockées à plat directement sur `Match`, fixées à la synchro et ne bougent plus. Décision assumée (commentaire dans `Match.java`), pas un raccourci à corriger.
 
+**Calcul des cotes (`OddsService`)** : vainqueur et écart viennent de l'Elo (avantage terrain inclus, marge ~6 %, cote plancher 1,03 pour qu'un pari gagnant ne fasse jamais perdre de points). La ligne des totaux vient de la forme des deux équipes (points marqués et encaissés sur leurs 10 derniers matchs hors présaison, lissés vers la moyenne de la ligue, 114 pts par équipe), toujours en x,5. L'ancienne base fixe de 220,5 était la même pour tous les matchs et nettement sous la moyenne NBA : « plus de » gagnait trop souvent.
+
 **Double mécanisme admin, volontairement séparé** :
 - `/admin/**` (`NbaSyncController`, `BetAdminController`, `AdminUserController`) : protégé par une clé statique dans l'en-tête `X-Admin-Key` (`AdminAuthFilter`). Pensé pour toi en curl/Postman ou un futur job externe, jamais exposé au frontend. Chaque accès (autorisé ou refusé) est loggé avec méthode/route/IP.
 - `/console/**` (`AdminConsoleController`) : protégé par cookie de session + flag `User.isAdmin`, utilisé par la page `/admin` du frontend. Couvre aussi la gestion des utilisateurs (recherche, promotion/rétrogradation, suppression), la correction manuelle de matchs (score/statut, pour rattraper une synchro externe fausse) et la liste des paris en attente.
