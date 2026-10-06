@@ -163,3 +163,15 @@ export function formatSignedPoints(points: number, unit = true): string {
 export function isBettable(match: { status: string; date: string }, now: number = Date.now()): boolean {
   return match.status === "scheduled" && new Date(match.date).getTime() > now;
 }
+
+/**
+ * Chances de victoire tirées des deux cotes du vainqueur, marge retirée :
+ * 1/cote seule additionne ~106 % sur les deux équipes (la marge), ce qui
+ * se lisait comme une erreur. Arrondies pour faire 100 pile.
+ */
+export function winChances(oddsA: number, oddsB: number): [number, number] {
+  const a = 1 / oddsA;
+  const b = 1 / oddsB;
+  const pa = Math.round((a / (a + b)) * 100);
+  return [pa, 100 - pa];
+}

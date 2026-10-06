@@ -18,7 +18,7 @@ import { rankFanTeams } from "@/lib/fan-teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { useFavoriteTeam, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { FavoriteTeamStats, LeaderboardEntry, Match, RosterPlayer, TeamRank } from "@/lib/types";
-import { cn, formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
+import { cn, formatMatchTime, getDayLabel, isBettable, winChances } from "@/lib/utils";
 
 function zoneOf(seed: number | null): { label: string; className: string } | null {
   if (seed === null) return null;
@@ -75,7 +75,7 @@ function NextMatch({ match, team }: { match: Match | undefined; team: TeamRank }
             return (
               <OddsButton
                 key={side}
-                impliedProbability={(1 / odds) * 100}
+                impliedProbability={winChances(match.odds.moneylineHome, match.odds.moneylineAway)[side === "home" ? 0 : 1]}
                 selection={{
                   id: `${match.id}-moneyline-${side}`,
                   matchId: match.id,

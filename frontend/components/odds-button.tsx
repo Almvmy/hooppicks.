@@ -12,7 +12,7 @@ export function OddsButton({
   communityPct,
 }: {
   selection: BetSelection;
-  /** 0-100, uniquement pertinent pour le moneyline (spread/total ont une cote fixe 1.91 des deux côtés, donc toujours ~52% : pas un signal utile). */
+  /** 0-100, chances de victoire marge retirée (cf. winChances), uniquement pour le vainqueur : spread/total ont la même cote des deux côtés, donc toujours 50 %. */
   impliedProbability?: number;
   /** 0-100, part des paris de la communauté sur ce côté : null/undefined si personne n'a encore parié sur ce marché. */
   communityPct?: number | null;
@@ -50,10 +50,18 @@ export function OddsButton({
       </span>
       {(impliedProbability !== undefined || communityPct !== undefined) && (
         <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
-          {impliedProbability !== undefined && <span>{Math.round(impliedProbability)}%</span>}
+          {/* Deux chiffres de nature différente : chacun porte sa légende
+              (texte ou icône + infobulle), sinon on les confondait. */}
+          {impliedProbability !== undefined && (
+            <span title="Chances de victoire selon les cotes">{Math.round(impliedProbability)}% chances</span>
+          )}
           {communityPct !== undefined && communityPct !== null && (
-            <span className="flex items-center gap-0.5">
-              <Users className="h-2.5 w-2.5" />
+            <span
+              className="flex items-center gap-0.5"
+              title="Part des joueurs HoopPicks qui ont choisi ce camp"
+              aria-label={`${communityPct}% des joueurs ont choisi ce camp`}
+            >
+              <Users className="h-2.5 w-2.5" aria-hidden="true" />
               {communityPct}%
             </span>
           )}

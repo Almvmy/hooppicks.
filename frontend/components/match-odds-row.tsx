@@ -1,15 +1,13 @@
 import { OddsButton } from "@/components/odds-button";
 import { Match } from "@/lib/types";
+import { winChances } from "@/lib/utils";
 
 export function MatchOddsRow({ match }: { match: Match }) {
   const { odds } = match;
-  // Probabilité implicite de la cote (avec la marge bookmaker incluse,
-  // comme n'importe quel site de paris) : dérivée de la cote déjà stockée,
-  // aucun appel ni calcul serveur supplémentaire. Pertinent uniquement pour
-  // le moneyline : spread/total ont une cote fixe 1.91 des deux côtés (donc
-  // toujours ~52%), afficher ce chiffre partout serait du bruit.
-  const awayImpliedProbability = (1 / odds.moneylineAway) * 100;
-  const homeImpliedProbability = (1 / odds.moneylineHome) * 100;
+  // Chances de victoire tirées des cotes, marge retirée (somme = 100 %).
+  // Seulement pour le vainqueur : spread/total ont la même cote des deux
+  // côtés, le chiffre serait toujours 50 %.
+  const [awayImpliedProbability, homeImpliedProbability] = winChances(odds.moneylineAway, odds.moneylineHome);
   const pct = match.pickPercentages;
 
   return (
