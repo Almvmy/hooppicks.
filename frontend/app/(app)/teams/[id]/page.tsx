@@ -3,6 +3,7 @@
 import { use, useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { TeamNews } from "@/components/news/team-news";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -95,6 +96,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
       )}
+
+      {team && <TeamNews abbreviations={[team.abbreviation]} />}
 
       {isLoadingMatches && <BasketballLoader label="Chargement des matchs..." />}
       {isMatchesError && <p className="text-destructive">Impossible de charger les matchs.</p>}

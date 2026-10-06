@@ -7,10 +7,12 @@ import { ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
+import { MatchStageBadge } from "@/components/match-stage-badge";
 import { TeamRoster } from "@/components/team-roster";
 import { MatchBoxScore } from "@/components/match-box-score";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
+import { TeamNews } from "@/components/news/team-news";
 import { formatMatchTime, getDayLabel } from "@/lib/utils";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
@@ -64,6 +66,7 @@ export default function MatchDetailPage({
               <NbaLogo size={24} />
               <MatchStatusBadge status={match.status} />
             </div>
+            <MatchStageBadge match={match} className="-mt-2 justify-center" />
 
             <FaceOffTeams match={match} logoSize={88} morph nameClassName="text-xl" scoreClassName="text-4xl" />
 
@@ -78,6 +81,10 @@ export default function MatchDetailPage({
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {match && match.status !== "finished" && (
+        <TeamNews abbreviations={[match.awayTeam.abbreviation, match.homeTeam.abbreviation]} />
       )}
 
       {match && match.status === "finished" && (
