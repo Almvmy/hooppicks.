@@ -280,7 +280,7 @@ export default async function HomePage() {
             <span className="text-primary">Mets-le à l&apos;épreuve, match après match.</span>
           </h2>
           <Link href="/register" className={cn(buttonVariants({ size: "lg" }), "mt-8")}>
-            Commencer avec 1 000 points
+            1 000 points offerts chaque semaine
           </Link>
         </div>
       </section>

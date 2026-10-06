@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.PlaceBetRequest;
 import com.hooppicks.backendapplication.dto.PlacedBetDto;
 import com.hooppicks.backendapplication.entity.*;
@@ -31,11 +32,13 @@ public class BetController {
     private final SessionStore sessionStore;
 
     private final MatchRepository matchRepository;
+    private final BankrollService bankrollService;
 
     public BetController(BetRepository betRepository, UserRepository userRepository,
                          WalletTransactionRepository transactionRepository, SessionStore sessionStore,
-                         MatchRepository matchRepository) {
+                         MatchRepository matchRepository, BankrollService bankrollService) {
         this.betRepository = betRepository;
+        this.bankrollService = bankrollService;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.sessionStore = sessionStore;
@@ -75,6 +78,9 @@ public class BetController {
         // transaction de la première et voit le solde déjà à jour.
         User user = userRepository.findByIdForUpdate(userId).orElse(null);
         if (user == null) return ResponseEntity.status(401).build();
+        // Lundi 12h passé mais solde pas encore remis à niveau par le
+        // scheduler : on le fait ici, sous le même verrou, avant de débiter.
+        bankrollService.ensureCurrent(user);
 
         if (request.stake() > user.getWalletBalance()) {
             return ResponseEntity.badRequest().body("Solde insuffisant");

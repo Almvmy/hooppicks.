@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.PlaceBetRequest;
 import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.Match;
@@ -41,12 +42,14 @@ class BetControllerTest {
     private SessionStore sessionStore;
     @Mock
     private MatchRepository matchRepository;
+    @Mock
+    private BankrollService bankrollService;
 
     private BetController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository);
+        controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository, bankrollService);
     }
 
     private HttpServletRequest authenticatedRequest(String userId) {

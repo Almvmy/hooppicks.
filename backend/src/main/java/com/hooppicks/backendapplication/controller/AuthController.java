@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.ChangeEmailRequest;
 import com.hooppicks.backendapplication.dto.ChangePasswordRequest;
 import com.hooppicks.backendapplication.dto.DeleteAccountRequest;
@@ -88,6 +89,9 @@ public class AuthController {
         user.setUsername(request.username());
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        // Directement dans la semaine de jeu en cours, avec le solde par défaut :
+        // pas de remise à niveau ni de message « nouveau système » à l'inscription.
+        user.setBankrollWeek(BankrollService.weekOf(java.time.Instant.now()));
         userRepository.save(user);
 
         emailVerificationService.requestVerification(user);

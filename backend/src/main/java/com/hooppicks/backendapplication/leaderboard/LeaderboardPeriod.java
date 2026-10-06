@@ -1,9 +1,9 @@
 package com.hooppicks.backendapplication.leaderboard;
 
-import java.time.DayOfWeek;
+import com.hooppicks.backendapplication.bankroll.BankrollService;
+
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.temporal.TemporalAdjusters;
 
 public enum LeaderboardPeriod {
     SEASON, MONTH, WEEK;
@@ -14,7 +14,9 @@ public enum LeaderboardPeriod {
         return switch (this) {
             case SEASON -> null;
             case MONTH -> midnight.withDayOfMonth(1).toInstant();
-            case WEEK -> midnight.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toInstant();
+            // La semaine du classement est la semaine de jeu (lundi 12h), pas
+            // la semaine civile : celle où tout le monde est reparti à égalité.
+            case WEEK -> BankrollService.weekStart(now.toInstant()).toInstant();
         };
     }
 

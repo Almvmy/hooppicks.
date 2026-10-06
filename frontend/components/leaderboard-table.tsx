@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { LeaderboardEntry } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatSignedPoints } from "@/lib/utils";
 import { prefersReducedMotion } from "@/lib/motion";
 import { TeamLogo } from "@/components/team-logo";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
@@ -111,7 +111,7 @@ export function LeaderboardTable({
           {showTrends && <TableHead className="hidden md:table-cell">Forme</TableHead>}
           <TableHead className="text-right">Taux de réussite</TableHead>
           <TableHead className="text-right">Paris joués</TableHead>
-          <TableHead className="text-right">Points</TableHead>
+          <TableHead className="text-right" title="Bénéfice net : gains moins mises">Bénéfice</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody ref={bodyRef} className="stagger-children">
@@ -189,7 +189,7 @@ export function LeaderboardTable({
                 {entry.totalBets}
               </TableCell>
               <TableCell className="text-right font-mono font-bold">
-                {entry.points.toLocaleString("fr-FR")}
+                {formatSignedPoints(entry.points, false)}
               </TableCell>
             </TableRow>
           ))}

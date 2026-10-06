@@ -9,9 +9,13 @@ import java.util.List;
 public interface BetRepository extends JpaRepository<Bet, String> {
     List<Bet> findByUserIdOrderByPlacedAtDesc(String userId);
 
+    // Classement : bénéfice net des tickets résolus (gain moins mise si gagné,
+    // moins la mise si perdu ; un ticket remboursé ne compte pas). Avant, on
+    // additionnait les gains bruts sans jamais retirer les pertes : beaucoup de
+    // petits paris sur des favoris passaient devant des joueurs gagnants.
     @org.springframework.data.jpa.repository.Query("""
         SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout ELSE 0 END) as points,
+               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
                COUNT(b) as totalBets,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
                b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
@@ -25,18 +29,20 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     List<Object[]> getLeaderboardRaw();
 
-    // Même calcul que getLeaderboardRaw, limité aux tickets résolus depuis
-    // `since` (classements de la semaine / du mois).
+    // Même calcul que getLeaderboardRaw, limité aux tickets POSÉS depuis
+    // `since` (classements de la semaine / du mois) : un pari compte pour la
+    // semaine de jeu où il a été joué, avec le solde de cette semaine-là,
+    // même s'il se règle après le lundi suivant.
     @org.springframework.data.jpa.repository.Query("""
         SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout ELSE 0 END) as points,
+               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
                COUNT(b) as totalBets,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
                b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
                b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
                b.user.favoriteTeam as favoriteTeam
         FROM Bet b
-        WHERE b.status IN ('WON', 'LOST') AND b.resolvedAt >= :since
+        WHERE b.status IN ('WON', 'LOST') AND b.placedAt >= :since
         GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
                  b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
         ORDER BY points DESC
@@ -100,7 +106,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
 
     @org.springframework.data.jpa.repository.Query("""
         SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout ELSE 0 END) as points,
+               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
                COUNT(b) as totalBets,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
                b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
@@ -140,4 +146,20 @@ public interface BetRepository extends JpaRepository<Bet, String> {
 
     @org.springframework.data.jpa.repository.Query("SELECT b.placedAt FROM Bet b WHERE b.placedAt >= :since")
     List<java.time.Instant> findPlacedAtSince(java.time.Instant since);
+
+    // --- Semaines de jeu (BankrollService) ---
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COALESCE(SUM(b.stake), 0) FROM Bet b
+        WHERE b.user.id = :userId AND b.status = 'PENDING' AND b.placedAt >= :since
+    """)
+    long sumPendingStakesSince(String userId, java.time.Instant since);
+
+    // [nombre de tickets résolus, bénéfice net] des paris posés entre from et to.
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COUNT(b), SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END)
+        FROM Bet b
+        WHERE b.user.id = :userId AND b.status IN ('WON', 'LOST')
+          AND b.placedAt >= :from AND b.placedAt < :to
+    """)
+    List<Object[]> getNetResultBetween(String userId, java.time.Instant from, java.time.Instant to);
 }

@@ -108,8 +108,8 @@ export default function HelpPage() {
           <div className="reveal-children grid gap-4 sm:grid-cols-2">
             <RuleCard icon={Lock} title="Points virtuels uniquement">
               <p>
-                Tu démarres avec <strong className="text-foreground">1 000 points</strong>. Ils n&apos;ont aucune valeur
-                monétaire : rien ne s&apos;achète, rien ne se retire.
+                Chaque lundi à 12h, tout le monde repart avec <strong className="text-foreground">1 000 points</strong>{" "}
+                pour la semaine. Ils n&apos;ont aucune valeur monétaire : rien ne s&apos;achète, rien ne se retire.
               </p>
             </RuleCard>
 
@@ -169,7 +169,8 @@ export default function HelpPage() {
 
             <RuleCard icon={Trophy} title="Classement et ligues">
               <p>
-                Le classement général compare tous les joueurs. Crée une ligue privée et partage son code à 6
+                On est classé au <strong className="text-foreground">bénéfice net</strong> : gains moins mises,
+                pertes comprises. Ton solde de la semaine ne compte pas. Crée une ligue privée et partage son code à 6
                 caractères pour avoir aussi votre classement entre amis.
               </p>
             </RuleCard>

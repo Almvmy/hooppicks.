@@ -56,13 +56,13 @@ class LeaderboardServiceTest {
     }
 
     @Test
-    void semaine_commence_lundi_minuit_heure_de_paris() {
+    void semaine_commence_lundi_midi_heure_de_paris() {
         when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.of());
 
         service.leaderboard(LeaderboardPeriod.WEEK);
 
-        // Lundi 5 octobre, 00h00 à Paris = dimanche 4, 22h00 UTC (heure d'été).
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-04T22:00:00Z"));
+        // Semaine de jeu : lundi 5 octobre, 12h00 à Paris = 10h00 UTC (heure d'été).
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-05T10:00:00Z"));
         verify(betRepository, never()).getLeaderboardRaw();
     }
 

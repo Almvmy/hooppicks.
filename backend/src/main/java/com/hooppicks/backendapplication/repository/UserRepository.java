@@ -41,4 +41,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") String id);
+
+    // Joueurs dont le solde n'est pas encore celui de la semaine de jeu en
+    // cours (comptes antérieurs aux semaines de jeu compris).
+    @Query("select u.id from User u where u.bankrollWeek is null or u.bankrollWeek <> :week")
+    java.util.List<String> findIdsWithBankrollWeekNot(@Param("week") java.time.LocalDate week);
 }

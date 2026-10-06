@@ -22,7 +22,7 @@ import {
   reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, formatSignedPoints } from "@/lib/utils";
 
 // Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
 // libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
@@ -152,8 +152,8 @@ export default function LeagueDetailPage({
             </p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tes points</p>
-            <p className="font-mono text-2xl font-bold">{me.points.toLocaleString("fr-FR")}</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ton bénéfice</p>
+            <p className="font-mono text-2xl font-bold">{formatSignedPoints(me.points, false)}</p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
             <p className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">

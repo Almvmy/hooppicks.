@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Wallet, Target, Trophy, Ticket } from "lucide-react";
+import { WEEKLY_BANKROLL, formatBankrollReset } from "@/lib/utils";
 
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchWallet, fetchWalletTransactions } from "@/lib/api/wallet";
@@ -85,10 +86,11 @@ export default function DashboardPage() {
       <DashboardStats
         items={[
           {
-            label: "Solde actuel",
+            label: "Solde de la semaine",
             value: walletQuery.data ? (
               <CountUp value={walletQuery.data.balance} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
             ) : undefined,
+            hint: `Repart à ${WEEKLY_BANKROLL.toLocaleString("fr-FR")} pts ${formatBankrollReset()}`,
             icon: Wallet,
             isLoading: statsLoading,
           },

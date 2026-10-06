@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { LeaderboardEntry } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatSignedPoints } from "@/lib/utils";
 
 const RANK_COLORS: Record<number, string> = {
   1: "text-primary",
@@ -46,7 +46,7 @@ function Row({ entry, highlight }: { entry: LeaderboardEntry; highlight: boolean
           <span className="truncate">{entry.username}</span>
         </Link>
       </div>
-      <span className="font-mono text-xs font-bold">{entry.points.toLocaleString("fr-FR")}</span>
+      <span className="font-mono text-xs font-bold">{formatSignedPoints(entry.points, false)}</span>
     </div>
   );
 }

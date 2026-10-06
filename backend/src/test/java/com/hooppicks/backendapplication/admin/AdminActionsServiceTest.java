@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.admin;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.entity.AppNotification;
 import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.BetStatus;
@@ -49,6 +50,7 @@ class AdminActionsServiceTest {
     @Mock private NbaSyncService nbaSyncService;
     @Mock private AdminAuditService auditService;
     @Mock private PlatformTransactionManager transactionManager;
+    @Mock private BankrollService bankrollService;
 
     private AdminActionsService service;
     private final User admin = user("admin", 0);
@@ -56,7 +58,8 @@ class AdminActionsServiceTest {
     @BeforeEach
     void setUp() {
         service = new AdminActionsService(betRepository, matchRepository, userRepository, transactionRepository,
-                notificationRepository, pushService, nbaSyncService, auditService, transactionManager);
+                notificationRepository, pushService, nbaSyncService, auditService, transactionManager, bankrollService);
+        when(bankrollService.paysIntoCurrentBalance(any(), any())).thenReturn(true);
         // Verrou libre par défaut : le travail s'exécute.
         when(nbaSyncService.tryRunExclusive(any())).thenAnswer(inv -> {
             ((Runnable) inv.getArgument(0)).run();

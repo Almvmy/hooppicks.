@@ -103,3 +103,53 @@ export function formatDayChip(date: Date, timeZone = resolveTimeZone()): { top: 
       : date.toLocaleDateString("fr-FR", { weekday: "short", timeZone });
   return { top, bottom: date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone }) };
 }
+
+// --- Semaines de jeu (cf. BankrollService côté backend) ---
+// Chaque lundi à 12h heure de Paris, tout le monde repart avec ce solde.
+export const WEEKLY_BANKROLL = 1000;
+const BANKROLL_ZONE = "Europe/Paris";
+
+// Décalage de l'heure de Paris sur UTC à cet instant (heure d'été comprise).
+function parisOffsetMs(at: Date): number {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: BANKROLL_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(at)
+      .map((part) => [part.type, part.value])
+  );
+  const wall = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return wall - Math.floor(at.getTime() / 1000) * 1000;
+}
+
+/** Prochain passage à une nouvelle semaine de jeu : lundi 12h, heure de Paris. */
+export function nextBankrollReset(now: Date = new Date()): Date {
+  const wall = new Date(now.getTime() + parisOffsetMs(now));
+  const candidate = new Date(Date.UTC(wall.getUTCFullYear(), wall.getUTCMonth(), wall.getUTCDate(), 12));
+  candidate.setUTCDate(candidate.getUTCDate() + ((8 - candidate.getUTCDay()) % 7));
+  if (candidate.getTime() <= wall.getTime()) candidate.setUTCDate(candidate.getUTCDate() + 7);
+  // Décalage recalculé à la date visée : un changement d'heure peut tomber entre les deux.
+  const approx = new Date(candidate.getTime() - parisOffsetMs(now));
+  return new Date(candidate.getTime() - parisOffsetMs(approx));
+}
+
+/** « lundi 12h (dans 3 j) » / « lundi 12h (dans 5 h) ». */
+export function formatBankrollReset(now: Date = new Date()): string {
+  const hours = (nextBankrollReset(now).getTime() - now.getTime()) / 3_600_000;
+  const delay = hours < 24 ? `dans ${Math.max(1, Math.round(hours))} h` : `dans ${Math.round(hours / 24)} j`;
+  return `lundi 12h (${delay})`;
+}
+
+/** Bénéfice net signé : « +1 240 pts », « −350 pts », « 0 pts ». */
+export function formatSignedPoints(points: number, unit = true): string {
+  const abs = Math.abs(points).toLocaleString("fr-FR");
+  const sign = points > 0 ? "+" : points < 0 ? "−" : "";
+  return `${sign}${abs}${unit ? " pts" : ""}`;
+}

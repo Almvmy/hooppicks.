@@ -24,14 +24,14 @@ import { normalizeForSearch } from "@/lib/help-content";
 import { rankTitle } from "@/lib/rank-title";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { LeaderboardEntry, LeaderboardPeriod } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatSignedPoints } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
 const PERIODS: { value: LeaderboardPeriod; label: string; scope: string }[] = [
   { value: "season", label: "Saison", scope: "de la saison" },
   { value: "month", label: "Ce mois-ci", scope: "du mois" },
-  { value: "week", label: "Cette semaine", scope: "de la semaine" },
+  { value: "week", label: "Cette semaine", scope: "de la semaine de jeu" },
 ];
 
 // Or, argent, bronze : en accent (trophée, liseré, marche du podium), jamais
@@ -92,7 +92,7 @@ function PodiumSpot({
       </span>
       {isMe && <span className="text-[11px] font-semibold text-primary">C&apos;est toi</span>}
       <span className="mt-0.5 font-mono text-sm font-bold">
-        <CountUp value={entry.points} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
+        <CountUp value={entry.points} format={(n) => formatSignedPoints(n)} />
       </span>
       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {entry.winRate}% de réussite
@@ -151,7 +151,7 @@ function MyPosition({
               Ta position · {rankTitle(me.rank, total)}
             </p>
             <p className="flex items-center gap-2 font-mono text-lg font-bold text-foreground">
-              <CountUp value={me.points} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
+              <CountUp value={me.points} format={(n) => formatSignedPoints(n)} />
               <StreakBadge streak={me.streak} />
             </p>
             <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
@@ -278,7 +278,12 @@ function PlayersRanking({ username }: { username: string | undefined }) {
           {all.length > 0
             ? `${all.length} joueur${all.length > 1 ? "s" : ""} classé${all.length > 1 ? "s" : ""} au classement ${scope}.`
             : null}
-          {period !== "season" && " Points des tickets résolus sur la période : tout le monde repart de zéro."}
+          {" "}Bénéfice net : gains moins mises des tickets résolus
+          {period === "week"
+            ? ", posés depuis lundi 12h, quand tout le monde est reparti à 1 000 pts."
+            : period === "month"
+              ? ", posés ce mois-ci."
+              : ", posés depuis le début de la saison."}
         </p>
       )}
 

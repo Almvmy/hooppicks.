@@ -27,7 +27,13 @@ public class User {
 
     private String favoriteTeam = "";
 
-    private int walletBalance = 1000; // solde de départ, comme ton mock frontend
+    // Solde de pari de la semaine de jeu en cours : remis à 1000 chaque lundi
+    // à midi (cf. BankrollService). Ne compte jamais au classement.
+    private int walletBalance = 1000;
+
+    // Lundi de la semaine de jeu à laquelle appartient walletBalance. Null =
+    // compte antérieur aux semaines de jeu : remis à niveau au premier passage.
+    private java.time.LocalDate bankrollWeek;
 
     @Column(columnDefinition = "integer default 0", nullable = false)
     private int avatarNumber = 0;

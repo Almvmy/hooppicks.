@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchWallet } from "@/lib/api/wallet";
 import { CountUp } from "@/components/motion/count-up";
+import { WEEKLY_BANKROLL, formatBankrollReset } from "@/lib/utils";
 
 export function WalletBalance() {
   const { data, isLoading, isError } = useQuery({
@@ -30,6 +31,7 @@ export function WalletBalance() {
     <Badge
       variant="outline"
       className="border-primary/30 bg-primary/10 font-mono text-sm text-primary"
+      title={`Solde de la semaine de jeu : repart à ${WEEKLY_BANKROLL.toLocaleString("fr-FR")} pts ${formatBankrollReset()}`}
     >
       {/* animateOnMount=false : la topbar est montée à chaque chargement de
           page, seul un vrai changement de solde mérite d'être animé. */}

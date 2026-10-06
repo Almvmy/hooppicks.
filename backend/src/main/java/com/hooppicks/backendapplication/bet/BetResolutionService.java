@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.bet;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.bet.LegEvaluator.LegResult;
 import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
@@ -25,16 +26,19 @@ public class BetResolutionService {
     private final WalletTransactionRepository transactionRepository;
     private final NotificationRepository notificationRepository;
     private final PushService pushService;
+    private final BankrollService bankrollService;
 
     public BetResolutionService(BetRepository betRepository, MatchRepository matchRepository,
                                 UserRepository userRepository, WalletTransactionRepository transactionRepository,
-                                NotificationRepository notificationRepository, PushService pushService) {
+                                NotificationRepository notificationRepository, PushService pushService,
+                                BankrollService bankrollService) {
         this.betRepository = betRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
         this.notificationRepository = notificationRepository;
         this.pushService = pushService;
+        this.bankrollService = bankrollService;
     }
 
 
@@ -73,6 +77,10 @@ public class BetResolutionService {
 
             User user = bet.getUser();
             bet.setResolvedAt(java.time.Instant.now());
+            // Le joueur passe d'abord à la semaine de jeu en cours s'il ne l'a
+            // pas encore fait : on sait alors si ce pari appartient à son solde actuel.
+            bankrollService.ensureCurrent(user);
+            boolean credited = bankrollService.paysIntoCurrentBalance(user, bet);
 
             if (anyLoss) {
                 bet.setStatus(BetStatus.LOST);
@@ -82,10 +90,14 @@ public class BetResolutionService {
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
-                user.setWalletBalance(user.getWalletBalance() + bet.getStake());
-                userRepository.save(user);
-                logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
-                notify(user, NotificationType.SYSTEM, "Ticket remboursé", "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
+                if (credited) {
+                    user.setWalletBalance(user.getWalletBalance() + bet.getStake());
+                    userRepository.save(user);
+                    logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
+                    notify(user, NotificationType.SYSTEM, "Ticket remboursé", "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
+                } else {
+                    notify(user, NotificationType.SYSTEM, "Ticket annulé", "Ton pari de la semaine passée a été annulé (égalité sur le seuil) : il ne compte pas au classement.");
+                }
             } else {
                 if (anyPush) {
                     // Gain recalculé sans les sélections remboursées. Le ticket est
@@ -95,11 +107,21 @@ public class BetResolutionService {
                     bet.setPotentialPayout((int) Math.round(bet.getStake() * winningOdds));
                 }
                 bet.setStatus(BetStatus.WON);
-                user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());
-                userRepository.save(user);
-                logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
-                        "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
-                notify(user, NotificationType.BET_WON, "Ticket gagnant", "Ton pari est gagnant : +" + bet.getPotentialPayout() + " pts");
+                if (credited) {
+                    user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());
+                    userRepository.save(user);
+                    logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
+                            "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
+                    notify(user, NotificationType.BET_WON, "Ticket gagnant", "Ton pari est gagnant : +" + bet.getPotentialPayout() + " pts");
+                } else {
+                    // Pari de la semaine passée : le gain compte au classement de
+                    // cette semaine-là, mais ne gonfle pas le solde neuf.
+                    int net = bet.getPotentialPayout() - bet.getStake();
+                    logTransaction(user, TransactionType.BET_WIN, 0,
+                            "Pari gagné de la semaine passée (+" + net + " pts au classement, solde déjà remis à niveau)");
+                    notify(user, NotificationType.BET_WON, "Ticket gagnant",
+                            "Ton pari de la semaine passée est gagnant : +" + net + " pts au classement de cette semaine-là");
+                }
             }
 
             betRepository.save(bet);

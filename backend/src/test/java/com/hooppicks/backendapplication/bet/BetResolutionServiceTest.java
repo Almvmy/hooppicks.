@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.bet;
 
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.BetRepository;
@@ -36,13 +37,17 @@ class BetResolutionServiceTest {
     private NotificationRepository notificationRepository;
     @Mock
     private PushService pushService;
+    @Mock
+    private BankrollService bankrollService;
 
     private BetResolutionService service;
 
     @BeforeEach
     void setUp() {
         service = new BetResolutionService(betRepository, matchRepository, userRepository,
-                transactionRepository, notificationRepository, pushService);
+                transactionRepository, notificationRepository, pushService, bankrollService);
+        // Par défaut, le pari appartient à la semaine de jeu du solde actuel.
+        lenient().when(bankrollService.paysIntoCurrentBalance(any(), any())).thenReturn(true);
     }
 
     private Match finishedMatch(String id, int homeScore, int awayScore, double spreadValue, double totalValue) {
@@ -101,6 +106,27 @@ class BetResolutionServiceTest {
         ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(notifCaptor.capture());
         assertThat(notifCaptor.getValue().getType()).isEqualTo(NotificationType.BET_WON);
+    }
+
+    @Test
+    void pari_gagnant_d_une_semaine_passee_ne_credite_pas_le_solde_neuf() {
+        Match match = finishedMatch("m1", 100, 90, -2.5, 220.5);
+        User user = user(1000);
+        Bet bet = pendingBet(user, 10, 18, selection("m1", "moneyline", "home"));
+
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(match));
+        when(bankrollService.paysIntoCurrentBalance(user, bet)).thenReturn(false);
+
+        service.resolvePendingBets();
+
+        // Compté au classement (statut WON), mais le solde remis à niveau ne bouge pas.
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
+        assertThat(user.getWalletBalance()).isEqualTo(1000);
+        verify(bankrollService).ensureCurrent(user);
+        ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
+        verify(notificationRepository).save(notifCaptor.capture());
+        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts au classement");
     }
 
     @Test

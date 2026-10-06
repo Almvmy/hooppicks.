@@ -8,7 +8,7 @@ import { PlayerAvatar } from "@/components/player-avatar";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { LeaderboardEntry } from "@/lib/types";
 import { rankFanTeams } from "@/lib/fan-teams";
-import { cn } from "@/lib/utils";
+import { cn, formatSignedPoints } from "@/lib/utils";
 
 /** Classement des communautés de supporters (cf. rankFanTeams). */
 export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myTeam: string | null }) {
@@ -37,7 +37,7 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
-        Moyenne de points par supporter, sur les joueurs classés cette saison.
+        Bénéfice net moyen par supporter, sur les joueurs classés cette saison.
         {withoutTeam > 0 && ` ${withoutTeam} joueur${withoutTeam > 1 ? "s" : ""} sans équipe favorite ne compte${withoutTeam > 1 ? "nt" : ""} pas.`}
       </p>
       <ol className="stagger-children flex flex-col gap-2">
@@ -69,7 +69,7 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
                   </span>
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block font-mono font-bold">{team.averagePoints.toLocaleString("fr-FR")}</span>
+                  <span className="block font-mono font-bold">{formatSignedPoints(team.averagePoints, false)}</span>
                   <span className="block text-[10px] uppercase text-muted-foreground">pts / fan</span>
                 </span>
                 <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
@@ -92,7 +92,7 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
                         size="xs"
                       />
                       <span className="min-w-0 flex-1 truncate">{fan.username}</span>
-                      <span className="font-mono text-xs font-bold">{fan.points.toLocaleString("fr-FR")}</span>
+                      <span className="font-mono text-xs font-bold">{formatSignedPoints(fan.points, false)}</span>
                     </Link>
                   ))}
                 </div>

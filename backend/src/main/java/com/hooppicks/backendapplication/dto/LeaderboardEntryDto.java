@@ -35,7 +35,7 @@ public record LeaderboardEntryDto(
 
     /**
      * Lignes brutes de BetRepository.getLeaderboardRaw / getLeaderboardRawForUsers
-     * (déjà triées par points décroissants) -> classement. Partagé par le
+     * (déjà triées par bénéfice net décroissant) -> classement. Partagé par le
      * classement général et celui des ligues, qui dupliquaient ce code.
      *
      * Rang « sportif » : deux joueurs à égalité de points partagent le même
@@ -46,11 +46,13 @@ public record LeaderboardEntryDto(
                                                      java.util.function.Function<String, Extras> extrasByUserId) {
         List<LeaderboardEntryDto> result = new ArrayList<>();
         int rank = 0;
-        long previousPoints = -1;
+        // Pas de sentinelle numérique : avec le bénéfice net, n'importe quelle
+        // valeur (négatives comprises) peut être un vrai score.
+        Long previousPoints = null;
         for (int i = 0; i < rows.size(); i++) {
             Object[] row = rows.get(i);
             long points = (Long) row[2];
-            if (points != previousPoints) {
+            if (previousPoints == null || points != previousPoints) {
                 rank = i + 1;
                 previousPoints = points;
             }

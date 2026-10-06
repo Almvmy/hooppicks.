@@ -25,7 +25,13 @@ export const FAQ: FaqGroup[] = [
         id: "argent-reel",
         question: "Est-ce que je joue de l'argent réel ?",
         answer:
-          "Non, jamais. Tu démarres avec 1 000 points virtuels, sans aucune valeur monétaire : on ne peut ni en acheter, ni les retirer. HoopPicks n'est pas un site de paris d'argent.",
+          "Non, jamais. Chaque semaine, tu reçois 1 000 points virtuels, sans aucune valeur monétaire : on ne peut ni en acheter, ni les retirer. HoopPicks n'est pas un site de paris d'argent.",
+      },
+      {
+        id: "semaine-de-jeu",
+        question: "Pourquoi mon solde revient à 1 000 points le lundi ?",
+        answer:
+          "Chaque lundi à 12h (heure de Paris), tout le monde repart avec 1 000 points, que tu aies tout misé, tout perdu ou beaucoup gagné. Ce solde sert seulement à parier : il ne compte pas au classement. Ainsi chaque semaine se joue à armes égales, et personne ne reste bloqué à zéro plus de quelques jours. Un pari posé avant lundi midi et réglé après compte pour la semaine où tu l'as posé : son gain va au classement de cette semaine-là, pas sur ton nouveau solde.",
       },
       {
         id: "plus-parier",
@@ -93,7 +99,7 @@ export const FAQ: FaqGroup[] = [
         id: "classement-calcul",
         question: "Comment est calculé le classement ?",
         answer:
-          "Le classement général compare les points gagnés par chaque joueur, toutes ligues confondues. Chaque ligue a aussi son propre classement, limité à ses membres.",
+          "Au bénéfice net : pour chaque ticket gagné, le gain moins la mise ; pour chaque ticket perdu, moins la mise. Un ticket remboursé ne compte pas. Bien parier compte donc plus que parier beaucoup. Classement de la semaine : les paris posés depuis lundi 12h ; du mois : ceux posés ce mois-ci ; de la saison : l'addition de tout. Chaque ligue a aussi son propre classement, limité à ses membres.",
         link: { href: "/leaderboard", label: "Voir le classement" },
       },
       {

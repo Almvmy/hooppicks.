@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.admin;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.entity.AppNotification;
 import com.hooppicks.backendapplication.entity.Bet;
 import com.hooppicks.backendapplication.entity.BetStatus;
@@ -48,12 +49,13 @@ public class AdminActionsService {
     private final NbaSyncService nbaSyncService;
     private final AdminAuditService auditService;
     private final TransactionTemplate transactionTemplate;
+    private final BankrollService bankrollService;
 
     public AdminActionsService(BetRepository betRepository, MatchRepository matchRepository,
                                UserRepository userRepository, WalletTransactionRepository transactionRepository,
                                NotificationRepository notificationRepository, PushService pushService,
                                NbaSyncService nbaSyncService, AdminAuditService auditService,
-                               PlatformTransactionManager transactionManager) {
+                               PlatformTransactionManager transactionManager, BankrollService bankrollService) {
         this.betRepository = betRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
@@ -63,6 +65,7 @@ public class AdminActionsService {
         this.nbaSyncService = nbaSyncService;
         this.auditService = auditService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.bankrollService = bankrollService;
     }
 
     /** Annule un pari en attente et rembourse sa mise. */
@@ -105,6 +108,7 @@ public class AdminActionsService {
             // Même verrou de ligne que placeBet : pas de solde écrasé par un pari posé au même instant.
             User user = userRepository.findByIdForUpdate(userId)
                     .orElseThrow(() -> new AdminActionException(404, "Utilisateur introuvable."));
+            bankrollService.ensureCurrent(user);
             int newBalance = user.getWalletBalance() + amount;
             if (newBalance < 0) {
                 throw new AdminActionException(400, "Le solde deviendrait négatif (solde actuel : " + user.getWalletBalance() + " pts).");
@@ -154,6 +158,14 @@ public class AdminActionsService {
         bet.setStatus(BetStatus.VOID);
         bet.setResolvedAt(java.time.Instant.now());
         betRepository.save(bet);
+
+        // Pari d'une semaine de jeu passée : il sort juste du classement, sa
+        // mise ne s'ajoute pas au solde neuf de la semaine en cours.
+        bankrollService.ensureCurrent(user);
+        if (!bankrollService.paysIntoCurrentBalance(user, bet)) {
+            notify(user, "Pari annulé", "Ton pari de la semaine passée a été annulé et ne compte pas au classement : " + motive, "/bets");
+            return;
+        }
 
         user.setWalletBalance(user.getWalletBalance() + bet.getStake());
         userRepository.save(user);
