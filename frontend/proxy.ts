@@ -6,6 +6,7 @@ const PROTECTED_PREFIXES = [
   "/bets",
   "/leaderboard",
   "/profile",
+  "/leagues",
 ];
 
 export function proxy(request: NextRequest) {
@@ -22,7 +23,9 @@ export function proxy(request: NextRequest) {
 
   if (!session) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
+    // Chemin ET paramètres : un lien d'invitation (/leagues?code=…) doit
+    // retrouver son code après la connexion.
+    loginUrl.searchParams.set("from", pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -30,5 +33,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/matches/:path*", "/bets/:path*", "/leaderboard/:path*", "/profile/:path*"],
+  matcher: ["/dashboard/:path*", "/matches/:path*", "/bets/:path*", "/leaderboard/:path*", "/profile/:path*", "/leagues/:path*"],
 };

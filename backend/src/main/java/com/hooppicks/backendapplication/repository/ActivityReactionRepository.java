@@ -4,7 +4,6 @@ import com.hooppicks.backendapplication.entity.ActivityReaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ActivityReactionRepository extends JpaRepository<ActivityReaction, String> {
 
@@ -13,6 +12,8 @@ public interface ActivityReactionRepository extends JpaRepository<ActivityReacti
     // pour rester explicite et robuste si un jour les ids ne sont plus des UUID.
     List<ActivityReaction> findByTargetTypeInAndTargetIdIn(List<String> targetTypes, List<String> targetIds);
 
-    Optional<ActivityReaction> findByTargetTypeAndTargetIdAndUser_IdAndEmoji(
-            String targetType, String targetId, String userId, String emoji);
+    // Toutes les réactions d'un membre sur un item : une seule en principe
+    // (cf. LeagueService.toggleReaction), plusieurs pour les données
+    // antérieures à cette règle, nettoyées au prochain clic.
+    List<ActivityReaction> findByTargetTypeAndTargetIdAndUser_Id(String targetType, String targetId, String userId);
 }

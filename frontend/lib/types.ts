@@ -31,6 +31,7 @@ export interface UserProfile {
   notifyMatchStarting: boolean;
   notifyBetResults: boolean;
   notifyLeagueActivity: boolean;
+  notifyFavoriteTeam: boolean;
   emailVerified: boolean;
 }
 
@@ -38,6 +39,18 @@ export interface NotificationPreferences {
   notifyMatchStarting: boolean;
   notifyBetResults: boolean;
   notifyLeagueActivity: boolean;
+  notifyFavoriteTeam: boolean;
+}
+
+/** Tes paris vus depuis ton équipe favorite, sélection par sélection (GET /favorite-team/stats). */
+export interface FavoriteTeamStats {
+  teamAbbreviation: string | null;
+  forLegs: number;
+  forWon: number;
+  forLost: number;
+  againstLegs: number;
+  againstWon: number;
+  againstLost: number;
 }
 
 export interface UpdateProfileInput {
@@ -50,6 +63,7 @@ export interface UpdateProfileInput {
 
 export type MatchStatus = "scheduled" | "live" | "finished";
 export type Conference = "Est" | "Ouest";
+export type MatchType = "preseason" | "regular" | "nba_cup" | "all_star" | "play_in" | "playoffs";
 
 export interface Team {
   id: string;
@@ -95,6 +109,10 @@ export interface Match {
   awayTeam: Team;
   date: string; // ISO
   status: MatchStatus;
+  /** Phase lue sur ESPN ; null tant que le match n'y est pas relié. */
+  type: MatchType | null;
+  stageLabel: string | null;
+  seriesSummary: string | null;
   homeScore?: number;
   awayScore?: number;
   odds: MatchOdds;
@@ -133,6 +151,8 @@ export interface PlayerLeaders {
   points: RosterPlayer[];
   rebounds: RosterPlayer[];
   assists: RosterPlayer[];
+  steals: RosterPlayer[];
+  blocks: RosterPlayer[];
 }
 
 export interface PlayerRecentGame {
@@ -222,7 +242,17 @@ export interface LeaderboardEntry {
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
   favoriteTeam: string | null; // nom complet ("Boston Celtics"), null si aucune
+  /** Places gagnées (+) ou perdues (-) depuis la veille ; null sans historique (et hors classement saison). */
+  rankChange: number | null;
+  /** Classé aujourd'hui mais absent du classement de la veille. */
+  newcomer: boolean;
+  /** 5 derniers tickets résolus, du plus récent au plus ancien. */
+  recentForm: ("W" | "L")[];
+  /** Série en cours : +4 = 4 gagnés d'affilée, -2 = 2 perdus. */
+  streak: number;
 }
+
+export type LeaderboardPeriod = "season" | "month" | "week";
 
 export interface League {
   id: string;
@@ -281,6 +311,48 @@ export interface AdminUser {
   emailVerified: boolean;
   walletBalance: number;
   createdAt: string | null;
+  totalBets: number;
+  favoriteTeam: string | null;
+}
+
+/** Match vu depuis la console : verrouillé (corrigé à la main) et paris qui en dépendent. */
+export interface AdminMatch {
+  match: Match;
+  locked: boolean;
+  pendingBets: number;
+  resolvedBets: number;
+}
+
+export interface AdminOverview {
+  totalUsers: number;
+  newUsers7d: number;
+  activeBettors7d: number;
+  betsPlaced24h: number;
+  betsPlaced7d: number;
+  pointsStaked7d: number;
+  pointsInCirculation: number;
+  pendingBets: number;
+  totalMatches: number;
+  lockedMatches: number;
+  unlinkedMatches: number;
+  matchesByType: Record<string, number>;
+  rosterPlayers: number;
+  playersWithoutStats: number;
+  lastSyncAt: string | null;
+  lastGamesSynced: number;
+  lastBetsResolved: number;
+  syncMode: string | null;
+  series: { date: string; signups: number; bets: number }[];
+}
+
+export interface AdminAuditEntry {
+  id: string;
+  adminId: string;
+  adminUsername: string;
+  action: string;
+  target: string | null;
+  details: string | null;
+  date: string;
 }
 
 export interface AdminBet {
@@ -292,7 +364,7 @@ export interface AdminBet {
   placedAt: string;
 }
 
-export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "system";
+export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "favorite_team" | "system";
 
 export interface AppNotification {
   id: string;

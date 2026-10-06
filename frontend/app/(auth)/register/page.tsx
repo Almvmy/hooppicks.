@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { safeRedirectTarget } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/api/auth";
 
-export default function RegisterPage() {
+export default function RegisterPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
   const router = useRouter();
+  // Page demandée avant la connexion (lien d'invitation de ligue…) : on y
+  // retourne après, au lieu de toujours renvoyer au tableau de bord.
+  const { from } = use(searchParams);
+  const destination = safeRedirectTarget(from);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +28,7 @@ export default function RegisterPage() {
     setIsSubmitting(true);
     try {
       await registerUser(username, email, password);
-      router.push("/dashboard");
+      router.push(destination);
     } catch {
       setError("Impossible de créer le compte (e-mail déjà utilisé ?).");
     } finally {
@@ -56,7 +61,10 @@ export default function RegisterPage() {
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Déjà un compte ?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link
+              href={from ? `/login?from=${encodeURIComponent(from)}` : "/login"}
+              className="text-primary hover:underline"
+            >
               Se connecter
             </Link>
           </p>

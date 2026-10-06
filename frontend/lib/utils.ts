@@ -77,3 +77,29 @@ export function formatRelativeTime(iso: string): string {
   const diffWeeks = Math.floor(diffDays / 7);
   return `il y a ${diffWeeks} sem.`;
 }
+
+/**
+ * "2026-27" : une saison NBA démarre en octobre, donc un match de janvier
+ * 2027 appartient à la saison 2026-27. Déduit d'une date plutôt qu'écrit en dur.
+ */
+export function seasonLabel(reference: Date = new Date()): string {
+  const start = reference.getMonth() >= 8 ? reference.getFullYear() : reference.getFullYear() - 1;
+  return `${start}-${String(start + 1).slice(2)}`;
+}
+
+/** "2026-10-21" : jour calendaire d'un instant dans le fuseau d'affichage (pour grouper/filtrer par jour). */
+export function dayKey(date: Date, timeZone = resolveTimeZone()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+/**
+ * Libellé en deux lignes pour une pastille de date : "Auj." / "21 oct.",
+ * "mar." / "21 oct.". Relatif pour hier/aujourd'hui/demain, sinon jour court.
+ */
+export function formatDayChip(date: Date, timeZone = resolveTimeZone()): { top: string; bottom: string } {
+  const label = getDayLabel(date, timeZone);
+  const top =
+    label === "Aujourd'hui" ? "Auj." : label === "Demain" ? "Demain" : label === "Hier" ? "Hier"
+      : date.toLocaleDateString("fr-FR", { weekday: "short", timeZone });
+  return { top, bottom: date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone }) };
+}

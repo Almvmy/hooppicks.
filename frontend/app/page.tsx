@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Radio, Trophy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, seasonLabel } from "@/lib/utils";
 import { MatchDate, MatchTime, TimeZoneName } from "@/components/local-date";
 import { fetchPublicLeaderboard, fetchPublicMatches, fetchPublicStats } from "@/lib/api/public";
 import { Match } from "@/lib/types";
@@ -37,13 +37,6 @@ function nextScheduledMatches(matches: Match[] | undefined, limit: number): Matc
     .filter((m) => m.status === "scheduled" && new Date(m.date).getTime() >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, limit);
-}
-
-// Une saison NBA démarre en octobre : un match de janvier 2027 appartient à
-// la saison 2026-27. Déduit du prochain match plutôt qu'écrit en dur.
-function seasonLabel(reference: Date): string {
-  const start = reference.getMonth() >= 8 ? reference.getFullYear() : reference.getFullYear() - 1;
-  return `${start}-${String(start + 1).slice(2)}`;
 }
 
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
@@ -194,7 +187,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-3xl">
           <SectionTitle eyebrow="Calendrier" title="Prochaines affiches" />
           <p className="-mt-5 mb-6 text-center text-xs text-muted-foreground">
-            Heures en <TimeZoneName />
+            Heures pour <TimeZoneName />
           </p>
           {upcoming.length === 0 ? (
             <p className="text-center text-muted-foreground">Aucun match programmé pour le moment.</p>

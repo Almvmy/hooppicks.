@@ -308,27 +308,66 @@ class LeagueServiceTest {
     void reagir_une_premiere_fois_cree_la_reaction() {
         when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
                 .thenReturn(Optional.of(new LeagueMembership()));
-        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_IdAndEmoji("BET", "bet-1", "user-1", "🔥"))
-                .thenReturn(Optional.empty());
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_Id("BET", "bet-1", "user-1"))
+                .thenReturn(List.of());
         when(userRepository.findById("user-1")).thenReturn(Optional.of(userWithId("user-1")));
 
         leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "🔥");
 
-        verify(activityReactionRepository).save(any(ActivityReaction.class));
-        verify(activityReactionRepository, never()).delete(any());
+        ArgumentCaptor<ActivityReaction> saved = ArgumentCaptor.forClass(ActivityReaction.class);
+        verify(activityReactionRepository).save(saved.capture());
+        assertThat(saved.getValue().getEmoji()).isEqualTo("🔥");
+    }
+
+    @Test
+    void changer_de_reaction_remplace_l_ancienne() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        ActivityReaction thumbsUp = reaction("👍");
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_Id("BET", "bet-1", "user-1"))
+                .thenReturn(List.of(thumbsUp));
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(userWithId("user-1")));
+
+        leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "👎");
+
+        verify(activityReactionRepository).deleteAll(List.of(thumbsUp));
+        ArgumentCaptor<ActivityReaction> saved = ArgumentCaptor.forClass(ActivityReaction.class);
+        verify(activityReactionRepository).save(saved.capture());
+        assertThat(saved.getValue().getEmoji()).isEqualTo("👎");
+    }
+
+    @Test
+    void des_doublons_anterieurs_sont_nettoyes_au_prochain_clic() {
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
+                .thenReturn(Optional.of(new LeagueMembership()));
+        List<ActivityReaction> legacy = List.of(reaction("👍"), reaction("🔥"), reaction("👎"));
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_Id("BET", "bet-1", "user-1"))
+                .thenReturn(legacy);
+
+        leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "🔥");
+
+        // 🔥 était déjà là : tout est retiré, rien n'est recréé.
+        verify(activityReactionRepository).deleteAll(legacy);
+        verify(activityReactionRepository, never()).save(any());
+    }
+
+    private static ActivityReaction reaction(String emoji) {
+        ActivityReaction r = new ActivityReaction();
+        r.setEmoji(emoji);
+        return r;
     }
 
     @Test
     void reagir_une_deuxieme_fois_avec_le_meme_emoji_retire_la_reaction() {
         when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1"))
                 .thenReturn(Optional.of(new LeagueMembership()));
-        ActivityReaction existing = new ActivityReaction();
-        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_IdAndEmoji("BET", "bet-1", "user-1", "🔥"))
-                .thenReturn(Optional.of(existing));
+        ActivityReaction existing = reaction("🔥");
+        when(activityReactionRepository.findByTargetTypeAndTargetIdAndUser_Id("BET", "bet-1", "user-1"))
+                .thenReturn(List.of(existing));
 
         leagueService.toggleReaction("league-1", "user-1", "BET", "bet-1", "🔥");
 
-        verify(activityReactionRepository).delete(existing);
+        verify(activityReactionRepository).deleteAll(List.of(existing));
         verify(activityReactionRepository, never()).save(any());
     }
 

@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { safeRedirectTarget } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginUser } from "@/lib/api/auth";
 
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
   const router = useRouter();
+  // Page demandée avant la connexion (lien d'invitation de ligue…) : on y
+  // retourne après, au lieu de toujours renvoyer au tableau de bord.
+  const { from } = use(searchParams);
+  const destination = safeRedirectTarget(from);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +27,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await loginUser(email, password);
-      router.push("/dashboard");
+      router.push(destination);
     } catch {
       setError("Identifiants invalides.");
     } finally {
@@ -70,7 +75,10 @@ export default function LoginPage() {
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Pas encore de compte ?{" "}
-            <Link href="/register" className="text-primary hover:underline">
+            <Link
+              href={from ? `/register?from=${encodeURIComponent(from)}` : "/register"}
+              className="text-primary hover:underline"
+            >
               Créer un compte
             </Link>
           </p>

@@ -242,7 +242,10 @@ public class LeagueService {
     }
 
     /**
-     * Bascule (ajoute/retire) la réaction de l'appelant sur un item du fil.
+     * Une seule réaction par membre et par item, comme un vote : réagir avec
+     * un autre emoji remplace la réaction précédente, réagir avec le même la
+     * retire. (Avant, chaque emoji se basculait indépendamment et on pouvait
+     * mettre 👍 et 👎 en même temps, ce qui n'a pas de sens.)
      * L'appelant doit être membre de la ligue affichée, pas forcément lié au
      * pari/l'adhésion ciblé : c'est le fil de LA LIGUE qu'on protège, pas
      * l'item individuel (cf. getRecentActivity, même garde).
@@ -260,12 +263,16 @@ public class LeagueService {
             throw new IllegalArgumentException("Type de cible invalide.");
         }
 
-        var existing = activityReactionRepository
-                .findByTargetTypeAndTargetIdAndUser_IdAndEmoji(targetType, targetId, requestingUserId, emoji);
+        List<ActivityReaction> mine = activityReactionRepository
+                .findByTargetTypeAndTargetIdAndUser_Id(targetType, targetId, requestingUserId);
+        boolean sameEmoji = mine.stream().anyMatch(r -> emoji.equals(r.getEmoji()));
 
-        if (existing.isPresent()) {
-            activityReactionRepository.delete(existing.get());
-        } else {
+        // Toutes supprimées dans les deux cas : retire la réaction (même emoji)
+        // ou libère la place pour la nouvelle, et nettoie au passage les
+        // doublons créés avant cette règle.
+        activityReactionRepository.deleteAll(mine);
+
+        if (!sameEmoji) {
             ActivityReaction reaction = new ActivityReaction();
             reaction.setTargetType(targetType);
             reaction.setTargetId(targetId);
