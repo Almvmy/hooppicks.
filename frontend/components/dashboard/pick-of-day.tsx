@@ -5,7 +5,7 @@ import { MatchOddsRow } from "@/components/match-odds-row";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
 import { Match } from "@/lib/types";
-import { cn, formatMatchDate, formatMatchTime } from "@/lib/utils";
+import { cn, formatMatchDate, formatMatchTime, isBettable } from "@/lib/utils";
 
 export function PickOfDay({ match }: { match: Match | undefined }) {
   if (!match) {
@@ -61,7 +61,7 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
           <FaceOffTeams match={match} logoSize={72} morph nameClassName="text-lg" scoreClassName="text-3xl" />
         </Link>
 
-        {match.status === "scheduled" && (
+        {isBettable(match) && (
           <div className="mt-4">
             <MatchOddsRow match={match} />
           </div>

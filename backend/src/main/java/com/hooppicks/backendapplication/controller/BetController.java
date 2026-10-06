@@ -96,7 +96,12 @@ public class BetController {
             if (match == null) {
                 return ResponseEntity.badRequest().body("Match introuvable.");
             }
-            if (match.getStatus() != MatchStatus.SCHEDULED) {
+            // L'heure de coup d'envoi fait foi, pas seulement le statut : celui-ci
+            // n'est rafraîchi qu'à chaque synchro (5 min), et reste « à venir »
+            // aussi longtemps que l'API de matchs ne répond plus. Sans ce
+            // contrôle, on pouvait parier match commencé, voire score connu.
+            boolean started = match.getDate() != null && !match.getDate().isAfter(java.time.Instant.now());
+            if (match.getStatus() != MatchStatus.SCHEDULED || started) {
                 return ResponseEntity.badRequest().body(
                         "Ce match n'est plus ouvert aux paris : " + match.getHomeTeam().getName() + " vs " + match.getAwayTeam().getName()
                 );

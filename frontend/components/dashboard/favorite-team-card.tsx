@@ -18,7 +18,7 @@ import { rankFanTeams } from "@/lib/fan-teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { useFavoriteTeam, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { FavoriteTeamStats, LeaderboardEntry, Match, RosterPlayer, TeamRank } from "@/lib/types";
-import { cn, formatMatchTime, getDayLabel } from "@/lib/utils";
+import { cn, formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
 
 function zoneOf(seed: number | null): { label: string; className: string } | null {
   if (seed === null) return null;
@@ -67,7 +67,7 @@ function NextMatch({ match, team }: { match: Match | undefined; team: TeamRank }
           {getDayLabel(date)} · {formatMatchTime(date)}
         </span>
       </Link>
-      {match.status === "scheduled" ? (
+      {isBettable(match) ? (
         <div className="flex gap-2">
           {sides.map((side) => {
             const t = side === "home" ? match.homeTeam : match.awayTeam;

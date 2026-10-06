@@ -76,6 +76,7 @@ class BetControllerTest {
         Match m = new Match();
         m.setId(id);
         m.setStatus(MatchStatus.SCHEDULED);
+        m.setDate(java.time.Instant.now().plus(java.time.Duration.ofHours(6)));
         m.setHomeTeam(team("Lakers"));
         m.setAwayTeam(team("Celtics"));
         m.setMoneylineHome(1.8);
@@ -125,6 +126,26 @@ class BetControllerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         verifyNoInteractions(betRepository, userRepository, transactionRepository, matchRepository);
+    }
+
+    @Test
+    void pari_refuse_apres_le_coup_d_envoi_meme_si_le_statut_n_est_pas_encore_a_jour() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", 100);
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user));
+
+        // Synchro en retard (ou API de matchs en panne) : toujours SCHEDULED,
+        // mais le coup d'envoi date de 3 minutes.
+        Match lagging = scheduledMatch("m1");
+        lagging.setDate(java.time.Instant.now().minus(java.time.Duration.ofMinutes(3)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(lagging));
+
+        PlaceBetRequest body = new PlaceBetRequest(List.of(moneylineHome("m1")), 10);
+        ResponseEntity<?> response = controller.placeBet(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(user.getWalletBalance()).isEqualTo(100);
+        verifyNoInteractions(betRepository, transactionRepository);
     }
 
     @Test

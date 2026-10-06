@@ -154,3 +154,12 @@ export function formatSignedPoints(points: number, unit = true): string {
   const sign = points > 0 ? "+" : points < 0 ? "−" : "";
   return `${sign}${abs}${unit ? " pts" : ""}`;
 }
+
+/**
+ * Paris ouverts sur ce match ? Statut « à venir » ET coup d'envoi pas encore
+ * passé : le statut n'est rafraîchi qu'à chaque synchro (5 min), le serveur
+ * refuse de toute façon un pari après l'heure (BetController).
+ */
+export function isBettable(match: { status: string; date: string }, now: number = Date.now()): boolean {
+  return match.status === "scheduled" && new Date(match.date).getTime() > now;
+}

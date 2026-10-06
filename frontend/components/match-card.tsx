@@ -11,7 +11,7 @@ import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/ma
 import { NbaLogo } from "@/components/nba-logo";
 import { isRivalryMatchup } from "@/lib/rivalries";
 import { useFavoriteTeam } from "@/lib/use-teams";
-import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime } from "@/lib/utils";
+import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime, isBettable } from "@/lib/utils";
 
 export function MatchCard({ match }: { match: Match }) {
   const date = new Date(match.date);
@@ -82,11 +82,12 @@ export function MatchCard({ match }: { match: Match }) {
         </CardContent>
 
         <div className="relative px-6 pb-4">
-          {match.status === "scheduled" ? (
+          {isBettable(match) ? (
             <MatchOddsRow match={match} />
           ) : (
             <p className="glass-inset-quiet mt-3 rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
-              paris fermés : match {match.status === "live" ? "en cours" : "terminé"}
+              paris fermés :{" "}
+              {match.status === "finished" ? "match terminé" : match.status === "live" ? "match en cours" : "coup d'envoi passé"}
             </p>
           )}
         </div>
