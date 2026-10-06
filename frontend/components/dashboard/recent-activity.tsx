@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BetStatus, PlacedBet } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatSignedPoints } from "@/lib/utils";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 
 const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "success" | "destructive" }> = {
   pending: { label: "En attente", variant: "secondary" },
   won: { label: "Gagné", variant: "success" },
   lost: { label: "Perdu", variant: "destructive" },
-  void: { label: "Annulé", variant: "secondary" },
+  void: { label: "Remboursé", variant: "secondary" },
 };
 
 export function RecentActivity({
@@ -52,11 +52,18 @@ export function RecentActivity({
                 <span
                   className={cn(
                     "font-mono text-sm font-bold",
-                    bet.status === "won" ? "text-success" : "text-foreground"
+                    bet.status === "won" ? "text-success" : bet.status === "lost" ? "text-destructive" : "text-foreground"
                   )}
                 >
-                  {bet.status === "won" ? "+" : ""}
-                  {bet.potentialPayout.toLocaleString("fr-FR")} pts
+                  {/* Même lecture que le classement : bénéfice net du ticket.
+                      Avant, un ticket remboursé affichait son gain potentiel. */}
+                  {bet.status === "won"
+                    ? formatSignedPoints(bet.potentialPayout - bet.stake)
+                    : bet.status === "lost"
+                      ? formatSignedPoints(-bet.stake)
+                      : bet.status === "void"
+                        ? "mise rendue"
+                        : `${bet.stake.toLocaleString("fr-FR")} pts misés`}
                 </span>
               </div>
               <div className="mt-1.5 flex min-w-0 items-center gap-2">

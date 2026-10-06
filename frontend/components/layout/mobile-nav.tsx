@@ -18,9 +18,8 @@ export function MobileNav() {
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
   // Exclut les routes déjà accessibles depuis la bottom nav (Accueil, Matchs,
-  // Mes picks, Classement, Profil) : sinon le menu hamburger les affichait en
-  // double, sous un libellé différent en plus (ex. "Mes paris" ici vs
-  // "Mes picks" dans la bottom nav pour la même route /bets).
+  // Mes paris, Classement, Profil) : sinon le menu hamburger les affichait en
+  // double.
   const items = (profile?.isAdmin ? NAV_ITEMS : NAV_ITEMS.filter((item) => item.href !== "/admin"))
     .filter((item) => !BOTTOM_NAV_HREFS.includes(item.href));
 

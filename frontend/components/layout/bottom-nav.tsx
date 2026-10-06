@@ -14,7 +14,7 @@ export const BOTTOM_NAV_HREFS = ["/dashboard", "/matches", "/bets", "/leaderboar
 const navItems = [
   { href: "/dashboard", label: "Accueil", icon: LayoutDashboard },
   { href: "/matches", label: "Matchs", icon: CalendarDays },
-  { href: "/bets", label: "Mes picks", icon: Ticket },
+  { href: "/bets", label: "Mes paris", icon: Ticket },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
   { href: "/profile", label: "Profil", icon: User },
 ];
