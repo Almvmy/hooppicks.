@@ -23,11 +23,13 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    // Île flottante : inset-x-3.5 (14px de marge) + rayon 26px + verre dense.
-    // bottom = safe-area + 14px, donc l'île se dégage du home indicator iOS.
-    // Nécessite pb-32 sur le <main> de l'AppShell.
+    // Barre flottante : inset-x-3.5 (14px de marge) + rayon 26px + verre dense.
+    // bottom = safe-area + 14px, donc elle se dégage du home indicator iOS.
+    // Nécessite pb-32 sur le <main> de l'AppShell. Pas une île : en clair,
+    // elle suit le thème Parquet (verre crème) au lieu de rester marine,
+    // un bloc sombre qui tranchait trop en bas d'une page claire.
     <nav
-      className="glass-strong island fixed inset-x-3.5 z-40 flex items-stretch justify-around gap-0.5 rounded-[26px] p-2 md:hidden"
+      className="glass-strong fixed inset-x-3.5 z-40 flex items-stretch justify-around gap-0.5 rounded-[26px] p-2 md:hidden"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)" }}
     >
       {navItems.map((item) => {
@@ -40,7 +42,7 @@ export function BottomNav() {
             className={cn(
               // min-h-[52px] : cible tactile confortable (> 44px).
               "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[19px] text-[10px] font-semibold transition-all",
-              isActive ? "glass-accent" : "text-foreground/60"
+              isActive ? "nav-active" : "text-foreground/60"
             )}
           >
             <Icon className="h-[19px] w-[19px]" />

@@ -21,16 +21,19 @@ export function BetSlipPanel() {
   const { data: wallet } = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
   const matchesById = useMatchesById();
 
-  // Mobile uniquement : le ticket déplié recouvre la bottom nav (une seule
-  // île marine à l'écran), réduit il devient une pastille au-dessus d'elle.
-  // Il se redéplie à chaque sélection ajoutée : c'est le moment où on veut
-  // voir la cote totale et saisir sa mise. Ajusté pendant le rendu (et pas
-  // dans un effet) pour ne pas afficher une image intermédiaire.
-  const [expanded, setExpanded] = useState(true);
+  // Mobile uniquement : réduit par défaut en pastille dans le coin, déplié
+  // seulement quand on la touche. Avant, il se dépliait à chaque sélection
+  // et masquait la moitié de l'écran pendant qu'on composait un combiné.
+  // Déplié, il prend toute la largeur : saisie de la mise + clavier, une
+  // carte « dans le coin » ferait de toute façon ~90 % d'un écran de 375px.
+  // Chaque sélection ajoutée fait rebondir la pastille (clé qui change) :
+  // ajusté pendant le rendu, pas dans un effet.
+  const [expanded, setExpanded] = useState(false);
   const [previousCount, setPreviousCount] = useState(selections.length);
+  const [bump, setBump] = useState(0);
   if (selections.length !== previousCount) {
     setPreviousCount(selections.length);
-    if (selections.length > previousCount) setExpanded(true);
+    if (selections.length > previousCount) setBump((b) => b + 1);
   }
 
     const mutation = useMutation({
@@ -59,11 +62,20 @@ export function BetSlipPanel() {
 
   return (
     <>
+      {expanded && (
+        // Toucher à côté referme le ticket, comme une feuille de bas d'écran.
+        <div
+          aria-hidden
+          onClick={() => setExpanded(false)}
+          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] md:hidden"
+        />
+      )}
       {!expanded && (
         <button
+          key={bump}
           type="button"
           onClick={() => setExpanded(true)}
-          className="fixed right-4 z-50 flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-[var(--lift-strong)] md:hidden"
+          className="slip-pop fixed right-4 z-50 flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-[var(--lift-strong)] md:hidden"
           // Juste au-dessus de la bottom nav (14px + ~68px de haut + marge).
           style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
           aria-label={`Ouvrir le ticket (${selections.length} sélection${selections.length > 1 ? "s" : ""})`}

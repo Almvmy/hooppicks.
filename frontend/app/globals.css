@@ -682,7 +682,8 @@
    - Deux oranges : --primary (orange brûlé #A13C0A, 5,2:1) pour le texte,
      les liens et le focus ; --brand (#FF7A1A) seulement en aplat sous du
      texte marine (7,2:1), jamais en texte sur fond clair (2,1:1).
-   - Les îles (.island : bottom nav, ticket) restent marine (--jersey).
+   - Les îles (.island : ticket) restent marine (--jersey) ; la bottom nav
+     suit le thème (cf. .nav-active).
    ═══════════════════════════════════════════════════════════════════ */
 .light {
   --background: #ECE3D3;
@@ -813,4 +814,34 @@
 :root[data-theme-switching]::view-transition-new(root) {
   animation-duration: 450ms;
   animation-timing-function: ease-in-out;
+}
+
+/* Pastille du ticket (mobile) : petit rebond à chaque sélection ajoutée,
+   pour qu'on voie où elle part sans déplier le ticket. */
+@keyframes slip-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.12); }
+  70% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.slip-pop {
+  animation: slip-pop 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .slip-pop { animation: none; }
+}
+
+/* Onglet actif de la bottom nav. En sombre, même lumière orange que
+   .glass-accent. En clair (Parquet), la barre n'est plus une île marine
+   mais du verre crème : l'onglet actif y devient un aplat --brand sous
+   texte marine (seul usage autorisé de --brand, cf. bloc .light). */
+.nav-active {
+  color: var(--primary-lit);
+  background: var(--accent-bg);
+  box-shadow: var(--accent-shadow);
+}
+.light .nav-active {
+  color: var(--brand-foreground);
+  background: var(--brand);
+  box-shadow: 0 6px 16px rgba(161, 60, 10, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
