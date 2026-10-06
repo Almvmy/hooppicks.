@@ -2,18 +2,19 @@
 // (localStorage) : quelqu'un qui voyage ou suit les matchs à l'heure US
 // règle son téléphone sans toucher à son compte.
 
-// Rendu serveur et valeur par défaut : le public de l'app est francophone,
-// et le serveur de prod tourne en UTC (sans ça, la page d'accueil rendue
-// côté serveur affichait les matchs 1 à 2 h trop tôt).
-export const DEFAULT_TIME_ZONE = "Europe/Paris";
+// Rendu serveur et valeur par défaut : les joueurs sont en Côte d'Ivoire.
+// Sans fuseau explicite, le rendu serveur dépendrait de celui de la machine.
+export const DEFAULT_TIME_ZONE = "Africa/Abidjan";
 export const AUTO_TIME_ZONE = "auto";
 
 const STORAGE_KEY = "hp:time-zone";
 
 export const TIME_ZONE_CHOICES: { value: string; label: string }[] = [
+  { value: "Africa/Abidjan", label: "Côte d'Ivoire (GMT)" },
+  { value: "Africa/Dakar", label: "Sénégal, Mali, Burkina Faso (GMT)" },
+  { value: "Africa/Lagos", label: "Bénin, Niger, Nigeria" },
   { value: "Europe/Paris", label: "France métropolitaine, Belgique, Suisse" },
   { value: "Europe/London", label: "Royaume-Uni, Portugal" },
-  { value: "Africa/Dakar", label: "Sénégal, Côte d'Ivoire (GMT)" },
   { value: "Africa/Casablanca", label: "Maroc" },
   { value: "Africa/Algiers", label: "Algérie, Tunisie" },
   { value: "Africa/Douala", label: "Cameroun, Congo" },

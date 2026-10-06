@@ -25,13 +25,14 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 /**
- * Semaines de jeu : chaque lundi à midi (heure de Paris), tout le monde
+ * Semaines de jeu : chaque lundi à midi (GMT), tout le monde
  * repart avec le même solde de pari. Le solde ne sert qu'à jouer ; le
  * classement compte le bénéfice net des paris (cf. BetRepository), attribué
  * à la semaine où chaque pari a été posé.
  *
- * Midi plutôt que minuit : les matchs NBA se jouent la nuit heure de Paris,
- * à midi ceux de la veille sont terminés et ceux du soir pas commencés.
+ * Midi plutôt que minuit : les matchs NBA se jouent entre minuit et 6h30
+ * GMT environ, à midi ceux de la nuit sont terminés et les suivants
+ * pas commencés.
  *
  * Remise à zéro plutôt qu'un versement qui s'ajoute : sinon les soldes
  * divergent semaine après semaine et les joueurs ne jouent plus avec les
@@ -41,7 +42,9 @@ import java.util.List;
 public class BankrollService {
 
     public static final int WEEKLY_BANKROLL = 1000;
-    public static final ZoneId ZONE = ZoneId.of("Europe/Paris");
+    // Fuseau du jeu : GMT, celui des joueurs (Côte d'Ivoire), sans heure
+    // d'été. Partagé par le classement et la console admin.
+    public static final ZoneId ZONE = ZoneId.of("GMT");
     public static final LocalTime RESET_TIME = LocalTime.NOON;
 
     private final UserRepository userRepository;
@@ -67,7 +70,7 @@ public class BankrollService {
         this.clock = clock;
     }
 
-    /** Début de la semaine de jeu qui contient cet instant (lundi 12h, heure de Paris). */
+    /** Début de la semaine de jeu qui contient cet instant (lundi 12h GMT). */
     public static ZonedDateTime weekStart(Instant at) {
         ZonedDateTime t = at.atZone(ZONE);
         ZonedDateTime start = t.toLocalDate()

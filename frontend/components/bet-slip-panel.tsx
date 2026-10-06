@@ -10,7 +10,7 @@ import { useBetSlip } from "@/components/bet-slip-provider";
 import { fetchWallet } from "@/lib/api/wallet";
 import { placeBet } from "@/lib/api/bets";
 import type { BetSelection } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatBankrollReset, WEEKLY_BANKROLL } from "@/lib/utils";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 
 export function BetSlipPanel() {
@@ -154,11 +154,13 @@ export function BetSlipPanel() {
             </span>
           </div>
 
-          {stake > balance && (
-            <p className="text-xs text-destructive">
-              Solde insuffisant ({balance.toLocaleString("fr-FR")} pts disponibles).
-            </p>
-          )}
+          {/* Le solde vit ici plutôt qu'en haut de l'écran : c'est au moment de
+              miser qu'on en a besoin. En haut, les points de classement. */}
+          <p className={cn("text-xs", stake > balance ? "text-destructive" : "text-muted-foreground")}>
+            {stake > balance ? "Solde insuffisant : " : "Solde de la semaine : "}
+            <span className="font-mono font-semibold">{balance.toLocaleString("fr-FR")} pts</span>
+            {" "}· repart à {WEEKLY_BANKROLL.toLocaleString("fr-FR")} {formatBankrollReset()}
+          </p>
 
           <Button
             variant="lit"

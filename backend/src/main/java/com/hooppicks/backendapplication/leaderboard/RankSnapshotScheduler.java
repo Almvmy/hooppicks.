@@ -25,10 +25,10 @@ public class RankSnapshotScheduler {
         this.leaderboardService = leaderboardService;
     }
 
-    // Midi, heure de Paris : entre deux nuits de matchs NBA (qui se jouent
-    // vers 1h-6h ici). L'évolution affichée couvre ainsi une nuit de
+    // Midi GMT : entre deux nuits de matchs NBA (qui se jouent
+    // de minuit à 6h30 GMT environ). L'évolution affichée couvre ainsi une nuit de
     // résultats complète, pas une nuit coupée en deux par minuit.
-    @Scheduled(cron = "0 0 12 * * *", zone = "Europe/Paris")
+    @Scheduled(cron = "0 0 12 * * *", zone = "GMT")
     public void dailySnapshot() {
         snapshot(LocalDate.now(LeaderboardService.ZONE));
     }

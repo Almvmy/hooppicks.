@@ -31,7 +31,7 @@ export const FAQ: FaqGroup[] = [
         id: "semaine-de-jeu",
         question: "Pourquoi mon solde revient à 1 000 points le lundi ?",
         answer:
-          "Chaque lundi à 12h (heure de Paris), tout le monde repart avec 1 000 points, que tu aies tout misé, tout perdu ou beaucoup gagné. Ce solde sert seulement à parier : il ne compte pas au classement. Ainsi chaque semaine se joue à armes égales, et personne ne reste bloqué à zéro plus de quelques jours. Un pari posé avant lundi midi et réglé après compte pour la semaine où tu l'as posé : son gain va au classement de cette semaine-là, pas sur ton nouveau solde.",
+          "Chaque lundi à 12h GMT, tout le monde repart avec 1 000 points, que tu aies tout misé, tout perdu ou beaucoup gagné. Ce solde sert seulement à parier : il ne compte pas au classement. Ainsi chaque semaine se joue à armes égales, et personne ne reste bloqué à zéro plus de quelques jours. Un pari posé avant lundi midi et réglé après compte pour la semaine où tu l'as posé : son gain va au classement de cette semaine-là, pas sur ton nouveau solde.",
       },
       {
         id: "plus-parier",

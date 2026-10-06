@@ -12,3 +12,17 @@ export async function fetchLeaderboard(period: LeaderboardPeriod = "season"): Pr
 export function leaderboardQueryKey(period: LeaderboardPeriod) {
   return period === "season" ? ["leaderboard"] : ["leaderboard", period];
 }
+
+export type MyStanding = {
+  seasonPoints: number;
+  seasonRank: number | null;
+  seasonPlayers: number;
+  weekPoints: number;
+  weekRank: number | null;
+  weekPlayers: number;
+};
+
+/** Score et rang du joueur connecté : pastille de la barre du haut. */
+export async function fetchMyStanding(): Promise<MyStanding> {
+  return apiFetch<MyStanding>("/leaderboard/me");
+}

@@ -30,7 +30,7 @@ class LeaderboardServiceTest {
 
     private LeaderboardService service;
 
-    // Mercredi 7 octobre 2026, 10h à Paris (8h UTC).
+    // Mercredi 7 octobre 2026, 8h GMT.
     private static final Instant NOW = Instant.parse("2026-10-07T08:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 7);
 
@@ -61,18 +61,18 @@ class LeaderboardServiceTest {
 
         service.leaderboard(LeaderboardPeriod.WEEK);
 
-        // Semaine de jeu : lundi 5 octobre, 12h00 à Paris = 10h00 UTC (heure d'été).
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-05T10:00:00Z"));
+        // Semaine de jeu : lundi 5 octobre, 12h00 GMT.
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-05T12:00:00Z"));
         verify(betRepository, never()).getLeaderboardRaw();
     }
 
     @Test
-    void mois_commence_le_premier_a_minuit_heure_de_paris() {
+    void mois_commence_le_premier_a_minuit_gmt() {
         when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.of());
 
         service.leaderboard(LeaderboardPeriod.MONTH);
 
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-09-30T22:00:00Z"));
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-01T00:00:00Z"));
     }
 
     @Test
@@ -159,5 +159,24 @@ class LeaderboardServiceTest {
         assertThat(LeaderboardPeriod.parse(null)).isEqualTo(LeaderboardPeriod.SEASON);
         assertThat(LeaderboardPeriod.parse("WEEK")).isEqualTo(LeaderboardPeriod.WEEK);
         assertThatThrownBy(() -> LeaderboardPeriod.parse("year")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void standing_donne_score_et_rang_avec_egalites_et_negatifs() {
+        when(betRepository.getLeaderboardRaw()).thenReturn(List.<Object[]>of(
+                row("a", 900), row("b", 300), row("c", 300), row("d", -120)));
+        when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.<Object[]>of(row("b", 50)));
+
+        LeaderboardService.Standing c = service.standing("c");
+        assertThat(c.seasonPoints()).isEqualTo(300);
+        assertThat(c.seasonRank()).isEqualTo(2);
+        assertThat(c.seasonPlayers()).isEqualTo(4);
+        // Pas de ticket résolu cette semaine : pas de rang, score nul.
+        assertThat(c.weekRank()).isNull();
+        assertThat(c.weekPoints()).isZero();
+
+        LeaderboardService.Standing d = service.standing("d");
+        assertThat(d.seasonPoints()).isEqualTo(-120);
+        assertThat(d.seasonRank()).isEqualTo(4);
     }
 }

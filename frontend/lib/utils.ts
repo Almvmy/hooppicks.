@@ -105,11 +105,12 @@ export function formatDayChip(date: Date, timeZone = resolveTimeZone()): { top: 
 }
 
 // --- Semaines de jeu (cf. BankrollService côté backend) ---
-// Chaque lundi à 12h heure de Paris, tout le monde repart avec ce solde.
+// Chaque lundi à 12h GMT, tout le monde repart avec ce solde.
 export const WEEKLY_BANKROLL = 1000;
-const BANKROLL_ZONE = "Europe/Paris";
+const BANKROLL_ZONE = "UTC";
 
-// Décalage de l'heure de Paris sur UTC à cet instant (heure d'été comprise).
+// Décalage du fuseau du jeu sur UTC à cet instant (nul en GMT, mais calculé
+// pour rester juste si le fuseau du jeu change un jour).
 function parisOffsetMs(at: Date): number {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
@@ -129,7 +130,7 @@ function parisOffsetMs(at: Date): number {
   return wall - Math.floor(at.getTime() / 1000) * 1000;
 }
 
-/** Prochain passage à une nouvelle semaine de jeu : lundi 12h, heure de Paris. */
+/** Prochain passage à une nouvelle semaine de jeu : lundi 12h GMT. */
 export function nextBankrollReset(now: Date = new Date()): Date {
   const wall = new Date(now.getTime() + parisOffsetMs(now));
   const candidate = new Date(Date.UTC(wall.getUTCFullYear(), wall.getUTCMonth(), wall.getUTCDate(), 12));

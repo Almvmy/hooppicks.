@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.leaderboard;
 
+import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.LeaderboardEntryDto;
 import com.hooppicks.backendapplication.entity.RankSnapshot;
 import com.hooppicks.backendapplication.repository.BetRepository;
@@ -21,9 +22,8 @@ import java.util.stream.Collectors;
 @Service
 public class LeaderboardService {
 
-    // Les joueurs sont en France : "cette semaine" commence le lundi à minuit
-    // heure de Paris, pas en UTC.
-    public static final ZoneId ZONE = ZoneId.of("Europe/Paris");
+    // Fuseau du jeu (GMT) : débuts de semaine et de mois.
+    public static final ZoneId ZONE = BankrollService.ZONE;
     private static final int FORM_LENGTH = 5;
     // Historique gardé : de quoi comparer à la veille, avec de la marge.
     private static final int SNAPSHOT_RETENTION_DAYS = 30;
@@ -71,6 +71,26 @@ public class LeaderboardService {
             return new LeaderboardEntryDto.Extras(change, newcomer,
                     recent.subList(0, Math.min(FORM_LENGTH, recent.size())), streak(recent));
         });
+    }
+
+    /**
+     * Score et rang du joueur, saison et semaine de jeu (pastille de la barre
+     * du haut). Rang null tant qu'aucun ticket n'est résolu sur la période.
+     */
+    public record Standing(long seasonPoints, Integer seasonRank, int seasonPlayers,
+                           long weekPoints, Integer weekRank, int weekPlayers) {}
+
+    @Transactional(readOnly = true)
+    public Standing standing(String userId) {
+        ZonedDateTime now = ZonedDateTime.now(clock).withZoneSameInstant(ZONE);
+        List<Object[]> season = betRepository.getLeaderboardRaw();
+        List<Object[]> week = betRepository.getLeaderboardRawSince(LeaderboardPeriod.WEEK.start(now));
+        return new Standing(pointsOf(season, userId), ranksByUserId(season).get(userId), season.size(),
+                pointsOf(week, userId), ranksByUserId(week).get(userId), week.size());
+    }
+
+    private static long pointsOf(List<Object[]> rows, String userId) {
+        return rows.stream().filter(r -> userId.equals(r[0])).mapToLong(r -> (Long) r[2]).findFirst().orElse(0);
     }
 
     /**

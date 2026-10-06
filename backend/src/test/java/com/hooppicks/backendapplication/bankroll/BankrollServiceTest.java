@@ -38,7 +38,7 @@ class BankrollServiceTest {
     @Mock private WalletTransactionRepository transactionRepository;
     @Mock private NotificationRepository notificationRepository;
 
-    // Mercredi 7 octobre 2026, 10h00 à Paris : semaine de jeu du lundi 5.
+    // Mercredi 7 octobre 2026, 8h00 GMT : semaine de jeu du lundi 5.
     private static final Instant NOW = Instant.parse("2026-10-07T08:00:00Z");
     private static final LocalDate WEEK = LocalDate.of(2026, 10, 5);
 
@@ -60,15 +60,15 @@ class BankrollServiceTest {
 
     @Test
     void la_semaine_de_jeu_commence_le_lundi_a_midi_heure_de_paris() {
-        // Lundi 5 octobre, 11h59 à Paris : encore la semaine du lundi 28 septembre.
-        assertThat(BankrollService.weekOf(Instant.parse("2026-10-05T09:59:00Z"))).isEqualTo(LocalDate.of(2026, 9, 28));
+        // Lundi 5 octobre, 11h59 GMT : encore la semaine du lundi 28 septembre.
+        assertThat(BankrollService.weekOf(Instant.parse("2026-10-05T11:59:00Z"))).isEqualTo(LocalDate.of(2026, 9, 28));
         // Midi pile : nouvelle semaine.
-        assertThat(BankrollService.weekOf(Instant.parse("2026-10-05T10:00:00Z"))).isEqualTo(WEEK);
+        assertThat(BankrollService.weekOf(Instant.parse("2026-10-05T12:00:00Z"))).isEqualTo(WEEK);
         // Dimanche soir suivant : toujours la même.
         assertThat(BankrollService.weekOf(Instant.parse("2026-10-11T21:00:00Z"))).isEqualTo(WEEK);
-        // Heure d'hiver : lundi 2 novembre, 12h00 à Paris = 11h00 UTC.
+        // GMT toute l'année : pas de décalage quand l'Europe change d'heure.
         assertThat(BankrollService.weekStart(Instant.parse("2026-11-04T12:00:00Z")).toInstant())
-                .isEqualTo(Instant.parse("2026-11-02T11:00:00Z"));
+                .isEqualTo(Instant.parse("2026-11-02T12:00:00Z"));
     }
 
     @Test
@@ -101,7 +101,7 @@ class BankrollServiceTest {
         verify(notificationRepository).save(n.capture());
         assertThat(n.getValue().getMessage()).contains("-350 pts au classement").contains("4 ticket(s)");
         // Récap calculé sur la semaine écoulée du joueur, pas sur la semaine en cours.
-        verify(betRepository).getNetResultBetween("u1", Instant.parse("2026-09-28T10:00:00Z"), Instant.parse("2026-10-05T10:00:00Z"));
+        verify(betRepository).getNetResultBetween("u1", Instant.parse("2026-09-28T12:00:00Z"), Instant.parse("2026-10-05T12:00:00Z"));
     }
 
     @Test
@@ -121,7 +121,7 @@ class BankrollServiceTest {
         // Pari posé lundi 12h01, avant le passage du scheduler : la mise a été
         // débitée de l'ancien solde, elle reste engagée sur le nouveau.
         User u = user(600, WEEK.minusWeeks(1));
-        when(betRepository.sumPendingStakesSince("u1", Instant.parse("2026-10-05T10:00:00Z"))).thenReturn(150L);
+        when(betRepository.sumPendingStakesSince("u1", Instant.parse("2026-10-05T12:00:00Z"))).thenReturn(150L);
         when(betRepository.getNetResultBetween(any(), any(), any())).thenReturn(List.of());
 
         service.ensureCurrent(u);

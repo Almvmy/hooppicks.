@@ -25,8 +25,8 @@ import java.util.Map;
 @Service
 public class AdminOverviewService {
 
-    // Jours comptés à l'heure de Paris, comme le reste de l'app côté joueurs.
-    static final ZoneId ZONE = ZoneId.of("Europe/Paris");
+    // Jours comptés dans le fuseau du jeu, comme le reste de l'app côté joueurs.
+    static final ZoneId ZONE = com.hooppicks.backendapplication.bankroll.BankrollService.ZONE;
     static final int SERIES_DAYS = 14;
 
     public record DailyPoint(String date, int signups, int bets) {}

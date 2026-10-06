@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { WalletBalance } from "@/components/wallet-balance";
+import { StandingBadge } from "@/components/standing-badge";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { PlayerAvatar } from "@/components/player-avatar";
@@ -61,7 +61,7 @@ export function Topbar() {
       )}
 
       <div className="ml-auto flex items-center gap-4">
-        <WalletBalance />
+        <StandingBadge />
         {/* Masqué sous md : la barre mobile est déjà pleine, l'aide reste
             accessible depuis le menu du profil. */}
         <Link
