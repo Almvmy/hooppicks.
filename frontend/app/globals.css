@@ -845,3 +845,36 @@
   background: var(--brand);
   box-shadow: 0 6px 16px rgba(161, 60, 10, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
+
+/* Barre du haut + barre latérale = un seul cadre en « L » sur ordinateur.
+   Avant : la barre du haut (dégradé qui s'éclaircit vers le bas) posait son
+   liseré au-dessus de la sidebar (teinte unie plus sombre) : un trait suivi
+   d'une marche de teinte à la jonction. Ici, même teinte que la sidebar, et
+   le liseré ne court qu'au-dessus du contenu, dans le prolongement de celui
+   de la sidebar. Sous md, pas de sidebar : la barre garde son style. */
+@media (min-width: 768px) {
+  .glass-chrome.chrome-joined {
+    background: var(--chrome-y-bg);
+    box-shadow: none;
+  }
+  .glass-chrome.chrome-joined::after {
+    content: "";
+    position: absolute;
+    left: 16rem; /* largeur de la sidebar (w-64) */
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--chrome-edge);
+    pointer-events: none;
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-chrome.chrome-joined {
+      background: var(--opaque-chrome-y);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-chrome.chrome-joined {
+      background: var(--opaque-chrome);
+    }
+  }
+}
