@@ -2,25 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Wallet, Target, Trophy, Ticket } from "lucide-react";
-import { WEEKLY_BANKROLL, formatBankrollReset } from "@/lib/utils";
+import { WEEKLY_BANKROLL, formatBankrollReset, formatSignedPoints } from "@/lib/utils";
 
 import { fetchProfile } from "@/lib/api/auth";
-import { fetchWallet, fetchWalletTransactions } from "@/lib/api/wallet";
+import { fetchWallet } from "@/lib/api/wallet";
 import { fetchBets } from "@/lib/api/bets";
 import { fetchMatches } from "@/lib/api/matches";
-import { fetchLeaderboard } from "@/lib/api/leaderboard";
+import { fetchLeaderboard, fetchMyStanding } from "@/lib/api/leaderboard";
 import { fetchNews } from "@/lib/api/news";
 import { fetchMyLeagues } from "@/lib/api/leagues";
 
-import {
-  buildDashboardSlate,
-  buildWalletSeries,
-  computeWinStreak,
-  findLeaderboardEntry,
-  pendingBetsSummary,
-  weeklyStakedAndWon,
-  weeklyWalletDelta,
-} from "@/lib/dashboard";
+import { buildDashboardSlate, computeWinStreak, pendingBetsSummary, weekSummary } from "@/lib/dashboard";
 
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardStats } from "@/components/dashboard/dashboard-stats";
@@ -38,10 +30,7 @@ import { CountUp } from "@/components/motion/count-up";
 export default function DashboardPage() {
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const walletQuery = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
-  const transactionsQuery = useQuery({
-    queryKey: ["wallet-transactions"],
-    queryFn: fetchWalletTransactions,
-  });
+  const standingQuery = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding, refetchInterval: 60_000 });
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
   const matchesQuery = useQuery({
     queryKey: ["matches"],
@@ -67,12 +56,10 @@ export default function DashboardPage() {
   const streak = computeWinStreak(betsQuery.data);
   const pending = pendingBetsSummary(betsQuery.data);
   const slate = buildDashboardSlate(matchesQuery.data);
-  const walletSeries = buildWalletSeries(transactionsQuery.data, walletQuery.data?.balance);
-  const weeklyDelta = weeklyWalletDelta(transactionsQuery.data);
-  const { staked, won } = weeklyStakedAndWon(transactionsQuery.data);
-  const ownEntry = findLeaderboardEntry(leaderboardQuery.data, profileQuery.data?.username);
+  const week = weekSummary(betsQuery.data);
+  const standing = standingQuery.data;
 
-  const statsLoading = profileQuery.isLoading || walletQuery.isLoading || leaderboardQuery.isLoading || betsQuery.isLoading;
+  const statsLoading = profileQuery.isLoading || walletQuery.isLoading || standingQuery.isLoading || betsQuery.isLoading;
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,9 +91,14 @@ export default function DashboardPage() {
             isLoading: statsLoading,
           },
           {
-            label: "Rang classement",
-            value: ownEntry ? `#${ownEntry.rank}` : "-",
-            hint: leaderboardQuery.data ? `sur ${leaderboardQuery.data.length} joueurs` : undefined,
+            // Le rang saison est déjà en haut de l'écran : ici, la course de la semaine.
+            label: "Bénéfice de la semaine",
+            value: standing ? formatSignedPoints(standing.weekPoints) : "-",
+            hint: standing
+              ? standing.weekRank !== null
+                ? `#${standing.weekRank} sur ${standing.weekPlayers} cette semaine`
+                : "aucun ticket réglé cette semaine"
+              : undefined,
             icon: Trophy,
             tone: "paint",
             isLoading: statsLoading,
@@ -136,11 +128,11 @@ export default function DashboardPage() {
 
         <div className="reveal-children flex flex-col gap-6">
           <WalletTrend
-            series={walletSeries}
-            weeklyDelta={weeklyDelta}
-            staked={staked}
-            won={won}
-            isLoading={walletQuery.isLoading || transactionsQuery.isLoading}
+            series={week.series}
+            weeklyDelta={week.net}
+            staked={week.staked}
+            won={week.won}
+            isLoading={betsQuery.isLoading}
           />
           <LeaderboardPreview
             entries={leaderboardQuery.data ?? []}

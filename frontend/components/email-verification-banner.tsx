@@ -18,16 +18,21 @@ export function EmailVerificationBanner() {
   if (!profile || profile.emailVerified) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-primary/20 bg-primary/10 px-6 py-2 text-sm">
-      <div className="flex items-center gap-2">
+    // Une ligne sur mobile : le rappel prenait un quart du premier écran.
+    <div className="flex items-center justify-between gap-2 border-b border-primary/20 bg-primary/10 px-4 py-1.5 text-xs sm:px-6 sm:py-2 sm:text-sm">
+      <div className="flex min-w-0 items-center gap-2">
         <Mail className="h-4 w-4 shrink-0 text-primary" />
-        <span>
-          Vérifie ton adresse e-mail ({profile.email}), un lien de confirmation t&apos;a été envoyé.
+        <span className="truncate sm:whitespace-normal">
+          <span className="sm:hidden">Confirme ton e-mail : lien envoyé.</span>
+          <span className="hidden sm:inline">
+            Vérifie ton adresse e-mail ({profile.email}), un lien de confirmation t&apos;a été envoyé.
+          </span>
         </span>
       </div>
       <Button
         variant="outline"
         size="sm"
+        className="h-7 shrink-0 px-2 text-xs sm:h-8 sm:px-3 sm:text-sm"
         onClick={() => mutation.mutate()}
         disabled={mutation.isPending}
       >

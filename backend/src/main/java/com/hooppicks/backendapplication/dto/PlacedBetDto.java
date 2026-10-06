@@ -11,7 +11,9 @@ public record PlacedBetDto(
         double totalOdds,
         int potentialPayout,
         String status,
-        String placedAt
+        String placedAt,
+        // Null tant que le ticket est en attente (et sur de vieux tickets).
+        String resolvedAt
 ) {
     public static PlacedBetDto from(Bet bet) {
         return new PlacedBetDto(
@@ -21,7 +23,8 @@ public record PlacedBetDto(
                 bet.getTotalOdds(),
                 bet.getPotentialPayout(),
                 bet.getStatus().name().toLowerCase(),
-                bet.getPlacedAt().toString()
+                bet.getPlacedAt().toString(),
+                bet.getResolvedAt() == null ? null : bet.getResolvedAt().toString()
         );
     }
 }

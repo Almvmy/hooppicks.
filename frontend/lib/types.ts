@@ -217,6 +217,7 @@ export interface PlacedBet {
   potentialPayout: number;
   status: BetStatus;
   placedAt: string;
+  resolvedAt: string | null;
 }
 
 export interface NewsItem {

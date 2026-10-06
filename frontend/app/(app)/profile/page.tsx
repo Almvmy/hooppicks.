@@ -7,8 +7,7 @@ import { Eye, EyeOff, Flame, History, Medal, Settings, UserRound } from "lucide-
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchBets } from "@/lib/api/bets";
 import { fetchBadges } from "@/lib/api/badges";
-import { fetchLeaderboard } from "@/lib/api/leaderboard";
-import { fetchWallet, fetchWalletTransactions } from "@/lib/api/wallet";
+import { fetchLeaderboard, fetchMyStanding } from "@/lib/api/leaderboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -25,11 +24,11 @@ import { TeamLogo } from "@/components/team-logo";
 import { CountUp } from "@/components/motion/count-up";
 import { badgeIcon } from "@/lib/badges";
 import { netResult } from "@/lib/bet-legs";
-import { computeWinStreak, findLeaderboardEntry, weeklyWalletDelta } from "@/lib/dashboard";
+import { computeWinStreak, findLeaderboardEntry } from "@/lib/dashboard";
 import { rankTitle } from "@/lib/rank-title";
 import { getTeamColor } from "@/lib/team-colors";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
-import { cn, seasonLabel } from "@/lib/utils";
+import { cn, formatSignedPoints, seasonLabel } from "@/lib/utils";
 
 function StatTile({
   label,
@@ -63,12 +62,8 @@ export default function ProfilePage() {
   const [showRecap, setShowRecap] = useState(true);
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
-  const walletQuery = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
+  const standingQuery = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding });
   const badgesQuery = useQuery({ queryKey: ["badges"], queryFn: fetchBadges });
-  const transactionsQuery = useQuery({
-    queryKey: ["wallet-transactions"],
-    queryFn: fetchWalletTransactions,
-  });
   const leaderboardQuery = useQuery({
     queryKey: ["leaderboard"],
     queryFn: () => fetchLeaderboard(),
@@ -79,7 +74,9 @@ export default function ProfilePage() {
   const profile = profileQuery.data;
   const ownEntry = findLeaderboardEntry(leaderboardQuery.data, profile?.username);
   const title = rankTitle(ownEntry?.rank, leaderboardQuery.data?.length);
-  const weeklyDelta = weeklyWalletDelta(transactionsQuery.data);
+  // Bénéfice net de la semaine de jeu, pas l'écart de solde : le solde
+  // remonte à 1 000 chaque lundi.
+  const weeklyDelta = standingQuery.data?.weekPoints ?? 0;
   const streak = computeWinStreak(betsQuery.data);
   const net = (betsQuery.data ?? []).reduce((sum, b) => sum + netResult(b), 0);
 
@@ -179,11 +176,19 @@ export default function ProfilePage() {
 
       {/* ── Chiffres ────────────────────────────────────────────────── */}
       <div className="stagger-children grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Solde" loading={walletQuery.isLoading}>
-          {walletQuery.isError ? (
+        <StatTile
+          label="Points de classement"
+          loading={standingQuery.isLoading}
+          hint={
+            standingQuery.data?.seasonRank != null
+              ? `#${standingQuery.data.seasonRank} sur ${standingQuery.data.seasonPlayers} cette saison`
+              : "bénéfice net de la saison"
+          }
+        >
+          {standingQuery.isError ? (
             <span className="text-sm text-destructive">Indisponible</span>
           ) : (
-            <CountUp value={walletQuery.data?.balance ?? 0} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
+            <CountUp value={standingQuery.data?.seasonPoints ?? 0} format={(n) => formatSignedPoints(n)} />
           )}
         </StatTile>
         <StatTile label="Réussite" loading={profileQuery.isLoading} hint={`sur ${profile?.totalBets ?? 0} paris`}>

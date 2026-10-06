@@ -55,12 +55,14 @@ export function DashboardHero({
       {/* Signature : tracé de terrain de basket en filigrane, ancré à droite */}
       <CourtWatermark />
 
-      <div className="relative flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+      {/* Compact sur mobile : à 400 px de large, le bandeau d'accueil
+          occupait tout le premier écran sans un seul match à parier. */}
+      <div className="relative flex flex-row items-center justify-between gap-4 p-4 sm:p-6">
         <div>
           {isLoading ? (
             <Skeleton className="h-8 w-56" />
           ) : (
-            <h1 className="font-heading text-2xl font-bold">
+            <h1 className="font-heading text-xl font-bold sm:text-2xl">
               {greetingForNow()}, {username ?? "champion"}
             </h1>
           )}
@@ -93,9 +95,10 @@ export function DashboardHero({
             </div>
           )}
 
+          {/* Masqué sur mobile : l'onglet Matchs de la barre du bas fait la même chose. */}
           <Link
             href="/matches"
-            className={cn(buttonVariants({ variant: "lit" }), "gap-1.5 rounded-full")}
+            className={cn(buttonVariants({ variant: "lit" }), "hidden gap-1.5 rounded-full sm:inline-flex")}
           >
             Voir les matchs
             <ArrowRight className="h-4 w-4" />

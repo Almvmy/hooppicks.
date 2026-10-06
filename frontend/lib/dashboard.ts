@@ -2,8 +2,8 @@ import {
   LeaderboardEntry,
   Match,
   PlacedBet,
-  WalletTransaction,
 } from "@/lib/types";
+import { nextBankrollReset } from "@/lib/utils";
 
 /**
  * Série de victoires en cours : on part du pari le plus récent (les paris
@@ -39,47 +39,31 @@ export function pendingBetsSummary(bets: PlacedBet[] | undefined) {
  * (triées date décroissante côté API) et du solde actuel, pour tracer une
  * mini-courbe de tendance.
  */
-export function buildWalletSeries(
-  transactions: WalletTransaction[] | undefined,
-  currentBalance: number | undefined
-): number[] {
-  if (currentBalance === undefined) return [];
-  if (!transactions || transactions.length === 0) {
-    return [currentBalance, currentBalance];
+/**
+ * La semaine de jeu en cours (depuis lundi 12h GMT) : bénéfice net cumulé
+ * ticket après ticket, dans l'ordre où ils se sont réglés, mises et gains.
+ * Calculé sur les paris et non sur le solde, qui remonte à 1 000 chaque
+ * lundi et rendait la courbe « solde des 7 derniers jours » illisible.
+ */
+export function weekSummary(bets: PlacedBet[] | undefined, now: Date = new Date()) {
+  const weekStart = nextBankrollReset(now).getTime() - 7 * 24 * 60 * 60 * 1000;
+  const thisWeek = (bets ?? []).filter((b) => new Date(b.placedAt).getTime() >= weekStart);
+  const settled = thisWeek
+    .filter((b) => b.status === "won" || b.status === "lost")
+    .sort((a, b) => new Date(a.resolvedAt ?? a.placedAt).getTime() - new Date(b.resolvedAt ?? b.placedAt).getTime());
+
+  const series = [0];
+  for (const b of settled) {
+    series.push(series[series.length - 1] + (b.status === "won" ? b.potentialPayout - b.stake : -b.stake));
   }
+  if (series.length === 1) series.push(0);
 
-  const chronological = [...transactions].reverse(); // plus ancien -> plus récent
-  const totalDelta = transactions.reduce((sum, t) => sum + t.amount, 0);
-  let running = currentBalance - totalDelta;
-
-  const points = [running];
-  for (const t of chronological) {
-    running += t.amount;
-    points.push(running);
-  }
-  return points;
-}
-
-export function weeklyWalletDelta(transactions: WalletTransaction[] | undefined): number {
-  if (!transactions) return 0;
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return transactions
-    .filter((t) => new Date(t.date).getTime() >= weekAgo)
-    .reduce((sum, t) => sum + t.amount, 0);
-}
-
-export function weeklyStakedAndWon(transactions: WalletTransaction[] | undefined) {
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recent = (transactions ?? []).filter(
-    (t) => new Date(t.date).getTime() >= weekAgo
-  );
-  const staked = recent
-    .filter((t) => t.type === "bet_placed")
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-  const won = recent
-    .filter((t) => t.type === "bet_win")
-    .reduce((sum, t) => sum + t.amount, 0);
-  return { staked, won };
+  return {
+    series,
+    net: series[series.length - 1],
+    staked: thisWeek.reduce((sum, b) => sum + b.stake, 0),
+    won: settled.filter((b) => b.status === "won").reduce((sum, b) => sum + b.potentialPayout, 0),
+  };
 }
 
 export interface DashboardSlate {
