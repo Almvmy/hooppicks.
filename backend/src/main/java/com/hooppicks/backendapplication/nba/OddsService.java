@@ -34,6 +34,9 @@ public class OddsService {
     private static final double PRIOR_GAMES = 5.0;
     // Une cote sous 1,00 ferait perdre des points sur un pari gagnant.
     private static final double MIN_ODDS = 1.03;
+    // En présaison, les titulaires jouent peu : l'écart de force réel entre
+    // deux équipes compte à moitié, cotes et écart sont plus serrés.
+    static final double PRESEASON_STRENGTH_FACTOR = 0.5;
 
     private final MatchRepository matchRepository;
 
@@ -48,19 +51,15 @@ public class OddsService {
      * risque de faire bouger une ligne sur laquelle un pari a déjà été posé.
      */
     public void applyOdds(Match match, Team home, Team away) {
-        double homeElo = home.getEloRating();
-        double awayElo = away.getEloRating();
+        double factor = match.getType() == MatchType.PRESEASON ? PRESEASON_STRENGTH_FACTOR : 1.0;
+        double eloDiff = ((home.getEloRating() + HOME_ADVANTAGE) - away.getEloRating()) * factor;
 
-        double probHome = clamp(
-                1.0 / (1.0 + Math.pow(10, (awayElo - (homeElo + HOME_ADVANTAGE)) / 400.0)),
-                0.05, 0.95
-        );
+        double probHome = clamp(1.0 / (1.0 + Math.pow(10, -eloDiff / 400.0)), 0.05, 0.95);
         double probAway = 1.0 - probHome;
 
         match.setMoneylineHome(Math.max(MIN_ODDS, round2(1.0 / (probHome * VIG))));
         match.setMoneylineAway(Math.max(MIN_ODDS, round2(1.0 / (probAway * VIG))));
 
-        double eloDiff = (homeElo + HOME_ADVANTAGE) - awayElo;
         double spread = clamp(-eloDiff / ELO_POINTS_PER_MARGIN_POINT, -20, 20);
         match.setSpreadValue(roundHalf(spread));
         match.setSpreadOddsHome(1.91);

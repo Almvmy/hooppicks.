@@ -50,7 +50,7 @@ export default function LeagueDetailPage({
 
   // La semaine relance la course entre amis chaque lundi, quand l'écart
   // de la saison est devenu trop grand pour être comblé.
-  const [period, setPeriod] = useState<LeaderboardPeriod>("season");
+  const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const leaderboardQuery = useQuery({
     queryKey: ["league-leaderboard", id, period],
     queryFn: () => fetchLeagueLeaderboard(id, period),

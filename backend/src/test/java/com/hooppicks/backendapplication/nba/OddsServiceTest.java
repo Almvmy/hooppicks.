@@ -133,4 +133,18 @@ class OddsServiceTest {
 
         assertThat(match.getMoneylineHome()).isGreaterThanOrEqualTo(1.03);
     }
+
+    @Test
+    void en_presaison_les_cotes_sont_plus_serrees_pour_le_meme_ecart_de_force() {
+        Match regular = new Match();
+        Match preseason = new Match();
+        preseason.setType(com.hooppicks.backendapplication.entity.MatchType.PRESEASON);
+
+        oddsService.applyOdds(regular, teamWithElo(1650), teamWithElo(1350));
+        oddsService.applyOdds(preseason, teamWithElo(1650), teamWithElo(1350));
+
+        assertThat(preseason.getMoneylineHome()).isGreaterThan(regular.getMoneylineHome());
+        assertThat(preseason.getMoneylineAway()).isLessThan(regular.getMoneylineAway());
+        assertThat(Math.abs(preseason.getSpreadValue())).isLessThan(Math.abs(regular.getSpreadValue()));
+    }
 }
