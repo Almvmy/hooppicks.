@@ -114,12 +114,20 @@ public class LeagueController {
     }
 
     @GetMapping("/{id}/leaderboard")
-    public ResponseEntity<?> getLeagueLeaderboard(@PathVariable String id, HttpServletRequest request) {
+    public ResponseEntity<?> getLeagueLeaderboard(@PathVariable String id,
+                                                  @RequestParam(required = false) String period,
+                                                  HttpServletRequest request) {
         String userId = sessionStore.getUserIdFromRequest(request);
         if (userId == null) return ResponseEntity.status(401).build();
 
+        com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod parsed;
         try {
-            List<LeaderboardEntryDto> leaderboard = leagueService.getLeagueLeaderboard(id, userId);
+            parsed = com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod.parse(period);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        try {
+            List<LeaderboardEntryDto> leaderboard = leagueService.getLeagueLeaderboard(id, userId, parsed);
             return ResponseEntity.ok(leaderboard);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(403).body(e.getMessage());

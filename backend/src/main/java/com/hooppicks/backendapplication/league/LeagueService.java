@@ -288,6 +288,15 @@ public class LeagueService {
      * l'appelant n'est pas membre : au contrôleur de traduire ça en 403.
      */
     public List<LeaderboardEntryDto> getLeagueLeaderboard(String leagueId, String requestingUserId) {
+        return getLeagueLeaderboard(leagueId, requestingUserId, com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod.SEASON);
+    }
+
+    /**
+     * Même classement, sur une période : la semaine relance la course entre
+     * amis chaque lundi, quand le classement saison s'est figé.
+     */
+    public List<LeaderboardEntryDto> getLeagueLeaderboard(String leagueId, String requestingUserId,
+                                                          com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod period) {
         if (membershipRepository.findByLeagueIdAndUserId(leagueId, requestingUserId).isEmpty()) {
             throw new IllegalStateException("Tu n'es pas membre de cette ligue.");
         }
@@ -296,7 +305,10 @@ public class LeagueService {
                 .map(m -> m.getUser().getId())
                 .toList();
 
-        return LeaderboardEntryDto.fromRows(betRepository.getLeaderboardRawForUsers(memberIds));
+        java.time.Instant since = period.start(java.time.ZonedDateTime.now(com.hooppicks.backendapplication.bankroll.BankrollService.ZONE));
+        return LeaderboardEntryDto.fromRows(since == null
+                ? betRepository.getLeaderboardRawForUsers(memberIds)
+                : betRepository.getLeaderboardRawForUsersSince(since, memberIds));
     }
 
     @Transactional

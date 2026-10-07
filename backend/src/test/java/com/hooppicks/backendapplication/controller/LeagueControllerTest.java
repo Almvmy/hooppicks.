@@ -100,10 +100,10 @@ class LeagueControllerTest {
     @Test
     void getLeagueLeaderboard_pour_un_non_membre_renvoie_403() {
         HttpServletRequest request = authenticatedRequest("u1");
-        when(leagueService.getLeagueLeaderboard("l1", "u1"))
+        when(leagueService.getLeagueLeaderboard("l1", "u1", com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod.SEASON))
                 .thenThrow(new IllegalStateException("Tu n'es pas membre de cette ligue."));
 
-        ResponseEntity<?> response = controller.getLeagueLeaderboard("l1", request);
+        ResponseEntity<?> response = controller.getLeagueLeaderboard("l1", null, request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(403);
     }

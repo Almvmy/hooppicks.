@@ -73,6 +73,11 @@ public interface BetRepository extends JpaRepository<Bet, String> {
         return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.of(1970, 1, 1, 0, 0), memberIds);
     }
 
+    /** Classement d'une ligue depuis `since` (même règle que getLeaderboardRawSince). */
+    default List<Object[]> getLeaderboardRawForUsersSince(java.time.Instant since, List<String> memberIds) {
+        return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC), memberIds);
+    }
+
     // Les 10 derniers tickets résolus (gagnés/perdus) de chaque joueur, du
     // plus récent au plus ancien : forme récente et série en cours. En SQL
     // natif pour la fonction de fenêtre : une seule requête pour tout le

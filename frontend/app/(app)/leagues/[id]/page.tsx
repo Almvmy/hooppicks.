@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import type { LeaderboardPeriod } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,11 +23,17 @@ import {
   reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
-import { formatRelativeTime, formatSignedPoints } from "@/lib/utils";
+import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 
 // Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
 // libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
 const REACTION_EMOJIS = ["👍", "🔥", "👎"];
+
+const LEAGUE_PERIODS: { value: LeaderboardPeriod; label: string }[] = [
+  { value: "season", label: "Saison" },
+  { value: "month", label: "Ce mois-ci" },
+  { value: "week", label: "Cette semaine" },
+];
 
 export default function LeagueDetailPage({
   params,
@@ -41,9 +48,12 @@ export default function LeagueDetailPage({
   const leaguesQuery = useQuery({ queryKey: ["leagues"], queryFn: fetchMyLeagues });
   const league = leaguesQuery.data?.find((l) => l.id === id);
 
+  // La semaine relance la course entre amis chaque lundi, quand l'écart
+  // de la saison est devenu trop grand pour être comblé.
+  const [period, setPeriod] = useState<LeaderboardPeriod>("season");
   const leaderboardQuery = useQuery({
-    queryKey: ["league-leaderboard", id],
-    queryFn: () => fetchLeagueLeaderboard(id),
+    queryKey: ["league-leaderboard", id, period],
+    queryFn: () => fetchLeagueLeaderboard(id, period),
   });
 
   const membersQuery = useQuery({
@@ -173,11 +183,33 @@ export default function LeagueDetailPage({
 
       <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
         <div className="glass relative overflow-hidden rounded-2xl">
+          <div className="flex gap-2 overflow-x-auto px-4 pt-4" role="group" aria-label="Période du classement">
+            {LEAGUE_PERIODS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                aria-pressed={period === p.value}
+                onClick={() => setPeriod(p.value)}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors",
+                  period === p.value ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
           <LeaderboardTable
             entries={leaderboardQuery.data}
             isLoading={leaderboardQuery.isLoading}
             isError={leaderboardQuery.isError}
-            emptyMessage="Aucun pari résolu dans cette ligue pour l'instant."
+            emptyMessage={
+              period === "week"
+                ? "Aucun ticket réglé dans la ligue cette semaine."
+                : period === "month"
+                  ? "Aucun ticket réglé dans la ligue ce mois-ci."
+                  : "Aucun pari résolu dans cette ligue pour l'instant."
+            }
             currentUsername={profile?.username}
           />
         </div>

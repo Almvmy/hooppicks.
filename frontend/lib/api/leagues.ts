@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import { League, LeagueActivity, LeagueMember, LeaguePreview, LeaderboardEntry } from "@/lib/types";
+import { League, LeagueActivity, LeagueMember, LeaguePreview, LeaderboardEntry, LeaderboardPeriod } from "@/lib/types";
 
 export async function fetchMyLeagues(): Promise<League[]> {
   return apiFetch<League[]>("/leagues");
@@ -43,8 +43,8 @@ export async function joinLeague(inviteCode: string): Promise<League> {
   });
 }
 
-export async function fetchLeagueLeaderboard(id: string): Promise<LeaderboardEntry[]> {
-  return apiFetch<LeaderboardEntry[]>(`/leagues/${id}/leaderboard`);
+export async function fetchLeagueLeaderboard(id: string, period: LeaderboardPeriod = "season"): Promise<LeaderboardEntry[]> {
+  return apiFetch<LeaderboardEntry[]>(`/leagues/${id}/leaderboard?period=${period}`);
 }
 
 export async function leaveLeague(id: string): Promise<void> {
