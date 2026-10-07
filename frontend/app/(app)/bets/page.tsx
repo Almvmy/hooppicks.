@@ -14,6 +14,7 @@ import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-l
 import { LegState, legState, netResult } from "@/lib/bet-legs";
 import { BetSelection, BetStatus, Match, PlacedBet } from "@/lib/types";
 import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
+import { ShareButton } from "@/components/share-button";
 
 const PAGE_SIZE = 8;
 
@@ -166,6 +167,14 @@ function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<str
           )}
           {bet.status === "void" && <span className="text-muted-foreground">Mise rendue</span>}
         </div>
+        {/* Seuls les tickets gagnants se partagent : c'est ce qu'on a envie de montrer. */}
+        {bet.status === "won" && (
+          <ShareButton
+            path={`/t/${bet.id}`}
+            text={`Ticket gagnant sur HoopPicks : +${net.toLocaleString("fr-FR")} pts 🏀`}
+            className="self-end"
+          />
+        )}
       </CardContent>
     </Card>
   );

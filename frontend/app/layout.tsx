@@ -22,6 +22,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  // Adresse absolue des images d'aperçu (liens partagés sur WhatsApp & co.).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://hooppicks.vercel.app"),
   title: {
     default: "HoopPicks - Pronostics NBA",
     template: "%s · HoopPicks",

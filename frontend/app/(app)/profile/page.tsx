@@ -29,6 +29,8 @@ import { rankTitle } from "@/lib/rank-title";
 import { getTeamColor } from "@/lib/team-colors";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { cn, formatSignedPoints, seasonLabel } from "@/lib/utils";
+import { ShareButton } from "@/components/share-button";
+import { ShareImageButton } from "@/components/share-image-button";
 
 function StatTile({
   label,
@@ -268,6 +270,7 @@ export default function ProfilePage() {
               </Button>
             </div>
             {showRecap && profile && (
+              <div className="flex flex-col gap-3">
               <WeeklyRecapCard
                 username={profile.username}
                 weeklyDelta={weeklyDelta}
@@ -277,6 +280,19 @@ export default function ProfilePage() {
                 streak={streak}
                 seasonLabel={`Saison ${seasonLabel()}`}
               />
+                <div className="flex flex-wrap gap-2">
+                  <ShareImageButton
+                    src={`/p/${encodeURIComponent(profile.username)}/carte`}
+                    fileName={`hooppicks-${profile.username}.png`}
+                    text="Ma semaine sur HoopPicks 🏀 Viens me défier !"
+                  />
+                  <ShareButton
+                    path={`/p/${encodeURIComponent(profile.username)}`}
+                    text="Viens me défier sur HoopPicks, les pronostics NBA entre amis 🏀"
+                    label="Partager le lien"
+                  />
+                </div>
+              </div>
             )}
           </div>
 

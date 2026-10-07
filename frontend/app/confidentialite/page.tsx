@@ -65,6 +65,10 @@ export default function PrivacyPage() {
             <strong className="text-foreground">déjà réglés</strong>. Tes tickets en attente restent privés jusqu&apos;à
             leur résultat. Ton adresse e-mail n&apos;est jamais affichée.
           </p>
+          <p>
+            Le classement est public. Quand tu partages ton profil ou un ticket, le lien montre à qui l&apos;ouvre ton
+            pseudo, tes points, ton rang et ta réussite, ou le contenu de ce ticket déjà réglé : rien d&apos;autre.
+          </p>
         </Section>
 
         <Section title="Durée et suppression">

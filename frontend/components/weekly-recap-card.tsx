@@ -1,6 +1,7 @@
 import { LogoSymbol } from "@/app/LogoSymbol";
 
-function headlineFor(streak: number, weeklyDelta: number): string {
+/** Partagée avec l'image générée de la carte (share-card-art), pour qu'elles disent la même chose. */
+export function headlineFor(streak: number, weeklyDelta: number): string {
   if (streak >= 5) return `${streak} pronostics gagnés d'affilée.\nNuit parfaite.`;
   if (streak >= 3) return `${streak} pronostics gagnés d'affilée.\nÇa chauffe.`;
   if (weeklyDelta > 0) return "Une bonne semaine.\nEncore un peu de sauce.";
@@ -77,7 +78,7 @@ export function WeeklyRecapCard({
               {weeklyDelta.toLocaleString("fr-FR")}
             </div>
             <div className="mt-1 font-mono text-[9px] font-medium tracking-wider text-muted-foreground">
-              POINTS (7J)
+              POINTS SEMAINE
             </div>
           </div>
           <div>

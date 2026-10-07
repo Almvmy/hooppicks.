@@ -24,6 +24,7 @@ import { getTeamColor } from "@/lib/team-colors";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { PlacedBet } from "@/lib/types";
 import { cn, formatMonthYear, formatRelativeTime, formatSignedPoints } from "@/lib/utils";
+import { ShareButton } from "@/components/share-button";
 
 function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
@@ -203,12 +204,19 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
             </div>
           )}
           {profile.isMe && (
-            <Link href="/profile" className="w-full lg:w-auto">
-              <Button variant="outline" size="sm">
-                <Pencil className="h-3.5 w-3.5" />
-                Modifier mon profil
-              </Button>
-            </Link>
+            <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+              <Link href="/profile">
+                <Button variant="outline" size="sm">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Modifier mon profil
+                </Button>
+              </Link>
+              <ShareButton
+                path={`/p/${encodeURIComponent(profile.username)}`}
+                text="Viens me défier sur HoopPicks, les pronostics NBA entre amis 🏀"
+                label="Partager mon profil"
+              />
+            </div>
           )}
         </div>
       </div>
