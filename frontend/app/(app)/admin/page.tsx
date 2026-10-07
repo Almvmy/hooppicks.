@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, LayoutDashboard, Megaphone, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Medal, Megaphone, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { AdminSyncPanel } from "@/components/admin/admin-sync-panel";
@@ -12,6 +12,7 @@ import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-pan
 import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
 import { AdminAnnouncements } from "@/components/admin/admin-announcements";
 import { AdminAuditLog } from "@/components/admin/admin-audit-log";
+import { AdminSeasonResults } from "@/components/admin/admin-season-results";
 import { fetchProfile } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const TABS = [
   { value: "paris", label: "Paris", icon: Ticket },
   { value: "utilisateurs", label: "Utilisateurs", icon: Users },
   { value: "annonces", label: "Annonces", icon: Megaphone },
+  { value: "saison", label: "Saison", icon: Medal },
   { value: "journal", label: "Journal", icon: ScrollText },
 ] as const;
 
@@ -92,6 +94,7 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
       {tab === "paris" && <AdminPendingBetsPanel />}
       {tab === "utilisateurs" && <AdminUsersPanel />}
       {tab === "annonces" && <AdminAnnouncements />}
+      {tab === "saison" && <AdminSeasonResults />}
       {tab === "journal" && <AdminAuditLog />}
     </div>
   );

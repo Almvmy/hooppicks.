@@ -76,7 +76,8 @@ class AdminConsoleControllerTest {
     void setUp() {
         controller = new AdminConsoleController(sessionStore, userRepository, matchRepository, betRepository,
                 nbaSyncService, betResolutionService, adminSyncStatus, accountDeletionService, espnRosterService,
-                espnStandingsService, espnPlayerStatsService, auditService, actionsService, overviewService);
+                espnStandingsService, espnPlayerStatsService, auditService, actionsService, overviewService,
+                mock(com.hooppicks.backendapplication.season.SeasonPickService.class));
     }
 
     private HttpServletRequest adminRequest(String adminId) {

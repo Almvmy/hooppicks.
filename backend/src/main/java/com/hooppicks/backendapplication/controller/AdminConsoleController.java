@@ -67,6 +67,7 @@ public class AdminConsoleController {
     private final EspnStandingsService espnStandingsService;
     private final EspnPlayerStatsService espnPlayerStatsService;
     private final AdminAuditService auditService;
+    private final com.hooppicks.backendapplication.season.SeasonPickService seasonPickService;
     private final AdminActionsService actionsService;
     private final AdminOverviewService overviewService;
 
@@ -76,7 +77,9 @@ public class AdminConsoleController {
                                    AdminSyncStatus adminSyncStatus, AccountDeletionService accountDeletionService,
                                    EspnRosterService espnRosterService, EspnStandingsService espnStandingsService,
                                    EspnPlayerStatsService espnPlayerStatsService, AdminAuditService auditService,
-                                   AdminActionsService actionsService, AdminOverviewService overviewService) {
+                                   AdminActionsService actionsService, AdminOverviewService overviewService,
+                                   com.hooppicks.backendapplication.season.SeasonPickService seasonPickService) {
+        this.seasonPickService = seasonPickService;
         this.sessionStore = sessionStore;
         this.userRepository = userRepository;
         this.matchRepository = matchRepository;
@@ -115,6 +118,22 @@ public class AdminConsoleController {
         Access access = access(request);
         if (access.denied() != null) return access.denied();
         return ResponseEntity.ok(overviewService.overview());
+    }
+
+    public record SeasonResultRequest(String question, String team) {}
+
+    // Bonne réponse d'une question de pronostics de saison (champion, finalistes…).
+    @PostMapping("/season-results")
+    public ResponseEntity<?> setSeasonResult(@RequestBody SeasonResultRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        try {
+            seasonPickService.setResult(body.question(), body.team());
+        } catch (com.hooppicks.backendapplication.season.SeasonPickService.SeasonPickException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        auditService.log(access.admin(), "SEASON_RESULT", body.question(), body.team());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/audit")

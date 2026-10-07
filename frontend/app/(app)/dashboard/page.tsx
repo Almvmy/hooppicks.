@@ -25,6 +25,7 @@ import { LeaguesPreview } from "@/components/dashboard/leagues-preview";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
+import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
 import { CountUp } from "@/components/motion/count-up";
 
 export default function DashboardPage() {
@@ -125,6 +126,7 @@ export default function DashboardPage() {
             username={profileQuery.data?.username}
             favoriteTeamName={profileQuery.data?.favoriteTeam}
           />
+          <SeasonPicksNudge />
           <PickOfDay match={slate.spotlight} />
           <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
           <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />

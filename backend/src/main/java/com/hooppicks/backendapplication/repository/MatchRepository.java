@@ -69,4 +69,7 @@ public interface MatchRepository extends JpaRepository<Match, String> {
         ORDER BY m.date DESC
     """)
     List<Match> findRecentFinishedForTeam(Team team, com.hooppicks.backendapplication.entity.MatchType excluded, Pageable pageable);
+
+    // Premier match de saison régulière : fin des pronostics de saison (SeasonPickService).
+    java.util.Optional<Match> findFirstByTypeAndDateAfterOrderByDateAsc(com.hooppicks.backendapplication.entity.MatchType type, java.time.Instant after);
 }
