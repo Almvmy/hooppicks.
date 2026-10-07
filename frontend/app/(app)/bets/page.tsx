@@ -44,6 +44,9 @@ const LEG_DISPLAY: Record<LegState, { icon: React.ElementType; label: string; cl
   upcoming: { icon: Clock, label: "À venir", className: "bg-tint/10 text-muted-foreground" },
   unknown: { icon: Clock, label: "", className: "hidden" },
 };
+// Ticket remboursé (égalité ou annulation par un admin) : ses sélections ne
+// comptent plus, quel que soit le résultat du match.
+const CANCELLED_DISPLAY = { icon: Undo2, label: "Annulée", className: "bg-tint/10 text-muted-foreground" };
 
 function MatchState({ match }: { match: Match | undefined }) {
   if (!match) return null;
@@ -67,13 +70,15 @@ function MatchState({ match }: { match: Match | undefined }) {
 function SelectionRow({
   selection,
   matchesById,
+  cancelled,
 }: {
   selection: BetSelection;
   matchesById: Map<string, Match>;
+  cancelled: boolean;
 }) {
   const match = matchesById.get(selection.matchId);
   const state = legState(selection, match);
-  const display = LEG_DISPLAY[state];
+  const display = cancelled ? CANCELLED_DISPLAY : LEG_DISPLAY[state];
   const Icon = display.icon;
   return (
     <div className="flex items-center justify-between gap-3">
@@ -124,7 +129,7 @@ function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<str
 
         <div className="flex flex-col gap-3">
           {bet.selections.map((s) => (
-            <SelectionRow key={s.id} selection={s} matchesById={matchesById} />
+            <SelectionRow key={s.id} selection={s} matchesById={matchesById} cancelled={bet.status === "void"} />
           ))}
         </div>
 

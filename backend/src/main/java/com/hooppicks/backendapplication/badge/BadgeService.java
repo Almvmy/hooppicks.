@@ -43,10 +43,13 @@ public class BadgeService {
         long wonCount = bets.stream().filter(b -> b.getStatus() == BetStatus.WON).count();
         int winRate = totalResolved == 0 ? 0 : (int) Math.round((wonCount * 100.0) / totalResolved);
 
-        int winStreak = computeWinStreak(bets);
+        // Meilleure série atteinte, pas la série en cours : un badge débloqué
+        // ne doit pas se reverrouiller à la première défaite.
+        int bestStreak = computeBestWinStreak(bets);
         boolean hasParlay = bets.stream().anyMatch(b -> b.getSelections().size() >= PARLAY_MIN_SELECTIONS);
         boolean hasBigWin = bets.stream()
-                .anyMatch(b -> b.getStatus() == BetStatus.WON && b.getPotentialPayout() >= BIG_WIN_THRESHOLD);
+                // Bénéfice, pas gain brut : miser 500 sur une cote à 1,03 suffisait.
+                .anyMatch(b -> b.getStatus() == BetStatus.WON && b.getPotentialPayout() - b.getStake() >= BIG_WIN_THRESHOLD);
         int totalStaked = bets.stream().mapToInt(Bet::getStake).sum();
 
         List<BadgeDto> badges = new ArrayList<>();
@@ -57,16 +60,16 @@ public class BadgeService {
         badges.add(new BadgeDto("fifty_bets", "Vétéran",
                 "Place 50 paris au total.", totalPlaced >= 50, "medal"));
         badges.add(new BadgeDto("hot_streak_3", "Main chaude",
-                "Gagne 3 paris d'affilée.", winStreak >= 3, "flame"));
+                "Gagne 3 paris d'affilée.", bestStreak >= 3, "flame"));
         badges.add(new BadgeDto("hot_streak_5", "Sur un nuage",
-                "Gagne 5 paris d'affilée.", winStreak >= 5, "cloud"));
+                "Gagne 5 paris d'affilée.", bestStreak >= 5, "cloud"));
         badges.add(new BadgeDto("sharpshooter", "Sniper",
                 "Termine au moins 10 paris avec 60% de réussite.",
                 totalResolved >= SHARPSHOOTER_MIN_BETS && winRate >= SHARPSHOOTER_MIN_WIN_RATE, "target"));
         badges.add(new BadgeDto("parlay_master", "Roi du multiple",
                 "Combine au moins 3 sélections dans un seul ticket.", hasParlay, "crown"));
         badges.add(new BadgeDto("big_win", "Gros coup",
-                "Remporte un ticket rapportant au moins 500 pts.", hasBigWin, "zap"));
+                "Remporte un ticket avec au moins 500 pts de bénéfice.", hasBigWin, "zap"));
         badges.add(new BadgeDto("grinder", "Gros joueur",
                 "Mise un total de 2000 pts sur l'ensemble de tes tickets.",
                 totalStaked >= GRINDER_STAKE_THRESHOLD, "coins"));
@@ -86,6 +89,16 @@ public class BadgeService {
      * pour l'afficher en direct sur le dashboard (cf. AuthController) : un
      * badge est un simple booléen "débloqué", pas le compteur vivant.
      */
+    /** Plus longue série de tickets gagnés d'affilée (remboursés et en attente ignorés). */
+    int computeBestWinStreak(List<Bet> betsOrderedMostRecentFirst) {
+        int best = 0, current = 0;
+        for (Bet bet : betsOrderedMostRecentFirst) {
+            if (bet.getStatus() == BetStatus.WON) best = Math.max(best, ++current);
+            else if (bet.getStatus() == BetStatus.LOST) current = 0;
+        }
+        return best;
+    }
+
     public int computeWinStreak(List<Bet> betsOrderedMostRecentFirst) {
         int streak = 0;
         for (Bet bet : betsOrderedMostRecentFirst) {
