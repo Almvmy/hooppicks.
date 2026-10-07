@@ -35,12 +35,14 @@ public record PublicProfileDto(
         List<PlacedBetDto> recentTickets,
         PlacedBetDto bestTicket,
         List<String> commonLeagues,
-        boolean isMe
+        boolean isMe,
+        com.hooppicks.backendapplication.palmares.PalmaresService.Palmares palmares
 ) {
     public record Extras(String memberSince, long seasonPoints, Integer seasonRank, int seasonPlayers,
                          long weekPoints, Integer weekRank, int weekPlayers, int currentStreak, int bestStreak,
                          List<PlacedBetDto> recentTickets, PlacedBetDto bestTicket,
-                         List<String> commonLeagues, boolean isMe) {}
+                         List<String> commonLeagues, boolean isMe,
+                         com.hooppicks.backendapplication.palmares.PalmaresService.Palmares palmares) {}
 
     public static PublicProfileDto from(User user, int winRate, int totalBets, List<BadgeDto> badges, Extras x) {
         return new PublicProfileDto(
@@ -55,7 +57,7 @@ public record PublicProfileDto(
                 badges,
                 x.memberSince(), x.seasonPoints(), x.seasonRank(), x.seasonPlayers(),
                 x.weekPoints(), x.weekRank(), x.weekPlayers(), x.currentStreak(), x.bestStreak(),
-                x.recentTickets(), x.bestTicket(), x.commonLeagues(), x.isMe()
+                x.recentTickets(), x.bestTicket(), x.commonLeagues(), x.isMe(), x.palmares()
         );
     }
 }

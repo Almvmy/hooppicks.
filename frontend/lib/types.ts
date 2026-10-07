@@ -407,6 +407,7 @@ export interface PublicProfile {
   bestTicket: PlacedBet | null;
   commonLeagues: string[];
   isMe: boolean;
+  palmares: Palmares;
 }
 export type DuelStatus = "pending" | "accepted" | "declined" | "cancelled" | "expired" | "finished";
 
@@ -426,4 +427,12 @@ export interface Duel {
   opponentPoints: number | null;
   result: "won" | "lost" | "tie" | null;
   createdAt: string;
+}
+
+/** Trophées gardés à vie (PalmaresService). */
+export interface Palmares {
+  weeklyTitles: number;
+  leagueTitles: { leagueName: string; count: number }[];
+  duelWins: number;
+  bestWeek: number | null;
 }

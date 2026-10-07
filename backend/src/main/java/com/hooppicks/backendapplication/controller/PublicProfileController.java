@@ -39,13 +39,16 @@ public class PublicProfileController {
     private final FavoriteTeamService favoriteTeamService;
     private final LeaderboardService leaderboardService;
     private final LeagueMembershipRepository membershipRepository;
+    private final com.hooppicks.backendapplication.palmares.PalmaresService palmaresService;
 
     private static final int RECENT_TICKETS = 10;
 
     public PublicProfileController(UserRepository userRepository, BetRepository betRepository,
                                     BadgeService badgeService, SessionStore sessionStore,
                                     FavoriteTeamService favoriteTeamService, LeaderboardService leaderboardService,
-                                    LeagueMembershipRepository membershipRepository) {
+                                    LeagueMembershipRepository membershipRepository,
+                                    com.hooppicks.backendapplication.palmares.PalmaresService palmaresService) {
+        this.palmaresService = palmaresService;
         this.leaderboardService = leaderboardService;
         this.membershipRepository = membershipRepository;
         this.userRepository = userRepository;
@@ -95,7 +98,7 @@ public class PublicProfileController {
                 standing.weekPoints(), standing.weekRank(), standing.weekPlayers(),
                 badgeService.computeWinStreak(bets), badgeService.computeBestWinStreak(bets),
                 settled.stream().limit(RECENT_TICKETS).map(PlacedBetDto::from).toList(),
-                best, common, isMe);
+                best, common, isMe, palmaresService.of(user.getId()));
 
         return ResponseEntity.ok(PublicProfileDto.from(user, winRate, (int) totalBets, badgeService.computeBadges(bets,
                 favoriteTeamService.badgeFacts(user.getFavoriteTeam(), bets)), extras));

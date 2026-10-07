@@ -31,6 +31,8 @@ import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-team
 import { cn, formatSignedPoints, seasonLabel } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
 import { ShareImageButton } from "@/components/share-image-button";
+import { PalmaresCard } from "@/components/palmares-card";
+import { fetchMyPalmares } from "@/lib/api/palmares";
 
 function StatTile({
   label,
@@ -66,6 +68,7 @@ export default function ProfilePage() {
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
   const standingQuery = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding });
   const badgesQuery = useQuery({ queryKey: ["badges"], queryFn: fetchBadges });
+  const palmaresQuery = useQuery({ queryKey: ["palmares", "me"], queryFn: fetchMyPalmares });
   const leaderboardQuery = useQuery({
     queryKey: ["leaderboard"],
     queryFn: () => fetchLeaderboard(),
@@ -212,6 +215,8 @@ export default function ProfilePage() {
           </span>
         </StatTile>
       </div>
+
+      <PalmaresCard palmares={palmaresQuery.data} isMe />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         {/* ── Colonne principale : jeu ──────────────────────────────── */}

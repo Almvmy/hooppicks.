@@ -25,6 +25,7 @@ import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-team
 import { PlacedBet } from "@/lib/types";
 import { cn, formatMonthYear, formatRelativeTime, formatSignedPoints } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
+import { PalmaresCard } from "@/components/palmares-card";
 
 function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
@@ -253,6 +254,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
           hint={`record : ${profile.bestStreak}`}
         />
       </div>
+
+      <PalmaresCard palmares={profile.palmares} isMe={profile.isMe} />
 
       {/* ── Face-à-face de la semaine et ligues en commun ──────────────── */}
       {!profile.isMe && (mine || profile.commonLeagues.length > 0) && (

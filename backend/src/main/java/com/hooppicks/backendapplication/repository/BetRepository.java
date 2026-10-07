@@ -89,6 +89,32 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     List<Object[]> getWeekScores(java.time.LocalDateTime week, List<String> userIds);
 
+    /** Points de tous les joueurs ayant un ticket réglé cette semaine-là (palmarès). */
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+        SELECT b.user_id,
+               CAST(GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
+        FROM bet b
+        WHERE b.status IN ('WON', 'LOST')
+          AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
+        GROUP BY b.user_id
+    """)
+    List<Object[]> getAllWeekScores(java.time.LocalDateTime week);
+
+    /** Semaines de jeu (lundi à minuit) ayant au moins un ticket réglé. */
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+        SELECT DISTINCT date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
+        FROM bet b WHERE b.status IN ('WON', 'LOST')
+    """)
+    List<Object> findSettledWeeks();
+
+    /** Tickets encore en attente posés pendant cette période, tous joueurs. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COUNT(b) FROM Bet b
+        WHERE b.status = com.hooppicks.backendapplication.entity.BetStatus.PENDING
+          AND b.placedAt >= :from AND b.placedAt < :to
+    """)
+    long countAllPendingPlacedBetween(java.time.Instant from, java.time.Instant to);
+
     @org.springframework.data.jpa.repository.Query("""
         SELECT COUNT(b) FROM Bet b
         WHERE b.user.id IN :userIds AND b.status = com.hooppicks.backendapplication.entity.BetStatus.PENDING

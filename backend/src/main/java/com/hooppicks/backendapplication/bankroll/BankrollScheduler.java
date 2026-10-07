@@ -25,10 +25,13 @@ public class BankrollScheduler {
     private final BankrollService bankrollService;
     private final NbaSyncService nbaSyncService;
     private final com.hooppicks.backendapplication.duel.DuelService duelService;
+    private final com.hooppicks.backendapplication.palmares.PalmaresService palmaresService;
 
     public BankrollScheduler(BankrollService bankrollService, NbaSyncService nbaSyncService,
-                             com.hooppicks.backendapplication.duel.DuelService duelService) {
+                             com.hooppicks.backendapplication.duel.DuelService duelService,
+                             com.hooppicks.backendapplication.palmares.PalmaresService palmaresService) {
         this.duelService = duelService;
+        this.palmaresService = palmaresService;
         this.bankrollService = bankrollService;
         this.nbaSyncService = nbaSyncService;
     }
@@ -41,6 +44,11 @@ public class BankrollScheduler {
             duelService.settleEndedWeeks();
         } catch (Exception e) {
             log.error("Clôture des duels en échec", e);
+        }
+        try {
+            palmaresService.recordEndedWeeks();
+        } catch (Exception e) {
+            log.error("Attribution du palmarès en échec", e);
         }
         try {
             if (!bankrollService.rollOverNeeded()) return;
