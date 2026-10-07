@@ -20,6 +20,31 @@ public class EloService {
      * passer à FINISHED" dans NbaSyncService) sous peine de fausser les
      * notes en les appliquant plusieurs fois au même résultat.
      */
+    // Part du bilan de la saison passée gardée d'une saison à l'autre : le
+    // reste revient vers la moyenne (effectifs qui changent), comme les
+    // modèles Elo NBA publics.
+    static final double CARRY_OVER = 0.75;
+    // Bilan minimum pour être pris en compte : une saison quasi complète.
+    private static final int MIN_GAMES = 60;
+
+    /**
+     * Elo de départ tiré du bilan de la saison passée (importé d'ESPN), une
+     * seule fois par équipe. Sans ça, les 30 équipes partaient à 1500 et
+     * presque tous les matchs avaient exactement les mêmes cotes. Le
+     * décalage s'ajoute à l'Elo actuel : les résultats déjà comptés restent.
+     * Renvoie true si l'équipe a été amorcée.
+     */
+    public boolean seedFromRecord(Team team) {
+        if (Boolean.TRUE.equals(team.getEloSeeded())) return false;
+        Integer w = team.getWins(), l = team.getLosses();
+        if (w == null || l == null || w + l < MIN_GAMES) return false;
+        double p = Math.min(0.85, Math.max(0.15, (double) w / (w + l)));
+        double offset = 400 * Math.log10(p / (1 - p)) * CARRY_OVER;
+        team.setEloRating(team.getEloRating() + offset);
+        team.setEloSeeded(true);
+        return true;
+    }
+
     public void applyResult(Team home, Team away, int homeScore, int awayScore) {
         double homeElo = home.getEloRating();
         double awayElo = away.getEloRating();

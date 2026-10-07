@@ -50,6 +50,8 @@ class BetControllerTest {
     @BeforeEach
     void setUp() {
         controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository, bankrollService);
+        // Semaine de jeu commencée hier : elle finit dans 6 jours.
+        lenient().when(bankrollService.currentWeekStart()).thenReturn(java.time.Instant.now().minus(java.time.Duration.ofDays(1)));
     }
 
     private HttpServletRequest authenticatedRequest(String userId) {
@@ -69,6 +71,7 @@ class BetControllerTest {
     private Team team(String name) {
         Team t = new Team();
         t.setName(name);
+        t.setAbbreviation(name.substring(0, 3).toUpperCase());
         return t;
     }
 
@@ -202,5 +205,54 @@ class BetControllerTest {
 
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         verifyNoInteractions(betRepository, transactionRepository);
+    }
+
+    @Test
+    void pari_refuse_sur_un_match_d_une_semaine_de_jeu_suivante() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", 100);
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user));
+        Match nextWeek = scheduledMatch("m1");
+        nextWeek.setDate(java.time.Instant.now().plus(java.time.Duration.ofDays(8)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(nextWeek));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(moneylineHome("m1")), 10), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(user.getWalletBalance()).isEqualTo(100);
+        verifyNoInteractions(betRepository);
+    }
+
+    @Test
+    void les_libelles_du_ticket_viennent_du_match_pas_du_client() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 100)));
+        Match match = scheduledMatch("m1");
+        match.setSpreadValue(-3.5);
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+
+        PlaceBetRequest body = new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "x", "spread", "away", "n'importe quoi", 9.9)), 10);
+        ResponseEntity<?> response = controller.placeBet(body, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        var captor = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(captor.capture());
+        var selection = captor.getValue().getSelections().get(0);
+        assertThat(selection.getMatchLabel()).isEqualTo("Celtics vs Lakers");
+        assertThat(selection.getLabel()).isEqualTo("CEL +3,5");
+    }
+
+    @Test
+    void une_selection_inconnue_est_refusee() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 100)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
+
+        PlaceBetRequest body = new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "", "moneyline", "draw", "", 1.0)), 10);
+
+        assertThat(controller.placeBet(body, request).getStatusCode().value()).isEqualTo(400);
+        verifyNoInteractions(betRepository);
     }
 }

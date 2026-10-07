@@ -28,9 +28,27 @@ public class EspnStandingsService {
     private final EspnStatsClient espnStatsClient;
     private final TeamRepository teamRepository;
 
-    public EspnStandingsService(EspnStatsClient espnStatsClient, TeamRepository teamRepository) {
+    public EspnStandingsService(EspnStatsClient espnStatsClient, TeamRepository teamRepository,
+                                com.hooppicks.backendapplication.nba.EloService eloService) {
+        this.eloService = eloService;
         this.espnStatsClient = espnStatsClient;
         this.teamRepository = teamRepository;
+    }
+
+    private final com.hooppicks.backendapplication.nba.EloService eloService;
+
+    /** Amorce l'Elo des équipes dont le bilan est déjà en base (sans appel ESPN). */
+    @Transactional
+    public int seedEloFromStoredRecords() {
+        int seeded = 0;
+        for (Team team : teamRepository.findAll()) {
+            if (eloService.seedFromRecord(team)) {
+                teamRepository.save(team);
+                seeded++;
+            }
+        }
+        if (seeded > 0) log.info("Elo de départ amorcé pour {} équipe(s) à partir de leur bilan", seeded);
+        return seeded;
     }
 
     @Scheduled(cron = "0 5 6 * * *")
@@ -56,6 +74,9 @@ public class EspnStandingsService {
             team.setConferenceSeed(row.conferenceSeed());
             team.setGamesBehind(row.gamesBehind());
             team.setLogoUrl(row.logoUrl());
+            // Avant le premier match de la saison, ESPN renvoie encore le bilan
+            // de la saison passée : c'est lui qui sert d'Elo de départ.
+            eloService.seedFromRecord(team);
             teamRepository.save(team);
             updated++;
         }

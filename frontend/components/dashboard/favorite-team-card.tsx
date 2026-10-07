@@ -18,7 +18,7 @@ import { rankFanTeams } from "@/lib/fan-teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { useFavoriteTeam, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { FavoriteTeamStats, LeaderboardEntry, Match, RosterPlayer, TeamRank } from "@/lib/types";
-import { cn, formatMatchTime, getDayLabel, isBettable, winChances } from "@/lib/utils";
+import { bettingClosedReason, cn, formatMatchTime, getDayLabel, isBettable, winChances } from "@/lib/utils";
 
 function zoneOf(seed: number | null): { label: string; className: string } | null {
   if (seed === null) return null;
@@ -90,7 +90,9 @@ function NextMatch({ match, team }: { match: Match | undefined; team: TeamRank }
           })}
         </div>
       ) : (
-        <p className="text-xs font-semibold text-live">En cours : paris fermés</p>
+        <p className={cn("text-xs first-letter:uppercase", match.status === "live" ? "font-semibold text-live" : "text-muted-foreground")}>
+          {bettingClosedReason(match)}
+        </p>
       )}
     </div>
   );

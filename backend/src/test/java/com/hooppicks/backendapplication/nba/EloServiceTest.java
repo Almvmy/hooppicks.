@@ -10,65 +10,41 @@ class EloServiceTest {
 
     private final EloService eloService = new EloService();
 
-    private Team teamWithElo(double elo) {
-        Team team = new Team();
-        team.setEloRating(elo);
-        return team;
+    private Team team(int wins, int losses, double elo) {
+        Team t = new Team();
+        t.setWins(wins);
+        t.setLosses(losses);
+        t.setEloRating(elo);
+        return t;
     }
 
     @Test
-    void egalite_de_force_victoire_a_domicile_rapporte_la_moitie_du_facteur_k() {
-        Team home = teamWithElo(1500);
-        Team away = teamWithElo(1500);
+    void un_bon_bilan_releve_l_elo_un_mauvais_le_baisse() {
+        Team strong = team(56, 26, 1500);
+        Team weak = team(20, 62, 1500);
 
-        eloService.applyResult(home, away, 100, 90);
+        assertThat(eloService.seedFromRecord(strong)).isTrue();
+        assertThat(eloService.seedFromRecord(weak)).isTrue();
 
-        // Elo égaux -> probabilité attendue 50%, donc gain = K * (1 - 0.5) = 10
-        assertThat(home.getEloRating()).isCloseTo(1510.0, within(0.01));
-        assertThat(away.getEloRating()).isCloseTo(1490.0, within(0.01));
+        // 56-26 : ~+100 ; 20-62 : ~-148 (75 % du bilan gardé).
+        assertThat(strong.getEloRating()).isCloseTo(1600, within(5.0));
+        assertThat(weak.getEloRating()).isCloseTo(1352, within(5.0));
     }
 
     @Test
-    void le_gain_et_la_perte_sont_toujours_symetriques() {
-        Team home = teamWithElo(1620);
-        Team away = teamWithElo(1400);
-        double homeBefore = home.getEloRating();
-        double awayBefore = away.getEloRating();
-
-        eloService.applyResult(home, away, 88, 102);
-
-        double homeDelta = home.getEloRating() - homeBefore;
-        double awayDelta = away.getEloRating() - awayBefore;
-        assertThat(homeDelta).isCloseTo(-awayDelta, within(0.0001));
+    void l_amorcage_ne_se_fait_qu_une_fois_et_garde_les_resultats_deja_comptes() {
+        Team t = team(41, 41, 1508);
+        eloService.seedFromRecord(t);
+        assertThat(t.getEloRating()).isCloseTo(1508, within(0.01)); // bilan à 50 % : aucun décalage
+        t.setWins(60);
+        assertThat(eloService.seedFromRecord(t)).isFalse();
+        assertThat(t.getEloRating()).isCloseTo(1508, within(0.01));
     }
 
     @Test
-    void une_victoire_surprise_de_l_outsider_rapporte_plus_qu_une_victoire_attendue() {
-        Team favorite = teamWithElo(1700);
-        Team outsider = teamWithElo(1300);
-
-        // Cas 1 : le favori gagne, comme attendu.
-        Team favoriteCopy = teamWithElo(1700);
-        Team outsiderCopy = teamWithElo(1300);
-        eloService.applyResult(favoriteCopy, outsiderCopy, 110, 90);
-        double favoriteGainAttendu = favoriteCopy.getEloRating() - 1700;
-
-        // Cas 2 : l'outsider cause l'exploit (gagne à l'extérieur).
-        eloService.applyResult(favorite, outsider, 90, 110);
-        double outsiderGainSurprise = outsider.getEloRating() - 1300;
-
-        assertThat(outsiderGainSurprise).isGreaterThan(favoriteGainAttendu);
-    }
-
-    @Test
-    void une_defaite_du_favori_lui_coute_plus_cher_qu_une_defaite_de_l_outsider() {
-        Team favorite = teamWithElo(1700);
-        Team outsider = teamWithElo(1300);
-        double favoriteBefore = favorite.getEloRating();
-
-        eloService.applyResult(favorite, outsider, 90, 110);
-
-        double favoriteLoss = favoriteBefore - favorite.getEloRating();
-        assertThat(favoriteLoss).isGreaterThan(10.0); // plus que le cas "force égale"
+    void un_bilan_trop_court_n_amorce_rien() {
+        Team t = team(3, 1, 1500);
+        assertThat(eloService.seedFromRecord(t)).isFalse();
+        assertThat(t.getEloSeeded()).isNull();
     }
 }

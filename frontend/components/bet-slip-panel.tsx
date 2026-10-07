@@ -6,7 +6,7 @@ import { ChevronDown, X, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useBetSlip } from "@/components/bet-slip-provider";
+import { MAX_SELECTIONS, MIN_STAKE, useBetSlip } from "@/components/bet-slip-provider";
 import { fetchWallet } from "@/lib/api/wallet";
 import { placeBet } from "@/lib/api/bets";
 import type { BetSelection } from "@/lib/types";
@@ -45,15 +45,19 @@ export function BetSlipPanel() {
       queryClient.invalidateQueries({ queryKey: ["bets"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
     },
-    onError: () => {
-      toast.error("Impossible de valider le ticket. Réessaie.");
+    onError: (error) => {
+      // Le serveur explique le refus en clair (match commencé, solde…) :
+      // on l'affiche plutôt qu'un message générique.
+      const message = error instanceof Error ? error.message : "";
+      const readable = message && !message.startsWith("{") && !message.startsWith("Erreur API");
+      toast.error(readable ? message : "Impossible de valider le ticket. Réessaie.");
     },
   });
 
   if (selections.length === 0) return null;
 
   const balance = wallet?.balance ?? 0;
-  const isStakeValid = stake > 0 && stake <= balance;
+  const isStakeValid = stake >= MIN_STAKE && stake <= balance;
 
   function handleSubmit() {
     if (!isStakeValid) return;
@@ -98,7 +102,8 @@ export function BetSlipPanel() {
         <div className="flex items-center justify-between px-4 py-3 shadow-[inset_0_-1px_0_var(--hairline)]">
           <div className="flex items-center gap-2 font-heading font-bold">
             <TicketIcon className="h-4 w-4 text-primary" />
-            Ticket ({selections.length})
+            Ticket ({selections.length}
+            <span className="font-normal text-muted-foreground">/{MAX_SELECTIONS}</span>)
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setExpanded(false)} aria-label="Réduire le ticket" className="md:hidden">
@@ -141,8 +146,8 @@ export function BetSlipPanel() {
 
           <Input
             type="number"
-            min={1}
-            placeholder="Mise en points"
+            min={MIN_STAKE}
+            placeholder={`Mise en points (${MIN_STAKE} minimum)`}
             value={stake || ""}
             onChange={(e) => setStake(Number(e.target.value))}
           />
@@ -157,6 +162,7 @@ export function BetSlipPanel() {
           {/* Le solde vit ici plutôt qu'en haut de l'écran : c'est au moment de
               miser qu'on en a besoin. En haut, les points de classement. */}
           <p className={cn("text-xs", stake > balance ? "text-destructive" : "text-muted-foreground")}>
+            {stake > 0 && stake < MIN_STAKE && <span className="block text-destructive">Mise minimum : {MIN_STAKE} pts.</span>}
             {stake > balance ? "Solde insuffisant : " : "Solde de la semaine : "}
             <span className="font-mono font-semibold">{balance.toLocaleString("fr-FR")} pts</span>
             {" "}· repart à {WEEKLY_BANKROLL.toLocaleString("fr-FR")} {formatBankrollReset()}

@@ -26,7 +26,7 @@ class EspnStandingsServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EspnStandingsService(espnStatsClient, teamRepository);
+        service = new EspnStandingsService(espnStatsClient, teamRepository, new com.hooppicks.backendapplication.nba.EloService());
     }
 
     private Team team(String abbreviation) {

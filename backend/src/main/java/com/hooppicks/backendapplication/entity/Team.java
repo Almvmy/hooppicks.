@@ -37,6 +37,11 @@ public class Team {
     @Column(columnDefinition = "double precision default 1500.0")
     private double eloRating = 1500.0;
 
+    // Elo de départ déjà tiré du bilan de la saison précédente (EloService
+    // .seedFromRecord) : une seule fois, sinon chaque synchro le rajouterait.
+    // Boolean nullable : colonne ajoutée à une table déjà remplie.
+    private Boolean eloSeeded;
+
     // Vrai classement (victoires/défaites officielles), importé depuis ESPN
     // (cf. EspnStandingsService) : purement informatif, distinct de l'Elo qui
     // reste la seule donnée utilisée pour le calcul des cotes (cf. OddsService).

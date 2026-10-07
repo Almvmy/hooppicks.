@@ -161,7 +161,28 @@ export function formatSignedPoints(points: number, unit = true): string {
  * refuse de toute façon un pari après l'heure (BetController).
  */
 export function isBettable(match: { status: string; date: string }, now: number = Date.now()): boolean {
-  return match.status === "scheduled" && new Date(match.date).getTime() > now;
+  const kickoff = new Date(match.date).getTime();
+  // Seulement les matchs de la semaine de jeu en cours : un pari compte pour
+  // la semaine où il est posé, parier sur un match d'une semaine suivante
+  // ferait bouger le score d'une semaine déjà close (BetController).
+  return match.status === "scheduled" && kickoff > now && kickoff < nextBankrollReset(new Date(now)).getTime();
+}
+
+/** Match d'une semaine de jeu suivante : paris pas encore ouverts. */
+export function opensLater(match: { status: string; date: string }, now: number = Date.now()): boolean {
+  return match.status === "scheduled" && new Date(match.date).getTime() >= nextBankrollReset(new Date(now)).getTime();
+}
+
+/** Pourquoi on ne peut pas parier sur ce match : « match terminé », « ouverts lundi 12 oct. à 12h »… */
+export function bettingClosedReason(match: { status: string; date: string }, now: number = Date.now()): string {
+  if (match.status === "finished") return "paris fermés : match terminé";
+  if (match.status === "live") return "paris fermés : match en cours";
+  if (opensLater(match, now)) {
+    // Ouverture = début de la semaine de jeu du match (le lundi 12h qui le précède).
+    const opening = new Date(nextBankrollReset(new Date(match.date)).getTime() - 7 * 24 * 3_600_000);
+    return `paris ouverts le lundi ${formatMatchDate(opening)} à 12h GMT`;
+  }
+  return "paris fermés : coup d'envoi passé";
 }
 
 /**

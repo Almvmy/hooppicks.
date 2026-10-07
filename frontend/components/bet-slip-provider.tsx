@@ -1,7 +1,12 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { BetSelection } from "@/lib/types";
+
+// Mêmes limites que le serveur (PlaceBetRequest).
+export const MAX_SELECTIONS = 8;
+export const MIN_STAKE = 10;
 
 interface BetSlipContextValue {
   selections: BetSelection[];
@@ -25,6 +30,10 @@ export function BetSlipProvider({ children }: { children: React.ReactNode }) {
       if (exists) return prev.filter((s) => s.id !== selection.id);
       // Une seule sélection active par match, pour éviter les combinaisons contradictoires (ex: pari sur les deux équipes gagnantes du même match).
       const withoutSameMatch = prev.filter((s) => s.matchId !== selection.matchId);
+      if (withoutSameMatch.length >= MAX_SELECTIONS) {
+        toast.error(`${MAX_SELECTIONS} sélections au maximum par ticket.`, { id: "slip-full" });
+        return prev;
+      }
       return [...withoutSameMatch, selection];
     });
   }

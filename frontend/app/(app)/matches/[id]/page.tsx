@@ -13,7 +13,7 @@ import { MatchBoxScore } from "@/components/match-box-score";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
 import { TeamNews } from "@/components/news/team-news";
-import { formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
+import { bettingClosedReason, formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
@@ -100,8 +100,8 @@ export default function MatchDetailPage({
       )}
 
       {match && match.status === "scheduled" && !isBettable(match) && (
-        <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground">
-          Paris fermés : le coup d&apos;envoi est passé.
+        <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground first-letter:uppercase">
+          {bettingClosedReason(match)}.
         </p>
       )}
 

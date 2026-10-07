@@ -103,8 +103,21 @@ public class BetController {
             boolean started = match.getDate() != null && !match.getDate().isAfter(java.time.Instant.now());
             if (match.getStatus() != MatchStatus.SCHEDULED || started) {
                 return ResponseEntity.badRequest().body(
-                        "Ce match n'est plus ouvert aux paris : " + match.getHomeTeam().getName() + " vs " + match.getAwayTeam().getName()
+                        "Ce match n'est plus ouvert aux paris : " + matchLabel(match)
                 );
+            }
+            // Seulement les matchs de la semaine de jeu en cours : un pari compte
+            // pour la semaine où il est posé. Sinon on misait le solde de fin de
+            // semaine (remis à 1000 lundi de toute façon) sur des matchs des
+            // semaines suivantes, et le score d'une semaine close bougeait encore.
+            java.time.Instant weekEnd = bankrollService.currentWeekStart().plus(java.time.Duration.ofDays(7));
+            if (match.getDate() != null && !match.getDate().isBefore(weekEnd)) {
+                return ResponseEntity.badRequest().body(
+                        "Ce match ouvre aux paris lundi à 12h GMT, avec la semaine de jeu suivante : " + matchLabel(match)
+                );
+            }
+            if (!isKnownSelection(s.market(), s.outcome())) {
+                return ResponseEntity.badRequest().body("Sélection inconnue.");
             }
             matchesById.put(s.matchId(), match);
         }
@@ -112,7 +125,7 @@ public class BetController {
         double totalOdds = request.selections().stream()
                 .mapToDouble(s -> resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()))
                 .reduce(1, (a, b) -> a * b);
-        int potentialPayout = (int) Math.round(request.stake() * totalOdds);
+        int potentialPayout = (int) Math.min(Integer.MAX_VALUE, Math.round(request.stake() * totalOdds));
 
         Bet bet = new Bet();
         bet.setUser(user);
@@ -125,10 +138,13 @@ public class BetController {
             BetSelection selection = new BetSelection();
             selection.setBet(bet);
             selection.setMatchId(s.matchId());
-            selection.setMatchLabel(s.matchLabel());
+            // Libellés construits ici, jamais repris du client : ils sont
+            // affichés dans l'historique et les notifications.
+            Match m = matchesById.get(s.matchId());
+            selection.setMatchLabel(matchLabel(m));
             selection.setMarket(s.market());
             selection.setOutcome(s.outcome());
-            selection.setLabel(s.label());
+            selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             selection.setOdds(resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()));
             bet.getSelections().add(selection);
         });
@@ -147,6 +163,38 @@ public class BetController {
         transactionRepository.save(tx);
 
         return ResponseEntity.ok(PlacedBetDto.from(bet));
+    }
+
+    private static boolean isKnownSelection(String market, String outcome) {
+        return switch (market == null ? "" : market) {
+            case "moneyline", "spread" -> "home".equals(outcome) || "away".equals(outcome);
+            case "total" -> "over".equals(outcome) || "under".equals(outcome);
+            default -> false;
+        };
+    }
+
+    /** « Wizards vs Knicks » : extérieur puis domicile, comme dans l'app. */
+    static String matchLabel(Match match) {
+        return match.getAwayTeam().getName() + " vs " + match.getHomeTeam().getName();
+    }
+
+    /** « LAL (V) », « WAS +3,5 », « Plus de 222,5 » (spreadValue : ligne de l'équipe à domicile). */
+    static String selectionLabel(Match match, String market, String outcome) {
+        boolean home = "home".equals(outcome);
+        String abbr = home ? match.getHomeTeam().getAbbreviation() : match.getAwayTeam().getAbbreviation();
+        return switch (market) {
+            case "moneyline" -> abbr + " (V)";
+            case "spread" -> {
+                double line = home ? match.getSpreadValue() : -match.getSpreadValue();
+                yield abbr + " " + (line > 0 ? "+" : line < 0 ? "-" : "") + formatLine(Math.abs(line));
+            }
+            case "total" -> ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(match.getTotalValue());
+            default -> throw new IllegalArgumentException("Marché inconnu : " + market);
+        };
+    }
+
+    private static String formatLine(double value) {
+        return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(value).replace('.', ',');
     }
 
     private double resolveOdds(Match match, String market, String outcome) {
