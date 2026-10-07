@@ -36,7 +36,8 @@ class PublicProfileControllerTest {
     void setUp() {
         controller = new PublicProfileController(userRepository, betRepository, new BadgeService(), sessionStore,
                 favoriteTeamService, leaderboardService, membershipRepository,
-                mock(com.hooppicks.backendapplication.palmares.PalmaresService.class));
+                mock(com.hooppicks.backendapplication.palmares.PalmaresService.class),
+                mock(com.hooppicks.backendapplication.badge.CrowdService.class));
         when(favoriteTeamService.badgeFacts(any(), any())).thenReturn(FavoriteTeamService.BadgeFacts.NONE);
         when(leaderboardService.standing(any())).thenReturn(new LeaderboardService.Standing(300, 2, 10, 50, 1, 4));
         when(betRepository.getUserStats(any())).thenReturn(List.of());

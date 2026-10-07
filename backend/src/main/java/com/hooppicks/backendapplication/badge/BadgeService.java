@@ -36,6 +36,11 @@ public class BadgeService {
      * est cohérent avec leur intitulé (« ton équipe favorite »).
      */
     public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite) {
+        return computeBadges(bets, favorite, false);
+    }
+
+    /** wonAgainstCrowd : cf. CrowdService (calcul à part, il lit la répartition des pronostics). */
+    public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite, boolean wonAgainstCrowd) {
         long totalPlaced = bets.size();
         long totalResolved = bets.stream()
                 .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST)
@@ -79,6 +84,8 @@ public class BadgeService {
         badges.add(new BadgeDto("clear_eyed", "Lucide",
                 "Gagne un ticket en pariant contre ton équipe favorite.",
                 favorite.wonTicketAgainst(), "eye"));
+        badges.add(new BadgeDto("contrarian", "Contre la foule",
+                "Gagne une sélection que moins de 20 % des joueurs avaient choisie.", wonAgainstCrowd, "users"));
 
         return badges;
     }

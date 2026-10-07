@@ -26,13 +26,17 @@ public class BadgeController {
     private final FavoriteTeamService favoriteTeamService;
 
     public BadgeController(BetRepository betRepository, SessionStore sessionStore, BadgeService badgeService,
-                           UserRepository userRepository, FavoriteTeamService favoriteTeamService) {
+                           UserRepository userRepository, FavoriteTeamService favoriteTeamService,
+                           com.hooppicks.backendapplication.badge.CrowdService crowdService) {
+        this.crowdService = crowdService;
         this.betRepository = betRepository;
         this.sessionStore = sessionStore;
         this.badgeService = badgeService;
         this.userRepository = userRepository;
         this.favoriteTeamService = favoriteTeamService;
     }
+
+    private final com.hooppicks.backendapplication.badge.CrowdService crowdService;
 
     @GetMapping
     public ResponseEntity<List<BadgeDto>> getBadges(HttpServletRequest request) {
@@ -41,6 +45,7 @@ public class BadgeController {
 
         List<Bet> bets = betRepository.findByUserIdOrderByPlacedAtDesc(userId);
         String favoriteTeam = userRepository.findById(userId).map(u -> u.getFavoriteTeam()).orElse(null);
-        return ResponseEntity.ok(badgeService.computeBadges(bets, favoriteTeamService.badgeFacts(favoriteTeam, bets)));
+        return ResponseEntity.ok(badgeService.computeBadges(bets, favoriteTeamService.badgeFacts(favoriteTeam, bets),
+                crowdService.wonAgainstCrowd(bets)));
     }
 }

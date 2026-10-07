@@ -20,6 +20,9 @@ const BADGE_RULES = [
   { icon: "crown", name: "Roi du multiple", condition: "Un ticket d'au moins 3 sélections." },
   { icon: "zap", name: "Gros coup", condition: "Un ticket gagné qui rapporte au moins 500 points de plus que sa mise." },
   { icon: "coins", name: "Gros joueur", condition: "2 000 points misés au total." },
+  { icon: "heart", name: "Fidèle", condition: "10 sélections en faveur de ton équipe favorite." },
+  { icon: "eye", name: "Lucide", condition: "Un ticket gagné en pariant contre ton équipe favorite." },
+  { icon: "users", name: "Contre la foule", condition: "Une sélection gagnante que moins de 20 % des joueurs avaient choisie (5 pronostics au moins)." },
 ];
 
 const SECTIONS = [

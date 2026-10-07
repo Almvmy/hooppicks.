@@ -1,4 +1,4 @@
-import { Award, Cloud, Coins, Crown, Eye, Flame, Heart, Medal, Repeat, Target, Ticket, Zap } from "lucide-react";
+import { Award, Cloud, Coins, Crown, Eye, Flame, Heart, Medal, Repeat, Target, Ticket, Users, Zap } from "lucide-react";
 
 export const BADGE_ICONS: Record<string, React.ElementType> = {
   ticket: Ticket,
@@ -12,6 +12,7 @@ export const BADGE_ICONS: Record<string, React.ElementType> = {
   coins: Coins,
   heart: Heart,
   eye: Eye,
+  users: Users,
 };
 
 export function badgeIcon(icon: string): React.ElementType {
