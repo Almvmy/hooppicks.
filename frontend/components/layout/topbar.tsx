@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircle, Info, LogOut, Settings } from "lucide-react";
+import { HelpCircle, Info, LogOut, Settings, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -102,6 +102,10 @@ export function Topbar() {
             <DropdownMenuItem onClick={() => router.push("/about")}>
               <Info className="mr-2 h-4 w-4" />
               À propos
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/confidentialite")}>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Confidentialité
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleLogout}

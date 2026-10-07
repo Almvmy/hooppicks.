@@ -45,8 +45,14 @@ export default function AboutPage() {
             <a href="/settings" className="text-primary hover:underline">
               Paramètres, 
             </a>{" "}
-            l&apos;action est immédiate et irréversible.
+            l&apos;action est immédiate et irréversible. Tout le détail (ce que voient les autres joueurs, nos
+            prestataires, tes droits) est sur la page{" "}
+            <a href="/confidentialite" className="text-primary hover:underline">
+              Confidentialité
+            </a>
+            .
           </p>
+          <p>HoopPicks est un projet indépendant, non affilié à la NBA, à ses équipes ni à ESPN.</p>
         </CardContent>
       </Card>
 

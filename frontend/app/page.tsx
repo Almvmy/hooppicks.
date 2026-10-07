@@ -23,6 +23,7 @@ import {
 } from "@/components/landing/feature-previews";
 import { CountUpOnView } from "@/components/motion/count-up-on-view";
 import { InstallAppButton } from "@/components/install-app";
+import { LegalFooter } from "@/components/legal-footer";
 
 const RANK_COLORS: Record<number, string> = {
   1: "text-primary",
@@ -285,10 +286,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="glass-hairline-t flex flex-col items-center gap-4 px-4 py-8 text-center text-xs text-muted-foreground">
+      <LegalFooter>
         <InstallAppButton />
-        <p>HoopPicks · pronostics NBA en points virtuels, aucun argent réel en jeu.</p>
-      </footer>
+      </LegalFooter>
     </div>
   );
 }
