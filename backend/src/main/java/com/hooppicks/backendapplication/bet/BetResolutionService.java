@@ -52,10 +52,17 @@ public class BetResolutionService {
             Map<String, Match> matchesById = matchRepository.findAllById(matchIds).stream()
                     .collect(Collectors.toMap(Match::getId, Function.identity()));
 
-            // On ne résout un ticket que si TOUS ses matchs sont terminés
             boolean allFinished = matchIds.stream()
                     .allMatch(id -> matchesById.containsKey(id) && matchesById.get(id).getStatus() == MatchStatus.FINISHED);
-            if (!allFinished) continue;
+            // Un combiné est perdu dès qu'une de ses sélections terminées est
+            // perdue : inutile d'attendre les autres matchs, rien ne peut plus
+            // le sauver. Sinon on attend la fin de tous ses matchs.
+            boolean alreadyLost = bet.getSelections().stream().anyMatch(sel -> {
+                Match m = matchesById.get(sel.getMatchId());
+                return m != null && m.getStatus() == MatchStatus.FINISHED
+                        && LegEvaluator.evaluate(sel, m) == LegResult.LOSE;
+            });
+            if (!allFinished && !alreadyLost) continue;
 
             boolean anyLoss = false;
             boolean allPush = true;
@@ -68,6 +75,12 @@ public class BetResolutionService {
 
             for (BetSelection selection : bet.getSelections()) {
                 Match match = matchesById.get(selection.getMatchId());
+                // Match pas encore joué dans un combiné déjà perdu : ni gagné ni
+                // remboursé, le ticket est perdu quoi qu'il arrive.
+                if (match == null || match.getStatus() != MatchStatus.FINISHED) {
+                    allPush = false;
+                    continue;
+                }
                 LegResult result = LegEvaluator.evaluate(selection, match);
                 if (result == LegResult.LOSE) anyLoss = true;
                 if (result != LegResult.PUSH) allPush = false;

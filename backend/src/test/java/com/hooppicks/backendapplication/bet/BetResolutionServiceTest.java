@@ -322,6 +322,27 @@ class BetResolutionServiceTest {
     }
 
     @Test
+    void un_combine_est_perdu_des_qu_une_selection_terminee_est_perdue_sans_attendre_les_autres() {
+        Match lost = finishedMatch("m1", 98, 124, -2.5, 220.5);   // domicile battu
+        Match won = finishedMatch("m2", 117, 106, -2.5, 220.5);
+        Match upcoming = new Match();
+        upcoming.setId("m3");
+        upcoming.setStatus(MatchStatus.SCHEDULED);
+        User user = user(1000);
+        Bet bet = pendingBet(user, 200, 3597,
+                selection("m1", "moneyline", "home"),
+                selection("m2", "moneyline", "home"),
+                selection("m3", "moneyline", "home"));
+
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(lost, won, upcoming));
+
+        assertThat(service.resolvePendingBets()).isEqualTo(1);
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.LOST);
+        assertThat(user.getWalletBalance()).isEqualTo(1000);
+    }
+
+    @Test
     void un_ticket_dont_un_match_n_est_pas_encore_termine_reste_en_attente() {
         Match finished = finishedMatch("m1", 100, 90, -2.5, 220.5);
         Match stillScheduled = new Match();

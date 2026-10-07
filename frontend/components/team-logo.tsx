@@ -1,4 +1,6 @@
-import { ViewTransition } from "react";
+"use client";
+
+import { useEffect, useRef, useState, ViewTransition } from "react";
 import { getTeamColor } from "@/lib/team-colors";
 import { cn } from "@/lib/utils";
 
@@ -39,12 +41,25 @@ export function TeamLogo({
   size?: number;
   className?: string;
 }) {
-  if (logoUrl) {
+  // Image injoignable (CDN ESPN bloqué, réseau coupé) : repli sur le disque
+  // de couleur plutôt qu'une image cassée avec son texte de remplacement.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  // Une image rendue côté serveur peut échouer avant que React soit branché :
+  // onError ne part alors jamais, on vérifie son état au montage.
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && logoUrl && img.complete && img.naturalWidth === 0) setFailedUrl(logoUrl);
+  }, [logoUrl]);
+
+  if (logoUrl && failedUrl !== logoUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={logoUrl}
         alt={abbreviation}
+        ref={imgRef}
+        onError={() => setFailedUrl(logoUrl)}
         width={size}
         height={size}
         className={cn("shrink-0 object-contain", className)}
