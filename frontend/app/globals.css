@@ -523,6 +523,13 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+/* Sans barre de défilement, une rangée coupée net (« Perdu », « Mes ») ne
+   disait pas qu'il y avait d'autres pastilles : fondu sur le bord droit. */
+.glass-scroll.overflow-x-auto {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  padding-right: 28px;
+}
 .glass-scroll::-webkit-scrollbar {
   display: none;
 }

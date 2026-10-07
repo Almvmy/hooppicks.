@@ -84,7 +84,7 @@ export function MatchCard({ match }: { match: Match }) {
         <div className="relative px-6 pb-4">
           {isBettable(match) ? (
             <MatchOddsRow match={match} />
-          ) : (
+          ) : match.status === "finished" ? null : (
             <p className="glass-inset-quiet mt-3 rounded-xl px-3 py-2 text-center text-xs text-muted-foreground">
               {bettingClosedReason(match)}
             </p>

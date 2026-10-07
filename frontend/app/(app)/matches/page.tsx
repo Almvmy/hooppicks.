@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, FlaskConical, Heart, Radio, Trophy, X } from "lucide-react";
+import { CalendarDays, FlaskConical, Heart, Radio, SlidersHorizontal, Trophy, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MatchCard } from "@/components/match-card";
+import { FinishedMatchRow } from "@/components/finished-match-row";
 import { NbaLogo } from "@/components/nba-logo";
 import { TeamLogo } from "@/components/team-logo";
 import { MATCH_TYPE_META } from "@/components/match-stage-badge";
@@ -44,6 +45,9 @@ export default function MatchesPage() {
   const [team, setTeam] = useState<string | null>(null);
   const [phase, setPhase] = useState<MatchType | "all">("all");
   const [chosenDay, setChosenDay] = useState<string | null>(null);
+  // Phase, conférence et équipe repliées derrière « Filtres » : trois rangées
+  // de pastilles passaient avant le premier match sur mobile.
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data, isLoading, isError, dataUpdatedAt } = useQuery({
     queryKey: ["matches"],
@@ -118,6 +122,9 @@ export default function MatchesPage() {
   const defaultDay = days.find((d) => d >= today) ?? days[days.length - 1] ?? null;
   const selectedDay = chosenDay && byDay.has(chosenDay) ? chosenDay : defaultDay;
   const dayMatches = selectedDay ? byDay.get(selectedDay) ?? [] : [];
+  // Ce qu'on peut encore parier d'abord, les matchs terminés à la fin.
+  const dayOpen = dayMatches.filter((m) => m.status !== "finished");
+  const dayFinished = dayMatches.filter((m) => m.status === "finished");
   const noMatchToday = !isLoading && days.length > 0 && !byDay.has(today) && selectedDay === defaultDay && selectedDay !== null && selectedDay > today;
 
   // La pastille sélectionnée reste visible dans la bande (au chargement,
@@ -139,6 +146,7 @@ export default function MatchesPage() {
   }, [selectedDay, days.length]);
 
   const hasFilters = conference !== "Toutes" || status !== "all" || team !== null || activePhase !== "all";
+  const secondaryFilterCount = (conference !== "Toutes" ? 1 : 0) + (team !== null ? 1 : 0) + (activePhase !== "all" ? 1 : 0);
   function resetFilters() {
     setPhase("all");
     setConference("Toutes");
@@ -201,11 +209,15 @@ export default function MatchesPage() {
             </button>
           ))}
           <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-tint/15" />
-          {CONFERENCES.map((c) => (
-            <button key={c} type="button" className={chipClass(conference === c)} onClick={() => setConference(c)}>
-              {c}
-            </button>
-          ))}
+          <button
+            type="button"
+            className={chipClass(showFilters || secondaryFilterCount > 0)}
+            aria-expanded={showFilters}
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtres{secondaryFilterCount > 0 && ` (${secondaryFilterCount})`}
+          </button>
           {hasFilters && (
             <Button variant="ghost" size="sm" className="shrink-0" onClick={resetFilters}>
               <X className="h-3.5 w-3.5" />
@@ -214,7 +226,17 @@ export default function MatchesPage() {
           )}
         </div>
 
-        {showPhases && (
+        {showFilters && (
+          <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Conférence">
+            {CONFERENCES.map((c) => (
+              <button key={c} type="button" className={chipClass(conference === c)} onClick={() => setConference(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {showFilters && showPhases && (
           <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Phase">
             <button type="button" className={chipClass(activePhase === "all")} onClick={() => setPhase("all")}>
               Toutes phases
@@ -231,7 +253,7 @@ export default function MatchesPage() {
           </div>
         )}
 
-        {sortedTeams.length > 0 && (
+        {showFilters && sortedTeams.length > 0 && (
           <div className="glass-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Équipe">
             {favorite && (
               <button
@@ -344,11 +366,25 @@ export default function MatchesPage() {
             )}
           </div>
           {/* key = jour : la grille rejoue son entrée en cascade à chaque changement de jour. */}
-          <div key={selectedDay} className="stagger-children grid gap-4 xl:grid-cols-2">
-            {dayMatches.map((m) => (
-              <MatchCard key={m.id} match={m} />
-            ))}
-          </div>
+          {dayOpen.length > 0 && (
+            <div key={selectedDay} className="stagger-children grid gap-4 xl:grid-cols-2">
+              {dayOpen.map((m) => (
+                <MatchCard key={m.id} match={m} />
+              ))}
+            </div>
+          )}
+          {dayFinished.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {dayOpen.length > 0 && (
+                <h3 className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Terminés</h3>
+              )}
+              <div className="grid gap-2 xl:grid-cols-2">
+                {dayFinished.map((m) => (
+                  <FinishedMatchRow key={m.id} match={m} />
+                ))}
+              </div>
+            </div>
+          )}
         </section>
       )}
     </div>

@@ -46,7 +46,7 @@ export function UpcomingMatches({
                 className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-sm transition-colors hover:bg-tint/[0.06]"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
+                  <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                     {formatMatchDate(date)}
                   </span>
                   <span className="flex min-w-0 items-center gap-1.5 font-medium">
