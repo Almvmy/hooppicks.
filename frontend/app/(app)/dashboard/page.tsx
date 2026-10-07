@@ -84,15 +84,19 @@ export default function DashboardPage() {
           {
             label: "Taux de réussite",
             value: profileQuery.data ? (
-              <CountUp value={profileQuery.data.winRate} format={(n) => `${n}%`} />
+              profileQuery.data.totalBets === 0 ? "—" : <CountUp value={profileQuery.data.winRate} format={(n) => `${n}%`} />
             ) : undefined,
-            hint: profileQuery.data ? `sur ${profileQuery.data.totalBets} paris` : undefined,
+            hint: profileQuery.data
+              ? profileQuery.data.totalBets === 0
+                ? "aucun ticket réglé"
+                : `sur ${profileQuery.data.totalBets} ticket${profileQuery.data.totalBets > 1 ? "s" : ""} réglé${profileQuery.data.totalBets > 1 ? "s" : ""}`
+              : undefined,
             icon: Target,
             isLoading: statsLoading,
           },
           {
             // Le rang saison est déjà en haut de l'écran : ici, la course de la semaine.
-            label: "Score de la semaine",
+            label: "Points de la semaine",
             value: standing ? formatSignedPoints(standing.weekPoints) : "-",
             hint: standing
               ? standing.weekRank !== null

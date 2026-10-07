@@ -191,8 +191,12 @@ export default function ProfilePage() {
             <CountUp value={standingQuery.data?.seasonPoints ?? 0} format={(n) => formatSignedPoints(n)} />
           )}
         </StatTile>
-        <StatTile label="Réussite" loading={profileQuery.isLoading} hint={`sur ${profile?.totalBets ?? 0} paris`}>
-          <CountUp value={profile?.winRate ?? 0} format={(n) => `${n}%`} />
+        <StatTile
+          label="Réussite"
+          loading={profileQuery.isLoading}
+          hint={profile?.totalBets ? `sur ${profile.totalBets} ticket${profile.totalBets > 1 ? "s" : ""} réglé${profile.totalBets > 1 ? "s" : ""}` : "aucun ticket réglé"}
+        >
+          {profile?.totalBets ? <CountUp value={profile.winRate} format={(n) => `${n}%`} /> : "—"}
         </StatTile>
         <StatTile label="Série en cours" loading={betsQuery.isLoading} hint={streak > 0 ? "tickets gagnés d'affilée" : "aucune série"}>
           <span className="flex items-center gap-1.5">
@@ -200,7 +204,7 @@ export default function ProfilePage() {
             <CountUp value={streak} />
           </span>
         </StatTile>
-        <StatTile label="Bilan net" loading={betsQuery.isLoading} hint="gains moins mises">
+        <StatTile label="Bilan" loading={betsQuery.isLoading} hint="gains moins mises, sans plancher">
           <span className={cn(net > 0 ? "text-success" : net < 0 ? "text-destructive" : undefined)}>
             <CountUp value={net} format={(n) => `${n > 0 ? "+" : ""}${n.toLocaleString("fr-FR")}`} />
           </span>

@@ -99,7 +99,7 @@ export const FAQ: FaqGroup[] = [
         id: "classement-calcul",
         question: "Comment est calculé le classement ?",
         answer:
-          "Semaine par semaine. Ton score d'une semaine, c'est ton bénéfice net sur les paris posés cette semaine-là : chaque ticket gagné ajoute son gain moins sa mise, chaque ticket perdu retire sa mise, un ticket remboursé ne compte pas. Ce score ne descend jamais sous 0 : une mauvaise semaine vaut 0, elle ne te fait pas perdre les points des autres. Le classement de la saison additionne tes semaines, celui du mois les semaines commencées dans le mois. Chaque ligue a aussi son propre classement, limité à ses membres.",
+          "Semaine par semaine. Tes points d'une semaine, c'est ton bilan sur les paris posés cette semaine-là : chaque ticket gagné ajoute son gain moins sa mise, chaque ticket perdu retire sa mise, un ticket remboursé ne compte pas. Ce total ne descend jamais sous 0 : une mauvaise semaine vaut 0, elle ne te fait pas perdre les points des autres. Le classement de la saison additionne tes semaines, celui du mois les semaines commencées dans le mois. Chaque ligue a aussi son propre classement, limité à ses membres.",
         link: { href: "/leaderboard", label: "Voir le classement" },
       },
       {

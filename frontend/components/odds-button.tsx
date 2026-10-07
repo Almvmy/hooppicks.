@@ -4,7 +4,7 @@ import { TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useBetSlip } from "@/components/bet-slip-provider";
 import { BetSelection } from "@/lib/types";
 import { useOddsTrend } from "@/lib/odds-trend";
-import { cn } from "@/lib/utils";
+import { cn, formatOdds } from "@/lib/utils";
 
 export function OddsButton({
   selection,
@@ -46,7 +46,7 @@ export function OddsButton({
       >
         {trend === "up" && <TrendingUp className="h-3 w-3 shrink-0" />}
         {trend === "down" && <TrendingDown className="h-3 w-3 shrink-0" />}
-        {selection.odds.toFixed(2)}
+        {formatOdds(selection.odds)}
       </span>
       {(impliedProbability !== undefined || communityPct !== undefined) && (
         <span className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">

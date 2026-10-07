@@ -13,7 +13,7 @@ import { fetchBets } from "@/lib/api/bets";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 import { LegState, legState, netResult } from "@/lib/bet-legs";
 import { BetSelection, BetStatus, Match, PlacedBet } from "@/lib/types";
-import { cn, formatLongDate, formatMatchDate, formatMatchTime } from "@/lib/utils";
+import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
 
@@ -91,7 +91,7 @@ function SelectionRow({
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className="font-mono text-sm font-bold">{selection.odds.toFixed(2)}</span>
+        <span className="font-mono text-sm font-bold">{formatOdds(selection.odds)}</span>
         {display.label && (
           <span className={cn("flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold", display.className)}>
             <Icon className="h-3 w-3" />
@@ -147,8 +147,8 @@ function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<str
 
         <div className="glass-hairline-t flex flex-wrap items-center justify-between gap-2 pt-3 text-sm">
           <span className="text-muted-foreground">
-            Mise <span className="font-mono text-foreground">{bet.stake.toLocaleString("fr-FR")}</span> · cote{" "}
-            <span className="font-mono text-foreground">{bet.totalOdds.toFixed(2)}</span>
+            Mise <span className="font-mono text-foreground">{bet.stake.toLocaleString("fr-FR")}</span> pts · cote{" "}
+            <span className="font-mono text-foreground">{formatOdds(bet.totalOdds)}</span>
           </span>
           {bet.status === "pending" && (
             <span className="text-muted-foreground">
@@ -237,9 +237,9 @@ export default function BetsPage() {
               <CountUp value={bets.length} />
             </SummaryTile>
             <SummaryTile label="Réussite" hint={`${counts.won} gagné${counts.won > 1 ? "s" : ""} · ${counts.lost} perdu${counts.lost > 1 ? "s" : ""}`}>
-              <CountUp value={winRate} format={(n) => `${n}%`} />
+              {resolved === 0 ? "—" : <CountUp value={winRate} format={(n) => `${n}%`} />}
             </SummaryTile>
-            <SummaryTile label="Bilan net" hint="gains moins mises">
+            <SummaryTile label="Bilan" hint="gains moins mises">
               <span className={cn(net > 0 ? "text-success" : net < 0 ? "text-destructive" : undefined)}>
                 <CountUp value={net} format={(n) => `${n > 0 ? "+" : ""}${n.toLocaleString("fr-FR")}`} />
               </span>

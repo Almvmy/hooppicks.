@@ -10,7 +10,7 @@ import { MAX_SELECTIONS, MIN_STAKE, useBetSlip } from "@/components/bet-slip-pro
 import { fetchWallet } from "@/lib/api/wallet";
 import { placeBet } from "@/lib/api/bets";
 import type { BetSelection } from "@/lib/types";
-import { cn, formatBankrollReset, WEEKLY_BANKROLL } from "@/lib/utils";
+import { cn, formatBankrollReset, WEEKLY_BANKROLL, formatOdds } from "@/lib/utils";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 
 export function BetSlipPanel() {
@@ -86,7 +86,7 @@ export function BetSlipPanel() {
         >
           <TicketIcon className="h-4 w-4" />
           Ticket ({selections.length})
-          <span className="font-mono">{totalOdds.toFixed(2)}</span>
+          <span className="font-mono">{formatOdds(totalOdds)}</span>
         </button>
       )}
       <div
@@ -129,7 +129,7 @@ export function BetSlipPanel() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-mono font-bold text-primary">{s.odds.toFixed(2)}</span>
+                <span className="font-mono font-bold text-primary">{formatOdds(s.odds)}</span>
                 <button onClick={() => toggleSelection(s)} aria-label="Retirer">
                   <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
                 </button>
@@ -141,7 +141,7 @@ export function BetSlipPanel() {
         <div className="flex flex-col gap-3 p-4 shadow-[inset_0_1px_0_var(--hairline)]">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Cote totale</span>
-            <span className="font-mono font-bold">{totalOdds.toFixed(2)}</span>
+            <span className="font-mono font-bold">{formatOdds(totalOdds)}</span>
           </div>
 
           <Input

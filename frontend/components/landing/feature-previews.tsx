@@ -1,7 +1,7 @@
 import { Cloud, Crown, Flame, Medal, Target, Ticket, Trophy, Users } from "lucide-react";
 import { TeamLogo } from "@/components/team-logo";
 import { LeaderboardEntry, Match } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatOdds } from "@/lib/utils";
 import { MatchDate, MatchTime } from "@/components/local-date";
 
 // Aperçus des fonctionnalités pour le carrousel d'accueil. Rendus avec les
@@ -13,7 +13,7 @@ function Odds({ label, value }: { label: string; value: number }) {
   return (
     <div className="glass-inset-quiet flex flex-1 flex-col items-center rounded-xl py-2">
       <span className="text-[10px] text-muted-foreground">{label}</span>
-      <span className="font-mono text-sm font-bold">{value.toFixed(2)}</span>
+      <span className="font-mono text-sm font-bold">{formatOdds(value)}</span>
     </div>
   );
 }
@@ -65,12 +65,12 @@ export function ComboPreview() {
       {COMBO.map((s) => (
         <div key={s.pick} className="glass-inset-quiet flex items-center justify-between rounded-lg px-3 py-1.5 text-xs">
           <span>{s.pick}</span>
-          <span className="font-mono font-bold">{s.odds.toFixed(2)}</span>
+          <span className="font-mono font-bold">{formatOdds(s.odds)}</span>
         </div>
       ))}
       <div className="mt-1 flex items-center justify-between px-1 text-xs">
         <span className="text-muted-foreground">Cote totale</span>
-        <span className="font-mono font-bold text-primary">× {total.toFixed(2)}</span>
+        <span className="font-mono font-bold text-primary">× {formatOdds(total)}</span>
       </div>
       <div className="flex items-center justify-between px-1 text-xs">
         <span className="text-muted-foreground">Mise 50 pts</span>

@@ -18,7 +18,7 @@ const BADGE_RULES = [
   { icon: "cloud", name: "Sur un nuage", condition: "5 paris gagnés d'affilée." },
   { icon: "target", name: "Sniper", condition: "Au moins 10 paris résolus avec 60 % de réussite." },
   { icon: "crown", name: "Roi du multiple", condition: "Un ticket d'au moins 3 sélections." },
-  { icon: "zap", name: "Gros coup", condition: "Un ticket gagné avec au moins 500 points de bénéfice." },
+  { icon: "zap", name: "Gros coup", condition: "Un ticket gagné qui rapporte au moins 500 points de plus que sa mise." },
   { icon: "coins", name: "Gros joueur", condition: "2 000 points misés au total." },
 ];
 
@@ -169,7 +169,7 @@ export default function HelpPage() {
 
             <RuleCard icon={Trophy} title="Classement et ligues">
               <p>
-                Chaque semaine vaut ton <strong className="text-foreground">bénéfice net</strong> (gains moins
+                Chaque semaine te rapporte des <strong className="text-foreground">points</strong> : ton bilan (gains moins
                 mises), jamais moins de 0, et le classement additionne les semaines. Ton solde ne compte pas. Crée une ligue privée et partage son code à 6
                 caractères pour avoir aussi votre classement entre amis.
               </p>

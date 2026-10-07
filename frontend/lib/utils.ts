@@ -196,3 +196,13 @@ export function winChances(oddsA: number, oddsB: number): [number, number] {
   const pa = Math.round((a / (a + b)) * 100);
   return [pa, 100 - pa];
 }
+
+/** Cote à la française : « 2,62 ». */
+export function formatOdds(odds: number): string {
+  return odds.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Ligne d'écart ou de total : « 3,5 », « 228,5 », « 4 ». */
+export function formatLine(value: number): string {
+  return value.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+}

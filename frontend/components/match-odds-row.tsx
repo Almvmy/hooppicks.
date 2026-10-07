@@ -1,6 +1,6 @@
 import { OddsButton } from "@/components/odds-button";
 import { Match } from "@/lib/types";
-import { winChances } from "@/lib/utils";
+import { winChances, formatLine } from "@/lib/utils";
 
 export function MatchOddsRow({ match }: { match: Match }) {
   const { odds } = match;
@@ -49,7 +49,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
             matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
             market: "spread",
             outcome: "away",
-            label: `${match.awayTeam.abbreviation} ${odds.spreadValue > 0 ? "-" : "+"}${Math.abs(odds.spreadValue)}`,
+            label: `${match.awayTeam.abbreviation} ${odds.spreadValue > 0 ? "-" : "+"}${formatLine(Math.abs(odds.spreadValue))}`,
             odds: odds.spreadOddsAway,
           }}
         />
@@ -61,7 +61,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
             matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
             market: "spread",
             outcome: "home",
-            label: `${match.homeTeam.abbreviation} ${odds.spreadValue > 0 ? "+" : "-"}${Math.abs(odds.spreadValue)}`,
+            label: `${match.homeTeam.abbreviation} ${odds.spreadValue > 0 ? "+" : "-"}${formatLine(Math.abs(odds.spreadValue))}`,
             odds: odds.spreadOddsHome,
           }}
         />
@@ -75,7 +75,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
             matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
             market: "total",
             outcome: "over",
-            label: `Plus de ${odds.totalValue}`,
+            label: `Plus de ${formatLine(odds.totalValue)}`,
             odds: odds.totalOddsOver,
           }}
         />
@@ -87,7 +87,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
             matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
             market: "total",
             outcome: "under",
-            label: `Moins de ${odds.totalValue}`,
+            label: `Moins de ${formatLine(odds.totalValue)}`,
             odds: odds.totalOddsUnder,
           }}
         />
