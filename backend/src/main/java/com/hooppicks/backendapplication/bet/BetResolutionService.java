@@ -62,7 +62,10 @@ public class BetResolutionService {
                 return m != null && m.getStatus() == MatchStatus.FINISHED
                         && LegEvaluator.evaluate(sel, m) == LegResult.LOSE;
             });
-            if (!allFinished && !alreadyLost) continue;
+            if (!allFinished && !alreadyLost) {
+                if (bet.getSelections().size() > 1) trackProgress(bet, matchesById);
+                continue;
+            }
 
             boolean anyLoss = false;
             boolean allPush = true;
@@ -171,6 +174,51 @@ public class BetResolutionService {
         tx.setAmount(amount);
         tx.setDescription(description);
         transactionRepository.save(tx);
+    }
+
+    /**
+     * Suivi en direct d'un combiné encore en vie : prévient quand une
+     * sélection est validée (« plus que 2 matchs ») et quand tout se joue sur
+     * le dernier match, en cours. Chaque étape n'est annoncée qu'une fois
+     * (drapeaux sur la sélection et le ticket), en une seule notification.
+     */
+    void trackProgress(Bet bet, Map<String, Match> matchesById) {
+        List<String> validated = new java.util.ArrayList<>();
+        List<BetSelection> remaining = new java.util.ArrayList<>();
+        for (BetSelection sel : bet.getSelections()) {
+            Match m = matchesById.get(sel.getMatchId());
+            if (m == null || m.getStatus() != MatchStatus.FINISHED) {
+                remaining.add(sel);
+            } else if (!Boolean.TRUE.equals(sel.getProgressNotified())) {
+                sel.setProgressNotified(true);
+                validated.add(sel.getLabel());
+            }
+        }
+
+        String lastLeg = null;
+        if (remaining.size() == 1 && !Boolean.TRUE.equals(bet.getLastLegAlerted())) {
+            BetSelection last = remaining.get(0);
+            Match m = matchesById.get(last.getMatchId());
+            if (m != null && m.getStatus() == MatchStatus.LIVE) {
+                bet.setLastLegAlerted(true);
+                String score = m.getHomeScore() == null || m.getAwayScore() == null ? ""
+                        : " (" + m.getAwayTeam().getAbbreviation() + " " + m.getAwayScore() + "-" + m.getHomeScore()
+                                + " " + m.getHomeTeam().getAbbreviation() + ")";
+                lastLeg = "Tout se joue maintenant sur " + last.getLabel() + " · " + last.getMatchLabel() + score + ".";
+            }
+        }
+        if (validated.isEmpty() && lastLeg == null) return;
+
+        StringBuilder message = new StringBuilder("Combiné toujours en vie");
+        if (!validated.isEmpty()) {
+            message.append(" : ").append(String.join(", ", validated))
+                    .append(validated.size() > 1 ? " validées" : " validée");
+        }
+        message.append(". ");
+        if (lastLeg != null) message.append(lastLeg);
+        else message.append("Plus que ").append(remaining.size()).append(remaining.size() > 1 ? " matchs" : " match");
+        message.append(lastLeg != null ? " Gain en jeu : " : " pour ").append(bet.getPotentialPayout()).append(" pts.");
+        notify(bet.getUser(), NotificationType.BET_PROGRESS, "Ton combiné tient bon", message.toString());
     }
 
     private void notify(User user, NotificationType type, String title, String message) {

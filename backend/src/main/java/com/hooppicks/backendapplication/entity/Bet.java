@@ -33,4 +33,7 @@ public class Bet {
 
     private Instant placedAt = Instant.now();
     private Instant resolvedAt;
+
+    // « Tout se joue sur le dernier match » déjà annoncé pour ce combiné.
+    private Boolean lastLegAlerted;
 }

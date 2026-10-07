@@ -364,7 +364,65 @@ class BetResolutionServiceTest {
         assertThat(bet.getStatus()).isEqualTo(BetStatus.PENDING);
         assertThat(bet.getResolvedAt()).isNull();
         assertThat(user.getWalletBalance()).isEqualTo(1000);
-        verifyNoInteractions(notificationRepository, transactionRepository);
+        verifyNoInteractions(transactionRepository);
         verify(betRepository, never()).save(any());
+        // Seule notification : le suivi du combiné (1re sélection validée), pas un résultat.
+        verify(notificationRepository).save(argThat(n -> n.getType() == NotificationType.BET_PROGRESS));
+    }
+
+    @Test
+    void un_combine_en_vie_annonce_chaque_selection_validee_puis_le_dernier_match_une_seule_fois() {
+        User user = user(1000);
+        user.setNotifyBetResults(true);
+        BetSelection den = selection("m1", "moneyline", "home");
+        den.setLabel("DEN (V)");
+        BetSelection lal = selection("m2", "moneyline", "home");
+        lal.setLabel("LAL (V)");
+        BetSelection min = selection("m3", "moneyline", "home");
+        min.setLabel("MIN (V)");
+        min.setMatchLabel("Pacers vs Timberwolves");
+        Bet bet = pendingBet(user, 200, 3597, den, lal, min);
+
+        Match won1 = finishedMatch("m1", 117, 106, -2.5, 220.5);
+        Match live = new Match();
+        live.setId("m2");
+        live.setStatus(MatchStatus.LIVE);
+        Match upcoming = new Match();
+        upcoming.setId("m3");
+        upcoming.setStatus(MatchStatus.SCHEDULED);
+
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(won1, live, upcoming));
+
+        // 1er passage : DEN validée, encore 2 matchs.
+        service.resolvePendingBets();
+        // 2e passage sans changement : rien de neuf à annoncer.
+        service.resolvePendingBets();
+
+        ArgumentCaptor<AppNotification> captor = ArgumentCaptor.forClass(AppNotification.class);
+        verify(notificationRepository, times(1)).save(captor.capture());
+        assertThat(captor.getValue().getType()).isEqualTo(NotificationType.BET_PROGRESS);
+        assertThat(captor.getValue().getMessage()).contains("DEN (V) validée").contains("Plus que 2 matchs");
+
+        // LAL gagne, le dernier match commence : une notification « tout se joue ».
+        Team ind = new Team();
+        ind.setAbbreviation("IND");
+        Team minTeam = new Team();
+        minTeam.setAbbreviation("MIN");
+        Match lastLive = new Match();
+        lastLive.setId("m3");
+        lastLive.setStatus(MatchStatus.LIVE);
+        lastLive.setAwayTeam(ind);
+        lastLive.setHomeTeam(minTeam);
+        lastLive.setAwayScore(50);
+        lastLive.setHomeScore(48);
+        when(matchRepository.findAllById(any())).thenReturn(List.of(won1, finishedMatch("m2", 110, 100, -2.5, 220.5), lastLive));
+        service.resolvePendingBets();
+        service.resolvePendingBets();
+
+        verify(notificationRepository, times(2)).save(captor.capture());
+        assertThat(captor.getValue().getMessage()).contains("LAL (V) validée").contains("Tout se joue maintenant sur MIN (V)")
+                .contains("IND 50-48 MIN");
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.PENDING);
     }
 }

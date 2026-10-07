@@ -23,4 +23,9 @@ public class BetSelection {
     private String outcome; // "home" | "away" | "over" | "under"
     private String label;
     private double odds;
+
+    // Suivi en direct d'un combiné (BetResolutionService.trackProgress) :
+    // sélection déjà annoncée comme validée. Boolean nullable : colonne
+    // ajoutée à une table déjà remplie.
+    private Boolean progressNotified;
 }
