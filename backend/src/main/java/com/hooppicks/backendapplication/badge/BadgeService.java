@@ -90,7 +90,7 @@ public class BadgeService {
      * badge est un simple booléen "débloqué", pas le compteur vivant.
      */
     /** Plus longue série de tickets gagnés d'affilée (remboursés et en attente ignorés). */
-    int computeBestWinStreak(List<Bet> betsOrderedMostRecentFirst) {
+    public int computeBestWinStreak(List<Bet> betsOrderedMostRecentFirst) {
         int best = 0, current = 0;
         for (Bet bet : betsOrderedMostRecentFirst) {
             if (bet.getStatus() == BetStatus.WON) best = Math.max(best, ++current);

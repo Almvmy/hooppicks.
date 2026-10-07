@@ -393,4 +393,18 @@ export interface PublicProfile {
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
   badges: UserBadge[];
+  memberSince: string | null;
+  seasonPoints: number;
+  seasonRank: number | null;
+  seasonPlayers: number;
+  weekPoints: number;
+  weekRank: number | null;
+  weekPlayers: number;
+  currentStreak: number;
+  bestStreak: number;
+  /** Tickets réglés seulement : les tickets en attente restent privés. */
+  recentTickets: PlacedBet[];
+  bestTicket: PlacedBet | null;
+  commonLeagues: string[];
+  isMe: boolean;
 }

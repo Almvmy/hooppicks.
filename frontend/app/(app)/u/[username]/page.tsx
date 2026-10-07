@@ -1,30 +1,102 @@
 "use client";
 
 import { use } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { CalendarDays, Flame, Pencil, Swords, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlayerCard } from "@/components/player-card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PlayerAvatar } from "@/components/player-avatar";
+import { TeamLogo } from "@/components/team-logo";
+import { CourtWatermark } from "@/components/court-watermark";
+import { FormStreak } from "@/components/form-streak";
+import { BestBetTrophy } from "@/components/best-bet-trophy";
 import { fetchPublicProfile } from "@/lib/api/users";
+import { fetchMyStanding } from "@/lib/api/leaderboard";
 import { badgeIcon } from "@/lib/badges";
-import { FavoriteTeamLogo } from "@/components/favorite-team-logo";
+import { netResult } from "@/lib/bet-legs";
+import { rankTitle } from "@/lib/rank-title";
+import { getTeamColor } from "@/lib/team-colors";
+import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
+import { PlacedBet } from "@/lib/types";
+import { cn, formatMonthYear, formatRelativeTime, formatSignedPoints } from "@/lib/utils";
 
-export default function PublicProfilePage({
-  params,
-}: {
-  params: Promise<{ username: string }>;
-}) {
+function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+  return (
+    <Card size="sm">
+      <CardContent>
+        <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+        <div className="mt-0.5 whitespace-nowrap font-heading text-xl font-bold sm:text-2xl">{value}</div>
+        {hint && <p className="truncate text-xs text-muted-foreground">{hint}</p>}
+      </CardContent>
+    </Card>
+  );
+}
+
+const TICKET_STATUS: Record<PlacedBet["status"], { label: string; variant: "success" | "destructive" | "secondary" }> = {
+  won: { label: "Gagné", variant: "success" },
+  lost: { label: "Perdu", variant: "destructive" },
+  void: { label: "Remboursé", variant: "secondary" },
+  pending: { label: "En attente", variant: "secondary" },
+};
+
+function TicketRow({ bet }: { bet: PlacedBet }) {
+  const net = netResult(bet);
+  const config = TICKET_STATUS[bet.status];
+  const single = bet.selections.length === 1;
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      <Badge variant={config.variant} className="shrink-0">
+        {config.label}
+      </Badge>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">
+          {!single && <span className="text-muted-foreground">Combiné ×{bet.selections.length} · </span>}
+          {bet.selections.map((s) => s.label).join(" · ")}
+        </p>
+        <p className="truncate text-xs text-muted-foreground">
+          {[single ? bet.selections[0].matchLabel : null, bet.resolvedAt ? formatRelativeTime(bet.resolvedAt) : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      </div>
+      <span
+        className={cn(
+          "shrink-0 font-mono text-sm font-bold",
+          net > 0 ? "text-success" : net < 0 ? "text-destructive" : "text-muted-foreground"
+        )}
+      >
+        {bet.status === "void" ? "rendu" : formatSignedPoints(net)}
+      </span>
+    </div>
+  );
+}
+
+export default function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = use(params);
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ["public-profile", username],
     queryFn: () => fetchPublicProfile(username),
   });
+  // Pour le face-à-face de la semaine : inutile sur son propre profil.
+  const mineQuery = useQuery({
+    queryKey: ["leaderboard", "me"],
+    queryFn: fetchMyStanding,
+    enabled: !!profile && !profile.isMe,
+  });
+  const teams = useTeamsByAbbreviation();
 
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
-        <Skeleton className="h-56 w-40" />
-        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -42,51 +114,180 @@ export default function PublicProfilePage({
   }
 
   const unlockedBadges = profile.badges.filter((badge) => badge.unlocked);
+  const favorite = favoriteTeamAbbreviation(profile.favoriteTeam, teams);
+  const favoriteTeam = favorite ? teams.get(favorite) : undefined;
+  const heroColor = favorite ? getTeamColor(favorite) : "var(--brand)";
+  const title = rankTitle(profile.seasonRank ?? undefined, profile.seasonPlayers);
+  const mine = mineQuery.data;
+  const plural = (n: number) => (n > 1 ? "s" : "");
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-5">
-        <PlayerCard
-          username={profile.username}
-          number={profile.avatarNumber}
-          position={profile.avatarPosition}
-          colorway={profile.avatarColorway}
-          icon={profile.avatarIcon}
-        />
-        <div>
-          <h1 className="font-heading text-2xl font-bold">@{profile.username}</h1>
-          {profile.favoriteTeam && (
-            <p className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
-              <FavoriteTeamLogo teamName={profile.favoriteTeam} size={28} />
-              Supporter des {profile.favoriteTeam}
-            </p>
+      {/* ── En-tête : même habillage que sa propre page Profil ─────────── */}
+      <div
+        className="glass relative overflow-hidden rounded-3xl p-6 sm:p-8"
+        style={{
+          backgroundImage: `linear-gradient(115deg, color-mix(in srgb, ${heroColor} 22%, transparent) 0%, transparent 65%), var(--glass-tint)`,
+        }}
+      >
+        <CourtWatermark />
+        {favoriteTeam && (
+          <div aria-hidden className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 rotate-12 opacity-[0.12]">
+            <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={240} />
+          </div>
+        )}
+        <div className="relative flex flex-wrap items-center gap-5">
+          <PlayerAvatar
+            number={profile.avatarNumber}
+            position={profile.avatarPosition}
+            colorway={profile.avatarColorway}
+            icon={profile.avatarIcon}
+            size="lg"
+          />
+          <div className="min-w-[10rem] flex-1">
+            <h1 className="truncate font-heading text-3xl font-bold">@{profile.username}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-xs font-bold text-primary">
+                {title}
+              </span>
+              {favoriteTeam && (
+                <span className="flex items-center gap-1.5">
+                  <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={20} />
+                  {profile.favoriteTeam}
+                </span>
+              )}
+              {profile.memberSince && (
+                <span className="flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  depuis {formatMonthYear(profile.memberSince)}
+                </span>
+              )}
+            </div>
+          </div>
+          {profile.isMe && (
+            <Link href="/profile" className="w-full lg:w-auto">
+              <Button variant="outline" size="sm">
+                <Pencil className="h-3.5 w-3.5" />
+                Modifier mon profil
+              </Button>
+            </Link>
           )}
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Taux de réussite</p>
-            <p className="mt-1 font-mono text-2xl font-bold">{profile.winRate}%</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Paris joués</p>
-            <p className="mt-1 font-mono text-2xl font-bold">{profile.totalBets}</p>
-          </CardContent>
-        </Card>
+      {/* ── Chiffres ───────────────────────────────────────────────────── */}
+      <div className="stagger-children grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+        <Stat
+          label="Points saison"
+          value={formatSignedPoints(profile.seasonPoints)}
+          hint={profile.seasonRank !== null ? `#${profile.seasonRank} sur ${profile.seasonPlayers}` : "pas encore classé"}
+        />
+        <Stat
+          label="Points semaine"
+          value={formatSignedPoints(profile.weekPoints)}
+          hint={profile.weekRank !== null ? `#${profile.weekRank} sur ${profile.weekPlayers}` : "aucun ticket réglé"}
+        />
+        <Stat
+          label="Réussite"
+          value={profile.totalBets === 0 ? "—" : `${profile.winRate}%`}
+          hint={
+            profile.totalBets === 0
+              ? "aucun ticket réglé"
+              : `sur ${profile.totalBets} ticket${plural(profile.totalBets)} réglé${plural(profile.totalBets)}`
+          }
+        />
+        <Stat
+          label="Série en cours"
+          value={
+            <span className="flex items-center gap-1.5">
+              {profile.currentStreak >= 3 && <Flame className="h-5 w-5 text-primary" />}
+              {profile.currentStreak}
+            </span>
+          }
+          hint={`record : ${profile.bestStreak}`}
+        />
       </div>
 
+      {/* ── Face-à-face de la semaine et ligues en commun ──────────────── */}
+      {!profile.isMe && (mine || profile.commonLeagues.length > 0) && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {mine && (
+            <Card>
+              <CardContent className="flex flex-col gap-2">
+                <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <Swords className="h-3.5 w-3.5" />
+                  Toi contre @{profile.username} cette semaine
+                </p>
+                <div className="flex items-baseline justify-between gap-3 font-mono">
+                  <span className={cn("text-lg font-bold", mine.weekPoints >= profile.weekPoints && "text-primary")}>
+                    Toi {formatSignedPoints(mine.weekPoints)}
+                  </span>
+                  <span className={cn("text-lg font-bold", profile.weekPoints > mine.weekPoints && "text-primary")}>
+                    {formatSignedPoints(profile.weekPoints)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {mine.weekPoints === profile.weekPoints
+                    ? "À égalité pour l'instant."
+                    : mine.weekPoints > profile.weekPoints
+                      ? `Tu as ${(mine.weekPoints - profile.weekPoints).toLocaleString("fr-FR")} pts d'avance.`
+                      : `Il te manque ${(profile.weekPoints - mine.weekPoints).toLocaleString("fr-FR")} pts pour passer devant.`}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          {profile.commonLeagues.length > 0 && (
+            <Card>
+              <CardContent className="flex flex-col gap-2">
+                <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <Users className="h-3.5 w-3.5" />
+                  Ligue{plural(profile.commonLeagues.length)} en commun
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.commonLeagues.map((name) => (
+                    <span key={name} className="glass-inset-quiet rounded-full px-2.5 py-1 text-sm">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* ── Derniers tickets et meilleur ticket ────────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <Card>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-heading text-base font-bold">Derniers tickets</h2>
+              <FormStreak bets={profile.recentTickets} />
+            </div>
+            {profile.recentTickets.length > 0 && (
+              <div className="divide-y divide-tint/10">
+                {profile.recentTickets.map((bet) => (
+                  <TicketRow key={bet.id} bet={bet} />
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Les tickets en attente restent privés jusqu&apos;à leur résultat.</p>
+          </CardContent>
+        </Card>
+        {profile.bestTicket && (
+          <div>
+            <BestBetTrophy bets={[profile.bestTicket]} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Badges ─────────────────────────────────────────────────────── */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-heading text-lg font-bold">Badges</h2>
-          {unlockedBadges.length > 0 && (
-            <span className="text-xs font-medium text-muted-foreground">
-              {unlockedBadges.length} débloqué{unlockedBadges.length > 1 ? "s" : ""}
-            </span>
-          )}
+          <span className="text-xs font-medium text-muted-foreground">
+            {unlockedBadges.length} sur {profile.badges.length}
+          </span>
         </div>
         {/* Contrairement à la page Profil (BadgeGrid), on ne montre ici que
             les badges débloqués : les verrouillés servent d'objectif perso,
@@ -94,7 +295,7 @@ export default function PublicProfilePage({
         {unlockedBadges.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun badge débloqué pour l&apos;instant.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {unlockedBadges.map((badge) => {
               const Icon = badgeIcon(badge.icon);
               return (

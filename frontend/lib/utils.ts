@@ -206,3 +206,8 @@ export function formatOdds(odds: number): string {
 export function formatLine(value: number): string {
   return value.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 }
+
+/** « oct. 2026 » : date d'inscription d'un joueur. */
+export function formatMonthYear(iso: string, timeZone = resolveTimeZone()): string {
+  return new Date(iso).toLocaleDateString("fr-FR", { month: "short", year: "numeric", timeZone });
+}
