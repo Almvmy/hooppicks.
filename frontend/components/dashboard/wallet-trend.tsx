@@ -49,7 +49,11 @@ export function WalletTrend({
     <Card>
       <CardHeader className="space-y-0">
         <CardTitle className="font-heading text-base">Ta semaine</CardTitle>
-        <p className="text-xs text-muted-foreground">Bénéfice net des tickets réglés depuis lundi 12h</p>
+        <p className="text-xs text-muted-foreground">
+          Bilan des tickets réglés depuis lundi 12h.{" "}
+          {/* La courbe peut passer sous 0, le score de la semaine non. */}
+          {weeklyDelta < 0 && "Au classement, ta semaine compte 0 : jamais moins."}
+        </p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {isLoading ? (

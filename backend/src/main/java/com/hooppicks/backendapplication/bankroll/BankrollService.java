@@ -164,7 +164,7 @@ public class BankrollService {
         String message;
         if (previous == null) {
             message = "Nouveau : chaque lundi à 12h, tout le monde repart à " + WEEKLY_BANKROLL
-                    + " pts. Le classement compte ton bénéfice net (gains moins mises). Ton solde vient d'être remis à "
+                    + " pts. Chaque semaine compte au classement pour son bénéfice net (gains moins mises), jamais moins de 0. Ton solde vient d'être remis à "
                     + user.getWalletBalance() + " pts.";
         } else {
             List<Object[]> rows = betRepository.getNetResultBetween(user.getId(), startOf(previous), startOf(previous.plusWeeks(1)));
@@ -172,8 +172,13 @@ public class BankrollService {
             long tickets = row == null || row[0] == null ? 0 : ((Number) row[0]).longValue();
             if (tickets == 0) return;
             long net = row[1] == null ? 0 : ((Number) row[1]).longValue();
-            message = "Semaine terminée : " + (net > 0 ? "+" : "") + net + " pts au classement sur "
-                    + tickets + " ticket(s). Ton solde repart à " + user.getWalletBalance() + " pts.";
+            // Une semaine compte pour son bénéfice net, jamais moins de 0.
+            message = net > 0
+                    ? "Semaine terminée : +" + net + " pts au classement sur " + tickets
+                            + " ticket(s). Ton solde repart à " + user.getWalletBalance() + " pts."
+                    : "Semaine terminée : 0 pt au classement (bilan de " + net + " pts sur " + tickets
+                            + " ticket(s), une semaine ne descend jamais sous 0). Ton solde repart à "
+                            + user.getWalletBalance() + " pts.";
         }
         AppNotification notification = new AppNotification();
         notification.setUser(user);

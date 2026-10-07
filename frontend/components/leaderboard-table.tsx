@@ -111,7 +111,7 @@ export function LeaderboardTable({
           {showTrends && <TableHead className="hidden md:table-cell">Forme</TableHead>}
           <TableHead className="text-right">Taux de réussite</TableHead>
           <TableHead className="text-right">Paris joués</TableHead>
-          <TableHead className="text-right" title="Bénéfice net : gains moins mises">Bénéfice</TableHead>
+          <TableHead className="text-right" title="Somme des semaines : bénéfice net de chaque semaine, jamais moins de 0">Points</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody ref={bodyRef} className="stagger-children">

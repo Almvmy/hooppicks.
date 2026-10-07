@@ -92,7 +92,7 @@ export default function DashboardPage() {
           },
           {
             // Le rang saison est déjà en haut de l'écran : ici, la course de la semaine.
-            label: "Bénéfice de la semaine",
+            label: "Score de la semaine",
             value: standing ? formatSignedPoints(standing.weekPoints) : "-",
             hint: standing
               ? standing.weekRank !== null

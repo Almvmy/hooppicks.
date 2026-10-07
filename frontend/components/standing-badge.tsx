@@ -13,7 +13,8 @@ function ordinal(rank: number) {
 }
 
 /**
- * Points de classement (bénéfice net de la saison) et rang, en tête de la
+ * Points de classement (somme des semaines, chacune à son bénéfice net,
+ * jamais moins de 0) et rang, en tête de la
  * barre du haut : c'est le score du jeu. Le solde de pari, qui repart à
  * 1 000 chaque lundi, reste dans le ticket et sur le tableau de bord.
  */
@@ -35,7 +36,7 @@ export function StandingBadge() {
   const title =
     data.seasonRank === null
       ? "Pas encore classé : ton premier ticket réglé te fait entrer au classement."
-      : `Classement saison : ${formatSignedPoints(data.seasonPoints)} de bénéfice net, ${ordinal(data.seasonRank)} sur ${data.seasonPlayers}. ${week[0].toUpperCase()}${week.slice(1)}.`;
+      : `Classement saison : ${formatSignedPoints(data.seasonPoints)}, ${ordinal(data.seasonRank)} sur ${data.seasonPlayers}. ${week[0].toUpperCase()}${week.slice(1)}.`;
 
   return (
     <Link

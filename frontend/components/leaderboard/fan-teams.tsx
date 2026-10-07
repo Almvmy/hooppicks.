@@ -37,7 +37,7 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
-        Bénéfice net moyen par supporter, sur les joueurs classés cette saison.
+        Points moyens par supporter, sur les joueurs classés cette saison.
         {withoutTeam > 0 && ` ${withoutTeam} joueur${withoutTeam > 1 ? "s" : ""} sans équipe favorite ne compte${withoutTeam > 1 ? "nt" : ""} pas.`}
       </p>
       <ol className="stagger-children flex flex-col gap-2">

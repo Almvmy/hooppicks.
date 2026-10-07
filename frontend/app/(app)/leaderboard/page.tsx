@@ -278,12 +278,12 @@ function PlayersRanking({ username }: { username: string | undefined }) {
           {all.length > 0
             ? `${all.length} joueur${all.length > 1 ? "s" : ""} classé${all.length > 1 ? "s" : ""} au classement ${scope}.`
             : null}
-          {" "}Bénéfice net : gains moins mises des tickets résolus
+          {" "}Chaque semaine de jeu compte pour son bénéfice net (gains moins mises), jamais moins de 0
           {period === "week"
-            ? ", posés depuis lundi 12h, quand tout le monde est reparti à 1 000 pts."
+            ? " : ici, celle commencée lundi 12h, quand tout le monde est reparti à 1 000 pts."
             : period === "month"
-              ? ", posés ce mois-ci."
-              : ", posés depuis le début de la saison."}
+              ? " : ici, l'addition des semaines commencées ce mois-ci."
+              : " : ici, l'addition de toutes les semaines de la saison."}
         </p>
       )}
 

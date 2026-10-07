@@ -9,45 +9,69 @@ import java.util.List;
 public interface BetRepository extends JpaRepository<Bet, String> {
     List<Bet> findByUserIdOrderByPlacedAtDesc(String userId);
 
-    // Classement : bénéfice net des tickets résolus (gain moins mise si gagné,
-    // moins la mise si perdu ; un ticket remboursé ne compte pas). Avant, on
-    // additionnait les gains bruts sans jamais retirer les pertes : beaucoup de
-    // petits paris sur des favoris passaient devant des joueurs gagnants.
-    @org.springframework.data.jpa.repository.Query("""
-        SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
-               COUNT(b) as totalBets,
-               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
-               b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
-               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
-               b.user.favoriteTeam as favoriteTeam
-        FROM Bet b
+    // Classement : chaque semaine de jeu (lundi 12h GMT) vaut son bénéfice net
+    // (gain − mise si gagné, − mise si perdu, remboursé : 0), ramené à 0
+    // s'il est négatif ; le classement additionne ces semaines. Un ticket
+    // perdu pèse donc sur sa semaine, mais une mauvaise semaine ne fait
+    // jamais perdre les points des autres. Chaque pari compte pour la semaine
+    // où il a été posé. En SQL natif (Postgres) : regroupement par semaine
+    // décalée de 12 h, puis somme par joueur, en une seule requête.
+    String WEEKLY_SCORES_ALL = """
+        SELECT b.user_id, COUNT(*) AS total,
+               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) AS won,
+               GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
+        FROM bet b
         WHERE b.status IN ('WON', 'LOST')
-        GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
-                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
-        ORDER BY points DESC
-    """)
-    List<Object[]> getLeaderboardRaw();
+        GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
+        HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
+    """;
+    String WEEKLY_SCORES_MEMBERS = """
+        SELECT b.user_id, COUNT(*) AS total,
+               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) AS won,
+               GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
+        FROM bet b
+        WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:memberIds)
+        GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
+        HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
+    """;
+    String LEADERBOARD_OUTER_START = """
+        SELECT u.id, u.username, CAST(SUM(w.score) AS bigint) AS points,
+               CAST(SUM(w.total) AS bigint) AS total_bets, CAST(SUM(w.won) AS bigint) AS won_bets,
+               u.avatar_number, u.avatar_position, u.avatar_colorway, u.avatar_icon, u.favorite_team
+        FROM (
+    """;
+    String LEADERBOARD_OUTER_END = """
+        ) w JOIN app_user u ON u.id = w.user_id
+        GROUP BY u.id, u.username, u.avatar_number, u.avatar_position, u.avatar_colorway, u.avatar_icon, u.favorite_team
+        ORDER BY points DESC, u.username
+    """;
 
-    // Même calcul que getLeaderboardRaw, limité aux tickets POSÉS depuis
-    // `since` (classements de la semaine / du mois) : un pari compte pour la
-    // semaine de jeu où il a été joué, avec le solde de cette semaine-là,
-    // même s'il se règle après le lundi suivant.
-    @org.springframework.data.jpa.repository.Query("""
-        SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
-               COUNT(b) as totalBets,
-               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
-               b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
-               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
-               b.user.favoriteTeam as favoriteTeam
-        FROM Bet b
-        WHERE b.status IN ('WON', 'LOST') AND b.placedAt >= :since
-        GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
-                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
-        ORDER BY points DESC
-    """)
-    List<Object[]> getLeaderboardRawSince(java.time.Instant since);
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true,
+            value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_ALL + ") s" + LEADERBOARD_OUTER_END)
+    List<Object[]> getWeeklyScoreLeaderboard(java.time.LocalDateTime fromWeek);
+
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true,
+            value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_MEMBERS + ") s" + LEADERBOARD_OUTER_END)
+    List<Object[]> getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime fromWeek, List<String> memberIds);
+
+    /** Classement de la saison : toutes les semaines. */
+    default List<Object[]> getLeaderboardRaw() {
+        return getWeeklyScoreLeaderboard(java.time.LocalDateTime.of(1970, 1, 1, 0, 0));
+    }
+
+    /**
+     * Classement depuis `since` (semaine : lundi 12h ; mois : le 1er à minuit,
+     * GMT) : semaines de jeu dont le lundi tombe à partir de cette date.
+     * Les semaines sont repérées par leur lundi à minuit, décalé de 12 h.
+     */
+    default List<Object[]> getLeaderboardRawSince(java.time.Instant since) {
+        return getWeeklyScoreLeaderboard(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC));
+    }
+
+    /** Classement d'une ligue : saison, limité à ses membres. */
+    default List<Object[]> getLeaderboardRawForUsers(List<String> memberIds) {
+        return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.of(1970, 1, 1, 0, 0), memberIds);
+    }
 
     // Les 10 derniers tickets résolus (gagnés/perdus) de chaque joueur, du
     // plus récent au plus ancien : forme récente et série en cours. En SQL
@@ -104,21 +128,6 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     List<Object[]> countBetsByUser(List<String> userIds);
 
-    @org.springframework.data.jpa.repository.Query("""
-        SELECT b.user.id as userId, b.user.username as username,
-               SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END) as points,
-               COUNT(b) as totalBets,
-               SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) as wonBets,
-               b.user.avatarNumber as avatarNumber, b.user.avatarPosition as avatarPosition,
-               b.user.avatarColorway as avatarColorway, b.user.avatarIcon as avatarIcon,
-               b.user.favoriteTeam as favoriteTeam
-        FROM Bet b
-        WHERE b.status IN ('WON', 'LOST') AND b.user.id IN :memberIds
-        GROUP BY b.user.id, b.user.username, b.user.avatarNumber, b.user.avatarPosition,
-                 b.user.avatarColorway, b.user.avatarIcon, b.user.favoriteTeam
-        ORDER BY points DESC
-    """)
-    List<Object[]> getLeaderboardRawForUsers(List<String> memberIds);
 
     @org.springframework.data.jpa.repository.Query("""
         SELECT COUNT(b), SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END)

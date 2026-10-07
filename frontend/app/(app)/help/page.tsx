@@ -169,8 +169,8 @@ export default function HelpPage() {
 
             <RuleCard icon={Trophy} title="Classement et ligues">
               <p>
-                On est classé au <strong className="text-foreground">bénéfice net</strong> : gains moins mises,
-                pertes comprises. Ton solde de la semaine ne compte pas. Crée une ligue privée et partage son code à 6
+                Chaque semaine vaut ton <strong className="text-foreground">bénéfice net</strong> (gains moins
+                mises), jamais moins de 0, et le classement additionne les semaines. Ton solde ne compte pas. Crée une ligue privée et partage son code à 6
                 caractères pour avoir aussi votre classement entre amis.
               </p>
             </RuleCard>

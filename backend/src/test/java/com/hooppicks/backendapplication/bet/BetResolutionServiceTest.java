@@ -108,7 +108,7 @@ class BetResolutionServiceTest {
         assertThat(notifCaptor.getValue().getType()).isEqualTo(NotificationType.BET_WON);
         // Le ticket est nommé, et les deux chiffres sont distingués.
         assertThat(notifCaptor.getValue().getMessage())
-                .contains("+8 pts au classement")
+                .contains("+8 pts de bénéfice")
                 .contains("18 pts versés sur ton solde");
     }
 
@@ -147,7 +147,7 @@ class BetResolutionServiceTest {
         verify(bankrollService).ensureCurrent(user);
         ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(notifCaptor.capture());
-        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts au classement");
+        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts de bénéfice pour cette semaine-là");
     }
 
     @Test

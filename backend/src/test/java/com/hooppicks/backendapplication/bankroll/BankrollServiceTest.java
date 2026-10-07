@@ -99,7 +99,8 @@ class BankrollServiceTest {
 
         ArgumentCaptor<AppNotification> n = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(n.capture());
-        assertThat(n.getValue().getMessage()).contains("-350 pts au classement").contains("4 ticket(s)");
+        // Semaine dans le rouge : elle compte 0 au classement, jamais -350.
+        assertThat(n.getValue().getMessage()).contains("0 pt au classement").contains("bilan de -350 pts").contains("4 ticket(s)");
         // Récap calculé sur la semaine écoulée du joueur, pas sur la semaine en cours.
         verify(betRepository).getNetResultBetween("u1", Instant.parse("2026-09-28T12:00:00Z"), Instant.parse("2026-10-05T12:00:00Z"));
     }

@@ -182,7 +182,7 @@ export default function ProfilePage() {
           hint={
             standingQuery.data?.seasonRank != null
               ? `#${standingQuery.data.seasonRank} sur ${standingQuery.data.seasonPlayers} cette saison`
-              : "bénéfice net de la saison"
+              : "somme de tes semaines"
           }
         >
           {standingQuery.isError ? (

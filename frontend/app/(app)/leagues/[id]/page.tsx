@@ -152,7 +152,7 @@ export default function LeagueDetailPage({
             </p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ton bénéfice</p>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tes points</p>
             <p className="font-mono text-2xl font-bold">{formatSignedPoints(me.points, false)}</p>
           </div>
           <div className="glass rounded-2xl px-4 py-3">

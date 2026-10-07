@@ -100,7 +100,8 @@ public class BetResolutionService {
                 logTransaction(user, TransactionType.BET_LOSS, 0,
                         "Pari perdu (" + bet.getSelections().size() + " sélection(s))");
                 notify(user, NotificationType.BET_LOST, "Ticket perdu",
-                        "Ticket perdu · " + describe(bet) + " : -" + bet.getStake() + " pts au classement.");
+                        "Ticket perdu · " + describe(bet) + " : mise de " + bet.getStake()
+                                + " pts perdue, retirée de ton bénéfice de la semaine (qui ne descend jamais sous 0).");
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
@@ -133,7 +134,7 @@ public class BetResolutionService {
                     // solde (mise comprise) et ce qui compte au classement.
                     notify(user, NotificationType.BET_WON, "Ticket gagnant",
                             "Ticket gagnant · " + describe(bet) + " : +" + (bet.getPotentialPayout() - bet.getStake())
-                                    + " pts au classement (" + bet.getPotentialPayout() + " pts versés sur ton solde, mise comprise).");
+                                    + " pts de bénéfice pour ta semaine (" + bet.getPotentialPayout() + " pts versés sur ton solde, mise comprise).");
                 } else {
                     // Pari de la semaine passée : le gain compte au classement de
                     // cette semaine-là, mais ne gonfle pas le solde neuf.
@@ -141,7 +142,7 @@ public class BetResolutionService {
                     logTransaction(user, TransactionType.BET_WIN, 0,
                             "Pari gagné de la semaine passée (+" + net + " pts au classement, solde déjà remis à niveau)");
                     notify(user, NotificationType.BET_WON, "Ticket gagnant",
-                            "Ticket de la semaine passée gagnant · " + describe(bet) + " : +" + net + " pts au classement de cette semaine-là.");
+                            "Ticket de la semaine passée gagnant · " + describe(bet) + " : +" + net + " pts de bénéfice pour cette semaine-là.");
                 }
             }
 
