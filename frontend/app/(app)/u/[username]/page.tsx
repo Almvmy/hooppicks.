@@ -2,7 +2,8 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { CalendarDays, Flame, Pencil, Swords, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +16,7 @@ import { FormStreak } from "@/components/form-streak";
 import { BestBetTrophy } from "@/components/best-bet-trophy";
 import { fetchPublicProfile } from "@/lib/api/users";
 import { fetchMyStanding } from "@/lib/api/leaderboard";
+import { challengeToDuel, fetchDuels } from "@/lib/api/duels";
 import { badgeIcon } from "@/lib/badges";
 import { netResult } from "@/lib/bet-legs";
 import { rankTitle } from "@/lib/rank-title";
@@ -87,6 +89,16 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
     enabled: !!profile && !profile.isMe,
   });
   const teams = useTeamsByAbbreviation();
+  const queryClient = useQueryClient();
+  const duelsQuery = useQuery({ queryKey: ["duels"], queryFn: fetchDuels, enabled: !!profile && !profile.isMe });
+  const challenge = useMutation({
+    mutationFn: () => challengeToDuel(username),
+    onSuccess: () => {
+      toast.success(`Défi envoyé à @${username}.`);
+      queryClient.invalidateQueries({ queryKey: ["duels"] });
+    },
+    onError: (error) => toast.error(error instanceof Error && error.message ? error.message : "Défi impossible."),
+  });
 
   if (isLoading) {
     return (
@@ -120,6 +132,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   const title = rankTitle(profile.seasonRank ?? undefined, profile.seasonPlayers);
   const mine = mineQuery.data;
   const plural = (n: number) => (n > 1 ? "s" : "");
+  // Un défi en attente ou accepté porte forcément sur la semaine en cours
+  // (les autres ont expiré ou sont terminés).
+  const currentDuel = duelsQuery.data?.find(
+    (d) => d.opponentUsername === profile.username && (d.status === "pending" || d.status === "accepted")
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -164,6 +181,27 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
               )}
             </div>
           </div>
+          {!profile.isMe && (
+            <div className="w-full lg:w-auto">
+              {currentDuel ? (
+                <Link href="/duels">
+                  <Button variant="outline" size="sm">
+                    <Swords className="h-3.5 w-3.5" />
+                    {currentDuel.status === "accepted"
+                      ? "Duel en cours"
+                      : currentDuel.iChallenged
+                        ? "Défi envoyé"
+                        : "Répondre à son défi"}
+                  </Button>
+                </Link>
+              ) : (
+                <Button variant="lit" size="sm" disabled={challenge.isPending || duelsQuery.isLoading} onClick={() => challenge.mutate()}>
+                  <Swords className="h-3.5 w-3.5" />
+                  Défier cette semaine
+                </Button>
+              )}
+            </div>
+          )}
           {profile.isMe && (
             <Link href="/profile" className="w-full lg:w-auto">
               <Button variant="outline" size="sm">

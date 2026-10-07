@@ -365,7 +365,7 @@ export interface AdminBet {
   placedAt: string;
 }
 
-export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "favorite_team" | "system";
+export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "favorite_team" | "system" | "duel";
 
 export interface AppNotification {
   id: string;
@@ -407,4 +407,23 @@ export interface PublicProfile {
   bestTicket: PlacedBet | null;
   commonLeagues: string[];
   isMe: boolean;
+}
+export type DuelStatus = "pending" | "accepted" | "declined" | "cancelled" | "expired" | "finished";
+
+/** Un duel vu par le joueur connecté : « moi » contre « l'adversaire ». */
+export interface Duel {
+  id: string;
+  status: DuelStatus;
+  iChallenged: boolean;
+  week: string;
+  opponentUsername: string;
+  opponentAvatarNumber: number;
+  opponentAvatarPosition: AvatarPosition;
+  opponentAvatarColorway: AvatarColorway;
+  opponentAvatarIcon: AvatarIcon;
+  /** En direct pour un duel de la semaine en cours, figés une fois terminé. */
+  myPoints: number | null;
+  opponentPoints: number | null;
+  result: "won" | "lost" | "tie" | null;
+  createdAt: string;
 }

@@ -30,7 +30,8 @@ public class EnumCheckConstraintCleanup implements ApplicationRunner {
             new String[]{"wallet_transaction", "wallet_transaction_type_check"},
             new String[]{"bet", "bet_status_check"},
             new String[]{"match", "match_status_check"},
-            new String[]{"match", "match_type_check"}
+            new String[]{"match", "match_type_check"},
+            new String[]{"duel", "duel_status_check"}
     );
 
     private final JdbcTemplate jdbcTemplate;

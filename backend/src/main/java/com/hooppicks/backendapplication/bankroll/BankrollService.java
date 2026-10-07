@@ -85,7 +85,7 @@ public class BankrollService {
         return weekStart(at).toLocalDate();
     }
 
-    private static Instant startOf(LocalDate week) {
+    public static Instant startOf(LocalDate week) {
         return week.atTime(RESET_TIME).atZone(ZONE).toInstant();
     }
 

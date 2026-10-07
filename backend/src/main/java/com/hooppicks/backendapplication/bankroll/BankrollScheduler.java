@@ -24,14 +24,24 @@ public class BankrollScheduler {
 
     private final BankrollService bankrollService;
     private final NbaSyncService nbaSyncService;
+    private final com.hooppicks.backendapplication.duel.DuelService duelService;
 
-    public BankrollScheduler(BankrollService bankrollService, NbaSyncService nbaSyncService) {
+    public BankrollScheduler(BankrollService bankrollService, NbaSyncService nbaSyncService,
+                             com.hooppicks.backendapplication.duel.DuelService duelService) {
+        this.duelService = duelService;
         this.bankrollService = bankrollService;
         this.nbaSyncService = nbaSyncService;
     }
 
     @Scheduled(fixedRate = 60 * 1000, initialDelay = 20 * 1000)
     public void rollOver() {
+        // Duels des semaines finies : ne touche à aucun solde, pas besoin du
+        // verrou de la synchro. Isolé pour ne jamais bloquer le passage de semaine.
+        try {
+            duelService.settleEndedWeeks();
+        } catch (Exception e) {
+            log.error("Clôture des duels en échec", e);
+        }
         try {
             if (!bankrollService.rollOverNeeded()) return;
             nbaSyncService.tryRunExclusive(() -> {

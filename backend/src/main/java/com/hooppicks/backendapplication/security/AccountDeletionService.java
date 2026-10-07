@@ -5,6 +5,7 @@ import com.hooppicks.backendapplication.entity.LeagueMembership;
 import com.hooppicks.backendapplication.league.LeagueService;
 import com.hooppicks.backendapplication.push.PushSubscriptionRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
+import com.hooppicks.backendapplication.repository.DuelRepository;
 import com.hooppicks.backendapplication.repository.LeagueMembershipRepository;
 import com.hooppicks.backendapplication.repository.LeagueRepository;
 import com.hooppicks.backendapplication.repository.NotificationRepository;
@@ -29,6 +30,7 @@ public class AccountDeletionService {
     private final EmailVerificationTokenRepository verificationTokenRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final SessionStore sessionStore;
+    private final DuelRepository duelRepository;
 
     public AccountDeletionService(UserRepository userRepository, LeagueRepository leagueRepository,
                                    LeagueMembershipRepository membershipRepository, LeagueService leagueService,
@@ -37,7 +39,8 @@ public class AccountDeletionService {
                                    PasswordResetTokenRepository tokenRepository,
                                    EmailVerificationTokenRepository verificationTokenRepository,
                                    PushSubscriptionRepository pushSubscriptionRepository,
-                                   SessionStore sessionStore) {
+                                   SessionStore sessionStore, DuelRepository duelRepository) {
+        this.duelRepository = duelRepository;
         this.userRepository = userRepository;
         this.leagueRepository = leagueRepository;
         this.membershipRepository = membershipRepository;
@@ -67,6 +70,7 @@ public class AccountDeletionService {
             leagueService.leaveLeague(membership.getLeague().getId(), userId);
         }
 
+        duelRepository.deleteAllForUser(userId);
         betRepository.deleteByUserId(userId);
         transactionRepository.deleteByUserId(userId);
         notificationRepository.deleteByUserId(userId);

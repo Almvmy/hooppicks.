@@ -73,6 +73,29 @@ public interface BetRepository extends JpaRepository<Bet, String> {
         return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.of(1970, 1, 1, 0, 0), memberIds);
     }
 
+    /**
+     * Points d'une semaine de jeu précise (même règle que le classement :
+     * bilan de la semaine, jamais moins de 0) pour quelques joueurs. `week` =
+     * lundi de la semaine à minuit, comme le regroupement décalé de 12 h.
+     * Un joueur sans ticket réglé cette semaine n'a pas de ligne (= 0).
+     */
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+        SELECT b.user_id,
+               CAST(GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
+        FROM bet b
+        WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:userIds)
+          AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
+        GROUP BY b.user_id
+    """)
+    List<Object[]> getWeekScores(java.time.LocalDateTime week, List<String> userIds);
+
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COUNT(b) FROM Bet b
+        WHERE b.user.id IN :userIds AND b.status = com.hooppicks.backendapplication.entity.BetStatus.PENDING
+          AND b.placedAt >= :from AND b.placedAt < :to
+    """)
+    long countPendingPlacedBetween(List<String> userIds, java.time.Instant from, java.time.Instant to);
+
     /** Classement d'une ligue depuis `since` (même règle que getLeaderboardRawSince). */
     default List<Object[]> getLeaderboardRawForUsersSince(java.time.Instant since, List<String> memberIds) {
         return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC), memberIds);
