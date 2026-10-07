@@ -1,4 +1,3 @@
-import { AlertTriangle } from "lucide-react";
 import { MorphingTeamLogo, TeamLogo, teamLogoMorphName } from "@/components/team-logo";
 import { getTeamColor } from "@/lib/team-colors";
 import { Match, Team } from "@/lib/types";
@@ -79,12 +78,14 @@ function FaceOffTeam({
       <span className={cn("max-w-full truncate font-heading text-base font-bold leading-tight", nameClassName)}>
         {team.name}
       </span>
-      {!!team.outPlayersCount && (
+      {/* Discret (gris, sans icône d'alerte) et masqué en présaison : le
+          rapport de blessures n'est pas encore remis à jour pour la nouvelle
+          saison, l'alerte orange donnait trop de poids à une info douteuse. */}
+      {!!team.outPlayersCount && match.type !== "preseason" && (
         <span
-          className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500 light:text-amber-800"
+          className="text-[10px] text-muted-foreground"
           title={`${team.outPlayersCount} joueur(s) indisponible(s) (Out)`}
         >
-          <AlertTriangle className="h-3 w-3" />
           {team.outPlayersCount} absent{team.outPlayersCount > 1 ? "s" : ""}
         </span>
       )}

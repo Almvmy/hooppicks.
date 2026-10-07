@@ -31,12 +31,14 @@ export function WalletTrend({
   weeklyDelta,
   staked,
   won,
+  pending,
   isLoading,
 }: {
   series: number[];
   weeklyDelta: number;
   staked: number;
   won: number;
+  pending: number;
   isLoading: boolean;
 }) {
   const { line, area } = buildPath(series);
@@ -47,7 +49,7 @@ export function WalletTrend({
     <Card>
       <CardHeader className="space-y-0">
         <CardTitle className="font-heading text-base">Ta semaine</CardTitle>
-        <p className="text-xs text-muted-foreground">Bénéfice net depuis lundi 12h, ticket après ticket</p>
+        <p className="text-xs text-muted-foreground">Bénéfice net des tickets réglés depuis lundi 12h</p>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {isLoading ? (
@@ -90,13 +92,18 @@ export function WalletTrend({
               )}
             </svg>
 
-            <div className="glass-hairline-t flex items-center justify-between pt-3 text-xs">
-              <span className="text-muted-foreground">
-                Misé <span className="font-mono text-foreground">{staked.toLocaleString("fr-FR")}</span> pts
+            <div className="glass-hairline-t flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3 text-xs">
+              <span className="text-muted-foreground" title="Mises des tickets réglés (gagnés ou perdus)">
+                Misé <span className="font-mono text-foreground">{staked.toLocaleString("fr-FR")}</span>
               </span>
-              <span className="text-muted-foreground">
-                Gagné <span className="font-mono text-foreground">{won.toLocaleString("fr-FR")}</span> pts
+              <span className="text-muted-foreground" title="Gains versés par les tickets gagnants, mise comprise">
+                Rapporté <span className="font-mono text-foreground">{won.toLocaleString("fr-FR")}</span>
               </span>
+              {pending > 0 && (
+                <span className="text-muted-foreground" title="Mises des tickets pas encore réglés">
+                  En jeu <span className="font-mono text-foreground">{pending.toLocaleString("fr-FR")}</span>
+                </span>
+              )}
             </div>
           </>
         )}

@@ -132,6 +132,7 @@ export default function DashboardPage() {
             weeklyDelta={week.net}
             staked={week.staked}
             won={week.won}
+            pending={week.pending}
             isLoading={betsQuery.isLoading}
           />
           <LeaderboardPreview

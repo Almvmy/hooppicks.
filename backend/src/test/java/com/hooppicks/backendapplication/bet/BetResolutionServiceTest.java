@@ -106,6 +106,27 @@ class BetResolutionServiceTest {
         ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(notifCaptor.capture());
         assertThat(notifCaptor.getValue().getType()).isEqualTo(NotificationType.BET_WON);
+        // Le ticket est nommé, et les deux chiffres sont distingués.
+        assertThat(notifCaptor.getValue().getMessage())
+                .contains("+8 pts au classement")
+                .contains("18 pts versés sur ton solde");
+    }
+
+    @Test
+    void describe_nomme_un_pari_simple_et_resume_un_combine() {
+        BetSelection a = selection("m1", "moneyline", "home");
+        a.setLabel("LAL (V)");
+        a.setMatchLabel("Celtics vs Lakers");
+        assertThat(BetResolutionService.describe(pendingBet(user(0), 10, 18, a))).isEqualTo("LAL (V) · Celtics vs Lakers");
+
+        BetSelection b = selection("m2", "spread", "away");
+        b.setLabel("BOS +4");
+        BetSelection c = selection("m3", "total", "over");
+        c.setLabel("Plus de 228.5");
+        BetSelection d = selection("m4", "moneyline", "away");
+        d.setLabel("NYK (V)");
+        assertThat(BetResolutionService.describe(pendingBet(user(0), 10, 18, a, b, c, d)))
+                .isEqualTo("combiné de 4 : LAL (V), BOS +4, Plus de 228.5…");
     }
 
     @Test

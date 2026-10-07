@@ -185,7 +185,8 @@ public class LeagueService {
             java.time.Instant occurredAt = bet.getResolvedAt() != null ? bet.getResolvedAt() : bet.getPlacedAt();
             activity.add(new RawActivity(
                     "BET", bet.getId(), bet.getUser().getUsername(),
-                    "a gagné un ticket : +" + bet.getPotentialPayout() + " pts", occurredAt,
+                    // Bénéfice net, comme au classement (pas le gain brut, mise comprise).
+                    "a gagné un ticket : +" + (bet.getPotentialPayout() - bet.getStake()) + " pts", occurredAt,
                     bet.getUser().getAvatarNumber(), bet.getUser().getAvatarPosition(),
                     bet.getUser().getAvatarColorway(), bet.getUser().getAvatarIcon()
             ));

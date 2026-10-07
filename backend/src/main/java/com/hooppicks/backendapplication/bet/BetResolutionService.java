@@ -86,7 +86,8 @@ public class BetResolutionService {
                 bet.setStatus(BetStatus.LOST);
                 logTransaction(user, TransactionType.BET_LOSS, 0,
                         "Pari perdu (" + bet.getSelections().size() + " sélection(s))");
-                notify(user, NotificationType.BET_LOST, "Ticket perdu", "Ton pari n'est pas gagnant.");
+                notify(user, NotificationType.BET_LOST, "Ticket perdu",
+                        "Ticket perdu · " + describe(bet) + " : -" + bet.getStake() + " pts au classement.");
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
@@ -94,9 +95,12 @@ public class BetResolutionService {
                     user.setWalletBalance(user.getWalletBalance() + bet.getStake());
                     userRepository.save(user);
                     logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
-                    notify(user, NotificationType.SYSTEM, "Ticket remboursé", "Ton pari a été annulé (égalité sur le seuil), mise remboursée : +" + bet.getStake() + " pts");
+                    notify(user, NotificationType.SYSTEM, "Ticket remboursé",
+                            "Ticket remboursé · " + describe(bet) + " : égalité pile sur la ligne, tes " + bet.getStake()
+                                    + " pts te sont rendus. Rien ne change au classement.");
                 } else {
-                    notify(user, NotificationType.SYSTEM, "Ticket annulé", "Ton pari de la semaine passée a été annulé (égalité sur le seuil) : il ne compte pas au classement.");
+                    notify(user, NotificationType.SYSTEM, "Ticket annulé",
+                            "Ticket de la semaine passée annulé · " + describe(bet) + " : égalité pile sur la ligne, il ne compte pas au classement.");
                 }
             } else {
                 if (anyPush) {
@@ -112,7 +116,11 @@ public class BetResolutionService {
                     userRepository.save(user);
                     logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
                             "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
-                    notify(user, NotificationType.BET_WON, "Ticket gagnant", "Ton pari est gagnant : +" + bet.getPotentialPayout() + " pts");
+                    // Deux chiffres distincts, chacun nommé : ce qui revient sur le
+                    // solde (mise comprise) et ce qui compte au classement.
+                    notify(user, NotificationType.BET_WON, "Ticket gagnant",
+                            "Ticket gagnant · " + describe(bet) + " : +" + (bet.getPotentialPayout() - bet.getStake())
+                                    + " pts au classement (" + bet.getPotentialPayout() + " pts versés sur ton solde, mise comprise).");
                 } else {
                     // Pari de la semaine passée : le gain compte au classement de
                     // cette semaine-là, mais ne gonfle pas le solde neuf.
@@ -120,7 +128,7 @@ public class BetResolutionService {
                     logTransaction(user, TransactionType.BET_WIN, 0,
                             "Pari gagné de la semaine passée (+" + net + " pts au classement, solde déjà remis à niveau)");
                     notify(user, NotificationType.BET_WON, "Ticket gagnant",
-                            "Ton pari de la semaine passée est gagnant : +" + net + " pts au classement de cette semaine-là");
+                            "Ticket de la semaine passée gagnant · " + describe(bet) + " : +" + net + " pts au classement de cette semaine-là.");
                 }
             }
 
@@ -129,6 +137,17 @@ public class BetResolutionService {
         }
 
         return resolvedCount;
+    }
+
+    /** « LAL (V) · Lakers vs Celtics » ou « combiné de 3 : LAL (V), BOS -4, Plus de 228.5 ». */
+    static String describe(Bet bet) {
+        List<BetSelection> legs = bet.getSelections();
+        if (legs.size() == 1) {
+            BetSelection s = legs.get(0);
+            return s.getMatchLabel() == null ? s.getLabel() : s.getLabel() + " · " + s.getMatchLabel();
+        }
+        String shown = legs.stream().limit(3).map(BetSelection::getLabel).collect(Collectors.joining(", "));
+        return "combiné de " + legs.size() + " : " + shown + (legs.size() > 3 ? "…" : "");
     }
 
     private void logTransaction(User user, TransactionType type, int amount, String description) {

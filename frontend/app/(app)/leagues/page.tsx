@@ -74,11 +74,13 @@ function LeagueCard({
                 </span>
               )}
             </p>
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            {/* div et non p : les avatars sont des div, interdits dans un p
+                (erreur d'hydratation). */}
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Users className="h-3 w-3" />
               {league.memberCount} membre{league.memberCount > 1 ? "s" : ""}
               <MemberStack members={members} />
-            </p>
+            </div>
           </div>
           <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
         </Link>
