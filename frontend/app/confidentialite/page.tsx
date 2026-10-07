@@ -67,19 +67,6 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="Prestataires">
-          <ul className="list-inside list-disc space-y-1">
-            <li>Railway : hébergement de l&apos;application et de sa base de données ;</li>
-            <li>Brevo : envoi des e-mails (confirmation d&apos;adresse, mot de passe oublié) ;</li>
-            <li>Sentry, s&apos;il est activé : rapports d&apos;erreurs techniques pour corriger les bugs ;</li>
-            <li>
-              les services push de ton navigateur (Google, Mozilla, Apple, Microsoft) : acheminement des notifications que
-              tu as activées.
-            </li>
-          </ul>
-          <p>Les données des matchs et des joueurs NBA viennent de sources publiques et ne te concernent pas.</p>
-        </Section>
-
         <Section title="Durée et suppression">
           <p>
             Tes données sont gardées tant que ton compte existe. Tu peux le supprimer à tout moment depuis{" "}
