@@ -1,24 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPromptCapture } from "@/components/install-app";
 import "./globals.css";
 
-const inter = Inter({
+// Polices dans le dépôt plutôt que next/font/google : celui-ci les retélécharge
+// chez Google au démarrage du serveur et casse toute la page (« Can't resolve
+// .../font/google/font ») à la moindre coupure réseau. Variables, sous-ensemble latin.
+const inter = localFont({
+  src: "./fonts/inter-latin.woff2",
   variable: "--font-sans",
-  subsets: ["latin"],
+  weight: "100 900",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-latin.woff2",
   variable: "--font-heading",
-  subsets: ["latin"],
+  weight: "300 700",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "./fonts/jetbrains-mono-latin.woff2",
   variable: "--font-mono-num",
-  subsets: ["latin"],
+  weight: "100 800",
 });
 
 export const metadata: Metadata = {
