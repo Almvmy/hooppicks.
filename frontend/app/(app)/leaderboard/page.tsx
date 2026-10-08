@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, CalendarRange, Crown, Heart, Search, Shield, TrendingUp, Trophy, Users } from "lucide-react";
+import { ArrowDown, CalendarRange, Crown, Heart, Search, TrendingUp, Trophy, Users } from "lucide-react";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import { TeamLogo } from "@/components/team-logo";
 import { CountUp } from "@/components/motion/count-up";
 import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/trends";
 import { FanTeams } from "@/components/leaderboard/fan-teams";
-import { MyLeagues } from "@/components/leaderboard/my-leagues";
 import { fetchLeaderboard, leaderboardQueryKey } from "@/lib/api/leaderboard";
 import { fetchProfile } from "@/lib/api/auth";
 import { normalizeForSearch } from "@/lib/help-content";
@@ -364,12 +363,11 @@ function FansRanking({ favoriteTeam }: { favoriteTeam: string | undefined }) {
   return <FanTeams entries={data} myTeam={favoriteTeamAbbreviation(favoriteTeam, teams)} />;
 }
 
-type View = "joueurs" | "fans" | "ligues";
+type View = "joueurs" | "fans";
 
 const VIEWS: { value: View; label: string; icon: typeof Users }[] = [
   { value: "joueurs", label: "Joueurs", icon: Users },
   { value: "fans", label: "Fans par équipe", icon: Heart },
-  { value: "ligues", label: "Mes ligues", icon: Shield },
 ];
 
 export default function LeaderboardPage({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
@@ -379,9 +377,10 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
   const [view, setViewState] = useState<View>(VIEWS.some((v) => v.value === vue) ? (vue as View) : "joueurs");
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
 
-  // « Mes ligues » n'a de sens que connecté (le classement, lui, est public).
-  const views = profile ? VIEWS : VIEWS.filter((v) => v.value !== "ligues");
-  const activeView = views.some((v) => v.value === view) ? view : "joueurs";
+  // Ancienne vue « Mes ligues », devenue l'onglet Ligues de la rubrique.
+  useEffect(() => {
+    if (vue === "ligues") router.replace("/leagues");
+  }, [vue, router]);
 
   function setView(next: View) {
     setViewState(next);
@@ -396,13 +395,13 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
       </div>
 
       <div className="glass-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist">
-        {views.map(({ value, label, icon: Icon }) => (
+        {VIEWS.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
             type="button"
             role="tab"
-            aria-selected={activeView === value}
-            className={chipClass(activeView === value)}
+            aria-selected={view === value}
+            className={chipClass(view === value)}
             onClick={() => setView(value)}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -411,9 +410,8 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
         ))}
       </div>
 
-      {activeView === "joueurs" && <PlayersRanking username={profile?.username} />}
-      {activeView === "fans" && <FansRanking favoriteTeam={profile?.favoriteTeam} />}
-      {activeView === "ligues" && <MyLeagues username={profile?.username} />}
+      {view === "joueurs" && <PlayersRanking username={profile?.username} />}
+      {view === "fans" && <FansRanking favoriteTeam={profile?.favoriteTeam} />}
     </div>
   );
 }

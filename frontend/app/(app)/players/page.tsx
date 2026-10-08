@@ -2,9 +2,8 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Crown, Search, Shield, Trophy, Users, X } from "lucide-react";
+import { Activity, Crown, Search, Trophy, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
@@ -486,40 +485,24 @@ function TeamsTab() {
   );
 }
 
-type Tab = "joueurs" | "equipes";
-
 export default function PlayersPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  // Onglet dans l'adresse (?tab=equipes) : retrouvé au retour sur la page et partageable.
-  const { tab: tabParam } = use(searchParams);
-  const router = useRouter();
-  const [tab, setTabState] = useState<Tab>(tabParam === "equipes" ? "equipes" : "joueurs");
-
-  function setTab(next: Tab) {
-    setTabState(next);
-    router.replace(next === "joueurs" ? "/players" : "/players?tab=equipes", { scroll: false });
-  }
+  // Joueurs et Équipes sont deux onglets de la rubrique NBA (SectionTabs),
+  // distingués par l'adresse (?tab=equipes) : partageable et retrouvé au retour.
+  const { tab } = use(searchParams);
+  const teams = tab === "equipes";
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold">Joueurs & équipes</h1>
+        <h1 className="font-heading text-2xl font-bold">{teams ? "Équipes" : "Joueurs"}</h1>
         <p className="mt-1 text-muted-foreground">
-          Meneurs statistiques, blessés, effectifs, comparateur et classement des équipes.
+          {teams
+            ? "Classement officiel par conférence, effectifs et classement Elo des 30 équipes."
+            : "Meneurs statistiques, blessés, recherche et comparateur de joueurs."}
         </p>
       </div>
 
-      <div className="flex gap-2" role="tablist">
-        <button type="button" role="tab" aria-selected={tab === "joueurs"} className={chipClass(tab === "joueurs")} onClick={() => setTab("joueurs")}>
-          <Users className="h-3.5 w-3.5" />
-          Joueurs
-        </button>
-        <button type="button" role="tab" aria-selected={tab === "equipes"} className={chipClass(tab === "equipes")} onClick={() => setTab("equipes")}>
-          <Shield className="h-3.5 w-3.5" />
-          Équipes
-        </button>
-      </div>
-
-      {tab === "joueurs" ? <PlayersTab /> : <TeamsTab />}
+      {teams ? <TeamsTab /> : <PlayersTab />}
     </div>
   );
 }

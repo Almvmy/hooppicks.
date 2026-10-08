@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { SectionTabs } from "@/components/layout/section-tabs";
 import { Topbar } from "@/components/layout/topbar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { BetSlipProvider } from "@/components/bet-slip-provider";
@@ -23,7 +25,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <EmailVerificationBanner />
             {/* pb-32 (au lieu de pb-20) : la bottom nav est devenue une île
                 flottante, elle a besoin de plus de dégagement. */}
-            <main className="flex-1 p-6 pb-32 md:pb-6">{children}</main>
+            <main className="flex-1 p-6 pb-32 md:pb-6">
+              <Suspense fallback={null}>
+                <SectionTabs />
+              </Suspense>
+              {children}
+            </main>
           </div>
         </div>
       </div>

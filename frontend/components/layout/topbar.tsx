@@ -1,8 +1,9 @@
 "use client";
 
-import { HelpCircle, Info, LogOut, Settings, ShieldCheck } from "lucide-react";
+import { Suspense } from "react";
+import { HelpCircle, Info, LogOut, Lock } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,17 +14,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StandingBadge } from "@/components/standing-badge";
 import { NotificationsDropdown } from "@/components/notifications-dropdown";
-import { MobileNav } from "@/components/layout/mobile-nav";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { LogoSymbol } from "@/app/LogoSymbol";
 import { logoutUser, fetchProfile } from "@/lib/api/auth";
-import { NAV_ITEMS } from "@/lib/nav";
+import { ACCOUNT_ITEMS, pageTitle } from "@/lib/nav";
+
+// Sous Suspense : useSearchParams (« Joueurs » / « Équipes » partagent /players).
+function PageTitle() {
+  const title = pageTitle(usePathname(), useSearchParams().toString());
+  if (!title) return null;
+  // Centré sur toute la largeur de la barre (pas juste dans l'espace restant
+  // entre logo et actions) : sinon le titre penche visuellement vers la gauche
+  // dès que le logo prend de la place. Caché sur mobile où la topbar est déjà
+  // pleine.
+  return (
+    <h1 className="absolute left-1/2 hidden -translate-x-1/2 font-heading text-lg font-bold md:block">{title}</h1>
+  );
+}
 
 export function Topbar() {
   const router = useRouter();
-  const pathname = usePathname();
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
-  const pageTitle = NAV_ITEMS.find((item) => pathname.startsWith(item.href))?.label;
+  const account = ACCOUNT_ITEMS.filter((item) => !item.adminOnly || profile?.isAdmin);
 
   async function handleLogout() {
     await logoutUser();
@@ -35,10 +47,6 @@ export function Topbar() {
     // + sticky top-0 : la barre reste au-dessus du contenu qui défile, ce qui
     //   est le seul moment où le flou se voit vraiment.
     <header className="glass-chrome chrome-joined relative sticky top-0 z-30 flex h-16 items-center gap-4 px-6">
-      <div className="flex items-center gap-2 md:hidden">
-        <MobileNav />
-      </div>
-
       {/* La topbar porte la marque en permanence désormais (plus dans la
           sidebar) : une seule barre continue en haut, sidebar en dessous. */}
       <Link href="/dashboard" className="flex items-center gap-2">
@@ -50,15 +58,9 @@ export function Topbar() {
         </span>
       </Link>
 
-      {/* Centré sur toute la largeur de la barre (pas juste dans l'espace
-          restant entre logo et actions) : sinon le titre penche visuellement
-          vers la gauche dès que le logo prend de la place. Caché sur mobile
-          où la topbar est déjà pleine. */}
-      {pageTitle && (
-        <h1 className="absolute left-1/2 hidden -translate-x-1/2 font-heading text-lg font-bold md:block">
-          {pageTitle}
-        </h1>
-      )}
+      <Suspense fallback={null}>
+        <PageTitle />
+      </Suspense>
 
       <div className="ml-auto flex items-center gap-4">
         <StandingBadge />
@@ -75,7 +77,7 @@ export function Topbar() {
         <NotificationsDropdown />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-full" data-testid="user-menu-trigger">
+          <DropdownMenuTrigger className="rounded-full" data-testid="user-menu-trigger" aria-label="Mon compte">
             {profile ? (
               <PlayerAvatar
                 number={profile.avatarNumber}
@@ -90,21 +92,19 @@ export function Topbar() {
               </Avatar>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Paramètres
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/help")}>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Aide et support
-            </DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-48">
+            {account.map((item) => (
+              <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.label}
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuItem onClick={() => router.push("/about")}>
               <Info className="mr-2 h-4 w-4" />
               À propos
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push("/confidentialite")}>
-              <ShieldCheck className="mr-2 h-4 w-4" />
+              <Lock className="mr-2 h-4 w-4" />
               Confidentialité
             </DropdownMenuItem>
             <DropdownMenuItem
