@@ -195,7 +195,7 @@ export interface MatchOdds {
 }
 
 
-export type BetMarket = "moneyline" | "spread" | "total";
+export type BetMarket = "moneyline" | "spread" | "total" | "player_points";
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";
 
@@ -207,6 +207,21 @@ export interface BetSelection {
   outcome: BetOutcome;
   label: string; // ex: "Lakers -4.5"
   odds: number;
+  /** Pari joueur : joueur visé et ligne vue au moment du choix (le serveur refuse si elle a bougé). */
+  playerId?: string;
+  line?: number;
+}
+
+/** Pari joueur proposé sur un match (PlayerPropsService). */
+export interface PlayerProp {
+  playerId: string;
+  playerName: string;
+  teamAbbreviation: string;
+  headshotUrl: string | null;
+  line: number;
+  overOdds: number;
+  underOdds: number;
+  pointsPerGame: number;
 }
 
 export interface PlacedBet {

@@ -28,4 +28,10 @@ public class BetSelection {
     // sélection déjà annoncée comme validée. Boolean nullable : colonne
     // ajoutée à une table déjà remplie.
     private Boolean progressNotified;
+
+    // Pari joueur (market "player_points", PlayerPropsService) : joueur et
+    // ligne figés à la pose, la moyenne du joueur bougeant ensuite.
+    private String playerId;
+    private String playerName;
+    private Double propLine;
 }

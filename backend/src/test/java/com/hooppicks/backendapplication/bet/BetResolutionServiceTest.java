@@ -25,6 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class BetResolutionServiceTest {
 
+    private final PlayerPropsService playerPropsService = mock(PlayerPropsService.class);
+
     @Mock
     private BetRepository betRepository;
     @Mock
@@ -45,7 +47,8 @@ class BetResolutionServiceTest {
     @BeforeEach
     void setUp() {
         service = new BetResolutionService(betRepository, matchRepository, userRepository,
-                transactionRepository, notificationRepository, pushService, bankrollService);
+                transactionRepository, notificationRepository, pushService, bankrollService,
+                playerPropsService);
         // Par défaut, le pari appartient à la semaine de jeu du solde actuel.
         lenient().when(bankrollService.paysIntoCurrentBalance(any(), any())).thenReturn(true);
     }
@@ -424,5 +427,25 @@ class BetResolutionServiceTest {
         assertThat(captor.getValue().getMessage()).contains("LAL (V) validée").contains("Tout se joue maintenant sur MIN (V)")
                 .contains("IND 50-48 MIN");
         assertThat(bet.getStatus()).isEqualTo(BetStatus.PENDING);
+    }
+
+    @Test
+    void un_pari_joueur_attend_la_feuille_de_match_avant_de_regler_le_ticket() {
+        Match match = finishedMatch("m1", 110, 100, -2.5, 220.5);
+        User user = user(1000);
+        BetSelection prop = selection("m1", PlayerPropsService.MARKET, "over");
+        prop.setPlayerName("Jalen Brunson");
+        prop.setPropLine(26.5);
+        Bet bet = pendingBet(user, 100, 191, prop);
+        when(betRepository.findByStatus(BetStatus.PENDING)).thenReturn(List.of(bet));
+        when(matchRepository.findAllById(any())).thenReturn(List.of(match));
+
+        when(playerPropsService.evaluate(any(), any(), any())).thenReturn(java.util.Optional.empty());
+        assertThat(service.resolvePendingBets()).isZero();
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.PENDING);
+
+        when(playerPropsService.evaluate(any(), any(), any())).thenReturn(java.util.Optional.of(LegEvaluator.LegResult.WIN));
+        assertThat(service.resolvePendingBets()).isEqualTo(1);
+        assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
     }
 }

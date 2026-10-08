@@ -44,12 +44,15 @@ class BetControllerTest {
     private MatchRepository matchRepository;
     @Mock
     private BankrollService bankrollService;
+    @Mock
+    private com.hooppicks.backendapplication.bet.PlayerPropsService playerPropsService;
 
     private BetController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository, bankrollService);
+        controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository, bankrollService,
+                playerPropsService);
         // Semaine de jeu commencée hier : elle finit dans 6 jours.
         lenient().when(bankrollService.currentWeekStart()).thenReturn(java.time.Instant.now().minus(java.time.Duration.ofDays(1)));
     }
@@ -88,7 +91,7 @@ class BetControllerTest {
     }
 
     private PlaceBetRequest.SelectionInput moneylineHome(String matchId) {
-        return new PlaceBetRequest.SelectionInput(matchId, "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 1.8);
+        return new PlaceBetRequest.SelectionInput(matchId, "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 1.8, null, null);
     }
 
     @Test
@@ -123,7 +126,7 @@ class BetControllerTest {
 
         PlaceBetRequest body = new PlaceBetRequest(
                 List.of(moneylineHome("m1"),
-                        new PlaceBetRequest.SelectionInput("m1", "Lakers vs Celtics", "moneyline", "away", "Celtics ML", 2.1)),
+                        new PlaceBetRequest.SelectionInput("m1", "Lakers vs Celtics", "moneyline", "away", "Celtics ML", 2.1, null, null)),
                 10);
         ResponseEntity<?> response = controller.placeBet(body, request);
 
@@ -180,7 +183,7 @@ class BetControllerTest {
 
         // Le client envoie une ancienne cote plus favorable (5.0) : doit être ignorée.
         PlaceBetRequest.SelectionInput staleOdds =
-                new PlaceBetRequest.SelectionInput("m1", "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 5.0);
+                new PlaceBetRequest.SelectionInput("m1", "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 5.0, null, null);
         PlaceBetRequest body = new PlaceBetRequest(List.of(staleOdds), 10);
 
         ResponseEntity<?> response = controller.placeBet(body, request);
@@ -232,7 +235,7 @@ class BetControllerTest {
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
 
         PlaceBetRequest body = new PlaceBetRequest(List.of(
-                new PlaceBetRequest.SelectionInput("m1", "x", "spread", "away", "n'importe quoi", 9.9)), 10);
+                new PlaceBetRequest.SelectionInput("m1", "x", "spread", "away", "n'importe quoi", 9.9, null, null)), 10);
         ResponseEntity<?> response = controller.placeBet(body, request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
@@ -250,9 +253,50 @@ class BetControllerTest {
         when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
 
         PlaceBetRequest body = new PlaceBetRequest(List.of(
-                new PlaceBetRequest.SelectionInput("m1", "", "moneyline", "draw", "", 1.0)), 10);
+                new PlaceBetRequest.SelectionInput("m1", "", "moneyline", "draw", "", 1.0, null, null)), 10);
 
         assertThat(controller.placeBet(body, request).getStatusCode().value()).isEqualTo(400);
         verifyNoInteractions(betRepository);
+    }
+
+    private PlaceBetRequest.SelectionInput brunsonOver(Double line) {
+        return new PlaceBetRequest.SelectionInput("m1", "", "player_points", "over", "", 9.9, "p1", line);
+    }
+
+    @Test
+    void pari_joueur_pose_avec_la_ligne_et_la_cote_du_serveur() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", 1000);
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user));
+        Match match = scheduledMatch("m1");
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        when(playerPropsService.find(match, "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "p1", "Jalen Brunson", "LAK", null, 26.5, 1.91, 1.91, 26.8)));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<Bet> captor = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(captor.capture());
+        com.hooppicks.backendapplication.entity.BetSelection sel = captor.getValue().getSelections().get(0);
+        assertThat(sel.getOdds()).isEqualTo(1.91); // pas le 9,9 envoyé par le client
+        assertThat(sel.getPropLine()).isEqualTo(26.5);
+        assertThat(sel.getLabel()).isEqualTo("J. Brunson · Plus de 26,5 pts");
+    }
+
+    @Test
+    void pari_joueur_refuse_si_la_ligne_a_bouge() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        Match match = scheduledMatch("m1");
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        when(playerPropsService.find(match, "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "p1", "Jalen Brunson", "LAK", null, 27.5, 1.91, 1.91, 27.6)));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        assertThat(String.valueOf(response.getBody())).contains("27,5");
+        verify(betRepository, never()).save(any());
     }
 }

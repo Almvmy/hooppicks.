@@ -15,6 +15,7 @@ import { NbaLogo } from "@/components/nba-logo";
 import { TeamNews } from "@/components/news/team-news";
 import { bettingClosedReason, formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
 import { MatchOddsRow } from "@/components/match-odds-row";
+import { PlayerPropsCard } from "@/components/player-props-card";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
 
@@ -98,6 +99,8 @@ export default function MatchDetailPage({
           </CardContent>
         </Card>
       )}
+
+      {match && isBettable(match) && <PlayerPropsCard match={match} />}
 
       {match && match.status === "scheduled" && !isBettable(match) && (
         <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground first-letter:uppercase">

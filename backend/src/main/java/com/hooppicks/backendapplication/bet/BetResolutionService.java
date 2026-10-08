@@ -27,11 +27,13 @@ public class BetResolutionService {
     private final NotificationRepository notificationRepository;
     private final PushService pushService;
     private final BankrollService bankrollService;
+    private final PlayerPropsService playerPropsService;
 
     public BetResolutionService(BetRepository betRepository, MatchRepository matchRepository,
                                 UserRepository userRepository, WalletTransactionRepository transactionRepository,
                                 NotificationRepository notificationRepository, PushService pushService,
-                                BankrollService bankrollService) {
+                                BankrollService bankrollService, PlayerPropsService playerPropsService) {
+        this.playerPropsService = playerPropsService;
         this.betRepository = betRepository;
         this.matchRepository = matchRepository;
         this.userRepository = userRepository;
@@ -52,18 +54,18 @@ public class BetResolutionService {
             Map<String, Match> matchesById = matchRepository.findAllById(matchIds).stream()
                     .collect(Collectors.toMap(Match::getId, Function.identity()));
 
-            boolean allFinished = matchIds.stream()
-                    .allMatch(id -> matchesById.containsKey(id) && matchesById.get(id).getStatus() == MatchStatus.FINISHED);
-            // Un combiné est perdu dès qu'une de ses sélections terminées est
-            // perdue : inutile d'attendre les autres matchs, rien ne peut plus
-            // le sauver. Sinon on attend la fin de tous ses matchs.
-            boolean alreadyLost = bet.getSelections().stream().anyMatch(sel -> {
-                Match m = matchesById.get(sel.getMatchId());
-                return m != null && m.getStatus() == MatchStatus.FINISHED
-                        && LegEvaluator.evaluate(sel, m) == LegResult.LOSE;
-            });
-            if (!allFinished && !alreadyLost) {
-                if (bet.getSelections().size() > 1) trackProgress(bet, matchesById);
+            java.time.Instant now = java.time.Instant.now();
+            Map<BetSelection, java.util.Optional<LegResult>> results = new java.util.HashMap<>();
+            for (BetSelection sel : bet.getSelections()) {
+                results.put(sel, legResult(sel, matchesById.get(sel.getMatchId()), now));
+            }
+            boolean allDecided = results.values().stream().allMatch(java.util.Optional::isPresent);
+            // Un combiné est perdu dès qu'une de ses sélections est perdue :
+            // inutile d'attendre les autres matchs, rien ne peut plus le sauver.
+            // Sinon on attend que toutes soient tranchées.
+            boolean alreadyLost = results.values().stream().anyMatch(r -> r.orElse(null) == LegResult.LOSE);
+            if (!allDecided && !alreadyLost) {
+                if (bet.getSelections().size() > 1) trackProgress(bet, matchesById, results);
                 continue;
             }
 
@@ -77,14 +79,13 @@ public class BetResolutionService {
             double winningOdds = 1.0;
 
             for (BetSelection selection : bet.getSelections()) {
-                Match match = matchesById.get(selection.getMatchId());
-                // Match pas encore joué dans un combiné déjà perdu : ni gagné ni
-                // remboursé, le ticket est perdu quoi qu'il arrive.
-                if (match == null || match.getStatus() != MatchStatus.FINISHED) {
+                // Sélection pas encore tranchée dans un combiné déjà perdu : ni
+                // gagnée ni remboursée, le ticket est perdu quoi qu'il arrive.
+                LegResult result = results.get(selection).orElse(null);
+                if (result == null) {
                     allPush = false;
                     continue;
                 }
-                LegResult result = LegEvaluator.evaluate(selection, match);
                 if (result == LegResult.LOSE) anyLoss = true;
                 if (result != LegResult.PUSH) allPush = false;
                 if (result == LegResult.PUSH) anyPush = true;
@@ -182,12 +183,12 @@ public class BetResolutionService {
      * le dernier match, en cours. Chaque étape n'est annoncée qu'une fois
      * (drapeaux sur la sélection et le ticket), en une seule notification.
      */
-    void trackProgress(Bet bet, Map<String, Match> matchesById) {
+    void trackProgress(Bet bet, Map<String, Match> matchesById, Map<BetSelection, java.util.Optional<LegResult>> results) {
         List<String> validated = new java.util.ArrayList<>();
         List<BetSelection> remaining = new java.util.ArrayList<>();
         for (BetSelection sel : bet.getSelections()) {
-            Match m = matchesById.get(sel.getMatchId());
-            if (m == null || m.getStatus() != MatchStatus.FINISHED) {
+            // Pas encore tranchée : match en cours, ou feuille de match pas encore là (pari joueur).
+            if (results.get(sel).isEmpty()) {
                 remaining.add(sel);
             } else if (!Boolean.TRUE.equals(sel.getProgressNotified())) {
                 sel.setProgressNotified(true);
@@ -219,6 +220,16 @@ public class BetResolutionService {
         else message.append("Plus que ").append(remaining.size()).append(remaining.size() > 1 ? " matchs" : " match");
         message.append(lastLeg != null ? " Gain en jeu : " : " pour ").append(bet.getPotentialPayout()).append(" pts.");
         notify(bet.getUser(), NotificationType.BET_PROGRESS, "Ton combiné tient bon", message.toString());
+    }
+
+    /**
+     * Résultat d'une sélection, vide tant qu'il n'est pas connu : match pas
+     * terminé, ou pari joueur dont la feuille de match n'est pas encore importée.
+     */
+    private java.util.Optional<LegResult> legResult(BetSelection selection, Match match, java.time.Instant now) {
+        if (match == null || match.getStatus() != MatchStatus.FINISHED) return java.util.Optional.empty();
+        if (PlayerPropsService.isProp(selection)) return playerPropsService.evaluate(selection, match, now);
+        return java.util.Optional.of(LegEvaluator.evaluate(selection, match));
     }
 
     private void notify(User user, NotificationType type, String title, String message) {

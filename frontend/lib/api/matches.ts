@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import { Match, PlayerBoxScore } from "@/lib/types";
+import { Match, PlayerBoxScore, PlayerProp } from "@/lib/types";
 
 export async function fetchMatches(): Promise<Match[]> {
   return apiFetch<Match[]>("/matches");
@@ -15,4 +15,8 @@ export async function fetchMatchById(id: string): Promise<Match | undefined> {
 
 export async function fetchMatchBoxScore(id: string): Promise<PlayerBoxScore[]> {
   return apiFetch<PlayerBoxScore[]>(`/matches/${id}/boxscore`);
+}
+
+export async function fetchPlayerProps(matchId: string): Promise<PlayerProp[]> {
+  return apiFetch<PlayerProp[]>(`/matches/${matchId}/props`);
 }

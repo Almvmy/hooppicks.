@@ -27,6 +27,10 @@ public record PlaceBetRequest(
             String market,
             String outcome,
             String label,
-            double odds
+            double odds,
+            // Pari joueur seulement : joueur visé et ligne affichée au moment
+            // du choix (refus si elle a bougé depuis, cf. BetController).
+            String playerId,
+            Double line
     ) {}
 }

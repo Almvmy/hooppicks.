@@ -10,8 +10,11 @@ export function OddsButton({
   selection,
   impliedProbability,
   communityPct,
+  label,
 }: {
   selection: BetSelection;
+  /** Libellé du bouton s'il doit être plus court que celui du ticket (paris joueurs). */
+  label?: string;
   /** 0-100, chances de victoire marge retirée (cf. winChances), uniquement pour le vainqueur : spread/total ont la même cote des deux côtés, donc toujours 50 %. */
   impliedProbability?: number;
   /** 0-100, part des paris de la communauté sur ce côté : null/undefined si personne n'a encore parié sur ce marché. */
@@ -35,7 +38,7 @@ export function OddsButton({
         isActive ? "glass-accent" : "glass-inset text-muted-foreground"
       )}
     >
-      <span className="truncate">{selection.label}</span>
+      <span className="truncate">{label ?? selection.label}</span>
       <span
         className={cn(
           "flex items-center gap-0.5 font-mono font-bold transition-colors duration-500",

@@ -32,6 +32,8 @@ public class CrowdService {
         List<BetSelection> won = bets.stream()
                 .filter(b -> b.getStatus() == BetStatus.WON)
                 .flatMap(b -> b.getSelections().stream())
+                // Paris joueurs : un même marché pour plusieurs joueurs du match, la répartition ne veut rien dire.
+                .filter(s -> !com.hooppicks.backendapplication.bet.PlayerPropsService.isProp(s))
                 .toList();
         if (won.isEmpty()) return false;
 

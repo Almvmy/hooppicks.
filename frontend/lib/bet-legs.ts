@@ -30,12 +30,17 @@ function evaluate(selection: Pick<BetSelection, "market" | "outcome">, match: Ma
       if (total === match.odds.totalValue) return "push";
       return total > match.odds.totalValue === (selection.outcome === "over") ? "win" : "lose";
     }
+    case "player_points":
+      return "push"; // jamais atteint : legState répond avant
   }
 }
 
 export function legState(selection: Pick<BetSelection, "market" | "outcome">, match: Match | undefined): LegState {
   if (!match) return "unknown";
   if (match.status === "scheduled") return "upcoming";
+  // Pari joueur : pas de stats du joueur en direct ici, le serveur tranche
+  // d'après la feuille de match une fois importée.
+  if (selection.market === "player_points") return "unknown";
   const result = evaluate(selection, match);
   if (match.status === "finished") return result === "win" ? "won" : result === "lose" ? "lost" : "push";
   return result === "win" ? "winning" : result === "lose" ? "losing" : "level";

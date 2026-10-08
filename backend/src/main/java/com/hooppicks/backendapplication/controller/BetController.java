@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.controller;
 
+import com.hooppicks.backendapplication.bet.PlayerPropsService;
 import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.PlaceBetRequest;
 import com.hooppicks.backendapplication.dto.PlacedBetDto;
@@ -33,10 +34,13 @@ public class BetController {
 
     private final MatchRepository matchRepository;
     private final BankrollService bankrollService;
+    private final PlayerPropsService playerPropsService;
 
     public BetController(BetRepository betRepository, UserRepository userRepository,
                          WalletTransactionRepository transactionRepository, SessionStore sessionStore,
-                         MatchRepository matchRepository, BankrollService bankrollService) {
+                         MatchRepository matchRepository, BankrollService bankrollService,
+                         PlayerPropsService playerPropsService) {
+        this.playerPropsService = playerPropsService;
         this.betRepository = betRepository;
         this.bankrollService = bankrollService;
         this.userRepository = userRepository;
@@ -91,6 +95,8 @@ public class BetController {
         // : sinon un client pourrait renvoyer une ancienne cote plus favorable
         // maintenant que les cotes bougent (cf. OddsService).
         Map<String, Match> matchesById = new HashMap<>();
+        // Pari joueur : la ligne recalculée maintenant fait foi (comme les cotes).
+        Map<String, PlayerPropsService.PlayerProp> propsByMatch = new HashMap<>();
         for (PlaceBetRequest.SelectionInput s : request.selections()) {
             Match match = matchRepository.findById(s.matchId()).orElse(null);
             if (match == null) {
@@ -119,11 +125,25 @@ public class BetController {
             if (!isKnownSelection(s.market(), s.outcome())) {
                 return ResponseEntity.badRequest().body("Sélection inconnue.");
             }
+            if (PlayerPropsService.MARKET.equals(s.market())) {
+                PlayerPropsService.PlayerProp prop = s.playerId() == null ? null
+                        : playerPropsService.find(match, s.playerId()).orElse(null);
+                if (prop == null) {
+                    return ResponseEntity.badRequest().body("Ce pari joueur n'est plus proposé : " + matchLabel(match));
+                }
+                // Moyenne du joueur mise à jour entre l'affichage et la validation :
+                // on ne pose pas en silence sur une autre ligne que celle qu'il a vue.
+                if (s.line() == null || Math.abs(s.line() - prop.line()) > 0.01) {
+                    return ResponseEntity.badRequest().body("La ligne de " + prop.playerName() + " est passée à "
+                            + formatLine(prop.line()) + " pts : vérifie ton ticket.");
+                }
+                propsByMatch.put(s.matchId(), prop);
+            }
             matchesById.put(s.matchId(), match);
         }
 
         double totalOdds = request.selections().stream()
-                .mapToDouble(s -> resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()))
+                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch))
                 .reduce(1, (a, b) -> a * b);
         int potentialPayout = (int) Math.min(Integer.MAX_VALUE, Math.round(request.stake() * totalOdds));
 
@@ -144,8 +164,16 @@ public class BetController {
             selection.setMatchLabel(matchLabel(m));
             selection.setMarket(s.market());
             selection.setOutcome(s.outcome());
-            selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
-            selection.setOdds(resolveOdds(matchesById.get(s.matchId()), s.market(), s.outcome()));
+            PlayerPropsService.PlayerProp prop = propsByMatch.get(s.matchId());
+            if (prop != null) {
+                selection.setPlayerId(prop.playerId());
+                selection.setPlayerName(prop.playerName());
+                selection.setPropLine(prop.line());
+                selection.setLabel(propLabel(prop.playerName(), s.outcome(), prop.line()));
+            } else {
+                selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
+            }
+            selection.setOdds(oddsFor(s, matchesById, propsByMatch));
             bet.getSelections().add(selection);
         });
 
@@ -168,7 +196,7 @@ public class BetController {
     private static boolean isKnownSelection(String market, String outcome) {
         return switch (market == null ? "" : market) {
             case "moneyline", "spread" -> "home".equals(outcome) || "away".equals(outcome);
-            case "total" -> "over".equals(outcome) || "under".equals(outcome);
+            case "total", PlayerPropsService.MARKET -> "over".equals(outcome) || "under".equals(outcome);
             default -> false;
         };
     }
@@ -191,6 +219,20 @@ public class BetController {
             case "total" -> ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(match.getTotalValue());
             default -> throw new IllegalArgumentException("Marché inconnu : " + market);
         };
+    }
+
+    /** « J. Brunson · Plus de 26,5 pts ». */
+    static String propLabel(String playerName, String outcome, double line) {
+        String[] parts = playerName.split(" ", 2);
+        String shortName = parts.length == 2 ? parts[0].charAt(0) + ". " + parts[1] : playerName;
+        return shortName + " · " + ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(line) + " pts";
+    }
+
+    private double oddsFor(PlaceBetRequest.SelectionInput s, Map<String, Match> matches,
+                           Map<String, PlayerPropsService.PlayerProp> props) {
+        PlayerPropsService.PlayerProp prop = props.get(s.matchId());
+        if (prop != null) return "over".equals(s.outcome()) ? prop.overOdds() : prop.underOdds();
+        return resolveOdds(matches.get(s.matchId()), s.market(), s.outcome());
     }
 
     private static String formatLine(double value) {
