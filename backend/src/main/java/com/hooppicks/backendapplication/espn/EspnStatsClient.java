@@ -351,7 +351,9 @@ public class EspnStatsClient {
                 parseDouble(byLabel.get("TO")),
                 parseDouble(byLabel.get("FG%")),
                 parseDouble(byLabel.get("3P%")),
-                parseDouble(byLabel.get("FT%"))
+                parseDouble(byLabel.get("FT%")),
+                // « 3PT » vaut « réussis-tentés » par match (« 2.6-7.1 ») : on garde les réussis.
+                parseDouble(madePart(byLabel.get("3PT")))
         ));
     }
 
@@ -410,6 +412,10 @@ public class EspnStatsClient {
             return b.date().compareTo(a.date()); // ISO-8601 se compare lexicographiquement dans l'ordre chronologique
         });
         return result.stream().limit(5).toList();
+    }
+
+    private static String madePart(String madeAttempted) {
+        return madeAttempted == null ? null : madeAttempted.split("-", 2)[0];
     }
 
     private double parseDouble(String raw) {

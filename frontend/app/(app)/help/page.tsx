@@ -135,13 +135,13 @@ export default function HelpPage() {
             <RuleCard icon={UserRound} title="Paris joueurs">
               <p>
                 Sur la page d&apos;un match : plus ou moins de <strong className="text-foreground">points</strong>,{" "}
-                <strong className="text-foreground">rebonds</strong>, <strong className="text-foreground">passes</strong>{" "}
-                ou des trois cumulés, pour les meilleurs joueurs de chaque équipe dans la statistique.
+                <strong className="text-foreground">rebonds</strong>, <strong className="text-foreground">passes</strong>,{" "}
+                <strong className="text-foreground">tirs à 3 points</strong> réussis, ou points + rebonds + passes cumulés, pour les meilleurs joueurs de chaque équipe dans la statistique.
               </p>
               <p>
                 La ligne est la moyenne du joueur sur la saison, toujours en ,5 : pas d&apos;égalité possible. Cote 1,91
-                des deux côtés. Rebonds et passes seulement pour les joueurs qui en font (5 rebonds ou 4 passes de
-                moyenne au moins). Pas de paris joueurs en présaison.
+                des deux côtés. Rebonds, passes et tirs à 3 points seulement pour les joueurs qui en font (5 rebonds,
+                4 passes ou 2 tirs à 3 points réussis de moyenne au moins). Pas de paris joueurs en présaison.
               </p>
               <p>
                 Réglé d&apos;après la feuille de match. Joueur qui ne joue pas : sélection remboursée.

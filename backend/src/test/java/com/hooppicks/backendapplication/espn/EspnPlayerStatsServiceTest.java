@@ -43,7 +43,7 @@ class EspnPlayerStatsServiceTest {
         when(rosterPlayerRepository.findAllOrderByStatsUpdatedAtAscNullsFirst(any(Pageable.class)))
                 .thenReturn(List.of(p));
         when(espnStatsClient.fetchSeasonStats("100")).thenReturn(Optional.of(
-                new PlayerSeasonStatsRow("2025-26", 78, 78, 33.4, 20.8, 3.4, 3.7, 1.3, 0.5, 2.1, 46.0, 38.0, 84.0)
+                new PlayerSeasonStatsRow("2025-26", 78, 78, 33.4, 20.8, 3.4, 3.7, 1.3, 0.5, 2.1, 46.0, 38.0, 84.0, 2.4)
         ));
 
         service.syncBatch();
@@ -79,7 +79,7 @@ class EspnPlayerStatsServiceTest {
                 .thenReturn(List.of(failing, ok));
         when(espnStatsClient.fetchSeasonStats("300")).thenThrow(new RuntimeException("boom"));
         when(espnStatsClient.fetchSeasonStats("301")).thenReturn(Optional.of(
-                new PlayerSeasonStatsRow("2025-26", 10, 0, 12.0, 5.0, 2.0, 1.0, 0.5, 0.2, 1.0, 45.0, 30.0, 80.0)
+                new PlayerSeasonStatsRow("2025-26", 10, 0, 12.0, 5.0, 2.0, 1.0, 0.5, 0.2, 1.0, 45.0, 30.0, 80.0, 0.5)
         ));
 
         service.syncBatch();

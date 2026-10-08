@@ -60,5 +60,6 @@ public class RosterPlayer {
     private Double fieldGoalPct;
     private Double threePointPct;
     private Double freeThrowPct;
+    private Double threePointersMadePerGame;
     private Instant statsUpdatedAt;
 }

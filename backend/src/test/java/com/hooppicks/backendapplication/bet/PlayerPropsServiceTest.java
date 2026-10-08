@@ -105,6 +105,8 @@ class PlayerPropsServiceTest {
                 .extracting(PlayerPropsService.PlayerProp::playerName).containsExactly("Karl-Anthony Towns");
         assertThat(props).filteredOn(p -> p.market().equals("player_assists"))
                 .extracting(PlayerPropsService.PlayerProp::playerName).containsExactly("Jalen Brunson");
+        // Moyenne de tirs à 3 points pas encore importée : pas de ligne plutôt qu'une ligne fausse.
+        assertThat(props).filteredOn(p -> p.market().equals("player_threes")).isEmpty();
         // 26,8 + 3,4 + 7,3 = 37,5 → ligne 37,5
         assertThat(props).filteredOn(p -> p.market().equals("player_pra") && p.playerId().equals("1"))
                 .extracting(PlayerPropsService.PlayerProp::line).containsExactly(37.5);
@@ -125,6 +127,11 @@ class PlayerPropsServiceTest {
         BetSelection assists = over("Nikola Jokic", 9.5);
         assists.setMarket("player_assists");
         assertThat(service.evaluate(assists, match(), after)).contains(LegResult.LOSE);
+
+        BetSelection threes = over("Nikola Jokic", 1.5);
+        threes.setMarket("player_threes");
+        line.setThreePointsMade(1);
+        assertThat(service.evaluate(threes, match(), after)).contains(LegResult.LOSE);
 
         BetSelection pra = over("Nikola Jokic", 46.5); // 25 + 13 + 9 = 47
         pra.setMarket("player_pra");

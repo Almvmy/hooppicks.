@@ -14,6 +14,7 @@ public record PlayerSeasonStatsRow(
         double turnoversPerGame,
         double fieldGoalPct,
         double threePointPct,
-        double freeThrowPct
+        double freeThrowPct,
+        double threePointersMadePerGame
 ) {
 }

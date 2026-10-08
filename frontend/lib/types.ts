@@ -195,7 +195,12 @@ export interface MatchOdds {
 }
 
 
-export type PlayerPropMarket = "player_points" | "player_rebounds" | "player_assists" | "player_pra";
+export type PlayerPropMarket =
+  | "player_points"
+  | "player_rebounds"
+  | "player_assists"
+  | "player_threes"
+  | "player_pra";
 export type BetMarket = "moneyline" | "spread" | "total" | PlayerPropMarket;
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";

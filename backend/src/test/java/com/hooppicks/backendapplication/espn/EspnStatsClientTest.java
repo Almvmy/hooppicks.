@@ -55,6 +55,31 @@ class EspnStatsClientTest {
     }
 
     @Test
+    void fetchSeasonStats_lit_les_tirs_a_3_points_reussis_par_match() throws Exception {
+        // Format réel d'ESPN : « 3PT » = réussis-tentés par match.
+        mockResponse("""
+            {
+              "categories": [
+                {
+                  "name": "averages",
+                  "labels": ["GP","GS","MIN","FG","FG%","3PT","3P%","FT","FT%","OR","DR","REB","AST","BLK","STL","PF","TO","PTS"],
+                  "statistics": [
+                    { "season": { "displayName": "2025-26" },
+                      "stats": ["74","74","35.0","9.3-19.9","46.7","2.6-7.1","36.9","4.8-5.7","84.1","0.4","2.9","3.3","6.8","0.1","0.8","2.3","2.4","26.0"] }
+                  ]
+                }
+              ]
+            }
+            """);
+
+        PlayerSeasonStatsRow row = client.fetchSeasonStats("3934672").orElseThrow();
+
+        assertThat(row.threePointersMadePerGame()).isEqualTo(2.6);
+        assertThat(row.threePointPct()).isEqualTo(36.9);
+        assertThat(row.pointsPerGame()).isEqualTo(26.0);
+    }
+
+    @Test
     void fetchScoreboard_lit_equipes_score_statut_et_phase() throws Exception {
         mockResponse("""
             {

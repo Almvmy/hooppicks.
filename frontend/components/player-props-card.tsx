@@ -65,8 +65,13 @@ export function PlayerPropsCard({ match }: { match: Match }) {
           </p>
         </div>
         {markets.length > 1 && (
-          // Largeur selon le libellé : « Pts+Rbd+Pd » ne tient pas dans un quart de carte sur téléphone.
-          <div className="glass-inset-quiet flex gap-1 rounded-xl p-1" role="tablist" aria-label="Statistique">
+          // Largeur selon le libellé, et défilement horizontal : les cinq
+          // statistiques ne tiennent pas toutes sur une ligne de téléphone.
+          <div
+            className="glass-inset-quiet glass-scroll flex gap-1 overflow-x-auto rounded-xl p-1"
+            role="tablist"
+            aria-label="Statistique"
+          >
             {markets.map((m) => (
               <button
                 key={m}
@@ -75,7 +80,7 @@ export function PlayerPropsCard({ match }: { match: Match }) {
                 aria-selected={m === market}
                 onClick={() => setPicked(m)}
                 className={cn(
-                  "min-h-9 flex-auto whitespace-nowrap rounded-lg px-1.5 text-xs font-semibold transition-colors",
+                  "min-h-9 flex-auto shrink-0 whitespace-nowrap rounded-lg px-2.5 text-xs font-semibold transition-colors",
                   m === market ? "glass-accent" : "text-muted-foreground hover:text-foreground"
                 )}
               >

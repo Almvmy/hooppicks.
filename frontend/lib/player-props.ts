@@ -8,6 +8,7 @@ export const PLAYER_PROP_MARKETS: Record<PlayerPropMarket, { tab: string; unit: 
   player_points: { tab: "Points", unit: "pts" },
   player_rebounds: { tab: "Rebonds", unit: "rbd" },
   player_assists: { tab: "Passes", unit: "pd" },
+  player_threes: { tab: "3 pts", unit: "tirs à 3 pts" },
   player_pra: { tab: "Pts+Rbd+Pd", unit: "pts+rbd+pd" },
 };
 

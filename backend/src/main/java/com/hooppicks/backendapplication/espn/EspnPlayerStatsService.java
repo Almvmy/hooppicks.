@@ -78,5 +78,6 @@ public class EspnPlayerStatsService {
         player.setFieldGoalPct(row.fieldGoalPct());
         player.setThreePointPct(row.threePointPct());
         player.setFreeThrowPct(row.freeThrowPct());
+        player.setThreePointersMadePerGame(row.threePointersMadePerGame());
     }
 }

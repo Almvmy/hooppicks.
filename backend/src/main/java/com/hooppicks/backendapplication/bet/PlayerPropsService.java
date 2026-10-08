@@ -16,8 +16,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * Paris joueurs : « plus / moins de X » points, rebonds, passes décisives ou
- * points + rebonds + passes, pour les deux meilleurs joueurs de chaque équipe
+ * Paris joueurs : « plus / moins de X » points, rebonds, passes décisives,
+ * tirs à 3 points réussis ou points + rebonds + passes, pour les deux meilleurs joueurs de chaque équipe
  * dans la statistique. Ligne = moyenne de la saison (effectif ESPN), toujours
  * en x,5 : pas d'égalité possible. Cote fixe des deux côtés, comme l'écart et
  * le total.
@@ -42,7 +42,8 @@ public class PlayerPropsService {
     /**
      * Statistiques proposées. Le plancher de moyenne écarte les lignes sans
      * intérêt (« plus de 1,5 passe » pour un pivot remplaçant) : seuls les
-     * joueurs dont c'est vraiment le rôle ont une ligne en rebonds ou passes.
+     * joueurs dont c'est vraiment le rôle ont une ligne en rebonds, passes
+     * ou tirs à 3 points.
      */
     public enum Stat {
         POINTS("player_points", "pts", 0) {
@@ -56,6 +57,10 @@ public class PlayerPropsService {
         ASSISTS("player_assists", "pd", 4) {
             Double average(RosterPlayer p) { return p.getAssistsPerGame(); }
             int value(PlayerMatchStat s) { return s.getAssists(); }
+        },
+        THREES("player_threes", "tirs à 3 pts", 2) {
+            Double average(RosterPlayer p) { return p.getThreePointersMadePerGame(); }
+            int value(PlayerMatchStat s) { return s.getThreePointsMade(); }
         },
         POINTS_REBOUNDS_ASSISTS("player_pra", "pts+rbd+pd", 0) {
             Double average(RosterPlayer p) {
