@@ -270,8 +270,8 @@ class BetControllerTest {
         when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user));
         Match match = scheduledMatch("m1");
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
-        when(playerPropsService.find(match, "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
-                "p1", "Jalen Brunson", "LAK", null, 26.5, 1.91, 1.91, 26.8)));
+        when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 26.5, 1.91, 1.91, 26.8)));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
 
@@ -285,13 +285,31 @@ class BetControllerTest {
     }
 
     @Test
+    void pari_joueur_rebonds_libelle_avec_son_unite() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        Match match = scheduledMatch("m1");
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        when(playerPropsService.find(match, "player_rebounds", "p2")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "player_rebounds", "p2", "Nikola Jokic", "DEN", null, 12.5, 1.91, 1.91, 12.7)));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "", "player_rebounds", "under", "", 1.91, "p2", 12.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<Bet> captor = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(captor.capture());
+        assertThat(captor.getValue().getSelections().get(0).getLabel()).isEqualTo("N. Jokic · Moins de 12,5 rbd");
+    }
+
+    @Test
     void pari_joueur_refuse_si_la_ligne_a_bouge() {
         HttpServletRequest request = authenticatedRequest("u1");
         when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
         Match match = scheduledMatch("m1");
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
-        when(playerPropsService.find(match, "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
-                "p1", "Jalen Brunson", "LAK", null, 27.5, 1.91, 1.91, 27.6)));
+        when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 27.5, 1.91, 1.91, 27.6)));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
 

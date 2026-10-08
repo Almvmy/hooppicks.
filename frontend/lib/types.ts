@@ -195,7 +195,8 @@ export interface MatchOdds {
 }
 
 
-export type BetMarket = "moneyline" | "spread" | "total" | "player_points";
+export type PlayerPropMarket = "player_points" | "player_rebounds" | "player_assists" | "player_pra";
+export type BetMarket = "moneyline" | "spread" | "total" | PlayerPropMarket;
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";
 
@@ -214,6 +215,7 @@ export interface BetSelection {
 
 /** Pari joueur proposé sur un match (PlayerPropsService). */
 export interface PlayerProp {
+  market: PlayerPropMarket;
   playerId: string;
   playerName: string;
   teamAbbreviation: string;
@@ -221,7 +223,8 @@ export interface PlayerProp {
   line: number;
   overOdds: number;
   underOdds: number;
-  pointsPerGame: number;
+  /** Moyenne de la saison dans la statistique du marché. */
+  average: number;
 }
 
 export interface PlacedBet {

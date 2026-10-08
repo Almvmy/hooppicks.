@@ -84,8 +84,51 @@ class PlayerPropsServiceTest {
                 player("5", "OG", "Anunoby", 16.0, 40, "Day-To-Day")));
         when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
 
-        assertThat(service.propsFor(match())).extracting(PlayerPropsService.PlayerProp::playerName)
+        assertThat(service.propsFor(match()).stream().filter(p -> p.market().equals("player_points")))
+                .extracting(PlayerPropsService.PlayerProp::playerName)
                 .containsExactly("Jalen Brunson", "Mikal Bridges");
+    }
+
+    @Test
+    void rebonds_et_passes_seulement_pour_les_joueurs_dont_c_est_le_role() {
+        RosterPlayer brunson = player("1", "Jalen", "Brunson", 26.8, 40, null);
+        brunson.setReboundsPerGame(3.4);
+        brunson.setAssistsPerGame(7.3);
+        RosterPlayer towns = player("2", "Karl-Anthony", "Towns", 24.1, 40, null);
+        towns.setReboundsPerGame(12.8);
+        towns.setAssistsPerGame(3.1);
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("nyk")).thenReturn(List.of(brunson, towns));
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
+
+        List<PlayerPropsService.PlayerProp> props = service.propsFor(match());
+        assertThat(props).filteredOn(p -> p.market().equals("player_rebounds"))
+                .extracting(PlayerPropsService.PlayerProp::playerName).containsExactly("Karl-Anthony Towns");
+        assertThat(props).filteredOn(p -> p.market().equals("player_assists"))
+                .extracting(PlayerPropsService.PlayerProp::playerName).containsExactly("Jalen Brunson");
+        // 26,8 + 3,4 + 7,3 = 37,5 → ligne 37,5
+        assertThat(props).filteredOn(p -> p.market().equals("player_pra") && p.playerId().equals("1"))
+                .extracting(PlayerPropsService.PlayerProp::line).containsExactly(37.5);
+    }
+
+    @Test
+    void chaque_marche_est_regle_sur_sa_statistique() {
+        PlayerMatchStat line = stat("Nikola Jokic", 25, "35");
+        line.setRebounds(13);
+        line.setAssists(9);
+        when(statRepository.findByMatchIdOrderByPointsDesc("m1")).thenReturn(List.of(line));
+        Instant after = TIP_OFF.plus(Duration.ofHours(3));
+
+        BetSelection rebounds = over("Nikola Jokic", 12.5);
+        rebounds.setMarket("player_rebounds");
+        assertThat(service.evaluate(rebounds, match(), after)).contains(LegResult.WIN);
+
+        BetSelection assists = over("Nikola Jokic", 9.5);
+        assists.setMarket("player_assists");
+        assertThat(service.evaluate(assists, match(), after)).contains(LegResult.LOSE);
+
+        BetSelection pra = over("Nikola Jokic", 46.5); // 25 + 13 + 9 = 47
+        pra.setMarket("player_pra");
+        assertThat(service.evaluate(pra, match(), after)).contains(LegResult.WIN);
     }
 
     @Test

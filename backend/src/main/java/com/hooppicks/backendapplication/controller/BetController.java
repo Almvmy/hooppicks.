@@ -125,9 +125,9 @@ public class BetController {
             if (!isKnownSelection(s.market(), s.outcome())) {
                 return ResponseEntity.badRequest().body("Sélection inconnue.");
             }
-            if (PlayerPropsService.MARKET.equals(s.market())) {
+            if (PlayerPropsService.isPropMarket(s.market())) {
                 PlayerPropsService.PlayerProp prop = s.playerId() == null ? null
-                        : playerPropsService.find(match, s.playerId()).orElse(null);
+                        : playerPropsService.find(match, s.market(), s.playerId()).orElse(null);
                 if (prop == null) {
                     return ResponseEntity.badRequest().body("Ce pari joueur n'est plus proposé : " + matchLabel(match));
                 }
@@ -135,7 +135,8 @@ public class BetController {
                 // on ne pose pas en silence sur une autre ligne que celle qu'il a vue.
                 if (s.line() == null || Math.abs(s.line() - prop.line()) > 0.01) {
                     return ResponseEntity.badRequest().body("La ligne de " + prop.playerName() + " est passée à "
-                            + formatLine(prop.line()) + " pts : vérifie ton ticket.");
+                            + formatLine(prop.line()) + " " + PlayerPropsService.Stat.of(prop.market()).orElseThrow().unit
+                            + " : vérifie ton ticket.");
                 }
                 propsByMatch.put(s.matchId(), prop);
             }
@@ -169,7 +170,7 @@ public class BetController {
                 selection.setPlayerId(prop.playerId());
                 selection.setPlayerName(prop.playerName());
                 selection.setPropLine(prop.line());
-                selection.setLabel(propLabel(prop.playerName(), s.outcome(), prop.line()));
+                selection.setLabel(propLabel(prop.playerName(), prop.market(), s.outcome(), prop.line()));
             } else {
                 selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             }
@@ -196,8 +197,8 @@ public class BetController {
     private static boolean isKnownSelection(String market, String outcome) {
         return switch (market == null ? "" : market) {
             case "moneyline", "spread" -> "home".equals(outcome) || "away".equals(outcome);
-            case "total", PlayerPropsService.MARKET -> "over".equals(outcome) || "under".equals(outcome);
-            default -> false;
+            case "total" -> "over".equals(outcome) || "under".equals(outcome);
+            default -> PlayerPropsService.isPropMarket(market) && ("over".equals(outcome) || "under".equals(outcome));
         };
     }
 
@@ -221,11 +222,12 @@ public class BetController {
         };
     }
 
-    /** « J. Brunson · Plus de 26,5 pts ». */
-    static String propLabel(String playerName, String outcome, double line) {
+    /** « J. Brunson · Plus de 26,5 pts », « N. Jokić · Moins de 12,5 rbd ». */
+    static String propLabel(String playerName, String market, String outcome, double line) {
         String[] parts = playerName.split(" ", 2);
         String shortName = parts.length == 2 ? parts[0].charAt(0) + ". " + parts[1] : playerName;
-        return shortName + " · " + ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(line) + " pts";
+        return shortName + " · " + ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(line) + " "
+                + PlayerPropsService.Stat.of(market).map(st -> st.unit).orElse("pts");
     }
 
     private double oddsFor(PlaceBetRequest.SelectionInput s, Map<String, Match> matches,
