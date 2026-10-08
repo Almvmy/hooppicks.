@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, MessageCircleQuestion, Scale, Search, Timer, Trophy } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, Scale, Search, Swords, Timer, Trophy, UserRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { badgeIcon } from "@/lib/badges";
@@ -111,12 +111,12 @@ export default function HelpPage() {
           <div className="reveal-children grid gap-4 sm:grid-cols-2">
             <RuleCard icon={Lock} title="Points virtuels uniquement">
               <p>
-                Chaque lundi à 12h, tout le monde repart avec <strong className="text-foreground">1 000 points</strong>{" "}
+                Chaque lundi à 12h GMT, tout le monde repart avec <strong className="text-foreground">1 000 points</strong>{" "}
                 pour la semaine. Ils n&apos;ont aucune valeur monétaire : rien ne s&apos;achète, rien ne se retire.
               </p>
             </RuleCard>
 
-            <RuleCard icon={BookOpen} title="Trois façons de parier">
+            <RuleCard icon={BookOpen} title="Paris sur les matchs">
               <ul className="flex flex-col gap-1.5">
                 <li>
                   <strong className="text-foreground">Vainqueur</strong> (moneyline) : quelle équipe gagne le match.
@@ -132,20 +132,41 @@ export default function HelpPage() {
               </ul>
             </RuleCard>
 
-            <RuleCard icon={Layers} title="Combinés">
+            <RuleCard icon={UserRound} title="Paris joueurs">
               <p>
-                Ajoute plusieurs matchs à un même ticket : les cotes se multiplient. Le ticket n&apos;est gagnant que si{" "}
-                <strong className="text-foreground">toutes</strong> ses sélections le sont.
+                Sur la page d&apos;un match : plus ou moins de <strong className="text-foreground">points</strong>,{" "}
+                <strong className="text-foreground">rebonds</strong>, <strong className="text-foreground">passes</strong>{" "}
+                ou des trois cumulés, pour les meilleurs joueurs de chaque équipe dans la statistique.
               </p>
-              <p>Une seule sélection par match dans un ticket.</p>
+              <p>
+                La ligne est la moyenne du joueur sur la saison, toujours en ,5 : pas d&apos;égalité possible. Cote 1,91
+                des deux côtés. Rebonds et passes seulement pour les joueurs qui en font (5 rebonds ou 4 passes de
+                moyenne au moins). Pas de paris joueurs en présaison.
+              </p>
+              <p>
+                Réglé d&apos;après la feuille de match. Joueur qui ne joue pas : sélection remboursée.
+              </p>
             </RuleCard>
 
-            <RuleCard icon={Timer} title="Jusqu'au coup d'envoi">
+            <RuleCard icon={Layers} title="Combinés">
               <p>
-                On peut parier sur un match tant qu&apos;il n&apos;a pas commencé. La cote affichée au moment où tu valides
-                est celle appliquée : elle ne change plus ensuite.
+                Ajoute plusieurs matchs à un même ticket, jusqu&apos;à 8 : les cotes se multiplient. Le ticket n&apos;est
+                gagnant que si <strong className="text-foreground">toutes</strong> ses sélections le sont.
               </p>
-              <p>La mise est débitée dès la validation.</p>
+              <p>
+                Une seule sélection par match dans un ticket, pari joueur compris. Mise minimum : 10 points.
+              </p>
+            </RuleCard>
+
+            <RuleCard icon={Timer} title="Quand parier">
+              <p>
+                Sur les matchs de la <strong className="text-foreground">semaine de jeu en cours</strong>, jusqu&apos;au
+                coup d&apos;envoi. Ceux de la semaine suivante ouvrent le lundi à 12h GMT.
+              </p>
+              <p>
+                La cote affichée au moment où tu valides est celle appliquée : elle ne change plus ensuite. La mise est
+                débitée dès la validation.
+              </p>
             </RuleCard>
 
             <RuleCard icon={Scale} title="Résultat d'un ticket">
@@ -176,6 +197,25 @@ export default function HelpPage() {
                 mises), jamais moins de 0, et le classement additionne les semaines. Ton solde ne compte pas. Crée une ligue privée et partage son code à 6
                 caractères pour avoir aussi votre classement entre amis.
               </p>
+              <p>
+                Chaque lundi, le meilleur score de la semaine est sacré champion, sur tout HoopPicks et dans chaque
+                ligue : les titres s&apos;affichent sur le profil.
+              </p>
+            </RuleCard>
+
+            <RuleCard icon={Swords} title="Duels">
+              <p>
+                Défie un joueur sur la semaine en cours depuis son profil. S&apos;il accepte, celui qui marque le plus de
+                points de classement d&apos;ici lundi 12h GMT gagne. Un duel par adversaire et par semaine.
+              </p>
+            </RuleCard>
+
+            <RuleCard icon={Medal} title="Pronostics de saison">
+              <p>
+                Quatre questions pour toute la saison : le champion, les deux finalistes de conférence et le meilleur
+                bilan. Modifiables jusqu&apos;à une semaine après le début de la saison régulière.
+              </p>
+              <p>Classement à part : il ne touche pas aux points de la semaine.</p>
             </RuleCard>
           </div>
 

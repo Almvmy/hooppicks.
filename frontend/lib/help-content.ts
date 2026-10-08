@@ -37,7 +37,7 @@ export const FAQ: FaqGroup[] = [
         id: "plus-parier",
         question: "Pourquoi je ne peux plus parier sur ce match ?",
         answer:
-          "Les paris ferment au coup d'envoi : une fois le match commencé (ou terminé), il n'est plus proposé. Tu peux toujours parier sur les matchs à venir.",
+          "Deux raisons possibles. Les paris ferment au coup d'envoi : une fois le match commencé, il n'est plus proposé. Et seuls les matchs de la semaine de jeu en cours sont ouverts : ceux d'après le lundi 12h GMT ouvrent ce lundi-là, avec la nouvelle semaine.",
         link: { href: "/matches", label: "Voir les matchs à venir" },
       },
       {
@@ -53,10 +53,23 @@ export const FAQ: FaqGroup[] = [
           "Les cotes de toutes tes sélections se multiplient, puis la mise est multipliée par cette cote totale. Exemple : 1,62 × 1,91 = 3,09 ; avec 50 points misés, le gain potentiel est de 155 points. Il faut que toutes les sélections soient gagnantes.",
       },
       {
+        id: "paris-joueurs",
+        question: "Comment marchent les paris joueurs ?",
+        answer:
+          "Sur la page d'un match, choisis une statistique (points, rebonds, passes, ou les trois cumulés) puis plus ou moins que la ligne. La ligne est la moyenne du joueur sur la saison, arrondie en ,5. Le pari est réglé d'après la feuille de match, en général moins d'une heure après la fin. Si le joueur ne joue pas, ta sélection est remboursée (cote de 1,00 dans un combiné).",
+        link: { href: "/matches", label: "Choisir un match" },
+      },
+      {
+        id: "ligne-joueur-change",
+        question: "On me dit que la ligne d'un joueur a changé, pourquoi ?",
+        answer:
+          "Les moyennes des joueurs sont mises à jour plusieurs fois par jour. Si celle de ton joueur a bougé entre le moment où tu l'as ajouté et ta validation, on te prévient au lieu de poser le pari sur une autre ligne que celle que tu as vue : retire la sélection et ajoute-la de nouveau.",
+      },
+      {
         id: "meme-match",
         question: "Pourquoi je ne peux pas mettre deux paris sur le même match dans un ticket ?",
         answer:
-          "Un ticket ne peut contenir qu'une sélection par match : deux issues du même match sont souvent contradictoires, et les combiner gonflerait la cote artificiellement. Fais deux tickets séparés si tu veux jouer deux marchés.",
+          "Un ticket ne peut contenir qu'une sélection par match, pari joueur compris : deux issues du même match sont liées (un joueur qui marque beaucoup aide son équipe à gagner), et les combiner gonflerait la cote artificiellement. Fais deux tickets séparés si tu veux jouer deux marchés.",
       },
       {
         id: "quand-resolu",
@@ -101,6 +114,20 @@ export const FAQ: FaqGroup[] = [
         answer:
           "Semaine par semaine. Tes points d'une semaine, c'est ton bilan sur les paris posés cette semaine-là : chaque ticket gagné ajoute son gain moins sa mise, chaque ticket perdu retire sa mise, un ticket remboursé ne compte pas. Ce total ne descend jamais sous 0 : une mauvaise semaine vaut 0, elle ne te fait pas perdre les points des autres. Le classement de la saison additionne tes semaines, celui du mois les semaines commencées dans le mois. Chaque ligue a aussi son propre classement, limité à ses membres.",
         link: { href: "/leaderboard", label: "Voir le classement" },
+      },
+      {
+        id: "duels",
+        question: "Comment défier un ami en duel ?",
+        answer:
+          "Depuis son profil (touche son pseudo dans un classement ou une ligue) ou depuis Compétition › Duels. S'il accepte, vous comparez vos points de classement de la semaine : le plus haut lundi 12h GMT gagne.",
+        link: { href: "/duels", label: "Voir mes duels" },
+      },
+      {
+        id: "pronostics-saison",
+        question: "Où sont les pronostics de saison ?",
+        answer:
+          "Dans Compétition › Saison, et sur l'accueil tant qu'il t'en reste à faire. Quatre questions (champion, finalistes de chaque conférence, meilleur bilan), modifiables jusqu'à une semaine après le début de la saison régulière. Les choix des autres joueurs ne s'affichent qu'une fois les pronostics clos.",
+        link: { href: "/saison", label: "Faire mes pronostics" },
       },
       {
         id: "badges",
