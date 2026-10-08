@@ -84,10 +84,10 @@ export default function SeasonPicksPage() {
         <p className="mt-1 text-muted-foreground">
           Quatre questions sur toute la saison, jusqu&apos;à {total} points à la clé, dans un classement à part.{" "}
           {data?.locked
-            ? "La saison a commencé : les pronostics sont verrouillés."
+            ? "Les pronostics sont clos."
             : deadline
-              ? `Modifiables jusqu'au premier match de saison régulière, le ${formatMatchDate(deadline)} à ${formatMatchTime(deadline)}.`
-              : "Modifiables jusqu'au premier match de saison régulière."}
+              ? `Modifiables jusqu'au ${formatMatchDate(deadline)} à ${formatMatchTime(deadline)}, une semaine après le début de la saison régulière.`
+              : "Modifiables jusqu'à une semaine après le début de la saison régulière."}
         </p>
       </div>
 

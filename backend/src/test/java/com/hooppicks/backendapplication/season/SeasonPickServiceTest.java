@@ -60,9 +60,19 @@ class SeasonPickServiceTest {
     }
 
     @Test
+    void encore_ouvert_pendant_la_premiere_semaine_de_saison() {
+        // Premier match le 1er octobre, on est le 7 : encore un jour.
+        seasonStartsAt(Instant.parse("2026-10-01T23:30:00Z"));
+        service.pick("u1", "champion", "BOS");
+        verify(pickRepository).save(any());
+        assertThat(service.deadline("2026-27")).isEqualTo(Instant.parse("2026-10-08T23:30:00Z"));
+    }
+
+    @Test
     void verrouille_une_fois_la_saison_commencee_et_refuse_l_inconnu() {
-        seasonStartsAt(Instant.parse("2026-10-06T23:30:00Z"));
-        assertThatThrownBy(() -> service.pick("u1", "champion", "BOS")).hasMessageContaining("verrouillés");
+        // Saison commencée le 28 septembre : la semaine de rab est finie le 5 octobre.
+        seasonStartsAt(Instant.parse("2026-09-28T23:30:00Z"));
+        assertThatThrownBy(() -> service.pick("u1", "champion", "BOS")).hasMessageContaining("clos");
 
         seasonStartsAt(Instant.parse("2026-10-21T23:30:00Z"));
         assertThatThrownBy(() -> service.pick("u1", "mvp", "BOS")).hasMessageContaining("Question");

@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 
 /**
  * Pronostics de saison : quelques questions sur toute la saison (champion,
- * finalistes, meilleur bilan), une équipe par réponse, verrouillées au
- * premier match de saison régulière. Les bonnes réponses sont saisies par un
+ * finalistes, meilleur bilan), une équipe par réponse, verrouillées une
+ * semaine après le premier match de saison régulière. Les bonnes réponses sont saisies par un
  * admin (console) : plus fiable que de déduire la fin des playoffs des
  * données de matchs. Classement à part, qui ne touche pas au classement des
  * semaines.
@@ -70,12 +70,16 @@ public class SeasonPickService {
         return start + "-" + String.valueOf(start + 1).substring(2);
     }
 
-    /** Premier match de saison régulière : fin des pronostics. Null tant qu'aucun n'est connu. */
+    // Choix du propriétaire : une semaine de rab après le coup d'envoi, pour
+    // laisser aux joueurs arrivés avec le lancement le temps de pronostiquer.
+    static final Duration GRACE_AFTER_OPENER = Duration.ofDays(7);
+
+    /** Fin des pronostics : premier match de saison régulière + une semaine. Null tant qu'aucun n'est connu. */
     public Instant deadline(String season) {
         int start = Integer.parseInt(season.substring(0, 4));
         Instant from = LocalDate.of(start, 9, 1).atStartOfDay(BankrollService.ZONE).toInstant();
         return matchRepository.findFirstByTypeAndDateAfterOrderByDateAsc(MatchType.REGULAR, from)
-                .map(Match::getDate).orElse(null);
+                .map(m -> m.getDate().plus(GRACE_AFTER_OPENER)).orElse(null);
     }
 
     private boolean locked(String season) {
@@ -90,7 +94,7 @@ public class SeasonPickService {
             throw new SeasonPickException("Équipe inconnue.");
         }
         String season = currentSeason();
-        if (locked(season)) throw new SeasonPickException("La saison a commencé : les pronostics sont verrouillés.");
+        if (locked(season)) throw new SeasonPickException("Les pronostics de saison sont clos.");
         SeasonPick pick = pickRepository.findBySeasonAndUserIdAndQuestion(season, userId, question).orElseGet(SeasonPick::new);
         pick.setUserId(userId);
         pick.setSeason(season);
