@@ -3,10 +3,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   experimental: {
-    // Transitions de page natives (API View Transitions du navigateur via le
-    // <ViewTransition> de React) : zéro dépendance d'animation, et un
-    // navigateur qui ne la supporte pas affiche simplement la page sans animer.
-    viewTransition: true,
+    // Plus de drapeau viewTransition : depuis Next 16.4, les transitions de
+    // page (<ViewTransition> de React) marchent sans configuration.
     // Cache disque de Turbopack en dev (actif par défaut depuis 16.1) : il
     // grossissait d'environ 1 Go par heure dans .next/dev et a rempli le
     // disque de la machine de dev plusieurs fois. Démarrage un peu plus lent.
