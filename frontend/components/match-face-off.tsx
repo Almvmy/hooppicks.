@@ -46,7 +46,7 @@ function Watermark({ team, side, size, opacity }: { team: Team; side: "left" | "
  */
 export function TeamWatermarks({ match, size = 190, opacity = 0.1 }: { match: Match; size?: number; opacity?: number }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
+    <div aria-hidden className="decor-clip">
       <Watermark team={match.awayTeam} side="left" size={size} opacity={opacity} />
       <Watermark team={match.homeTeam} side="right" size={size} opacity={opacity} />
     </div>

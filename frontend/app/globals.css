@@ -182,7 +182,24 @@
   }
   html {
     @apply font-sans;
+    /* Garde-fou : rien ne fait glisser la page de côté sur téléphone, même un
+       élément qui dépasse. clip et non hidden : hidden ferait de la page un
+       conteneur de défilement et casserait les barres collées (sticky). */
+    overflow-x: clip;
   }
+}
+
+/* Calque des filigranes d'une carte (logos d'équipe, terrain). Safari iOS ne
+   découpe pas avec overflow:hidden les éléments tournés ou composités (cartes
+   en verre) : ils dépassaient de la carte et faisaient glisser la page.
+   contain:paint les coupe partout, aux coins arrondis de la carte. */
+.decor-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  contain: paint;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 @keyframes bball-bounce {

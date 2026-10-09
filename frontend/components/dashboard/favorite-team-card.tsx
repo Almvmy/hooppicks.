@@ -269,8 +269,10 @@ export function FavoriteTeamCard({
       }}
       aria-label={`Mon équipe : ${team.name}`}
     >
-      <div aria-hidden className="pointer-events-none absolute -right-12 -top-10 rotate-12 opacity-[0.10]">
-        <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={220} />
+      <div aria-hidden className="decor-clip">
+        <div className="absolute -right-12 -top-10 rotate-12 opacity-[0.10]">
+          <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={220} />
+        </div>
       </div>
 
       <div className="relative flex flex-col gap-4">
