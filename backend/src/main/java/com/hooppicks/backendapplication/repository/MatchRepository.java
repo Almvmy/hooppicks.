@@ -73,6 +73,17 @@ public interface MatchRepository extends JpaRepository<Match, String> {
     """)
     List<Match> findRecentFinishedForTeam(Team team, com.hooppicks.backendapplication.entity.MatchType excluded, Pageable pageable);
 
+    // Confrontations terminées entre deux équipes, hors présaison : face-à-face d'un match.
+    @Query("""
+        SELECT m FROM Match m
+        WHERE m.status = com.hooppicks.backendapplication.entity.MatchStatus.FINISHED
+          AND ((m.homeTeam = :a AND m.awayTeam = :b) OR (m.homeTeam = :b AND m.awayTeam = :a))
+          AND m.homeScore IS NOT NULL AND m.awayScore IS NOT NULL
+          AND (m.type IS NULL OR m.type <> com.hooppicks.backendapplication.entity.MatchType.PRESEASON)
+        ORDER BY m.date DESC
+    """)
+    List<Match> findFinishedMeetings(Team a, Team b);
+
     // Premier match de saison régulière : fin des pronostics de saison (SeasonPickService).
     java.util.Optional<Match> findFirstByTypeAndDateAfterOrderByDateAsc(com.hooppicks.backendapplication.entity.MatchType type, java.time.Instant after);
 }

@@ -391,7 +391,15 @@ export interface AdminBet {
   placedAt: string;
 }
 
-export type NotificationType = "bet_won" | "bet_lost" | "match_starting" | "favorite_team" | "system" | "duel" | "bet_progress";
+export type NotificationType =
+  | "bet_won"
+  | "bet_lost"
+  | "match_starting"
+  | "favorite_team"
+  | "system"
+  | "duel"
+  | "bet_progress"
+  | "match_follow";
 
 export interface AppNotification {
   id: string;

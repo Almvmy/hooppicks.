@@ -45,6 +45,8 @@ public class EspnStatsClient {
             "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings";
     private static final String ATHLETE_STATS_URL =
             "https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/%s/stats";
+    private static final String TEAM_SCHEDULE_URL =
+            "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/%s/schedule?season=%d&seasontype=%d";
     private static final String NEWS_URL =
             "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/news?limit=%d";
     private static final String ATHLETE_GAMELOG_URL =
@@ -360,6 +362,65 @@ public class EspnStatsClient {
         return new EspnLiveGame(eventId, status.path("type").path("state").asText(""),
                 status.path("period").asInt(0), status.path("displayClock").asText(""),
                 status.path("type").path("detail").asText(""), homeScore, awayScore);
+    }
+
+    /**
+     * Les 5 derniers matchs de chaque équipe d'un event (bloc « lastFiveGames »
+     * du résumé ESPN), par sigle balldontlie. Optional vide = ESPN injoignable.
+     */
+    public Optional<Map<String, List<EspnFormGame>>> fetchForm(String eventId) {
+        JsonNode root = fetchWithRetry(String.format(SUMMARY_URL, eventId));
+        if (root == null) return Optional.empty();
+        Map<String, List<EspnFormGame>> form = new HashMap<>();
+        for (JsonNode team : root.path("lastFiveGames")) {
+            List<EspnFormGame> games = new ArrayList<>();
+            for (JsonNode e : team.path("events")) {
+                boolean away = "@".equals(e.path("atVs").asText());
+                int home = parseInt(e.path("homeTeamScore").asText(null));
+                int visitor = parseInt(e.path("awayTeamScore").asText(null));
+                games.add(new EspnFormGame(parseEventDate(e.path("gameDate").asText("")),
+                        fromEspnAbbreviation(e.path("opponent").path("abbreviation").asText()), !away,
+                        away ? visitor : home, away ? home : visitor, "W".equals(e.path("gameResult").asText())));
+            }
+            form.put(fromEspnAbbreviation(team.path("team").path("abbreviation").asText()), games);
+        }
+        return Optional.of(form);
+    }
+
+    /**
+     * Matchs terminés d'une équipe sur une saison ESPN (année de fin : 2026 =
+     * saison 2025-26) : 2 = saison régulière, 3 = playoffs. Réponse lourde
+     * (~1,5 Mo en saison régulière) : l'appelant la réduit tout de suite et la
+     * garde en cache. Optional vide = ESPN injoignable.
+     */
+    public Optional<List<EspnPastGame>> fetchTeamResults(String abbreviation, int seasonYear, int seasonType) {
+        JsonNode root = fetchWithRetry(String.format(TEAM_SCHEDULE_URL,
+                toEspnAbbreviation(abbreviation).toLowerCase(java.util.Locale.ROOT), seasonYear, seasonType));
+        if (root == null) return Optional.empty();
+        List<EspnPastGame> games = new ArrayList<>();
+        for (JsonNode event : root.path("events")) {
+            JsonNode competition = event.path("competitions").path(0);
+            if (!competition.path("status").path("type").path("completed").asBoolean(false)) continue;
+            String home = null;
+            String away = null;
+            int homeScore = 0;
+            int awayScore = 0;
+            for (JsonNode c : competition.path("competitors")) {
+                String abbr = fromEspnAbbreviation(c.path("team").path("abbreviation").asText());
+                int score = (int) c.path("score").path("value").asDouble(0);
+                if ("home".equals(c.path("homeAway").asText())) {
+                    home = abbr;
+                    homeScore = score;
+                } else {
+                    away = abbr;
+                    awayScore = score;
+                }
+            }
+            if (home == null || away == null) continue;
+            games.add(new EspnPastGame(parseEventDate(event.path("date").asText("")), home, away, homeScore, awayScore,
+                    seasonType == 3));
+        }
+        return Optional.of(games);
     }
 
     // ESPN écrit ses dates sans secondes ("2026-10-05T23:00Z"), format

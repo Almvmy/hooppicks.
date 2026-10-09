@@ -9,6 +9,7 @@ import { PlayerPropsCard } from "@/components/player-props-card";
 import { TeamRoster } from "@/components/team-roster";
 import { useQuery } from "@tanstack/react-query";
 import { BoxScoreTable } from "@/components/box-score-table";
+import { MatchPreviewSection } from "@/components/match-preview-section";
 import { fetchMatchBoxScore } from "@/lib/api/matches";
 import { TeamNews } from "@/components/news/team-news";
 import { LeadersSection, LinescoreSection, TeamStatsSection } from "@/components/match-live-sections";
@@ -65,10 +66,11 @@ function StickyScore({ match }: { match: Match }) {
   );
 }
 
-type Tab = "paris" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
+type Tab = "paris" | "avant" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
 
 const LABELS: Record<Tab, string> = {
   paris: "Paris",
+  avant: "Avant-match",
   resume: "Résumé",
   actions: "Temps forts",
   stats: "Stats",
@@ -80,7 +82,7 @@ const LABELS: Record<Tab, string> = {
 
 /**
  * Le contenu d'un match rangé en onglets, sous l'en-tête (score). Avant le
- * coup d'envoi : paris, effectifs, actus. Pendant et après : résumé
+ * coup d'envoi : paris, avant-match (forme, face-à-face), effectifs, actus. Pendant et après : résumé
  * (situation, quarts-temps, homme du match, courbe, meilleurs joueurs),
  * temps forts, stats, feuille de match, tirs, actus.
  *
@@ -108,7 +110,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
   const started = match.status !== "scheduled";
 
   const tabs: Tab[] = !started
-    ? ["paris", "effectifs", "actus"]
+    ? ["paris", "avant", "effectifs", "actus"]
     : live
       ? ([
           "resume",
@@ -193,6 +195,8 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
               <LeadersSection match={match} players={live.players} />
             </>
           )}
+
+          {active === "avant" && <MatchPreviewSection match={match} />}
 
           {active === "actions" && live && <KeyPlaysList match={match} live={live} />}
 

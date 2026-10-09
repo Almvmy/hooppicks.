@@ -6,6 +6,7 @@ import com.hooppicks.backendapplication.dto.PickPercentagesDto;
 import com.hooppicks.backendapplication.dto.PlayerBoxScoreDto;
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.live.LiveMatchService;
+import com.hooppicks.backendapplication.live.MatchPreviewService;
 import org.springframework.http.ResponseEntity;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
@@ -22,10 +23,13 @@ public class MatchController {
     private final PlayerMatchStatRepository playerMatchStatRepository;
     private final PickPercentagesService pickPercentagesService;
     private final LiveMatchService liveMatchService;
+    private final MatchPreviewService matchPreviewService;
 
     public MatchController(MatchRepository matchRepository, PlayerMatchStatRepository playerMatchStatRepository,
-                            PickPercentagesService pickPercentagesService, LiveMatchService liveMatchService) {
+                            PickPercentagesService pickPercentagesService, LiveMatchService liveMatchService,
+                            MatchPreviewService matchPreviewService) {
         this.liveMatchService = liveMatchService;
+        this.matchPreviewService = matchPreviewService;
         this.matchRepository = matchRepository;
         this.playerMatchStatRepository = playerMatchStatRepository;
         this.pickPercentagesService = pickPercentagesService;
@@ -51,6 +55,12 @@ public class MatchController {
     @GetMapping("/{id}/live")
     public ResponseEntity<LiveMatchService.LiveMatchDto> getLive(@PathVariable String id) {
         return liveMatchService.detail(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    // Avant-match : forme des deux équipes et dernières confrontations.
+    @GetMapping("/{id}/preview")
+    public ResponseEntity<MatchPreviewService.PreviewDto> getPreview(@PathVariable String id) {
+        return matchPreviewService.preview(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}")

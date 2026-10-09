@@ -16,6 +16,7 @@ import type { Match } from "@/lib/types";
 import { useLiveStatus, withLiveScore } from "@/lib/live";
 import { MatchDetailTabs } from "@/components/match-detail-tabs";
 import { MyBetChip } from "@/components/my-bet-chip";
+import { FollowMatchButton } from "@/components/follow-match-button";
 
 export default function MatchDetailPage({
   params,
@@ -65,9 +66,16 @@ export default function MatchDetailPage({
       )}
 
       {match && (
-        <Card style={faceOffBackground(match, 18)} className="relative overflow-hidden">
+        // overflow-clip (si le navigateur le connaît) plutôt que hidden : les
+        // filigranes dépassent, et avec hidden, mettre le focus sur la cloche
+        // faisait défiler l'en-tête de côté.
+        <Card
+          style={faceOffBackground(match, 18)}
+          className="relative overflow-hidden supports-[overflow:clip]:overflow-clip"
+        >
           <TeamWatermarks match={match} size={320} opacity={0.12} />
           <CardContent className="relative flex flex-col gap-5 pt-6">
+            <FollowMatchButton match={match} className="absolute right-4 top-4 z-10" />
             <div className="flex items-center justify-center gap-2">
               <NbaLogo size={24} />
               <MatchStatusBadge status={match.status} live={live} />
