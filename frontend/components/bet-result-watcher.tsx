@@ -26,7 +26,7 @@ export function BetResultWatcher() {
 
   // Ajustement pendant le rendu (pas dans un effet) : dès qu'un nouveau
   // snapshot de paris arrive de React Query, on vérifie les victoires pas
-  // encore fêtées. Cf. la même technique utilisée dans mobile-nav.tsx.
+  // encore fêtées (ajustement d'état pendant le rendu, cf. recommandation React).
   if (bets && bets !== lastChecked) {
     setLastChecked(bets);
     const newlyWon = detectNewlyWonBets(bets);

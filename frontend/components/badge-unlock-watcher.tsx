@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createElement, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchBadges } from "@/lib/api/badges";
 import { badgeIcon } from "@/lib/badges";
 import { detectNewlyUnlockedBadges } from "@/lib/badge-notifications";
 import { ConfettiBurst } from "@/components/confetti-burst";
+import type { UserBadge } from "@/lib/types";
 
 /**
  * Composant invisible : surveille en arrière-plan les badges de l'utilisateur
@@ -15,6 +16,7 @@ import { ConfettiBurst } from "@/components/confetti-burst";
  */
 export function BadgeUnlockWatcher() {
   const [celebrating, setCelebrating] = useState(false);
+  const [lastChecked, setLastChecked] = useState<UserBadge[] | undefined>(undefined);
 
   const { data: badges } = useQuery({
     queryKey: ["badges"],
@@ -22,8 +24,10 @@ export function BadgeUnlockWatcher() {
     staleTime: 60 * 1000,
   });
 
-  useEffect(() => {
-    if (!badges) return;
+  // Ajustement pendant le rendu, pas dans un effet (setState synchrone dans
+  // un effet = rendus en cascade) : même technique que BetResultWatcher.
+  if (badges && badges !== lastChecked) {
+    setLastChecked(badges);
     const newlyUnlocked = detectNewlyUnlockedBadges(badges);
 
     if (newlyUnlocked.length > 0) {
@@ -31,13 +35,12 @@ export function BadgeUnlockWatcher() {
     }
 
     for (const badge of newlyUnlocked) {
-      const Icon = badgeIcon(badge.icon);
       toast.success(`Badge débloqué : ${badge.label}`, {
         description: badge.description,
-        icon: <Icon className="h-4 w-4 text-primary" />,
+        icon: createElement(badgeIcon(badge.icon), { className: "h-4 w-4 text-primary" }),
       });
     }
-  }, [badges]);
+  }
 
   return celebrating ? <ConfettiBurst onDone={() => setCelebrating(false)} /> : null;
 }
