@@ -186,6 +186,80 @@ public class EspnStatsClient {
         return Optional.of(rows);
     }
 
+    /**
+     * Statut en direct de tous les matchs d'une journée ESPN : quart-temps,
+     * chrono, score. Même appel que {@link #fetchScoreboard}, lu autrement :
+     * gardé à part pour ne rien changer à la liaison des matchs. Optional
+     * vide = ESPN injoignable.
+     */
+    public Optional<List<EspnLiveGame>> fetchLiveScoreboard(LocalDate date) {
+        JsonNode root = fetchWithRetry(String.format(SCOREBOARD_URL, date.format(DateTimeFormatter.BASIC_ISO_DATE)));
+        if (root == null) return Optional.empty();
+        List<EspnLiveGame> games = new ArrayList<>();
+        for (JsonNode event : root.path("events")) {
+            JsonNode competition = event.path("competitions").path(0);
+            games.add(liveStatus(event.path("id").asText(), competition));
+        }
+        return Optional.of(games);
+    }
+
+    /**
+     * Résumé d'un match pour le direct : statut, score par quart-temps, stats
+     * des équipes, feuille de match du moment. Optional vide = ESPN
+     * injoignable ou réponse inexploitable.
+     */
+    public Optional<EspnLiveSummary> fetchLiveSummary(String eventId) {
+        JsonNode root = fetchWithRetry(String.format(SUMMARY_URL, eventId));
+        if (root == null) return Optional.empty();
+        JsonNode competition = root.path("header").path("competitions").path(0);
+        if (competition.isMissingNode()) return Optional.empty();
+
+        Map<String, Map<String, String>> statsByTeam = new HashMap<>();
+        for (JsonNode team : root.path("boxscore").path("teams")) {
+            Map<String, String> stats = new HashMap<>();
+            for (JsonNode stat : team.path("statistics")) {
+                stats.put(stat.path("name").asText(), stat.path("displayValue").asText(""));
+            }
+            statsByTeam.put(fromEspnAbbreviation(team.path("team").path("abbreviation").asText()), stats);
+        }
+
+        EspnLiveSummary.Side home = null;
+        EspnLiveSummary.Side away = null;
+        for (JsonNode competitor : competition.path("competitors")) {
+            String abbr = fromEspnAbbreviation(competitor.path("team").path("abbreviation").asText());
+            List<Integer> lines = new ArrayList<>();
+            competitor.path("linescores").forEach(l -> lines.add(parseInt(l.path("displayValue").asText(null))));
+            EspnLiveSummary.Side side = new EspnLiveSummary.Side(abbr, lines, statsByTeam.getOrDefault(abbr, Map.of()));
+            if ("home".equals(competitor.path("homeAway").asText())) home = side;
+            else away = side;
+        }
+        if (home == null || away == null) return Optional.empty();
+
+        // Sigles à la sauce balldontlie (« NYK », pas « NY ») : c'est avec eux
+        // que l'app range les joueurs par équipe.
+        List<PlayerBoxScoreRow> players = parseBoxScore(root).stream()
+                .map(r -> new PlayerBoxScoreRow(r.playerName(), fromEspnAbbreviation(r.teamAbbreviation()), r.starter(),
+                        r.minutes(), r.points(), r.rebounds(), r.assists(), r.steals(), r.blocks(), r.turnovers(),
+                        r.plusMinus(), r.fieldGoals(), r.threePoints(), r.freeThrows()))
+                .toList();
+        return Optional.of(new EspnLiveSummary(liveStatus(eventId, competition),
+                home, away, players));
+    }
+
+    private EspnLiveGame liveStatus(String eventId, JsonNode competition) {
+        Integer homeScore = null;
+        Integer awayScore = null;
+        for (JsonNode competitor : competition.path("competitors")) {
+            Integer score = competitor.hasNonNull("score") ? parseInt(competitor.path("score").asText()) : null;
+            if ("home".equals(competitor.path("homeAway").asText())) homeScore = score;
+            else awayScore = score;
+        }
+        JsonNode status = competition.path("status");
+        return new EspnLiveGame(eventId, status.path("type").path("state").asText(""),
+                status.path("period").asInt(0), status.path("displayClock").asText(""),
+                status.path("type").path("detail").asText(""), homeScore, awayScore);
+    }
+
     // ESPN écrit ses dates sans secondes ("2026-10-05T23:00Z"), format
     // qu'Instant.parse refuse mais qu'OffsetDateTime accepte.
     private static Instant parseEventDate(String raw) {
@@ -204,7 +278,10 @@ public class EspnStatsClient {
     public List<PlayerBoxScoreRow> fetchBoxScore(String eventId) {
         JsonNode root = fetchWithRetry(String.format(SUMMARY_URL, eventId));
         if (root == null) return List.of();
+        return parseBoxScore(root);
+    }
 
+    private List<PlayerBoxScoreRow> parseBoxScore(JsonNode root) {
         List<PlayerBoxScoreRow> result = new ArrayList<>();
         for (JsonNode teamBlock : root.path("boxscore").path("players")) {
             String teamAbbr = teamBlock.path("team").path("abbreviation").asText();

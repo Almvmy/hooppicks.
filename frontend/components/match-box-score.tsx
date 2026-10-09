@@ -14,7 +14,7 @@ function leaderName<T extends PlayerBoxScore>(players: T[], stat: (p: T) => numb
     ?.playerName;
 }
 
-function TeamBoxScore({ team, players }: { team: Team; players: PlayerBoxScore[] }) {
+export function TeamBoxScore({ team, players }: { team: Team; players: PlayerBoxScore[] }) {
   // Déjà trié par points côté serveur, mais on le refait ici : le tableau
   // peut contenir les deux équipes mélangées avant filtrage par team.
   const sorted = [...players].sort((a, b) => b.points - a.points);

@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { MatchStatus } from "@/lib/types";
+import { LiveStatus, liveClockLabel } from "@/lib/live";
 
 /**
  * Les trois états d'un match. Après le lot 2, plus aucune classe écrite à la
@@ -15,8 +16,10 @@ const STATUS_CONFIG: Record<
   finished: { label: "Terminé", variant: "success" },
 };
 
-export function MatchStatusBadge({ status }: { status: MatchStatus }) {
+/** `live` : quart-temps et chrono du direct à la place de « En direct », quand on les a. */
+export function MatchStatusBadge({ status, live }: { status: MatchStatus; live?: LiveStatus }) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.scheduled;
+  const label = status === "live" && live ? liveClockLabel(live) : config.label;
 
   return (
     <Badge variant={config.variant} className="font-mono">
@@ -26,7 +29,7 @@ export function MatchStatusBadge({ status }: { status: MatchStatus }) {
           className="mr-0.5 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-live"
         />
       )}
-      {config.label}
+      {label}
     </Badge>
   );
 }

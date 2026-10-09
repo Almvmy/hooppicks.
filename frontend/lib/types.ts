@@ -216,6 +216,9 @@ export interface BetSelection {
   /** Pari joueur : joueur visé et ligne vue au moment du choix (le serveur refuse si elle a bougé). */
   playerId?: string;
   line?: number;
+  /** Renvoyés par le serveur sur un ticket posé (paris joueurs) : de quoi suivre le joueur en direct. */
+  playerName?: string | null;
+  propLine?: number | null;
 }
 
 /** Pari joueur proposé sur un match (PlayerPropsService). */

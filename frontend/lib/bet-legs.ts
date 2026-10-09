@@ -36,12 +36,22 @@ function evaluate(selection: Pick<BetSelection, "market" | "outcome">, match: Ma
   }
 }
 
-export function legState(selection: Pick<BetSelection, "market" | "outcome">, match: Match | undefined): LegState {
+/**
+ * `propValue` : statistique du joueur en ce moment (direct ESPN), pour un pari
+ * joueur pendant le match. Sans elle (match fini, direct indisponible), on ne
+ * dit rien : le serveur tranche d'après la feuille de match une fois importée.
+ */
+export function legState(
+  selection: Pick<BetSelection, "market" | "outcome" | "propLine">,
+  match: Match | undefined,
+  propValue?: number
+): LegState {
   if (!match) return "unknown";
   if (match.status === "scheduled") return "upcoming";
-  // Pari joueur : pas de stats du joueur en direct ici, le serveur tranche
-  // d'après la feuille de match une fois importée.
-  if (isPlayerPropMarket(selection.market)) return "unknown";
+  if (isPlayerPropMarket(selection.market)) {
+    if (match.status !== "live" || propValue === undefined || selection.propLine == null) return "unknown";
+    return propValue > selection.propLine === (selection.outcome === "over") ? "winning" : "losing";
+  }
   const result = evaluate(selection, match);
   if (match.status === "finished") return result === "win" ? "won" : result === "lose" ? "lost" : "push";
   return result === "win" ? "winning" : result === "lose" ? "losing" : "level";

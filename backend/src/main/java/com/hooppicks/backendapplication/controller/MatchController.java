@@ -5,6 +5,8 @@ import com.hooppicks.backendapplication.dto.MatchDto;
 import com.hooppicks.backendapplication.dto.PickPercentagesDto;
 import com.hooppicks.backendapplication.dto.PlayerBoxScoreDto;
 import com.hooppicks.backendapplication.entity.Match;
+import com.hooppicks.backendapplication.live.LiveMatchService;
+import org.springframework.http.ResponseEntity;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +21,11 @@ public class MatchController {
     private final MatchRepository matchRepository;
     private final PlayerMatchStatRepository playerMatchStatRepository;
     private final PickPercentagesService pickPercentagesService;
+    private final LiveMatchService liveMatchService;
 
     public MatchController(MatchRepository matchRepository, PlayerMatchStatRepository playerMatchStatRepository,
-                            PickPercentagesService pickPercentagesService) {
+                            PickPercentagesService pickPercentagesService, LiveMatchService liveMatchService) {
+        this.liveMatchService = liveMatchService;
         this.matchRepository = matchRepository;
         this.playerMatchStatRepository = playerMatchStatRepository;
         this.pickPercentagesService = pickPercentagesService;
@@ -35,6 +39,18 @@ public class MatchController {
         return matches.stream()
                 .map(m -> MatchDto.from(m, percentages.get(m.getId())))
                 .toList();
+    }
+
+    // Direct (ESPN, affichage seulement) : liste vide ou 204 si ESPN ne répond
+    // plus, l'app garde alors le score et le statut de la synchro.
+    @GetMapping("/live")
+    public List<LiveMatchService.LiveStatusDto> getLiveBoard() {
+        return liveMatchService.board();
+    }
+
+    @GetMapping("/{id}/live")
+    public ResponseEntity<LiveMatchService.LiveMatchDto> getLive(@PathVariable String id) {
+        return liveMatchService.detail(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{id}")

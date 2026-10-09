@@ -18,6 +18,8 @@ import { MatchOddsRow } from "@/components/match-odds-row";
 import { PlayerPropsCard } from "@/components/player-props-card";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
+import { useLiveMatch, useLiveStatus, withLiveScore } from "@/lib/live";
+import { LiveMatchPanel } from "@/components/live-match-panel";
 
 export default function MatchDetailPage({
   params,
@@ -28,7 +30,7 @@ export default function MatchDetailPage({
 
   const queryClient = useQueryClient();
 
-  const { data: match, isLoading, isError } = useQuery({
+  const { data: synced, isLoading, isError } = useQuery({
     queryKey: ["match", id],
     queryFn: () => fetchMatchById(id),
     refetchInterval: 60 * 1000,
@@ -39,6 +41,10 @@ export default function MatchDetailPage({
     initialData: () => queryClient.getQueryData<Match[]>(["matches"])?.find((m) => m.id === id),
     initialDataUpdatedAt: () => queryClient.getQueryState(["matches"])?.dataUpdatedAt,
   });
+  // Direct ESPN (affichage seulement) : sans lui, on garde le match de la synchro tel quel.
+  const live = useLiveStatus(synced);
+  const { data: liveDetail } = useLiveMatch(synced);
+  const match = synced && withLiveScore(synced, live);
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,7 +72,7 @@ export default function MatchDetailPage({
           <CardContent className="relative flex flex-col gap-5 pt-6">
             <div className="flex items-center justify-center gap-2">
               <NbaLogo size={24} />
-              <MatchStatusBadge status={match.status} />
+              <MatchStatusBadge status={match.status} live={live} />
             </div>
             <MatchStageBadge match={match} className="-mt-2 justify-center" />
 
@@ -102,6 +108,8 @@ export default function MatchDetailPage({
 
       {match && isBettable(match) && <PlayerPropsCard match={match} />}
 
+      {match && match.status === "live" && <LiveMatchPanel match={match} />}
+
       {match && match.status === "scheduled" && !isBettable(match) && (
         <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground first-letter:uppercase">
           {bettingClosedReason(match)}.
@@ -125,7 +133,9 @@ export default function MatchDetailPage({
         </Card>
       )}
 
-      {match && match.status !== "finished" && (
+      {/* Pendant le match, la feuille de match en direct remplace les
+          effectifs ; ils reviennent si le direct ne répond pas. */}
+      {match && (match.status === "scheduled" || (match.status === "live" && !liveDetail)) && (
         <Card>
           <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
             <TeamRoster team={match.awayTeam} />

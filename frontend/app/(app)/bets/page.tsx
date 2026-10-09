@@ -12,7 +12,9 @@ import { CountUp } from "@/components/motion/count-up";
 import { fetchBets } from "@/lib/api/bets";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 import { LegState, legState, netResult } from "@/lib/bet-legs";
-import { BetSelection, BetStatus, Match, PlacedBet } from "@/lib/types";
+import { BetSelection, BetStatus, Match, PlacedBet, PlayerPropMarket } from "@/lib/types";
+import { LiveStatus, liveClockLabel, useLiveMatch, useLiveStatus, withLiveScore } from "@/lib/live";
+import { PLAYER_PROP_MARKETS, isPlayerPropMarket, normalizePlayerName, propStatValue } from "@/lib/player-props";
 import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
 
@@ -49,7 +51,7 @@ const LEG_DISPLAY: Record<LegState, { icon: React.ElementType; label: string; cl
 // comptent plus, quel que soit le résultat du match.
 const CANCELLED_DISPLAY = { icon: Undo2, label: "Annulée", className: "bg-tint/10 text-muted-foreground" };
 
-function MatchState({ match }: { match: Match | undefined }) {
+function MatchState({ match, live }: { match: Match | undefined; live?: LiveStatus }) {
   if (!match) return null;
   const d = new Date(match.date);
   if (match.status === "scheduled") {
@@ -63,8 +65,26 @@ function MatchState({ match }: { match: Match | undefined }) {
     <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
       {match.status === "live" && <Radio className="h-3 w-3 animate-pulse text-live" />}
       {match.awayTeam.abbreviation} {match.awayScore}–{match.homeScore} {match.homeTeam.abbreviation}
-      {match.status === "finished" ? " · final" : " · en direct"}
+      {match.status === "finished" ? " · final" : ` · ${live ? liveClockLabel(live) : "en direct"}`}
     </span>
+  );
+}
+
+/** « 18 pts · il en faut 27 », « 9 rbd · 12 au plus ». */
+function PropProgress({ value, line, over, unit }: { value: number; line: number; over: boolean; unit: string }) {
+  // Ligne franchie : gagné pour « plus de », perdu pour « moins de ».
+  const done = value > line;
+  const rest = over
+    ? done
+      ? "ligne passée"
+      : `il en faut ${Math.ceil(line)}`
+    : done
+      ? "ligne dépassée"
+      : `${Math.floor(line)} au plus`;
+  return (
+    <p className="font-mono text-[11px] font-semibold text-live">
+      {value} {unit} · {rest}
+    </p>
   );
 }
 
@@ -77,8 +97,19 @@ function SelectionRow({
   matchesById: Map<string, Match>;
   cancelled: boolean;
 }) {
-  const match = matchesById.get(selection.matchId);
-  const state = legState(selection, match);
+  const synced = matchesById.get(selection.matchId);
+  // Direct ESPN : score plus frais que la synchro, et stat du joueur pour un
+  // pari joueur. Indisponible : on retombe sur le match de la synchro.
+  const live = useLiveStatus(synced);
+  const match = synced && withLiveScore(synced, live);
+  const isProp = isPlayerPropMarket(selection.market);
+  const { data: liveDetail } = useLiveMatch(isProp ? synced : undefined);
+  const player =
+    isProp && selection.playerName
+      ? liveDetail?.players.find((p) => normalizePlayerName(p.playerName) === normalizePlayerName(selection.playerName!))
+      : undefined;
+  const propValue = player ? propStatValue(selection.market as PlayerPropMarket, player) : undefined;
+  const state = legState(selection, match, propValue);
   const display = cancelled ? CANCELLED_DISPLAY : LEG_DISPLAY[state];
   const Icon = display.icon;
   return (
@@ -88,7 +119,15 @@ function SelectionRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{selection.label}</p>
           <p className="truncate text-xs text-muted-foreground">{selection.matchLabel}</p>
-          <MatchState match={match} />
+          <MatchState match={match} live={live} />
+          {propValue !== undefined && selection.propLine != null && (
+            <PropProgress
+              value={propValue}
+              line={selection.propLine}
+              over={selection.outcome === "over"}
+              unit={PLAYER_PROP_MARKETS[selection.market as PlayerPropMarket].unit}
+            />
+          )}
         </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">

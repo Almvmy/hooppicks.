@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { MatchStageBadge } from "@/components/match-stage-badge";
 import { Match } from "@/lib/types";
+import { useLiveStatus, withLiveScore } from "@/lib/live";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
@@ -13,7 +14,9 @@ import { isRivalryMatchup } from "@/lib/rivalries";
 import { useFavoriteTeam } from "@/lib/use-teams";
 import { cn, formatKickoffCountdown, formatMatchDate, formatMatchTime, isBettable, bettingClosedReason } from "@/lib/utils";
 
-export function MatchCard({ match }: { match: Match }) {
+export function MatchCard({ match: synced }: { match: Match }) {
+  const live = useLiveStatus(synced);
+  const match = withLiveScore(synced, live);
   const date = new Date(match.date);
   const isRivalry = isRivalryMatchup(match.homeTeam.abbreviation, match.awayTeam.abbreviation);
   const countdown = match.status === "scheduled" ? formatKickoffCountdown(match.date) : null;
@@ -47,7 +50,7 @@ export function MatchCard({ match }: { match: Match }) {
               centre, aligné sur le « VS » du face-à-face en dessous. */}
           <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
             <div className="flex items-center">
-              <MatchStatusBadge status={match.status} />
+              <MatchStatusBadge status={match.status} live={live} />
             </div>
             <NbaLogo size={22} className="mt-0.5" />
             <div className="flex flex-col items-end gap-1 text-right">
