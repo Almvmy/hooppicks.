@@ -46,13 +46,15 @@ class BetControllerTest {
     private BankrollService bankrollService;
     @Mock
     private com.hooppicks.backendapplication.bet.PlayerPropsService playerPropsService;
+    @Mock
+    private com.hooppicks.backendapplication.boost.BoostService boostService;
 
     private BetController controller;
 
     @BeforeEach
     void setUp() {
         controller = new BetController(betRepository, userRepository, transactionRepository, sessionStore, matchRepository, bankrollService,
-                playerPropsService);
+                playerPropsService, boostService);
         // Semaine de jeu commencée hier : elle finit dans 6 jours.
         lenient().when(bankrollService.currentWeekStart()).thenReturn(java.time.Instant.now().minus(java.time.Duration.ofDays(1)));
     }
@@ -92,6 +94,34 @@ class BetControllerTest {
 
     private PlaceBetRequest.SelectionInput moneylineHome(String matchId) {
         return new PlaceBetRequest.SelectionInput(matchId, "Lakers vs Celtics", "moneyline", "home", "Lakers ML", 1.8, null, null);
+    }
+
+    @Test
+    void cote_boostee_appliquee_par_le_serveur() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
+        when(boostService.chosenMatchId()).thenReturn(Optional.of("m1"));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(moneylineHome("m1")), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<Bet> captor = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(captor.capture());
+        assertThat(captor.getValue().getSelections().get(0).getOdds()).isEqualTo(2.07); // 1,8 × 1,15
+    }
+
+    @Test
+    void cote_boostee_mise_plafonnee() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
+        when(boostService.chosenMatchId()).thenReturn(Optional.of("m1"));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(moneylineHome("m1")), 101), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        verify(betRepository, never()).save(any());
     }
 
     @Test

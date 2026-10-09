@@ -15,6 +15,7 @@ import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
 import { useLiveStatus, withLiveScore } from "@/lib/live";
 import { MatchDetailTabs } from "@/components/match-detail-tabs";
+import { MyBetChip } from "@/components/my-bet-chip";
 
 export default function MatchDetailPage({
   params,
@@ -74,6 +75,7 @@ export default function MatchDetailPage({
             <MatchStageBadge match={match} className="-mt-2 justify-center" />
 
             <FaceOffTeams match={match} logoSize={88} morph nameClassName="text-xl" scoreClassName="text-4xl" />
+            <MyBetChip match={match} className="mx-auto max-w-full" />
 
             <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 text-center text-xs text-muted-foreground">
               <span>{match.awayTeam.conference} · {match.awayTeam.division}</span>

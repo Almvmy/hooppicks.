@@ -26,6 +26,9 @@ import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
+import { BoostCard } from "@/components/dashboard/boost-card";
+import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
+import { useBoost } from "@/lib/boost";
 import { CountUp } from "@/components/motion/count-up";
 
 export default function DashboardPage() {
@@ -56,7 +59,12 @@ export default function DashboardPage() {
 
   const streak = computeWinStreak(betsQuery.data);
   const pending = pendingBetsSummary(betsQuery.data);
-  const slate = buildDashboardSlate(matchesQuery.data);
+  const boost = useBoost();
+  // Le match boosté a sa propre carte : pas une seconde fois « à la une »
+  // (sauf en direct, où la une sert à suivre le score).
+  const slate = buildDashboardSlate(
+    matchesQuery.data?.filter((m) => m.id !== boost?.matchId || m.status === "live")
+  );
   const week = weekSummary(betsQuery.data);
   const standing = standingQuery.data;
 
@@ -127,7 +135,9 @@ export default function DashboardPage() {
             favoriteTeamName={profileQuery.data?.favoriteTeam}
           />
           <SeasonPicksNudge />
+          <BoostCard matches={matchesQuery.data} />
           <PickOfDay match={slate.spotlight} />
+          <SuggestedParlays matches={matchesQuery.data} />
           <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
           <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />
         </div>

@@ -7,6 +7,7 @@ import { MatchStatusBadge } from "@/components/match-status-badge";
 import { MatchStageBadge } from "@/components/match-stage-badge";
 import { Match } from "@/lib/types";
 import { useLiveStatus, withLiveScore } from "@/lib/live";
+import { MyBetChip } from "@/components/my-bet-chip";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
@@ -85,6 +86,7 @@ export function MatchCard({ match: synced }: { match: Match }) {
         </CardContent>
 
         <div className="relative px-6 pb-4">
+          <MyBetChip match={match} className="mb-1" />
           {isBettable(match) ? (
             <MatchOddsRow match={match} />
           ) : match.status === "finished" ? null : (

@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, FlaskConical, Heart, Radio, SlidersHorizontal, Trophy, X } from "lucide-react";
+import { CalendarDays, FlaskConical, Heart, LayoutGrid, List, Radio, SlidersHorizontal, Trophy, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MatchCard } from "@/components/match-card";
 import { FinishedMatchRow } from "@/components/finished-match-row";
+import { CompactMatchRow } from "@/components/compact-match-row";
+import { useLocalFlag } from "@/lib/use-local-flag";
 import { NbaLogo } from "@/components/nba-logo";
 import { TeamLogo } from "@/components/team-logo";
 import { MATCH_TYPE_META } from "@/components/match-stage-badge";
@@ -39,6 +41,7 @@ function chipClass(active: boolean) {
 }
 
 export default function MatchesPage() {
+  const [compact, setCompact] = useLocalFlag("hp:matches:compact");
   const timeZone = useTimeZone();
   const [conference, setConference] = useState<Conference | "Toutes">("Toutes");
   const [status, setStatus] = useState<MatchStatus | "all">("all");
@@ -156,12 +159,36 @@ export default function MatchesPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
-          <NbaLogo size={30} />
-          Matchs
-        </h1>
-        <p className="mt-1 text-muted-foreground">Calendrier de la saison NBA, jour par jour.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
+            <NbaLogo size={30} />
+            Matchs
+          </h1>
+          <p className="mt-1 text-muted-foreground">Calendrier de la saison NBA, jour par jour.</p>
+        </div>
+        {/* Vue liste : une ligne par match, pour suivre une soirée chargée sur téléphone. */}
+        <div className="glass-inset-quiet flex shrink-0 gap-1 rounded-full p-1" role="group" aria-label="Affichage">
+          {[
+            { value: false, icon: LayoutGrid, label: "Cartes" },
+            { value: true, icon: List, label: "Liste" },
+          ].map(({ value, icon: Icon, label }) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={compact === value}
+              aria-label={label}
+              title={label}
+              onClick={() => setCompact(value)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+                compact === value ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Seule la bande des jours reste collée sous la topbar (à partir de la
@@ -335,10 +362,8 @@ export default function MatchesPage() {
             <Radio className="h-4 w-4 animate-pulse" />
             En direct
           </h2>
-          <div className="stagger-children grid gap-4 xl:grid-cols-2">
-            {live.map((m) => (
-              <MatchCard key={m.id} match={m} />
-            ))}
+          <div className={cn("stagger-children grid xl:grid-cols-2", compact ? "gap-2" : "gap-4")}>
+            {live.map((m) => (compact ? <CompactMatchRow key={m.id} match={m} /> : <MatchCard key={m.id} match={m} />))}
           </div>
         </section>
       )}
@@ -367,10 +392,8 @@ export default function MatchesPage() {
           </div>
           {/* key = jour : la grille rejoue son entrée en cascade à chaque changement de jour. */}
           {dayOpen.length > 0 && (
-            <div key={selectedDay} className="stagger-children grid gap-4 xl:grid-cols-2">
-              {dayOpen.map((m) => (
-                <MatchCard key={m.id} match={m} />
-              ))}
+            <div key={selectedDay} className={cn("stagger-children grid xl:grid-cols-2", compact ? "gap-2" : "gap-4")}>
+              {dayOpen.map((m) => (compact ? <CompactMatchRow key={m.id} match={m} /> : <MatchCard key={m.id} match={m} />))}
             </div>
           )}
           {dayFinished.length > 0 && (

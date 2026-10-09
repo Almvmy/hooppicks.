@@ -12,6 +12,7 @@ import { placeBet } from "@/lib/api/bets";
 import type { BetSelection } from "@/lib/types";
 import { cn, formatBankrollReset, WEEKLY_BANKROLL, formatOdds } from "@/lib/utils";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
+import { isBoostedSelection, useBoost } from "@/lib/boost";
 
 export function BetSlipPanel() {
   const { selections, stake, setStake, toggleSelection, clear, totalOdds, potentialPayout } =
@@ -20,6 +21,7 @@ export function BetSlipPanel() {
 
   const { data: wallet } = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
   const matchesById = useMatchesById();
+  const boost = useBoost();
 
   // Mobile uniquement : réduit par défaut en pastille dans le coin, déplié
   // seulement quand on la touche. Avant, il se dépliait à chaque sélection
@@ -57,7 +59,9 @@ export function BetSlipPanel() {
   if (selections.length === 0) return null;
 
   const balance = wallet?.balance ?? 0;
-  const isStakeValid = stake >= MIN_STAKE && stake <= balance;
+  // Ticket avec la cote boostée du jour : mise plafonnée (le serveur refuse au-delà).
+  const boostCap = boost && selections.some((s) => isBoostedSelection(s, boost)) ? boost.maxStake : null;
+  const isStakeValid = stake >= MIN_STAKE && stake <= balance && (boostCap === null || stake <= boostCap);
 
   function handleSubmit() {
     if (!isStakeValid) return;
@@ -163,6 +167,11 @@ export function BetSlipPanel() {
               miser qu'on en a besoin. En haut, les points de classement. */}
           <p className={cn("text-xs", stake > balance ? "text-destructive" : "text-muted-foreground")}>
             {stake > 0 && stake < MIN_STAKE && <span className="block text-destructive">Mise minimum : {MIN_STAKE} pts.</span>}
+            {boostCap !== null && (
+              <span className={cn("block", stake > boostCap && "text-destructive")}>
+                Cote boostée : mise limitée à {boostCap} pts sur ce ticket.
+              </span>
+            )}
             {stake > balance ? "Solde insuffisant : " : "Solde de la semaine : "}
             <span className="font-mono font-semibold">{balance.toLocaleString("fr-FR")} pts</span>
             {" "}· repart à {WEEKLY_BANKROLL.toLocaleString("fr-FR")} {formatBankrollReset()}

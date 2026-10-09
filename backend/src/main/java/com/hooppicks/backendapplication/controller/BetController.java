@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.bet.PlayerPropsService;
+import com.hooppicks.backendapplication.boost.BoostService;
 import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.dto.PlaceBetRequest;
 import com.hooppicks.backendapplication.dto.PlacedBetDto;
@@ -35,12 +36,14 @@ public class BetController {
     private final MatchRepository matchRepository;
     private final BankrollService bankrollService;
     private final PlayerPropsService playerPropsService;
+    private final BoostService boostService;
 
     public BetController(BetRepository betRepository, UserRepository userRepository,
                          WalletTransactionRepository transactionRepository, SessionStore sessionStore,
                          MatchRepository matchRepository, BankrollService bankrollService,
-                         PlayerPropsService playerPropsService) {
+                         PlayerPropsService playerPropsService, BoostService boostService) {
         this.playerPropsService = playerPropsService;
+        this.boostService = boostService;
         this.betRepository = betRepository;
         this.bankrollService = bankrollService;
         this.userRepository = userRepository;
@@ -143,8 +146,17 @@ public class BetController {
             matchesById.put(s.matchId(), match);
         }
 
+        // Cote boostée du jour : pari « vainqueur » sur le match de la soirée,
+        // ticket plafonné à BoostService.MAX_STAKE.
+        String boostedMatchId = boostService.chosenMatchId().orElse(null);
+        boolean boosted = request.selections().stream()
+                .anyMatch(s -> "moneyline".equals(s.market()) && s.matchId().equals(boostedMatchId));
+        if (boosted && request.stake() > BoostService.MAX_STAKE) {
+            return ResponseEntity.badRequest().body("Cote boostée : mise limitée à " + BoostService.MAX_STAKE + " pts par ticket.");
+        }
+
         double totalOdds = request.selections().stream()
-                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch))
+                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch, boostedMatchId))
                 .reduce(1, (a, b) -> a * b);
         int potentialPayout = (int) Math.min(Integer.MAX_VALUE, Math.round(request.stake() * totalOdds));
 
@@ -174,7 +186,7 @@ public class BetController {
             } else {
                 selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             }
-            selection.setOdds(oddsFor(s, matchesById, propsByMatch));
+            selection.setOdds(oddsFor(s, matchesById, propsByMatch, boostedMatchId));
             bet.getSelections().add(selection);
         });
 
@@ -231,10 +243,11 @@ public class BetController {
     }
 
     private double oddsFor(PlaceBetRequest.SelectionInput s, Map<String, Match> matches,
-                           Map<String, PlayerPropsService.PlayerProp> props) {
+                           Map<String, PlayerPropsService.PlayerProp> props, String boostedMatchId) {
         PlayerPropsService.PlayerProp prop = props.get(s.matchId());
         if (prop != null) return "over".equals(s.outcome()) ? prop.overOdds() : prop.underOdds();
-        return resolveOdds(matches.get(s.matchId()), s.market(), s.outcome());
+        double odds = resolveOdds(matches.get(s.matchId()), s.market(), s.outcome());
+        return "moneyline".equals(s.market()) && s.matchId().equals(boostedMatchId) ? BoostService.boosted(odds) : odds;
     }
 
     private static String formatLine(double value) {

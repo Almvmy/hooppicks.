@@ -1,9 +1,13 @@
 import { OddsButton } from "@/components/odds-button";
 import { Match } from "@/lib/types";
+import { useBoost } from "@/lib/boost";
 import { winChances, formatLine } from "@/lib/utils";
 
 export function MatchOddsRow({ match }: { match: Match }) {
   const { odds } = match;
+  // Cote boostée du jour : le pari « vainqueur » de ce match payé +15 %.
+  const boost = useBoost();
+  const boosted = boost?.matchId === match.id ? boost : null;
   // Chances de victoire tirées des cotes, marge retirée (somme = 100 %).
   // Seulement pour le vainqueur : spread/total ont la même cote des deux
   // côtés, le chiffre serait toujours 50 %.
@@ -16,6 +20,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
         <OddsButton
           impliedProbability={awayImpliedProbability}
           communityPct={pct?.moneylineAwayPct}
+          boostedFrom={boosted ? odds.moneylineAway : undefined}
           selection={{
             id: `${match.id}-moneyline-away`,
             matchId: match.id,
@@ -23,12 +28,13 @@ export function MatchOddsRow({ match }: { match: Match }) {
             market: "moneyline",
             outcome: "away",
             label: `${match.awayTeam.abbreviation} (V)`,
-            odds: odds.moneylineAway,
+            odds: boosted ? boosted.awayOdds : odds.moneylineAway,
           }}
         />
         <OddsButton
           impliedProbability={homeImpliedProbability}
           communityPct={pct?.moneylineHomePct}
+          boostedFrom={boosted ? odds.moneylineHome : undefined}
           selection={{
             id: `${match.id}-moneyline-home`,
             matchId: match.id,
@@ -36,7 +42,7 @@ export function MatchOddsRow({ match }: { match: Match }) {
             market: "moneyline",
             outcome: "home",
             label: `${match.homeTeam.abbreviation} (V)`,
-            odds: odds.moneylineHome,
+            odds: boosted ? boosted.homeOdds : odds.moneylineHome,
           }}
         />
       </div>
