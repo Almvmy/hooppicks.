@@ -92,16 +92,41 @@ export function dayKey(date: Date, timeZone = resolveTimeZone()): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 }
 
-/**
- * Libellé en deux lignes pour une pastille de date : "Auj." / "21 oct.",
- * "mar." / "21 oct.". Relatif pour hier/aujourd'hui/demain, sinon jour court.
- */
-export function formatDayChip(date: Date, timeZone = resolveTimeZone()): { top: string; bottom: string } {
-  const label = getDayLabel(date, timeZone);
+// --- Soirées NBA ---
+// Une soirée va de 12h à 12h le lendemain (comme la cote boostée et la
+// semaine de jeu) : un match à 00h30 samedi appartient à la soirée de
+// vendredi. Par jour calendaire, une même soirée était coupée en deux et ses
+// matchs de minuit mélangés à ceux de 23h du jour suivant.
+const NIGHT_SHIFT_MS = 12 * 60 * 60 * 1000;
+
+/** Début (jour) de la soirée NBA d'une date. */
+function nightStart(date: Date): Date {
+  return new Date(date.getTime() - NIGHT_SHIFT_MS);
+}
+
+/** "2026-10-10" : la soirée NBA d'une date, dans le fuseau d'affichage. */
+export function nightKey(date: Date, timeZone = resolveTimeZone()): string {
+  return dayKey(nightStart(date), timeZone);
+}
+
+/** "Ce soir", "Demain soir", "Hier soir", sinon "vendredi 10 octobre". */
+export function getNightLabel(date: Date, timeZone = resolveTimeZone()): string {
+  const start = nightStart(date);
+  const diffDays = Math.round((calendarDay(start, timeZone) - calendarDay(nightStart(new Date()), timeZone)) / 86400000);
+  if (diffDays === 0) return "Ce soir";
+  if (diffDays === 1) return "Demain soir";
+  if (diffDays === -1) return "Hier soir";
+  return start.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone });
+}
+
+/** Pastille d'une soirée : "Ce soir" / "10 oct.", "sam." / "11 oct.". */
+export function formatNightChip(date: Date, timeZone = resolveTimeZone()): { top: string; bottom: string } {
+  const label = getNightLabel(date, timeZone);
+  const start = nightStart(date);
   const top =
-    label === "Aujourd'hui" ? "Auj." : label === "Demain" ? "Demain" : label === "Hier" ? "Hier"
-      : date.toLocaleDateString("fr-FR", { weekday: "short", timeZone });
-  return { top, bottom: date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone }) };
+    label === "Ce soir" ? "Ce soir" : label === "Demain soir" ? "Demain" : label === "Hier soir" ? "Hier"
+      : start.toLocaleDateString("fr-FR", { weekday: "short", timeZone });
+  return { top, bottom: start.toLocaleDateString("fr-FR", { day: "numeric", month: "short", timeZone }) };
 }
 
 // --- Semaines de jeu (cf. BankrollService côté backend) ---

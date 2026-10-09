@@ -18,7 +18,7 @@ import { fetchProfile } from "@/lib/api/auth";
 import { useTimeZone } from "@/lib/use-time-zone";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { Conference, Match, MatchStatus, MatchType } from "@/lib/types";
-import { cn, dayKey, formatDayChip, getDayLabel } from "@/lib/utils";
+import { cn, formatNightChip, getNightLabel, nightKey } from "@/lib/utils";
 
 const CONFERENCES: (Conference | "Toutes")[] = ["Toutes", "Est", "Ouest"];
 const STATUSES: { value: MatchStatus | "all"; label: string }[] = [
@@ -104,13 +104,13 @@ export default function MatchesPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
   }, [data, favorite, dataUpdatedAt]);
 
-  // Matchs par jour (dans le fuseau d'affichage), hors direct déjà épinglé.
+  // Matchs par soirée NBA (12h → 12h, dans le fuseau d'affichage), hors direct déjà épinglé.
   const byDay = useMemo(() => {
     const map = new Map<string, Match[]>();
     for (const m of scoped) {
       if (m.status === "live") continue;
       if (status !== "all" && m.status !== status) continue;
-      const key = dayKey(new Date(m.date), timeZone);
+      const key = nightKey(new Date(m.date), timeZone);
       map.set(key, [...(map.get(key) ?? []), m]);
     }
     for (const list of map.values()) list.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -118,7 +118,7 @@ export default function MatchesPage() {
   }, [scoped, status, timeZone]);
 
   const days = [...byDay.keys()];
-  const today = dayKey(new Date(), timeZone);
+  const today = nightKey(new Date(), timeZone);
   // Jour affiché par défaut : aujourd'hui s'il a des matchs, sinon le prochain
   // jour de match, sinon le dernier (fin de saison). Calculé plutôt que stocké :
   // il reste juste quand un filtre fait disparaître le jour choisi.
@@ -195,12 +195,12 @@ export default function MatchesPage() {
           tablette) : avec les filtres, le bandeau collé faisait quatre rangées
           et masquait une bonne partie des cartes au défilement. */}
       <div className="glass-chrome -mx-6 px-6 py-3 md:sticky md:top-16 md:z-20">
-        <div ref={stripRef} className="glass-scroll relative flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Jour">
+        <div ref={stripRef} className="glass-scroll relative flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Soirée">
           {isLoading &&
             Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-14 w-16 shrink-0 rounded-2xl" />)}
           {days.map((day) => {
             const first = byDay.get(day)![0];
-            const { top, bottom } = formatDayChip(new Date(first.date), timeZone);
+            const { top, bottom } = formatNightChip(new Date(first.date), timeZone);
             const active = day === selectedDay;
             return (
               <button
@@ -384,10 +384,10 @@ export default function MatchesPage() {
         <section className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-heading text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              {getDayLabel(new Date(dayMatches[0].date), timeZone)}
+              {getNightLabel(new Date(dayMatches[0].date), timeZone)}
             </h2>
             {noMatchToday && (
-              <p className="text-xs text-muted-foreground">Pas de match aujourd&apos;hui : voici le prochain jour de match.</p>
+              <p className="text-xs text-muted-foreground">Pas de match ce soir : voici la prochaine soirée.</p>
             )}
           </div>
           {/* key = jour : la grille rejoue son entrée en cascade à chaque changement de jour. */}

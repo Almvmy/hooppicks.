@@ -7,6 +7,8 @@ import { TeamLogo } from "@/components/team-logo";
 import { fetchTeamRoster } from "@/lib/api/teams";
 import { normalizePlayerName } from "@/lib/player-props";
 import { playerRating, ratingClass } from "@/lib/player-rating";
+import { PlayerGameDialog } from "@/components/player-game-dialog";
+import type { LiveShot } from "@/lib/live";
 import type { Match, PlayerBoxScore, RosterPlayer, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +80,17 @@ function shortName(name: string) {
  * par colonne, nom du joueur figé pendant qu'on fait défiler les stats.
  * Titulaires marqués d'un liseré.
  */
-export function BoxScoreTable({ match, players }: { match: Match; players: PlayerBoxScore[] }) {
+export function BoxScoreTable({
+  match,
+  players,
+  shots,
+}: {
+  match: Match;
+  players: PlayerBoxScore[];
+  /** Tirs du match (direct ESPN) : montrés dans la fiche d'un joueur. */
+  shots?: LiveShot[];
+}) {
+  const [selected, setSelected] = useState<PlayerBoxScore | null>(null);
   const [side, setSide] = useState<Side>("both");
   const [sortKey, setSortKey] = useState("pts");
   const roster = useRosterIndex([match.awayTeam, match.homeTeam]);
@@ -157,14 +169,26 @@ export function BoxScoreTable({ match, players }: { match: Match; players: Playe
                 const info = roster.get(normalizePlayerName(p.playerName));
                 const team = teamOf(p);
                 return (
-                  <tr key={`${p.teamAbbreviation}-${p.playerName}`}>
+                  <tr
+                    key={`${p.teamAbbreviation}-${p.playerName}`}
+                    onClick={() => setSelected(p)}
+                    className="cursor-pointer hover:[&>td]:bg-tint/[0.04]"
+                  >
                     <td
                       className={cn(
                         "sticky left-0 z-10 border-t border-tint/10 bg-card py-2 pl-3 pr-2",
                         p.starter && "shadow-[inset_3px_0_0_var(--brand)]"
                       )}
                     >
-                      <div className="flex w-36 items-center gap-2 sm:w-44">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(p);
+                        }}
+                        aria-label={`Fiche de ${p.playerName} sur ce match`}
+                        className="flex w-36 items-center gap-2 text-left sm:w-44"
+                      >
                         <span className="relative shrink-0">
                           {info?.headshotUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -184,7 +208,7 @@ export function BoxScoreTable({ match, players }: { match: Match; players: Playe
                             {[info?.jersey, info?.position].filter(Boolean).join(" ") || team.abbreviation}
                           </span>
                         </span>
-                      </div>
+                      </button>
                     </td>
                     {COLUMNS.map((c) => (
                       <td
@@ -205,8 +229,16 @@ export function BoxScoreTable({ match, players }: { match: Match; players: Playe
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        <span className="mr-1 inline-block h-2.5 w-0.5 bg-brand align-middle" /> titulaire · touche une colonne pour trier
+        <span className="mr-1 inline-block h-2.5 w-0.5 bg-brand align-middle" /> titulaire · touche une colonne pour
+        trier, un joueur pour sa fiche
       </p>
+      <PlayerGameDialog
+        player={selected}
+        team={selected ? teamOf(selected) : null}
+        info={selected ? roster.get(normalizePlayerName(selected.playerName)) : undefined}
+        shots={shots}
+        onOpenChange={(open) => !open && setSelected(null)}
+      />
     </div>
   );
 }

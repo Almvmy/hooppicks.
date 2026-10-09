@@ -14,6 +14,7 @@ import { PlayerCompareTray } from "@/components/players/player-compare";
 import { fetchPlayerInjuries, fetchPlayerLeaders, fetchPlayers } from "@/lib/api/players";
 import { fetchTeamRankings, fetchTeamRoster } from "@/lib/api/teams";
 import { cn } from "@/lib/utils";
+import { useFavoriteTeam } from "@/lib/use-teams";
 import { PlayerLeaders, RosterPlayer, TeamRank } from "@/lib/types";
 
 const MIN_SEARCH_LENGTH = 2;
@@ -202,6 +203,9 @@ function PlayersTab() {
   const [teamId, setTeamId] = useState<string | null>(null);
   const [selected, setSelected] = useState<RosterPlayer | null>(null);
   const [compared, setCompared] = useState<RosterPlayer[]>([]);
+  // Sous-onglets plutôt qu'une longue page : sur téléphone, meneurs, blessés
+  // et effectifs empilés obligeaient à défiler loin pour trouver le reste.
+  const [view, setView] = useState<"meneurs" | "blesses" | "effectifs">("meneurs");
 
   useEffect(() => {
     const id = window.setTimeout(() => setDebouncedSearch(search), 300);
@@ -230,7 +234,7 @@ function PlayersTab() {
     staleTime: 60 * 60 * 1000,
   });
 
-  const activeQuery = isSearching ? searchQuery : teamId ? rosterQuery : null;
+  const activeQuery = isSearching ? searchQuery : view === "effectifs" && teamId ? rosterQuery : null;
   const activeData = activeQuery?.data;
   const results = useMemo(() => activeData ?? [], [activeData]);
 
@@ -263,9 +267,30 @@ function PlayersTab() {
             className="pl-9"
           />
         </div>
-        {!isSearching && sortedTeams.length > 0 && (
-          <div className="glass-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Parcourir une équipe">
-            <span className="mr-1 shrink-0 text-xs text-muted-foreground">ou parcours une équipe :</span>
+        {!isSearching && (
+          <div className="flex gap-2" role="tablist" aria-label="Rubrique">
+            {(
+              [
+                ["meneurs", "Meneurs"],
+                ["blesses", "Blessés"],
+                ["effectifs", "Effectifs"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="tab"
+                aria-selected={view === value}
+                className={chipClass(view === value)}
+                onClick={() => setView(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {!isSearching && view === "effectifs" && sortedTeams.length > 0 && (
+          <div className="glass-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Choisir une équipe">
             {sortedTeams.map((t) => (
               <button
                 key={t.id}
@@ -335,14 +360,12 @@ function PlayersTab() {
         </section>
       )}
 
-      {!activeQuery && (
-        <>
-          <LeadersSection onSelect={setSelected} />
-          <InjuriesSection onSelect={setSelected} />
-          <p className="text-xs text-muted-foreground">
-            Astuce : cherche ou parcours une équipe, puis utilise le bouton de comparaison sur deux joueurs pour les comparer.
-          </p>
-        </>
+      {!isSearching && view === "meneurs" && <LeadersSection onSelect={setSelected} />}
+      {!isSearching && view === "blesses" && <InjuriesSection onSelect={setSelected} />}
+      {!isSearching && view === "effectifs" && !teamId && (
+        <p className="text-sm text-muted-foreground">
+          Choisis une équipe pour voir son effectif. Le bouton de comparaison sur deux joueurs les met côte à côte.
+        </p>
       )}
 
       <PlayerCardDialog player={selected} onOpenChange={(open) => !open && setSelected(null)} />
@@ -425,11 +448,20 @@ function StandingsTable({ conference, teams }: { conference: string; teams: Team
 
 function TeamsTab() {
   const [sortMode, setSortMode] = useState<TeamSortMode>("official");
+  // Une conférence à la fois sur téléphone (on défilait jusqu'en bas pour
+  // l'autre tableau) ; les deux côte à côte sur grand écran. Par défaut, celle
+  // de l'équipe favorite.
+  const { team: favorite } = useFavoriteTeam();
+  const [chosenConference, setConference] = useState<"Est" | "Ouest" | null>(null);
+  const conference = chosenConference ?? (favorite?.conference === "Ouest" ? "Ouest" : "Est");
   const { data, isLoading, isError } = useQuery({
     queryKey: ["teams", "rankings"],
     queryFn: fetchTeamRankings,
     staleTime: 5 * 60 * 1000,
   });
+  const eloRanked = [...(data ?? [])].sort((a, b) => a.rank - b.rank);
+  const eloMax = Math.max(...eloRanked.map((t) => t.eloRating));
+  const eloMin = Math.min(...eloRanked.map((t) => t.eloRating));
 
   return (
     <div className="flex flex-col gap-4">
@@ -454,32 +486,58 @@ function TeamsTab() {
       {isError && <p className="text-destructive">Impossible de charger les équipes.</p>}
 
       {data && sortMode === "official" && (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {(["Est", "Ouest"] as const).map((conf) => (
-            <StandingsTable key={conf} conference={conf} teams={data.filter((t) => t.conference === conf)} />
-          ))}
-        </div>
+        <>
+          <div className="glass-inset-quiet grid grid-cols-2 gap-1 rounded-full p-1 xl:hidden" role="tablist" aria-label="Conférence">
+            {(["Est", "Ouest"] as const).map((conf) => (
+              <button
+                key={conf}
+                type="button"
+                role="tab"
+                aria-selected={conference === conf}
+                onClick={() => setConference(conf)}
+                className={cn(
+                  "min-h-9 rounded-full text-sm font-semibold transition-colors",
+                  conference === conf ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Conférence {conf}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {(["Est", "Ouest"] as const).map((conf) => (
+              <div key={conf} className={cn(conf !== conference && "hidden xl:block")}>
+                <StandingsTable conference={conf} teams={data.filter((t) => t.conference === conf)} />
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {data && sortMode === "elo" && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {data.map((team) => (
-            <Link key={team.id} href={`/teams/${team.id}`}>
-              <Card className="transition-colors hover:bg-tint/5">
-                <CardContent className="flex items-center gap-3 pt-6">
-                  <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={36} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{team.name}</p>
-                    <p className="truncate font-mono text-xs text-muted-foreground">Elo {Math.round(team.eloRating)}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary">
-                    #{team.rank}
+        // Un classement compact plutôt que 30 cartes : tout tient en un coup d'œil.
+        <Card className="overflow-hidden">
+          <ol className="flex flex-col">
+            {eloRanked.map((team) => (
+              <li key={team.id} className="border-t border-tint/10 first:border-t-0">
+                <Link href={`/teams/${team.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-tint/5">
+                  <span className="w-6 shrink-0 text-right font-mono text-xs text-muted-foreground">{team.rank}</span>
+                  <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={24} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{team.name}</span>
+                  <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-tint/10 sm:block" aria-hidden>
+                    <span
+                      className="block h-full bg-primary/70"
+                      style={{
+                        width: `${eloMax === eloMin ? 100 : 15 + ((team.eloRating - eloMin) / (eloMax - eloMin)) * 85}%`,
+                      }}
+                    />
                   </span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  <span className="w-12 shrink-0 text-right font-mono text-xs">{Math.round(team.eloRating)}</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </Card>
       )}
     </div>
   );

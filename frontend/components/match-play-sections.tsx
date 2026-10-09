@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Circle, Star } from "lucide-react";
+import { ChevronDown, Circle, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TeamLogo } from "@/components/team-logo";
 import { getTeamColor } from "@/lib/team-colors";
@@ -194,23 +194,67 @@ function ShotMark({ shot, color }: { shot: LiveShot; color: string }) {
 
 const pct = (made: number, total: number) => (total ? Math.round((made / total) * 100) : 0);
 
-/** Tirs d'une équipe (ou d'un de ses joueurs) sur le demi-terrain : réussis en plein, ratés en croix. */
+/** Demi-terrain avec des tirs (réussis en plein, ratés en croix) et la réussite en dessous. */
+export function ShotCourt({ shots, color }: { shots: LiveShot[]; color: string }) {
+  const made = shots.filter((s) => s.made).length;
+  const threes = shots.filter((s) => s.points === 3);
+  const threesMade = threes.filter((s) => s.made).length;
+  return (
+    <div className="flex flex-col gap-3">
+      <svg
+        viewBox="0 -5 50 47"
+        className="w-full rounded-xl bg-tint/[0.04]"
+        role="img"
+        aria-label={`Carte des tirs : ${made} réussis sur ${shots.length}`}
+      >
+        <Court />
+        {shots.map((s, i) => (
+          <ShotMark key={i} shot={s} color={color} />
+        ))}
+      </svg>
+      <div className="grid grid-cols-2 gap-2 text-center text-sm">
+        <div className="glass-inset-quiet rounded-xl px-2 py-1.5">
+          <p className="text-[11px] text-muted-foreground">Tirs</p>
+          <p className="font-mono font-bold">
+            {made}/{shots.length} · {pct(made, shots.length)} %
+          </p>
+        </div>
+        <div className="glass-inset-quiet rounded-xl px-2 py-1.5">
+          <p className="text-[11px] text-muted-foreground">À 3 pts</p>
+          <p className="font-mono font-bold">
+            {threesMade}/{threes.length} · {pct(threesMade, threes.length)} %
+          </p>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground">Rond plein : réussi · croix : raté. Lancers francs non compris.</p>
+    </div>
+  );
+}
+
+/** Tirs d'une équipe (ou d'un de ses joueurs) sur le demi-terrain. */
 export function ShotChart({ match, live }: { match: Match; live: LiveMatch }) {
   const [side, setSide] = useState<"away" | "home">("away");
   const [player, setPlayer] = useState("");
   const team = side === "home" ? match.homeTeam : match.awayTeam;
   const teamShots = live.shots.filter((s) => s.teamAbbreviation === team.abbreviation);
-  const shooters = [...new Set(teamShots.map((s) => s.playerName).filter((n): n is string => !!n))].sort(
-    (a, b) => teamShots.filter((s) => s.playerName === b).length - teamShots.filter((s) => s.playerName === a).length
-  );
+  // Les joueurs qui ont tiré, du plus grand nombre de tirs au plus petit, avec leur réussite.
+  const shooters = [...new Set(teamShots.map((s) => s.playerName).filter((n): n is string => !!n))]
+    .map((name) => {
+      const own = teamShots.filter((s) => s.playerName === name);
+      return { name, made: own.filter((s) => s.made).length, attempts: own.length };
+    })
+    .sort((a, b) => b.attempts - a.attempts || b.made - a.made);
   const shots = player ? teamShots.filter((s) => s.playerName === player) : teamShots;
-  const made = shots.filter((s) => s.made).length;
-  const threes = shots.filter((s) => s.points === 3);
-  const color = getTeamColor(team.abbreviation);
 
   if (live.shots.length === 0) {
     return <p className="text-sm text-muted-foreground">Pas encore de tir enregistré pour ce match.</p>;
   }
+
+  const chip = (active: boolean) =>
+    cn(
+      "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+      active ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+    );
 
   return (
     <Card>
@@ -236,41 +280,29 @@ export function ShotChart({ match, live }: { match: Match; live: LiveMatch }) {
             </button>
           ))}
         </div>
-        <select
-          value={player}
-          onChange={(e) => setPlayer(e.target.value)}
-          aria-label="Joueur"
-          className="glass-inset-quiet h-9 rounded-xl bg-transparent px-3 text-sm"
-        >
-          <option value="">Toute l&apos;équipe</option>
-          {shooters.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
+        {/* Pastilles qui défilent plutôt qu'une liste déroulante : on voit d'un coup
+            d'œil qui a tiré et avec quelle réussite, et on change d'un toucher. */}
+        <div className="glass-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Joueur">
+          <button type="button" role="tab" aria-selected={!player} onClick={() => setPlayer("")} className={chip(!player)}>
+            Toute l&apos;équipe
+          </button>
+          {shooters.map((s) => (
+            <button
+              key={s.name}
+              type="button"
+              role="tab"
+              aria-selected={player === s.name}
+              onClick={() => setPlayer(s.name)}
+              className={chip(player === s.name)}
+            >
+              {shortName(s.name)}
+              <span className="font-mono font-normal opacity-80">
+                {s.made}/{s.attempts}
+              </span>
+            </button>
           ))}
-        </select>
-        <svg viewBox="0 -5 50 47" className="w-full rounded-xl bg-tint/[0.04]" role="img"
-          aria-label={`Carte des tirs : ${made} réussis sur ${shots.length}`}>
-          <Court />
-          {shots.map((s, i) => (
-            <ShotMark key={i} shot={s} color={color} />
-          ))}
-        </svg>
-        <div className="grid grid-cols-2 gap-2 text-center text-sm">
-          <div className="glass-inset-quiet rounded-xl px-2 py-1.5">
-            <p className="text-[11px] text-muted-foreground">Tirs</p>
-            <p className="font-mono font-bold">
-              {made}/{shots.length} · {pct(made, shots.length)} %
-            </p>
-          </div>
-          <div className="glass-inset-quiet rounded-xl px-2 py-1.5">
-            <p className="text-[11px] text-muted-foreground">À 3 pts</p>
-            <p className="font-mono font-bold">
-              {threes.filter((s) => s.made).length}/{threes.length} · {pct(threes.filter((s) => s.made).length, threes.length)} %
-            </p>
-          </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">Rond plein : réussi · croix : raté. Lancers francs non compris.</p>
+        <ShotCourt shots={shots} color={getTeamColor(team.abbreviation)} />
       </CardContent>
     </Card>
   );
@@ -297,13 +329,16 @@ const KIND_LABELS: Record<KeyPlay["kind"], string> = {
  */
 export function KeyPlaysList({ match, live }: { match: Match; live: LiveMatch }) {
   const [withFreeThrows, setWithFreeThrows] = useState(false);
-  const plays = live.keyPlays.filter((p) => withFreeThrows || p.kind !== "free_throw").slice().reverse();
   const teamOf = (abbr: string | null) =>
     abbr === match.homeTeam.abbreviation ? match.homeTeam : abbr === match.awayTeam.abbreviation ? match.awayTeam : null;
 
   if (live.keyPlays.length === 0) {
     return <p className="text-sm text-muted-foreground">Le fil du match commence au coup d&apos;envoi.</p>;
   }
+
+  // Une section par période, la plus récente en haut, chacune du plus récent au plus ancien.
+  const periods = [...new Set(live.keyPlays.map((p) => p.period))].filter((p) => p > 0).sort((a, b) => b - a);
+  const finalPlay = live.keyPlays.find((p) => p.kind === "end_game");
 
   return (
     <Card>
@@ -312,33 +347,56 @@ export function KeyPlaysList({ match, live }: { match: Match; live: LiveMatch })
           <input type="checkbox" checked={withFreeThrows} onChange={(e) => setWithFreeThrows(e.target.checked)} />
           Afficher les lancers francs
         </label>
-        <ol className="flex flex-col">
-          {plays.map((p, i) => {
-            if (p.kind === "end_period" || p.kind === "end_game") {
-              return (
-                <li key={i} className="my-1.5 rounded-lg bg-tint/[0.06] px-3 py-1.5 text-center text-xs font-semibold">
-                  {p.kind === "end_game" ? "Fin du match" : `Fin du ${periodName(p.period)}`} · {match.awayTeam.abbreviation}{" "}
-                  {p.awayScore} - {p.homeScore} {match.homeTeam.abbreviation}
-                </li>
-              );
-            }
-            const team = teamOf(p.teamAbbreviation);
-            return (
-              <li key={i} className="flex items-center gap-2.5 border-t border-tint/10 py-2 text-sm first:border-t-0">
-                <span className="w-10 shrink-0 font-mono text-[11px] text-muted-foreground">{formatClock(p.clock)}</span>
-                {team && <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={18} />}
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{shortName(p.playerName) || team?.name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{KIND_LABELS[p.kind]}</span>
+        {finalPlay && (
+          <p className="rounded-lg bg-tint/[0.06] px-3 py-1.5 text-center text-xs font-semibold">
+            Fin du match · {match.awayTeam.abbreviation} {finalPlay.awayScore} - {finalPlay.homeScore}{" "}
+            {match.homeTeam.abbreviation}
+          </p>
+        )}
+        {periods.map((period, index) => {
+          const all = live.keyPlays.filter((p) => p.period === period);
+          const plays = all
+            .filter((p) => p.kind !== "end_period" && p.kind !== "end_game")
+            .filter((p) => withFreeThrows || p.kind !== "free_throw")
+            .reverse();
+          const last = all[all.length - 1];
+          const ended = all.some((p) => p.kind === "end_period");
+          return (
+            // Ouverte par défaut : la période en cours (ou la dernière jouée).
+            <details key={period} open={index === 0} className="group rounded-xl bg-tint/[0.03]">
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-semibold">
+                <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 text-muted-foreground transition-transform group-open:rotate-0" />
+                <span className="flex-1 first-letter:uppercase">{periodName(period)}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {ended ? "" : "en cours · "}
+                  {last.awayScore}-{last.homeScore}
                 </span>
-                <span className={cn("shrink-0 font-mono text-xs", p.points === 3 && "font-bold text-primary")}>+{p.points}</span>
-                <span className="w-14 shrink-0 text-right font-mono text-xs tabular-nums">
-                  {p.awayScore}-{p.homeScore}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+              </summary>
+              <ol className="flex flex-col px-3 pb-1">
+                {plays.length === 0 && <li className="py-2 text-xs text-muted-foreground">Pas encore de panier.</li>}
+                {plays.map((p, i) => {
+                  const team = teamOf(p.teamAbbreviation);
+                  return (
+                    <li key={i} className="flex items-center gap-2.5 border-t border-tint/10 py-2 text-sm">
+                      <span className="w-10 shrink-0 font-mono text-[11px] text-muted-foreground">{formatClock(p.clock)}</span>
+                      {team && <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={18} />}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{shortName(p.playerName) || team?.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{KIND_LABELS[p.kind]}</span>
+                      </span>
+                      <span className={cn("shrink-0 font-mono text-xs", p.points === 3 && "font-bold text-primary")}>
+                        +{p.points}
+                      </span>
+                      <span className="w-14 shrink-0 text-right font-mono text-xs tabular-nums">
+                        {p.awayScore}-{p.homeScore}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </details>
+          );
+        })}
       </CardContent>
     </Card>
   );

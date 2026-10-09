@@ -21,25 +21,33 @@ import {
   WinProbabilityChart,
 } from "@/components/match-play-sections";
 import { TeamLogo } from "@/components/team-logo";
-import { liveClockLabel, useLiveMatch, useLiveStatus } from "@/lib/live";
+import { liveClockLabel, useLiveMatch, useLiveStatus, type LiveShot } from "@/lib/live";
 import type { Match, PlayerBoxScore } from "@/lib/types";
 import { bettingClosedReason, cn, isBettable } from "@/lib/utils";
 
 /** Feuille de match du direct ESPN, sinon celle importée en base après le match. */
-function BoxScoreTab({ match, livePlayers }: { match: Match; livePlayers: PlayerBoxScore[] | undefined }) {
+function BoxScoreTab({
+  match,
+  livePlayers,
+  shots,
+}: {
+  match: Match;
+  livePlayers: PlayerBoxScore[] | undefined;
+  shots: LiveShot[] | undefined;
+}) {
   const fromEspn = !!livePlayers && livePlayers.length > 0;
   const { data, isLoading, isError } = useQuery({
     queryKey: ["match-boxscore", match.id],
     queryFn: () => fetchMatchBoxScore(match.id),
     enabled: !fromEspn,
   });
-  if (fromEspn) return <BoxScoreTable match={match} players={livePlayers} />;
+  if (fromEspn) return <BoxScoreTable match={match} players={livePlayers} shots={shots} />;
   if (isLoading) return <Skeleton className="h-64 w-full rounded-2xl" />;
   if (isError) return <p className="text-sm text-destructive">Impossible de charger la feuille de match.</p>;
   if (!data || data.length === 0) {
     return <p className="text-sm text-muted-foreground">Feuille de match pas encore disponible pour ce match.</p>;
   }
-  return <BoxScoreTable match={match} players={data} />;
+  return <BoxScoreTable match={match} players={data} shots={shots} />;
 }
 
 /** Score en petit, collé en haut avec les onglets : on garde l'œil dessus en parcourant la feuille de match. */
@@ -204,7 +212,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
 
           {active === "stats" && live && <TeamStatsSection match={match} live={live} />}
 
-          {active === "feuille" && <BoxScoreTab match={match} livePlayers={live?.players} />}
+          {active === "feuille" && <BoxScoreTab match={match} livePlayers={live?.players} shots={live?.shots} />}
 
           {active === "effectifs" && (
             <Card>
