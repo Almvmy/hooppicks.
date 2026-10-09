@@ -29,10 +29,12 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
     <Card style={faceOffBackground(match, 18)} className="relative overflow-hidden">
       <TeamWatermarks match={match} size={260} opacity={0.12} />
       <CardContent className="relative pt-6">
-        <div className="flex items-center justify-between">
+        {/* Une seule ligne sur téléphone : libellé raccourci et date qui ne se
+            coupe pas (ils passaient chacun sur deux lignes à 375 px). */}
+        <div className="flex items-center justify-between gap-2">
           <span
             className={cn(
-              "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide",
+              "flex min-w-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold uppercase tracking-wide",
               isLive ? "text-destructive" : "text-primary"
             )}
           >
@@ -44,12 +46,13 @@ export function PickOfDay({ match }: { match: Match | undefined }) {
             ) : (
               <>
                 <NbaLogo size={18} />
-                <Radio className="h-3.5 w-3.5" />
-                Prochain coup d&apos;envoi
+                <Radio className="hidden h-3.5 w-3.5 sm:block" />
+                <span className="sm:hidden">Coup d&apos;envoi</span>
+                <span className="hidden sm:inline">Prochain coup d&apos;envoi</span>
               </>
             )}
           </span>
-          <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+          <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-mono text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             {formatMatchDate(date)}
             {" · "}

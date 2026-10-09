@@ -73,23 +73,23 @@ export default function MatchDetailPage({
           style={faceOffBackground(match, 18)}
           className="relative overflow-hidden supports-[overflow:clip]:overflow-clip"
         >
-          <TeamWatermarks match={match} size={320} opacity={0.12} />
-          <CardContent className="relative flex flex-col gap-5 pt-6">
-            <FollowMatchButton match={match} className="absolute right-4 top-4 z-10" />
-            <div className="flex items-center justify-center gap-2">
-              <NbaLogo size={24} />
-              <MatchStatusBadge status={match.status} live={live} />
+          <TeamWatermarks match={match} size={260} opacity={0.12} />
+          {/* En-tête plutôt rectangulaire : statut et cloche sur une même ligne,
+              logos plus petits, sans la ligne conférence · division (déjà sur la
+              page de l'équipe). Carré et haut, il poussait les onglets hors de
+              l'écran du téléphone. */}
+          <CardContent className="relative flex flex-col gap-3 pt-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <NbaLogo size={22} />
+                <MatchStatusBadge status={match.status} live={live} />
+              </div>
+              <FollowMatchButton match={match} className="h-9 w-9 shrink-0" />
             </div>
-            <MatchStageBadge match={match} className="-mt-2 justify-center" />
+            <MatchStageBadge match={match} className="-mt-1 justify-center" />
 
-            <FaceOffTeams match={match} logoSize={88} morph nameClassName="text-xl" scoreClassName="text-4xl" />
+            <FaceOffTeams match={match} logoSize={64} morph nameClassName="text-lg" scoreClassName="text-3xl" />
             <MyBetChip match={match} className="mx-auto max-w-full" />
-
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 text-center text-xs text-muted-foreground">
-              <span>{match.awayTeam.conference} · {match.awayTeam.division}</span>
-              <span />
-              <span>{match.homeTeam.conference} · {match.homeTeam.division}</span>
-            </div>
 
             <p className="text-center font-mono text-sm text-muted-foreground">
               {getDayLabel(new Date(match.date))} · {formatMatchTime(new Date(match.date))}
