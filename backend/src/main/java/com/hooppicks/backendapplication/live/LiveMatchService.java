@@ -66,8 +66,13 @@ public class LiveMatchService {
 
     public record TeamStatLine(String label, String home, String away) {}
 
+    /** Possession, fautes d'équipe du quart-temps et bonus : seulement pendant le jeu. */
+    public record Situation(String possession, Integer homeFouls, Integer awayFouls, String homeBonus, String awayBonus) {}
+
     public record LiveMatchDto(LiveStatusDto status, List<Integer> homeLinescores, List<Integer> awayLinescores,
-                               List<TeamStatLine> teamStats, List<PlayerBoxScoreDto> players) {}
+                               List<TeamStatLine> teamStats, List<PlayerBoxScoreDto> players, Situation situation,
+                               List<EspnLiveSummary.WinPoint> winProbability, List<EspnLiveSummary.Shot> shots,
+                               List<EspnLiveSummary.KeyPlay> keyPlays) {}
 
     private record Cached<T>(T value, Instant fetchedAt, Duration freshFor) {}
 
@@ -133,8 +138,16 @@ public class LiveMatchService {
                 .map(PlayerBoxScoreDto::from)
                 .sorted(Comparator.comparingInt(PlayerBoxScoreDto::points).reversed())
                 .toList();
-        return Optional.of(new LiveMatchDto(toStatus(matchId, summary.status()), summary.home().linescores(),
-                summary.away().linescores(), stats, players));
+        EspnLiveSummary.Side home = summary.home();
+        EspnLiveSummary.Side away = summary.away();
+        Situation situation = "in".equals(summary.status().state())
+                ? new Situation(home.possession() ? home.abbreviation() : away.possession() ? away.abbreviation() : null,
+                        home.teamFouls(), away.teamFouls(), home.bonus(), away.bonus())
+                : null;
+        EspnLiveSummary.Details details = summary.details();
+        return Optional.of(new LiveMatchDto(toStatus(matchId, summary.status()), home.linescores(),
+                away.linescores(), stats, players, situation, details.winProbability(), details.shots(),
+                details.keyPlays()));
     }
 
     private static LiveStatusDto toStatus(String matchId, EspnLiveGame g) {

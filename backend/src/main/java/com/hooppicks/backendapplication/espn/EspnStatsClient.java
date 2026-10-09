@@ -225,11 +225,18 @@ public class EspnStatsClient {
 
         EspnLiveSummary.Side home = null;
         EspnLiveSummary.Side away = null;
+        Map<String, String> abbrByTeamId = new HashMap<>();
         for (JsonNode competitor : competition.path("competitors")) {
             String abbr = fromEspnAbbreviation(competitor.path("team").path("abbreviation").asText());
+            abbrByTeamId.put(competitor.path("team").path("id").asText(), abbr);
             List<Integer> lines = new ArrayList<>();
             competitor.path("linescores").forEach(l -> lines.add(parseInt(l.path("displayValue").asText(null))));
-            EspnLiveSummary.Side side = new EspnLiveSummary.Side(abbr, lines, statsByTeam.getOrDefault(abbr, Map.of()));
+            JsonNode fouls = competitor.path("fouls");
+            String bonus = fouls.path("bonusState").asText("");
+            EspnLiveSummary.Side side = new EspnLiveSummary.Side(abbr, lines, statsByTeam.getOrDefault(abbr, Map.of()),
+                    competitor.path("possession").asBoolean(false),
+                    fouls.has("teamFoulsCurrent") ? fouls.path("teamFoulsCurrent").asInt() : null,
+                    bonus.isBlank() || "NONE".equalsIgnoreCase(bonus) ? null : bonus);
             if ("home".equals(competitor.path("homeAway").asText())) home = side;
             else away = side;
         }
@@ -243,7 +250,102 @@ public class EspnStatsClient {
                         r.plusMinus(), r.fieldGoals(), r.threePoints(), r.freeThrows()))
                 .toList();
         return Optional.of(new EspnLiveSummary(liveStatus(eventId, competition),
-                home, away, players));
+                home, away, players, parseDetails(root, abbrByTeamId)));
+    }
+
+    // Au-delà, ce sont des tirs désespérés depuis l'autre moitié du terrain :
+    // hors de la carte des tirs.
+    private static final double SHOT_MAX_Y = 43;
+    private static final int MAX_WIN_POINTS = 200;
+
+    /**
+     * Courbe de probabilité de victoire, tirs et temps forts, lus dans les
+     * actions du match. Une action mal formée est ignorée, jamais bloquante.
+     */
+    private EspnLiveSummary.Details parseDetails(JsonNode root, Map<String, String> abbrByTeamId) {
+        Map<String, String> nameByAthleteId = new HashMap<>();
+        for (JsonNode teamBlock : root.path("boxscore").path("players")) {
+            for (JsonNode a : teamBlock.path("statistics").path(0).path("athletes")) {
+                nameByAthleteId.put(a.path("athlete").path("id").asText(), a.path("athlete").path("displayName").asText());
+            }
+        }
+
+        Map<String, Integer> elapsedByPlay = new HashMap<>();
+        List<EspnLiveSummary.Shot> shots = new ArrayList<>();
+        List<EspnLiveSummary.KeyPlay> keyPlays = new ArrayList<>();
+        for (JsonNode play : root.path("plays")) {
+            int period = play.path("period").path("number").asInt(0);
+            String clock = play.path("clock").path("displayValue").asText("");
+            elapsedByPlay.put(play.path("id").asText(), elapsedSeconds(period, clock));
+            String type = play.path("type").path("text").asText("");
+            String team = abbrByTeamId.get(play.path("team").path("id").asText());
+            String player = nameByAthleteId.get(play.path("participants").path(0).path("athlete").path("id").asText());
+
+            boolean freeThrow = type.startsWith("Free Throw");
+            JsonNode coordinate = play.path("coordinate");
+            double x = coordinate.path("x").asDouble(-1);
+            double y = coordinate.path("y").asDouble(-1);
+            if (play.path("shootingPlay").asBoolean(false) && !freeThrow && x >= 0 && x <= 50 && y <= SHOT_MAX_Y) {
+                boolean made = play.path("scoringPlay").asBoolean(false);
+                shots.add(new EspnLiveSummary.Shot(x, y, made, play.path("pointsAttempted").asInt(2), team, player));
+            }
+
+            String kind = null;
+            if (play.path("scoringPlay").asBoolean(false)) kind = shotKind(type, play.path("scoreValue").asInt());
+            else if ("End Period".equals(type)) kind = "end_period";
+            else if ("End Game".equals(type)) kind = "end_game";
+            if (kind != null) {
+                keyPlays.add(new EspnLiveSummary.KeyPlay(period, clock, kind, play.path("scoreValue").asInt(0), team,
+                        player, play.path("awayScore").asInt(0), play.path("homeScore").asInt(0)));
+            }
+        }
+
+        List<EspnLiveSummary.WinPoint> win = new ArrayList<>();
+        for (JsonNode point : root.path("winprobability")) {
+            Integer elapsed = elapsedByPlay.get(point.path("playId").asText());
+            if (elapsed != null) win.add(new EspnLiveSummary.WinPoint(elapsed, point.path("homeWinPercentage").asDouble()));
+        }
+        // ESPN insère parfois une action corrigée après coup : la courbe
+        // revenait en arrière dans le temps. Tri stable par temps de jeu.
+        win.sort(java.util.Comparator.comparingInt(EspnLiveSummary.WinPoint::elapsedSeconds));
+        return new EspnLiveSummary.Details(downsample(win), shots, keyPlays);
+    }
+
+    /** Secondes de jeu écoulées : quarts-temps de 12 min, prolongations de 5 min. */
+    static int elapsedSeconds(int period, String clock) {
+        if (period <= 0) return 0;
+        int remaining;
+        String[] parts = clock.split(":");
+        try {
+            remaining = parts.length == 2
+                    ? Integer.parseInt(parts[0]) * 60 + (int) Double.parseDouble(parts[1])
+                    : (int) Double.parseDouble(clock);
+        } catch (NumberFormatException e) {
+            remaining = 0;
+        }
+        int before = period <= 4 ? (period - 1) * 720 : 4 * 720 + (period - 5) * 300;
+        int length = period <= 4 ? 720 : 300;
+        return before + Math.max(0, length - remaining);
+    }
+
+    private static String shotKind(String type, int points) {
+        if (type.startsWith("Free Throw")) return "free_throw";
+        if (points == 3) return "three";
+        if (type.contains("Alley Oop")) return "alley_oop";
+        if (type.contains("Dunk")) return "dunk";
+        if (type.contains("Layup") || type.contains("Finger Roll")) return "layup";
+        if (type.contains("Hook")) return "hook";
+        return "jumper";
+    }
+
+    // Une courbe lisible n'a pas besoin des ~500 actions : on en garde au plus
+    // MAX_WIN_POINTS, à intervalles réguliers, la dernière toujours comprise.
+    private static List<EspnLiveSummary.WinPoint> downsample(List<EspnLiveSummary.WinPoint> points) {
+        if (points.size() <= MAX_WIN_POINTS) return points;
+        List<EspnLiveSummary.WinPoint> kept = new ArrayList<>();
+        double step = (double) (points.size() - 1) / (MAX_WIN_POINTS - 1);
+        for (int i = 0; i < MAX_WIN_POINTS; i++) kept.add(points.get((int) Math.round(i * step)));
+        return kept;
     }
 
     private EspnLiveGame liveStatus(String eventId, JsonNode competition) {

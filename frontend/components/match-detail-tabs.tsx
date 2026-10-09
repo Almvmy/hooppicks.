@@ -12,6 +12,13 @@ import { BoxScoreTable } from "@/components/box-score-table";
 import { fetchMatchBoxScore } from "@/lib/api/matches";
 import { TeamNews } from "@/components/news/team-news";
 import { LeadersSection, LinescoreSection, TeamStatsSection } from "@/components/match-live-sections";
+import {
+  KeyPlaysList,
+  ManOfTheMatch,
+  ShotChart,
+  SituationStrip,
+  WinProbabilityChart,
+} from "@/components/match-play-sections";
 import { TeamLogo } from "@/components/team-logo";
 import { liveClockLabel, useLiveMatch, useLiveStatus } from "@/lib/live";
 import type { Match, PlayerBoxScore } from "@/lib/types";
@@ -58,13 +65,15 @@ function StickyScore({ match }: { match: Match }) {
   );
 }
 
-type Tab = "paris" | "resume" | "stats" | "feuille" | "effectifs" | "actus";
+type Tab = "paris" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
 
 const LABELS: Record<Tab, string> = {
   paris: "Paris",
   resume: "Résumé",
+  actions: "Temps forts",
   stats: "Stats",
   feuille: "Feuille de match",
+  tirs: "Tirs",
   effectifs: "Effectifs",
   actus: "Actus",
 };
@@ -72,9 +81,10 @@ const LABELS: Record<Tab, string> = {
 /**
  * Le contenu d'un match rangé en onglets, sous l'en-tête (score). Avant le
  * coup d'envoi : paris, effectifs, actus. Pendant et après : résumé
- * (quarts-temps, meilleurs joueurs), stats, feuille de match, actus.
+ * (situation, quarts-temps, homme du match, courbe, meilleurs joueurs),
+ * temps forts, stats, feuille de match, tirs, actus.
  *
- * Résumé et stats viennent d'ESPN (direct, puis résumé du match terminé) :
+ * Tout sauf la feuille de match et les actus vient d'ESPN (direct, puis résumé du match terminé) :
  * sans ESPN, ces onglets disparaissent, la feuille de match retombe sur celle
  * importée en base après le match, et pendant le match on revient aux
  * effectifs. L'onglet ouvert est dans l'adresse (?onglet=stats).
@@ -100,7 +110,14 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
   const tabs: Tab[] = !started
     ? ["paris", "effectifs", "actus"]
     : live
-      ? ["resume", ...(live.teamStats.length > 0 ? (["stats"] as Tab[]) : []), "feuille", "actus"]
+      ? ([
+          "resume",
+          live.keyPlays.length > 0 && "actions",
+          live.teamStats.length > 0 && "stats",
+          "feuille",
+          live.shots.length > 0 && "tirs",
+          "actus",
+        ].filter(Boolean) as Tab[])
       : match.status === "finished"
         ? ["feuille", "actus"]
         : ["effectifs", "actus"];
@@ -132,7 +149,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
               onClick={() => select(t)}
               className={cn(
                 "flex min-h-9 shrink-0 items-center rounded-full px-4 text-sm font-semibold transition-colors",
-                t === active ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground",
+                t === active ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
               )}
             >
               {LABELS[t]}
@@ -169,10 +186,17 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
 
           {active === "resume" && live && (
             <>
+              <SituationStrip match={match} live={live} />
               <LinescoreSection match={match} live={live} />
+              <ManOfTheMatch match={match} live={live} />
+              <WinProbabilityChart match={match} live={live} />
               <LeadersSection match={match} players={live.players} />
             </>
           )}
+
+          {active === "actions" && live && <KeyPlaysList match={match} live={live} />}
+
+          {active === "tirs" && live && <ShotChart match={match} live={live} />}
 
           {active === "stats" && live && <TeamStatsSection match={match} live={live} />}
 

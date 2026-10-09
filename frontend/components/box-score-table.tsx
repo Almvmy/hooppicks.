@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 import { TeamLogo } from "@/components/team-logo";
 import { fetchTeamRoster } from "@/lib/api/teams";
 import { normalizePlayerName } from "@/lib/player-props";
+import { playerRating, ratingClass } from "@/lib/player-rating";
 import type { Match, PlayerBoxScore, RosterPlayer, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +20,28 @@ interface Column {
   label: string;
   title: string;
   value: (p: PlayerBoxScore) => number;
-  display?: (p: PlayerBoxScore) => string;
+  display?: (p: PlayerBoxScore) => React.ReactNode;
 }
 
 // Ordre de lecture d'une feuille de match : temps de jeu, puis les stats
 // qui comptent le plus pour les paris (points, rebonds, passes, 3 pts).
 const COLUMNS: Column[] = [
+  {
+    key: "note",
+    label: "NOTE",
+    title: "Note HoopPicks sur 10",
+    value: (p) => playerRating(p) ?? 0,
+    display: (p) => {
+      const r = playerRating(p);
+      return r === null ? (
+        "-"
+      ) : (
+        <span className={cn("inline-block min-w-8 rounded-md px-1 py-0.5 font-bold", ratingClass(r))}>
+          {r.toFixed(1).replace(".", ",")}
+        </span>
+      );
+    },
+  },
   { key: "min", label: "MIN", title: "Minutes", value: (p) => minutes(p.minutes), display: (p) => (minutes(p.minutes) ? `${minutes(p.minutes)}'` : "-") },
   { key: "pts", label: "PTS", title: "Points", value: (p) => p.points },
   { key: "reb", label: "REB", title: "Rebonds", value: (p) => p.rebounds },

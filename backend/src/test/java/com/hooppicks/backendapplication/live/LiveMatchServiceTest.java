@@ -52,9 +52,9 @@ class LiveMatchServiceTest {
         PlayerBoxScoreRow flagg = new PlayerBoxScoreRow("Cooper Flagg", "DAL", true, "24", 19, 6, 3, 1, 1, 2, -15,
                 new PlayerBoxScoreRow.ShotSplit(7, 14), new PlayerBoxScoreRow.ShotSplit(1, 5), new PlayerBoxScoreRow.ShotSplit(4, 4));
         return new EspnLiveSummary(status,
-                new EspnLiveSummary.Side("DAL", List.of(19, 26, 9), Map.of("totalRebounds", "24")),
-                new EspnLiveSummary.Side("HOU", List.of(27, 38, 4), Map.of("totalRebounds", "30")),
-                List.of(flagg));
+                new EspnLiveSummary.Side("DAL", List.of(19, 26, 9), Map.of("totalRebounds", "24"), false, 3, null),
+                new EspnLiveSummary.Side("HOU", List.of(27, 38, 4), Map.of("totalRebounds", "30"), true, 5, "SINGLE"),
+                List.of(flagg), EspnLiveSummary.Details.empty());
     }
 
     @Test
@@ -68,6 +68,8 @@ class LiveMatchServiceTest {
         assertThat(live.homeLinescores()).containsExactly(19, 26, 9);
         assertThat(live.teamStats()).extracting(LiveMatchService.TeamStatLine::label).containsExactly("Rebonds");
         assertThat(live.players()).extracting(p -> p.playerName()).containsExactly("Cooper Flagg");
+        assertThat(live.situation().possession()).isEqualTo("HOU");
+        assertThat(live.situation().awayBonus()).isEqualTo("SINGLE");
     }
 
     @Test

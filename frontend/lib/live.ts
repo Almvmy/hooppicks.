@@ -18,12 +18,59 @@ export interface LiveStatus {
   awayScore: number | null;
 }
 
+export interface LiveSituation {
+  possession: string | null;
+  homeFouls: number | null;
+  awayFouls: number | null;
+  /** « SINGLE » / « DOUBLE » : l'adversaire tire des lancers sur chaque faute. */
+  homeBonus: string | null;
+  awayBonus: string | null;
+}
+
+/** Un tir sur le demi-terrain, en pieds : panier vers (25, 0), ligne de fond vers y = −5. */
+export interface LiveShot {
+  x: number;
+  y: number;
+  made: boolean;
+  points: number;
+  teamAbbreviation: string | null;
+  playerName: string | null;
+}
+
+export type KeyPlayKind =
+  | "three"
+  | "dunk"
+  | "layup"
+  | "jumper"
+  | "hook"
+  | "alley_oop"
+  | "free_throw"
+  | "end_period"
+  | "end_game";
+
+export interface KeyPlay {
+  period: number;
+  clock: string;
+  kind: KeyPlayKind;
+  points: number;
+  teamAbbreviation: string | null;
+  playerName: string | null;
+  awayScore: number;
+  homeScore: number;
+}
+
 export interface LiveMatch {
   status: LiveStatus;
   homeLinescores: number[];
   awayLinescores: number[];
   teamStats: { label: string; home: string; away: string }[];
   players: PlayerBoxScore[];
+  /** Pendant le jeu seulement. */
+  situation: LiveSituation | null;
+  /** Probabilité de victoire de l'équipe à domicile au fil du match. */
+  winProbability: { elapsedSeconds: number; homeWinPct: number }[];
+  shots: LiveShot[];
+  keyPlays: KeyPlay[];
 }
 
 const REFRESH = 30 * 1000;

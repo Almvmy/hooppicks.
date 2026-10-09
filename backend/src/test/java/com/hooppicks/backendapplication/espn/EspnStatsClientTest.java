@@ -55,6 +55,65 @@ class EspnStatsClientTest {
     }
 
     @Test
+    void elapsedSeconds_quarts_de_12_min_et_prolongations_de_5() {
+        assertThat(EspnStatsClient.elapsedSeconds(1, "12:00")).isZero();
+        assertThat(EspnStatsClient.elapsedSeconds(3, "9:29")).isEqualTo(2 * 720 + 151);
+        assertThat(EspnStatsClient.elapsedSeconds(4, "1.2")).isEqualTo(3 * 720 + 719);
+        assertThat(EspnStatsClient.elapsedSeconds(5, "0.0")).isEqualTo(4 * 720 + 300);
+    }
+
+    @Test
+    void fetchLiveSummary_lit_tirs_temps_forts_courbe_et_possession() throws Exception {
+        mockResponse("""
+            {
+              "header": { "competitions": [ {
+                "status": { "period": 3, "displayClock": "9:29", "type": { "state": "in", "detail": "9:29 - 3rd Quarter" } },
+                "competitors": [
+                  { "homeAway": "home", "team": { "id": "18", "abbreviation": "NY" }, "score": "54", "possession": true,
+                    "fouls": { "teamFoulsCurrent": 4, "bonusState": "NONE" }, "linescores": [ { "displayValue": "29" } ] },
+                  { "homeAway": "away", "team": { "id": "2", "abbreviation": "BOS" }, "score": "69", "possession": false,
+                    "fouls": { "teamFoulsCurrent": 6, "bonusState": "SINGLE" }, "linescores": [ { "displayValue": "32" } ] }
+                ] } ] },
+              "boxscore": {
+                "teams": [],
+                "players": [ { "team": { "abbreviation": "BOS" }, "statistics": [ {
+                  "labels": ["MIN","PTS"],
+                  "athletes": [ { "athlete": { "id": "7", "displayName": "Jayson Tatum" }, "starter": true, "stats": ["30","22"] } ] } ] } ]
+              },
+              "plays": [
+                { "id": "p1", "period": { "number": 1 }, "clock": { "displayValue": "11:00" }, "type": { "text": "Pullup Jump Shot" },
+                  "team": { "id": "2" }, "participants": [ { "athlete": { "id": "7" } } ], "shootingPlay": true, "scoringPlay": true,
+                  "scoreValue": 3, "pointsAttempted": 3, "coordinate": { "x": 3, "y": 2 }, "awayScore": 3, "homeScore": 0 },
+                { "id": "p2", "period": { "number": 1 }, "clock": { "displayValue": "10:40" }, "type": { "text": "Free Throw - 1 of 2" },
+                  "team": { "id": "18" }, "shootingPlay": true, "scoringPlay": true, "scoreValue": 1, "pointsAttempted": 1,
+                  "coordinate": { "x": -214748340, "y": -214748365 }, "awayScore": 3, "homeScore": 1 },
+                { "id": "p3", "period": { "number": 1 }, "clock": { "displayValue": "0.0" }, "type": { "text": "End Period" },
+                  "awayScore": 3, "homeScore": 1 }
+              ],
+              "winprobability": [ { "playId": "p1", "homeWinPercentage": 0.41 }, { "playId": "p3", "homeWinPercentage": 0.44 } ]
+            }
+            """);
+
+        EspnLiveSummary s = client.fetchLiveSummary("e1").orElseThrow();
+
+        assertThat(s.home().abbreviation()).isEqualTo("NYK");
+        assertThat(s.home().possession()).isTrue();
+        assertThat(s.home().bonus()).isNull();
+        assertThat(s.away().bonus()).isEqualTo("SINGLE");
+        // Les lancers francs n'ont pas de position : hors de la carte des tirs.
+        assertThat(s.details().shots()).singleElement().satisfies(shot -> {
+            assertThat(shot.made()).isTrue();
+            assertThat(shot.points()).isEqualTo(3);
+            assertThat(shot.teamAbbreviation()).isEqualTo("BOS");
+            assertThat(shot.playerName()).isEqualTo("Jayson Tatum");
+        });
+        assertThat(s.details().keyPlays()).extracting(EspnLiveSummary.KeyPlay::kind)
+                .containsExactly("three", "free_throw", "end_period");
+        assertThat(s.details().winProbability()).extracting(EspnLiveSummary.WinPoint::elapsedSeconds)
+                .containsExactly(60, 720);
+    }
+
+    @Test
     void fetchSeasonStats_lit_les_tirs_a_3_points_reussis_par_match() throws Exception {
         // Format réel d'ESPN : « 3PT » = réussis-tentés par match.
         mockResponse("""
