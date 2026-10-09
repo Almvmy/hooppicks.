@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Tester sur un vrai téléphone en Wi-Fi (http://<IP du PC>:3000) : sans ça,
+  // le serveur de dev bloque ses fichiers internes pour toute autre adresse que
+  // localhost, la page s'affiche mais rien ne marche (connexion impossible).
+  // Adresses de réseau local seulement, et sans effet en production.
+  allowedDevOrigins: ["10.*.*.*", "192.168.*.*", "172.*.*.*"],
   experimental: {
     // Plus de drapeau viewTransition : depuis Next 16.4, les transitions de
     // page (<ViewTransition> de React) marchent sans configuration.

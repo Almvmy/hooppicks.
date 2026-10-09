@@ -12,6 +12,9 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 app.frontend-url=${FRONTEND_URL}
 app.cookie-same-site=${COOKIE_SAME_SITE:None}
 app.cookie-secure=${COOKIE_SECURE:true}
+# Dev seulement : ouvrir l'app depuis un téléphone sur le même Wi-Fi
+# (http://<IP du PC>:3000). Ne jamais renseigner en production.
+# app.cors.dev-origin-patterns=http://10.*:3000,http://192.168.*:3000,http://172.*:3000
 
 balldontlie.api-key=TA_CLE_API_ICI
 balldontlie.base-url=https://api.balldontlie.io
