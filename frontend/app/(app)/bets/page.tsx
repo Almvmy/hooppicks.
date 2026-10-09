@@ -300,7 +300,7 @@ export default function BetsPage() {
             </SummaryTile>
           </div>
 
-          <div className="glass-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filtrer les tickets">
+          <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrer les tickets">
             {FILTERS.map(({ value, label }) => (
               <button
                 key={value}

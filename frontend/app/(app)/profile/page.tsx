@@ -111,8 +111,10 @@ export default function ProfilePage() {
       >
         <CourtWatermark />
         {favoriteTeam && (
-          <div aria-hidden className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 rotate-12 opacity-[0.12]">
-            <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={240} />
+          <div aria-hidden className="decor-clip">
+            <div className="absolute -right-10 top-1/2 -translate-y-1/2 rotate-12 opacity-[0.12]">
+              <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={240} />
+            </div>
           </div>
         )}
 
@@ -231,7 +233,9 @@ export default function ProfilePage() {
           <BestBetTrophy bets={betsQuery.data} />
 
           <div className="relative">
-            <SeamPattern className="pointer-events-none absolute -right-6 -top-6 h-[160px] w-[220px] opacity-[0.05]" />
+            <div aria-hidden className="decor-clip">
+              <SeamPattern className="absolute -right-6 -top-6 h-[160px] w-[220px] opacity-[0.05]" />
+            </div>
             <div className="relative mb-3 flex flex-wrap items-end justify-between gap-3">
               <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
                 <Medal className="h-5 w-5 text-paint" />

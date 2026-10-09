@@ -18,7 +18,7 @@ import { rankFanTeams } from "@/lib/fan-teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { useFavoriteTeam, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { FavoriteTeamStats, LeaderboardEntry, Match, RosterPlayer, TeamRank } from "@/lib/types";
-import { bettingClosedReason, cn, formatMatchTime, getDayLabel, isBettable, winChances } from "@/lib/utils";
+import { bettingClosedReason, cn, formatMatchDate, formatMatchTime, getDayLabel, isBettable, winChances } from "@/lib/utils";
 
 function zoneOf(seed: number | null): { label: string; className: string } | null {
   if (seed === null) return null;
@@ -62,9 +62,12 @@ function NextMatch({ match, team }: { match: Match | undefined; team: TeamRank }
       <Link href={`/matches/${match.id}`} className="flex items-center gap-2 text-sm hover:underline">
         <span className="text-muted-foreground">{isHome ? "vs" : "@"}</span>
         <TeamLogo abbreviation={opponent.abbreviation} logoUrl={opponent.logoUrl} size={22} />
-        <span className="font-medium">{opponent.name}</span>
-        <span className="ml-auto font-mono text-xs text-muted-foreground">
-          {getDayLabel(date)} · {formatMatchTime(date)}
+        <span className="min-w-0 truncate font-medium">{opponent.name}</span>
+        {/* Date courte (« 12 oct. ») : « lundi 12 octobre » ne tenait pas sur un
+            téléphone et élargissait toute la carte. */}
+        <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
+          {["Aujourd'hui", "Demain"].includes(getDayLabel(date)) ? getDayLabel(date) : formatMatchDate(date)} ·{" "}
+          {formatMatchTime(date)}
         </span>
       </Link>
       {isBettable(match) ? (

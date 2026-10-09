@@ -14,7 +14,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <BetSlipProvider>
       {/* app-field remplace bg-background : c'est le champ lumineux que le
           verre traverse. Sans lui, tous les .glass rendent gris. */}
-      <div className="app-field flex min-h-screen flex-col">
+      {/* --gutter : marge latérale du contenu, 16 px sur téléphone (la norme des
+          applis mobiles, 24 px y gaspillait de la place), 24 px au-delà. */}
+      <div className="app-field flex min-h-screen flex-col [--gutter:1rem] md:[--gutter:1.5rem]">
         {/* Topbar en pleine largeur (logo compris) : la sidebar démarre en
             dessous plutôt qu'à côté, pour une seule barre continue en haut
             plutôt que deux panneaux avec une couture visible au logo. */}
@@ -25,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <EmailVerificationBanner />
             {/* pb-32 (au lieu de pb-20) : la bottom nav est devenue une île
                 flottante, elle a besoin de plus de dégagement. */}
-            <main className="flex-1 p-6 pb-32 md:pb-6">
+            <main className="flex-1 px-[var(--gutter)] pb-32 pt-5 md:pb-6 md:pt-6">
               <Suspense fallback={null}>
                 <SectionTabs />
               </Suspense>

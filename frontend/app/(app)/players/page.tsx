@@ -54,7 +54,7 @@ function LeadersSection({ onSelect }: { onSelect: Select }) {
         <Crown className="h-5 w-5 text-primary" />
         Meneurs de la saison
       </h2>
-      <div className="glass-scroll -mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1">
+      <div className="glass-scroll edge-scroll flex snap-x gap-3 overflow-x-auto pb-1">
         {LEADER_CATEGORIES.map(({ key, label, stat, suffix }) => {
           const [first, ...others] = data[key] ?? [];
           return (
@@ -290,7 +290,7 @@ function PlayersTab() {
           </div>
         )}
         {!isSearching && view === "effectifs" && sortedTeams.length > 0 && (
-          <div className="glass-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Choisir une équipe">
+          <div className="glass-scroll edge-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Choisir une équipe">
             {sortedTeams.map((t) => (
               <button
                 key={t.id}

@@ -151,8 +151,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
       >
         <CourtWatermark />
         {favoriteTeam && (
-          <div aria-hidden className="pointer-events-none absolute -right-10 top-1/2 -translate-y-1/2 rotate-12 opacity-[0.12]">
-            <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={240} />
+          <div aria-hidden className="decor-clip">
+            <div className="absolute -right-10 top-1/2 -translate-y-1/2 rotate-12 opacity-[0.12]">
+              <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={240} />
+            </div>
           </div>
         )}
         <div className="relative flex flex-wrap items-center gap-5">

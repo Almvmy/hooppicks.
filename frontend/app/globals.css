@@ -551,6 +551,41 @@
   display: none;
 }
 
+/* Bande de navigation d'une page (jours, filtres, onglets) : elle s'étend
+   jusqu'au bord de l'écran et s'y fond des deux côtés. Les pastilles sortent
+   de l'écran en douceur au lieu de buter, coupées net, sur la marge. Pas pour
+   une bande à l'intérieur d'une carte : elle en déborderait. Au repos, la
+   première et la dernière pastille restent hors du fondu (padding = gouttière).
+   Téléphone seulement : sur ordinateur il y a la place, et certaines bandes y
+   partagent leur ligne avec un autre élément. */
+@media (max-width: 767px) {
+  .glass-scroll.edge-scroll,
+  .edge-scroll {
+    margin-inline: calc(-1 * var(--gutter));
+    padding-inline: var(--gutter);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--gutter),
+      #000 calc(100% - var(--gutter)),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      #000 var(--gutter),
+      #000 calc(100% - var(--gutter)),
+      transparent
+    );
+  }
+}
+
+/* Bandeau sur toute la largeur du contenu (barre des jours collée…). */
+.bleed {
+  margin-inline: calc(-1 * var(--gutter));
+  padding-inline: var(--gutter);
+}
+
 /* ── .glass-overlay ─────────────────────────────────────────────────
    Pour les couches qui recouvrent TOUT l'écran (panneau de nav mobile,
    modales plein écran). Différence avec .glass-strong : bien plus

@@ -142,11 +142,11 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
   return (
     <div className="flex flex-col gap-4">
       <div ref={sentinel} aria-hidden className="-mb-4 h-0" />
-      {/* -mx-6/px-6 : le bandeau collé couvre toute la largeur du <main> (p-6). */}
-      <div className={cn("sticky top-16 z-20 -mx-6 px-6 pt-2", stuck && "glass-chrome pb-2")}>
+      {/* bleed : le bandeau collé couvre toute la largeur du <main>. */}
+      <div className={cn("bleed sticky top-16 z-20 pt-2", stuck && "glass-chrome pb-2")}>
         {stuck && started && <StickyScore match={match} />}
         <div
-          className="glass-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5"
+          className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-0.5"
           role="tablist"
           aria-label="Rubriques du match"
         >

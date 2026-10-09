@@ -126,8 +126,11 @@ export default function DashboardPage() {
         ]}
       />
 
+      {/* min-w-0 sur les colonnes : un élément de grille ne rétrécit pas sous
+          la largeur de son contenu, une ligne trop longue d'une carte élargissait
+          toute la colonne au-delà de l'écran (page qui glissait sur téléphone). */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="reveal-children flex flex-col gap-6 lg:col-span-2">
+        <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
           <FavoriteTeamCard
             matches={matchesQuery.data}
             leaderboard={leaderboardQuery.data ?? []}
@@ -142,7 +145,7 @@ export default function DashboardPage() {
           <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />
         </div>
 
-        <div className="reveal-children flex flex-col gap-6">
+        <div className="reveal-children flex min-w-0 flex-col gap-6">
           <WalletTrend
             series={week.series}
             weeklyDelta={week.net}

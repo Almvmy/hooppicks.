@@ -246,7 +246,7 @@ function PlayersRanking({ username }: { username: string | undefined }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Période">
+        <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Période">
           <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           {PERIODS.map((p) => (
             <button key={p.value} type="button" className={chipClass(period === p.value)} onClick={() => choosePeriod(p.value)}>
@@ -394,7 +394,7 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
         <p className="mt-1 text-muted-foreground">Les meilleurs pronostiqueurs, leurs séries et leurs communautés.</p>
       </div>
 
-      <div className="glass-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist">
+      <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist">
         {VIEWS.map(({ value, label, icon: Icon }) => (
           <button
             key={value}

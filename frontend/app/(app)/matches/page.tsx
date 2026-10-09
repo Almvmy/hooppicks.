@@ -165,7 +165,7 @@ export default function MatchesPage() {
             <NbaLogo size={30} />
             Matchs
           </h1>
-          <p className="mt-1 text-muted-foreground">Calendrier de la saison NBA, jour par jour.</p>
+          <p className="mt-1 text-muted-foreground">Calendrier de la saison NBA, soirée par soirée.</p>
         </div>
         {/* Vue liste : une ligne par match, pour suivre une soirée chargée sur téléphone. */}
         <div className="glass-inset-quiet flex shrink-0 gap-1 rounded-full p-1" role="group" aria-label="Affichage">
@@ -194,8 +194,8 @@ export default function MatchesPage() {
       {/* Seule la bande des jours reste collée sous la topbar (à partir de la
           tablette) : avec les filtres, le bandeau collé faisait quatre rangées
           et masquait une bonne partie des cartes au défilement. */}
-      <div className="glass-chrome -mx-6 px-6 py-3 md:sticky md:top-16 md:z-20">
-        <div ref={stripRef} className="glass-scroll relative flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Soirée">
+      <div className="glass-chrome bleed py-3 md:sticky md:top-16 md:z-20">
+        <div ref={stripRef} className="glass-scroll edge-scroll relative flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Soirée">
           {isLoading &&
             Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-14 w-16 shrink-0 rounded-2xl" />)}
           {days.map((day) => {
@@ -228,7 +228,7 @@ export default function MatchesPage() {
       </div>
 
       <div className="-mt-2 flex flex-col gap-3">
-        <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5">
+        <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5">
           {STATUSES.map(({ value, label }) => (
             <button key={value} type="button" className={chipClass(status === value)} onClick={() => setStatus(value)}>
               {value === "live" && <Radio className="h-3.5 w-3.5" />}
@@ -254,7 +254,7 @@ export default function MatchesPage() {
         </div>
 
         {showFilters && (
-          <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Conférence">
+          <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Conférence">
             {CONFERENCES.map((c) => (
               <button key={c} type="button" className={chipClass(conference === c)} onClick={() => setConference(c)}>
                 {c}
@@ -264,7 +264,7 @@ export default function MatchesPage() {
         )}
 
         {showFilters && showPhases && (
-          <div className="glass-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Phase">
+          <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Phase">
             <button type="button" className={chipClass(activePhase === "all")} onClick={() => setPhase("all")}>
               Toutes phases
             </button>
@@ -281,7 +281,7 @@ export default function MatchesPage() {
         )}
 
         {showFilters && sortedTeams.length > 0 && (
-          <div className="glass-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Équipe">
+          <div className="glass-scroll edge-scroll flex items-center gap-1.5 overflow-x-auto pb-0.5" role="group" aria-label="Équipe">
             {favorite && (
               <button
                 type="button"

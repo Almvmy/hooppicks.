@@ -210,7 +210,7 @@ export default function NewsPage({ searchParams }: { searchParams: Promise<{ equ
           )}
 
           {teamsInFeed.length > 0 && (
-            <div className="glass-scroll -mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filtrer par équipe">
+            <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrer par équipe">
               <button type="button" className={chip(teamFilter === null)} onClick={() => setTeamFilter(null)}>
                 Toutes
               </button>

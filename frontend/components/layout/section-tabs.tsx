@@ -21,7 +21,7 @@ export function SectionTabs() {
   return (
     // md:hidden : sur ordinateur, la barre latérale déplie déjà ces onglets
     // sous la rubrique ouverte.
-    <nav aria-label={section.label} className="glass-scroll -mx-1 mb-5 flex gap-2 overflow-x-auto px-1 pb-0.5 md:hidden">
+    <nav aria-label={section.label} className="glass-scroll edge-scroll mb-5 flex gap-2 overflow-x-auto pb-0.5 md:hidden">
       {tabs.map((tab) => {
         const active = isTabActive(tab, pathname, search);
         return (

@@ -67,8 +67,8 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
         </p>
       </div>
 
-      <div className="glass-chrome -mx-6 px-6 py-3 md:sticky md:top-16 md:z-20">
-        <div className="glass-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Sections de la console">
+      <div className="glass-chrome bleed py-3 md:sticky md:top-16 md:z-20">
+        <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Sections de la console">
           {TABS.map(({ value, label, icon: Icon }) => (
             <button
               key={value}

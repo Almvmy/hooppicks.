@@ -46,7 +46,7 @@ export function Topbar() {
     // "border-b border-border bg-background/80 backdrop-blur" → "glass-chrome"
     // + sticky top-0 : la barre reste au-dessus du contenu qui défile, ce qui
     //   est le seul moment où le flou se voit vraiment.
-    <header className="glass-chrome chrome-joined relative sticky top-0 z-30 flex h-16 items-center gap-4 px-6">
+    <header className="glass-chrome chrome-joined relative sticky top-0 z-30 flex h-16 items-center gap-4 px-[var(--gutter)]">
       {/* La topbar porte la marque en permanence désormais (plus dans la
           sidebar) : une seule barre continue en haut, sidebar en dessous. */}
       <Link href="/dashboard" className="flex items-center gap-2">

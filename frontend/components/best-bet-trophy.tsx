@@ -17,7 +17,9 @@ export function BestBetTrophy({ bets }: { bets: PlacedBet[] | undefined }) {
 
   return (
     <Card className="badge-holo relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card">
-      <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary/20 blur-2xl" />
+      <div aria-hidden className="decor-clip">
+        <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-primary/20 blur-2xl" />
+      </div>
       <CardContent className="relative flex items-start gap-3 pt-6">
         <Trophy className="h-8 w-8 shrink-0 text-primary" />
         <div className="min-w-0">
