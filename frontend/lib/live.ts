@@ -41,14 +41,19 @@ export function useLiveStatus(match: Match | undefined): LiveStatus | undefined 
   return data?.find((s) => s.matchId === match.id);
 }
 
-/** Détail du direct d'un match : score par quart-temps, stats, feuille de match. */
+/**
+ * Score par quart-temps, stats, feuille de match : en direct pendant le match,
+ * et toujours consultables après (ESPN garde le résumé d'un match terminé).
+ * null : pas de données ESPN pour ce match, ou ESPN injoignable.
+ */
 export function useLiveMatch(match: Match | undefined) {
+  const live = match?.status === "live";
   return useQuery({
     queryKey: ["live", match?.id],
     queryFn: async () => (await apiFetch<LiveMatch | undefined>(`/matches/${match!.id}/live`)) ?? null,
-    enabled: match?.status === "live",
-    refetchInterval: REFRESH,
-    staleTime: REFRESH,
+    enabled: live || match?.status === "finished",
+    refetchInterval: live ? REFRESH : false,
+    staleTime: live ? REFRESH : 10 * 60 * 1000,
   });
 }
 

@@ -27,7 +27,9 @@ import java.util.function.Supplier;
  * paris : si ESPN se trompe ou tombe, aucun pari n'est touché.
  *
  * <p>Une réponse ESPN sert à tout le monde pendant {@link #FRESH} (un appel
- * par match, quel que soit le nombre de joueurs qui regardent). ESPN
+ * par match, quel que soit le nombre de joueurs qui regardent), et
+ * {@link #FINISHED_FRESH} pour un match terminé, qui ne bouge plus : c'est ce
+ * qui permet de consulter stats et feuille de match après coup. ESPN
  * injoignable : on garde la dernière réponse au plus {@link #STALE_LIMIT},
  * puis on ne renvoie plus rien, et l'app retombe sur le score et le statut de
  * la synchro plutôt que d'afficher un chrono figé.
@@ -36,7 +38,11 @@ import java.util.function.Supplier;
 public class LiveMatchService {
 
     static final Duration FRESH = Duration.ofSeconds(20);
+    static final Duration FINISHED_FRESH = Duration.ofMinutes(10);
     static final Duration STALE_LIMIT = Duration.ofMinutes(2);
+    // Au-delà, le cache est purgé de ses entrées les plus vieilles : un match
+    // terminé consulté une fois ne doit pas y rester indéfiniment.
+    static final int MAX_ENTRIES = 300;
 
     // Stats d'équipe montrées face à face, dans cet ordre (noms ESPN → libellés).
     static final List<Map.Entry<String, String>> TEAM_STATS = List.of(
@@ -63,7 +69,7 @@ public class LiveMatchService {
     public record LiveMatchDto(LiveStatusDto status, List<Integer> homeLinescores, List<Integer> awayLinescores,
                                List<TeamStatLine> teamStats, List<PlayerBoxScoreDto> players) {}
 
-    private record Cached<T>(T value, Instant fetchedAt) {}
+    private record Cached<T>(T value, Instant fetchedAt, Duration freshFor) {}
 
     private final EspnStatsClient espnStatsClient;
     private final MatchRepository matchRepository;
@@ -87,7 +93,7 @@ public class LiveMatchService {
      * {@link #STALE_LIMIT}.
      */
     public List<LiveStatusDto> board() {
-        List<EspnLiveGame> games = cached("board", () -> {
+        List<EspnLiveGame> games = cached("board", g -> FRESH, () -> {
             // Journée ESPN = journée de New York ; la veille aussi, pour un
             // match commencé avant minuit là-bas et pas encore fini.
             LocalDate today = LocalDate.now(clock.withZone(EspnScheduleService.NBA_ZONE));
@@ -113,6 +119,7 @@ public class LiveMatchService {
         Match match = matchRepository.findById(matchId).orElse(null);
         if (match == null || match.getEspnEventId() == null) return Optional.empty();
         EspnLiveSummary summary = cached("summary:" + match.getEspnEventId(),
+                s -> "post".equals(s.status().state()) ? FINISHED_FRESH : FRESH,
                 () -> espnStatsClient.fetchLiveSummary(match.getEspnEventId()).orElse(null));
         if (summary == null || "pre".equals(summary.status().state())) return Optional.empty();
 
@@ -135,22 +142,34 @@ public class LiveMatchService {
     }
 
     /**
-     * Valeur fraîche si on en a une de moins de {@link #FRESH}, sinon nouvel
-     * appel. Appel raté (null) : la dernière valeur tant qu'elle a moins de
-     * {@link #STALE_LIMIT}, puis null.
+     * Valeur fraîche si on en a une (durée selon la valeur : un match fini le
+     * reste plus longtemps), sinon nouvel appel. Appel raté (null) : la
+     * dernière valeur encore {@link #STALE_LIMIT} après sa fraîcheur, puis null.
      */
     @SuppressWarnings("unchecked")
-    private <T> T cached(String key, Supplier<T> fetch) {
+    private <T> T cached(String key, java.util.function.Function<T, Duration> freshness, Supplier<T> fetch) {
         Instant now = clock.instant();
         Cached<T> current = (Cached<T>) cache.get(key);
-        if (current != null && current.fetchedAt().plus(FRESH).isAfter(now)) return current.value();
+        if (current != null && current.fetchedAt().plus(current.freshFor()).isAfter(now)) return current.value();
         T fresh = fetch.get();
         if (fresh != null) {
-            cache.put(key, new Cached<>(fresh, now));
+            if (cache.size() >= MAX_ENTRIES) evictOldest();
+            cache.put(key, new Cached<>(fresh, now, freshness.apply(fresh)));
             return fresh;
         }
-        if (current != null && current.fetchedAt().plus(STALE_LIMIT).isAfter(now)) return current.value();
+        if (current != null && current.fetchedAt().plus(current.freshFor()).plus(STALE_LIMIT).isAfter(now)) {
+            return current.value();
+        }
         cache.remove(key);
         return null;
+    }
+
+    private void evictOldest() {
+        cache.entrySet().stream()
+                .sorted(Comparator.comparing(e -> e.getValue().fetchedAt()))
+                .limit(MAX_ENTRIES / 3)
+                .map(Map.Entry::getKey)
+                .toList()
+                .forEach(cache::remove);
     }
 }

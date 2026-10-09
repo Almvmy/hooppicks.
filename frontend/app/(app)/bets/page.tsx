@@ -103,7 +103,7 @@ function SelectionRow({
   const live = useLiveStatus(synced);
   const match = synced && withLiveScore(synced, live);
   const isProp = isPlayerPropMarket(selection.market);
-  const { data: liveDetail } = useLiveMatch(isProp ? synced : undefined);
+  const { data: liveDetail } = useLiveMatch(isProp && synced?.status === "live" ? synced : undefined);
   const player =
     isProp && selection.playerName
       ? liveDetail?.players.find((p) => normalizePlayerName(p.playerName) === normalizePlayerName(selection.playerName!))

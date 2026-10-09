@@ -8,25 +8,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchStatusBadge } from "@/components/match-status-badge";
 import { MatchStageBadge } from "@/components/match-stage-badge";
-import { TeamRoster } from "@/components/team-roster";
-import { MatchBoxScore } from "@/components/match-box-score";
 import { FaceOffTeams, TeamWatermarks, faceOffBackground } from "@/components/match-face-off";
 import { NbaLogo } from "@/components/nba-logo";
-import { TeamNews } from "@/components/news/team-news";
-import { bettingClosedReason, formatMatchTime, getDayLabel, isBettable } from "@/lib/utils";
-import { MatchOddsRow } from "@/components/match-odds-row";
-import { PlayerPropsCard } from "@/components/player-props-card";
+import { formatMatchTime, getDayLabel } from "@/lib/utils";
 import { fetchMatchById } from "@/lib/api/matches";
 import type { Match } from "@/lib/types";
-import { useLiveMatch, useLiveStatus, withLiveScore } from "@/lib/live";
-import { LiveMatchPanel } from "@/components/live-match-panel";
+import { useLiveStatus, withLiveScore } from "@/lib/live";
+import { MatchDetailTabs } from "@/components/match-detail-tabs";
 
 export default function MatchDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ onglet?: string }>;
 }) {
   const { id } = use(params);
+  const { onglet } = use(searchParams);
 
   const queryClient = useQueryClient();
 
@@ -43,7 +41,6 @@ export default function MatchDetailPage({
   });
   // Direct ESPN (affichage seulement) : sans lui, on garde le match de la synchro tel quel.
   const live = useLiveStatus(synced);
-  const { data: liveDetail } = useLiveMatch(synced);
   const match = synced && withLiveScore(synced, live);
 
   return (
@@ -91,58 +88,7 @@ export default function MatchDetailPage({
         </Card>
       )}
 
-      {/* Les cotes juste sous l'affiche : c'est ici qu'on arrive depuis une
-          carte de match, une actu ou la page équipe, et la fiche ne
-          permettait pas de parier. */}
-      {match && isBettable(match) && (
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="font-heading text-base font-bold">Parier sur ce match</h2>
-            <p className="text-xs text-muted-foreground">
-              Vainqueur, écart ou total : une sélection par match et par ticket.
-            </p>
-            <MatchOddsRow match={match} />
-          </CardContent>
-        </Card>
-      )}
-
-      {match && isBettable(match) && <PlayerPropsCard match={match} />}
-
-      {match && match.status === "live" && <LiveMatchPanel match={match} />}
-
-      {match && match.status === "scheduled" && !isBettable(match) && (
-        <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground first-letter:uppercase">
-          {bettingClosedReason(match)}.
-        </p>
-      )}
-
-      {match && match.status !== "finished" && (
-        <TeamNews abbreviations={[match.awayTeam.abbreviation, match.homeTeam.abbreviation]} />
-      )}
-
-      {match && match.status === "finished" && (
-        <Card>
-          <CardContent className="pt-6">
-            <h2 className="mb-4 font-heading text-base font-bold">Feuille de match</h2>
-            <MatchBoxScore
-              matchId={match.id}
-              homeTeam={match.homeTeam}
-              awayTeam={match.awayTeam}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pendant le match, la feuille de match en direct remplace les
-          effectifs ; ils reviennent si le direct ne répond pas. */}
-      {match && (match.status === "scheduled" || (match.status === "live" && !liveDetail)) && (
-        <Card>
-          <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
-            <TeamRoster team={match.awayTeam} />
-            <TeamRoster team={match.homeTeam} />
-          </CardContent>
-        </Card>
-      )}
+      {match && <MatchDetailTabs match={match} tab={onglet} />}
     </div>
   );
 }

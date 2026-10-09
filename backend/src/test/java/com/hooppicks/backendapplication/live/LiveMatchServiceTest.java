@@ -44,7 +44,11 @@ class LiveMatchServiceTest {
     }
 
     private static EspnLiveSummary summary(int homeScore) {
-        EspnLiveGame status = new EspnLiveGame("e1", "in", 3, "9:29", "9:29 - 3rd Quarter", homeScore, 69);
+        return summary("in", homeScore);
+    }
+
+    private static EspnLiveSummary summary(String state, int homeScore) {
+        EspnLiveGame status = new EspnLiveGame("e1", state, 3, "9:29", "9:29 - 3rd Quarter", homeScore, 69);
         PlayerBoxScoreRow flagg = new PlayerBoxScoreRow("Cooper Flagg", "DAL", true, "24", 19, 6, 3, 1, 1, 2, -15,
                 new PlayerBoxScoreRow.ShotSplit(7, 14), new PlayerBoxScoreRow.ShotSplit(1, 5), new PlayerBoxScoreRow.ShotSplit(4, 4));
         return new EspnLiveSummary(status,
@@ -89,6 +93,17 @@ class LiveMatchServiceTest {
         // Panne qui dure : plus de direct, l'app retombe sur le score de la synchro.
         now = now.plus(Duration.ofSeconds(60));
         assertThat(service.detail("m1")).isEmpty();
+    }
+
+    @Test
+    void match_termine_consultable_apres_coup_sans_rappeler_espn_a_chaque_visite() {
+        when(espn.fetchLiveSummary("e1")).thenReturn(Optional.of(summary("post", 101)));
+
+        service.detail("m1");
+        now = now.plus(Duration.ofMinutes(5));
+        assertThat(service.detail("m1")).map(l -> l.status().state()).contains("post");
+
+        verify(espn, times(1)).fetchLiveSummary("e1");
     }
 
     @Test

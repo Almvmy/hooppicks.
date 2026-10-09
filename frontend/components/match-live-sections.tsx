@@ -4,7 +4,7 @@ import { Radio } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TeamLogo } from "@/components/team-logo";
 import { TeamBoxScore } from "@/components/match-box-score";
-import { LiveMatch, liveClockLabel, periodColumnLabel, useLiveMatch } from "@/lib/live";
+import { LiveMatch, liveClockLabel, periodColumnLabel } from "@/lib/live";
 import type { Match, PlayerBoxScore, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -135,61 +135,59 @@ function TeamStats({ match, live }: { match: Match; live: LiveMatch }) {
   );
 }
 
-/**
- * Le direct d'un match en cours (données ESPN rafraîchies toutes les 30 s).
- * Rien si ESPN ne répond pas : la page garde alors le score de la synchro.
- */
-export function LiveMatchPanel({ match }: { match: Match }) {
-  const { data: live } = useLiveMatch(match);
-  if (!live) return null;
-
-  const awayPlayers = live.players.filter((p) => p.teamAbbreviation === match.awayTeam.abbreviation);
-  const homePlayers = live.players.filter((p) => p.teamAbbreviation === match.homeTeam.abbreviation);
-
+/** Score par quart-temps, avec le chrono tant que le match se joue. */
+export function LinescoreSection({ match, live }: { match: Match; live: LiveMatch }) {
   return (
-    <>
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-6">
-          <div className="flex items-center justify-between gap-2">
-            <SectionTitle>Quarts-temps</SectionTitle>
+    <Card>
+      <CardContent className="flex flex-col gap-4 pt-6">
+        <div className="flex items-center justify-between gap-2">
+          <SectionTitle>Quarts-temps</SectionTitle>
+          {live.status.state === "in" && (
             <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap font-mono text-xs font-semibold text-live">
               <Radio className="h-3.5 w-3.5 animate-pulse" />
               {liveClockLabel(live.status)}
             </span>
-          </div>
-          <Linescore match={match} live={live} />
-        </CardContent>
-      </Card>
+          )}
+        </div>
+        <Linescore match={match} live={live} />
+      </CardContent>
+    </Card>
+  );
+}
 
-      {live.players.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <SectionTitle>Meilleurs joueurs du match</SectionTitle>
-            <Leaders match={match} players={live.players} />
-          </CardContent>
-        </Card>
-      )}
+export function LeadersSection({ match, players }: { match: Match; players: PlayerBoxScore[] }) {
+  if (players.length === 0) return null;
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 pt-6">
+        <SectionTitle>Meilleurs joueurs du match</SectionTitle>
+        <Leaders match={match} players={players} />
+      </CardContent>
+    </Card>
+  );
+}
 
-      {live.teamStats.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <SectionTitle>Stats des équipes</SectionTitle>
-            <TeamStats match={match} live={live} />
-          </CardContent>
-        </Card>
-      )}
+export function TeamStatsSection({ match, live }: { match: Match; live: LiveMatch }) {
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-3 pt-6">
+        <SectionTitle>Stats des équipes</SectionTitle>
+        <TeamStats match={match} live={live} />
+      </CardContent>
+    </Card>
+  );
+}
 
-      {live.players.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <SectionTitle>Feuille de match en direct</SectionTitle>
-            <div className="grid gap-6 sm:grid-cols-2">
-              <TeamBoxScore team={match.awayTeam} players={awayPlayers} />
-              <TeamBoxScore team={match.homeTeam} players={homePlayers} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </>
+/** Feuille de match lue chez ESPN (en direct, ou après coup). */
+export function BoxScoreSection({ match, players }: { match: Match; players: PlayerBoxScore[] }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <TeamBoxScore team={match.awayTeam} players={players.filter((p) => p.teamAbbreviation === match.awayTeam.abbreviation)} />
+          <TeamBoxScore team={match.homeTeam} players={players.filter((p) => p.teamAbbreviation === match.homeTeam.abbreviation)} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
