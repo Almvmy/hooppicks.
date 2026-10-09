@@ -3,7 +3,6 @@
 import { Radio } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TeamLogo } from "@/components/team-logo";
-import { TeamBoxScore } from "@/components/match-box-score";
 import { LiveMatch, liveClockLabel, periodColumnLabel } from "@/lib/live";
 import type { Match, PlayerBoxScore, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -173,20 +172,6 @@ export function TeamStatsSection({ match, live }: { match: Match; live: LiveMatc
       <CardContent className="flex flex-col gap-3 pt-6">
         <SectionTitle>Stats des équipes</SectionTitle>
         <TeamStats match={match} live={live} />
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Feuille de match lue chez ESPN (en direct, ou après coup). */
-export function BoxScoreSection({ match, players }: { match: Match; players: PlayerBoxScore[] }) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <TeamBoxScore team={match.awayTeam} players={players.filter((p) => p.teamAbbreviation === match.awayTeam.abbreviation)} />
-          <TeamBoxScore team={match.homeTeam} players={players.filter((p) => p.teamAbbreviation === match.homeTeam.abbreviation)} />
-        </div>
       </CardContent>
     </Card>
   );

@@ -30,7 +30,9 @@ public record PlayerBoxScoreDto(
     public static PlayerBoxScoreDto from(PlayerMatchStat s) {
         return new PlayerBoxScoreDto(
                 s.getPlayerName(),
-                s.getTeamAbbreviation(),
+                // Stocké avec le sigle ESPN (« NY », « GS ») : l'app range les
+                // joueurs par équipe avec ceux de balldontlie (« NYK », « GSW »).
+                com.hooppicks.backendapplication.espn.EspnStatsClient.fromEspnAbbreviation(s.getTeamAbbreviation()),
                 s.isStarter(),
                 s.getMinutes(),
                 s.getPoints(),
