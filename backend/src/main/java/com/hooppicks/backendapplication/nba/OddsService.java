@@ -19,7 +19,11 @@ import java.util.List;
 public class OddsService {
 
     private static final double HOME_ADVANTAGE = 100.0; // avantage terrain, en points Elo
-    private static final double VIG = 1.06; // marge bookmaker ~6%, répartie sur les deux côtés
+    // Marge de 2 % : sans argent en jeu, la marge d'un bookmaker (~6 %) ne
+    // servait qu'à faire finir à 0 des semaines bien jouées.
+    private static final double VIG = 1.02;
+    /** Cote des marchés à 50/50 (écart, total, paris joueurs), même marge. */
+    public static final double EVEN_ODDS = 1.96;
     private static final double ELO_POINTS_PER_MARGIN_POINT = 28.0; // ~1 pt d'écart au score par 28 Elo
     // Moyenne de points par équipe et par match en NBA ces dernières saisons
     // (~225-230 points par match à deux). Sert de point de départ quand une
@@ -62,8 +66,8 @@ public class OddsService {
 
         double spread = clamp(-eloDiff / ELO_POINTS_PER_MARGIN_POINT, -20, 20);
         match.setSpreadValue(roundHalf(spread));
-        match.setSpreadOddsHome(1.91);
-        match.setSpreadOddsAway(1.91);
+        match.setSpreadOddsHome(EVEN_ODDS);
+        match.setSpreadOddsAway(EVEN_ODDS);
 
         // Points attendus de chaque équipe : moyenne de son attaque et de la
         // défense adverse sur leurs derniers matchs. Toujours en x,5 : pas
@@ -72,8 +76,8 @@ public class OddsService {
         TeamForm a = form(away);
         double total = (h.scored() + a.conceded()) / 2.0 + (a.scored() + h.conceded()) / 2.0;
         match.setTotalValue(Math.floor(clamp(total, 190, 260)) + 0.5);
-        match.setTotalOddsOver(1.91);
-        match.setTotalOddsUnder(1.91);
+        match.setTotalOddsOver(EVEN_ODDS);
+        match.setTotalOddsUnder(EVEN_ODDS);
     }
 
     private record TeamForm(double scored, double conceded) {}

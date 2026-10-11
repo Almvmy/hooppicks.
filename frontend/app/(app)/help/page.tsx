@@ -139,7 +139,7 @@ export default function HelpPage() {
                 <strong className="text-foreground">tirs à 3 points</strong> réussis, ou points + rebonds + passes cumulés, pour les meilleurs joueurs de chaque équipe dans la statistique.
               </p>
               <p>
-                La ligne est la moyenne du joueur sur la saison, toujours en ,5 : pas d&apos;égalité possible. Cote 1,91
+                La ligne est la moyenne du joueur sur la saison, toujours en ,5 : pas d&apos;égalité possible. Cote 1,96
                 des deux côtés. Rebonds, passes et tirs à 3 points seulement pour les joueurs qui en font (5 rebonds,
                 4 passes ou 2 tirs à 3 points réussis de moyenne au moins). Pas de paris joueurs en présaison.
               </p>

@@ -39,9 +39,9 @@ class OddsServiceTest {
         // L'avantage terrain fait légèrement pencher vers l'équipe qui reçoit.
         assertThat(match.getMoneylineHome()).isLessThan(match.getMoneylineAway());
 
-        // Somme des probabilités implicites ~ 1.06 (marge bookmaker visée), pas 1.0 pile.
+        // Somme des probabilités implicites ~ 1.02 (marge de 2 %), pas 1.0 pile.
         double impliedSum = 1 / match.getMoneylineHome() + 1 / match.getMoneylineAway();
-        assertThat(impliedSum).isCloseTo(1.06, within(0.01));
+        assertThat(impliedSum).isCloseTo(1.02, within(0.01));
     }
 
     @Test

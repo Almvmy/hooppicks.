@@ -50,7 +50,7 @@ export const FAQ: FaqGroup[] = [
         id: "gain-combine",
         question: "Comment est calculé le gain d'un combiné ?",
         answer:
-          "Les cotes de toutes tes sélections se multiplient, puis la mise est multipliée par cette cote totale. Exemple : 1,62 × 1,91 = 3,09 ; avec 50 points misés, le gain potentiel est de 155 points. Il faut que toutes les sélections soient gagnantes.",
+          "Les cotes de toutes tes sélections se multiplient, puis la mise est multipliée par cette cote totale. Exemple : 1,62 × 1,96 = 3,18 ; avec 50 points misés, le gain potentiel est de 159 points. Il faut que toutes les sélections soient gagnantes.",
       },
       {
         id: "paris-joueurs",
@@ -88,7 +88,7 @@ export const FAQ: FaqGroup[] = [
         id: "egalite-combine",
         question: "Une sélection de mon combiné est tombée pile sur la ligne, que se passe-t-il ?",
         answer:
-          "Elle compte pour une cote de 1,00 : ton combiné reste gagnant si toutes les autres sélections le sont, et le gain est recalculé sans elle. Exemple : 100 points sur 1,50 × 2,00 × 1,91, la dernière à égalité → 100 × 1,50 × 2,00 = 300 points. « Mes paris » affiche alors la cote et le gain réellement appliqués.",
+          "Elle compte pour une cote de 1,00 : ton combiné reste gagnant si toutes les autres sélections le sont, et le gain est recalculé sans elle. Exemple : 100 points sur 1,50 × 2,00 × 1,96, la dernière à égalité → 100 × 1,50 × 2,00 = 300 points. « Mes paris » affiche alors la cote et le gain réellement appliqués.",
       },
       {
         id: "mise-debitee",

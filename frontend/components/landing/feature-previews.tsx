@@ -54,8 +54,8 @@ export function MatchPreview({ match }: { match: Match | undefined }) {
 
 const COMBO = [
   { pick: "BOS vainqueur", odds: 1.62 },
-  { pick: "LAL +4.5", odds: 1.91 },
-  { pick: "Plus de 224.5", odds: 1.91 },
+  { pick: "LAL +4.5", odds: 1.96 },
+  { pick: "Plus de 224.5", odds: 1.96 },
 ];
 
 export function ComboPreview() {

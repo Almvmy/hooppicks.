@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.bet;
 
 import com.hooppicks.backendapplication.entity.*;
+import com.hooppicks.backendapplication.nba.OddsService;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
 import com.hooppicks.backendapplication.repository.RosterPlayerRepository;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class PlayerPropsService {
 
     /** Premier marché, gardé sous ce nom : les tickets déjà posés le portent. */
     public static final String MARKET = "player_points";
-    public static final double ODDS = 1.91;
+    public static final double ODDS = OddsService.EVEN_ODDS;
     static final int PLAYERS_PER_TEAM = 2;
     // Moyenne fiable : au moins quelques matchs joués.
     static final int MIN_GAMES = 10;
