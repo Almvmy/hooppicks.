@@ -104,8 +104,7 @@ public class BetResolutionService {
                 logTransaction(user, TransactionType.BET_LOSS, 0,
                         "Pari perdu (" + bet.getSelections().size() + " sélection(s))");
                 notify(user, NotificationType.BET_LOST, "Ticket perdu",
-                        "Ticket perdu · " + describe(bet) + " : mise de " + bet.getStake()
-                                + " pts perdue, retirée de ton bénéfice de la semaine (qui ne descend jamais sous 0).");
+                        "Ticket perdu · " + describe(bet) + " : mise de " + bet.getStake() + " pts perdue.");
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
@@ -115,7 +114,7 @@ public class BetResolutionService {
                     logTransaction(user, TransactionType.BONUS, bet.getStake(), "Remboursement (pari annulé, égalité sur le seuil)");
                     notify(user, NotificationType.SYSTEM, "Ticket remboursé",
                             "Ticket remboursé · " + describe(bet) + " : égalité pile sur la ligne, tes " + bet.getStake()
-                                    + " pts te sont rendus. Rien ne change au classement.");
+                                    + " pts te sont rendus.");
                 } else {
                     notify(user, NotificationType.SYSTEM, "Ticket annulé",
                             "Ticket de la semaine passée annulé · " + describe(bet) + " : égalité pile sur la ligne, il ne compte pas au classement.");
@@ -134,11 +133,9 @@ public class BetResolutionService {
                     userRepository.save(user);
                     logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
                             "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
-                    // Deux chiffres distincts, chacun nommé : ce qui revient sur le
-                    // solde (mise comprise) et ce qui compte au classement.
                     notify(user, NotificationType.BET_WON, "Ticket gagnant",
                             "Ticket gagnant · " + describe(bet) + " : +" + (bet.getPotentialPayout() - bet.getStake())
-                                    + " pts de bénéfice pour ta semaine (" + bet.getPotentialPayout() + " pts versés sur ton solde, mise comprise).");
+                                    + " pts de bénéfice, " + bet.getPotentialPayout() + " pts versés sur ton solde.");
                 } else {
                     // Pari de la semaine passée : le gain compte au classement de
                     // cette semaine-là, mais ne gonfle pas le solde neuf.

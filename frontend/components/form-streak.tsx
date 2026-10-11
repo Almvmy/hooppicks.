@@ -18,7 +18,7 @@ export function FormStreak({
   const recent = resolved.slice(0, limit).reverse();
 
   if (recent.length === 0) {
-    return <p className="text-sm text-muted-foreground">Pas encore de paris résolus.</p>;
+    return <p className="text-sm text-muted-foreground">Pas encore de ticket réglé.</p>;
   }
 
   return (

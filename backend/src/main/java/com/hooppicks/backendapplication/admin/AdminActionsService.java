@@ -163,7 +163,7 @@ public class AdminActionsService {
         // mise ne s'ajoute pas au solde neuf de la semaine en cours.
         bankrollService.ensureCurrent(user);
         if (!bankrollService.paysIntoCurrentBalance(user, bet)) {
-            notify(user, "Pari annulé", "Ton pari de la semaine passée a été annulé et ne compte pas au classement : " + motive, "/bets");
+            notify(user, "Ticket annulé", "Ton ticket de la semaine passée a été annulé : " + motive, "/bets");
             return;
         }
 
@@ -179,7 +179,7 @@ public class AdminActionsService {
 
         // Toujours prévenu, quelle que soit sa préférence « résultats de
         // paris » : c'est une décision prise sur ses points, pas un résultat.
-        notify(user, "Pari annulé", "Ton pari de " + bet.getStake() + " pts a été annulé et remboursé : " + motive, "/bets");
+        notify(user, "Ticket annulé", "Ton ticket de " + bet.getStake() + " pts a été annulé et remboursé : " + motive, "/bets");
     }
 
     private void notify(User user, String title, String message, String url) {

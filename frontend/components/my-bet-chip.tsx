@@ -17,7 +17,7 @@ const STATE: Partial<Record<LegState, { label: string; className: string }>> = {
 };
 
 /**
- * « Ton pari : LAL (V) · bien parti », sur la carte et la page d'un match :
+ * « LAL (V) · bien parti », discret, sur la carte et la page d'un match :
  * on suit son ticket là où on suit le score. Tickets en attente seulement
  * (un ticket réglé se consulte dans Mes paris). `match` porte déjà le score
  * du direct quand il y en a un.
@@ -34,12 +34,13 @@ export function MyBetChip({ match, className }: { match: Match; className?: stri
   return (
     <p
       className={cn(
-        "flex items-center justify-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold",
+        "flex items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground",
         className
       )}
+      title="Ton pari en cours"
     >
-      <Ticket className="h-3.5 w-3.5 shrink-0 text-primary" />
-      <span className="truncate">Ton pari : {first.label}</span>
+      <Ticket className="h-3 w-3 shrink-0 text-primary" aria-label="Ton pari" />
+      <span className="truncate">{first.label}</span>
       {state && <span className={cn("shrink-0", state.className)}>· {state.label}</span>}
       {mine.length > 1 && <span className="shrink-0 text-muted-foreground">+{mine.length - 1}</span>}
     </p>

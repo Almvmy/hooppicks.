@@ -123,7 +123,7 @@ function Community({ entries, team, username }: { entries: LeaderboardEntry[]; t
   const ranking = useMemo(() => rankFanTeams(entries, teams), [entries, teams]);
   const index = ranking.findIndex((t) => t.abbreviation === team.abbreviation);
   if (index < 0) {
-    return <p className="text-sm text-muted-foreground">Aucun supporter classé pour l&apos;instant : un ticket résolu et tu ouvres la marche.</p>;
+    return <p className="text-sm text-muted-foreground">Aucun supporter classé pour l&apos;instant.</p>;
   }
   const community = ranking[index];
   const myIndex = community.fans.findIndex((f) => f.username === username);

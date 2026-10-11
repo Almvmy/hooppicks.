@@ -177,7 +177,7 @@ public class BankrollService {
                     ? "Semaine terminée : +" + net + " pts au classement sur " + tickets
                             + " ticket(s). Ton solde repart à " + user.getWalletBalance() + " pts."
                     : "Semaine terminée : 0 pt au classement (bilan de " + net + " pts sur " + tickets
-                            + " ticket(s), une semaine ne descend jamais sous 0). Ton solde repart à "
+                            + " ticket(s)). Ton solde repart à "
                             + user.getWalletBalance() + " pts.";
         }
         AppNotification notification = new AppNotification();

@@ -208,7 +208,7 @@ export default function LeagueDetailPage({
                 ? "Aucun ticket réglé dans la ligue cette semaine."
                 : period === "month"
                   ? "Aucun ticket réglé dans la ligue ce mois-ci."
-                  : "Aucun pari résolu dans cette ligue pour l'instant."
+                  : "Aucun ticket réglé dans cette ligue pour l'instant."
             }
             currentUsername={profile?.username}
           />

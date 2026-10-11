@@ -16,7 +16,7 @@ const BADGE_RULES = [
   { icon: "medal", name: "Vétéran", condition: "50 paris placés au total." },
   { icon: "flame", name: "Main chaude", condition: "3 paris gagnés d'affilée." },
   { icon: "cloud", name: "Sur un nuage", condition: "5 paris gagnés d'affilée." },
-  { icon: "target", name: "Sniper", condition: "Au moins 10 paris résolus avec 60 % de réussite." },
+  { icon: "target", name: "Sniper", condition: "Au moins 10 tickets réglés avec 60 % de réussite." },
   { icon: "crown", name: "Roi du multiple", condition: "Un ticket d'au moins 3 sélections." },
   { icon: "zap", name: "Gros coup", condition: "Un ticket gagné qui rapporte au moins 500 points de plus que sa mise." },
   { icon: "coins", name: "Gros joueur", condition: "2 000 points misés au total." },

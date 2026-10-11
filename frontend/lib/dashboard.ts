@@ -109,7 +109,5 @@ export function findLeaderboardEntry(
 
 export function greetingForNow(): string {
   const hour = new Date().getHours();
-  if (hour < 6) return "Bonne nuit";
-  if (hour < 18) return "Bonjour";
-  return "Bonsoir";
+  return hour >= 5 && hour < 18 ? "Bonjour" : "Bonsoir";
 }

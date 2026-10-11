@@ -281,7 +281,7 @@ export default function BetsPage() {
       {!isLoading && !isError && bets.length > 0 && (
         <>
           <div className="stagger-children grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <SummaryTile label="Tickets joués" hint={`${resolved} résolu${resolved > 1 ? "s" : ""}`}>
+            <SummaryTile label="Tickets joués" hint={`${resolved} réglé${resolved > 1 ? "s" : ""}`}>
               <CountUp value={bets.length} />
             </SummaryTile>
             <SummaryTile label="Réussite" hint={`${counts.won} gagné${counts.won > 1 ? "s" : ""} · ${counts.lost} perdu${counts.lost > 1 ? "s" : ""}`}>

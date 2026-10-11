@@ -73,7 +73,7 @@ export const FAQ: FaqGroup[] = [
       },
       {
         id: "quand-resolu",
-        question: "Quand mon ticket est-il résolu ?",
+        question: "Quand mon ticket est-il réglé ?",
         answer:
           "Automatiquement, quelques minutes après la fin du dernier match du ticket (les scores sont vérifiés toutes les 5 minutes). Les points sont crédités et tu reçois une notification. Un combiné reste en attente tant que tous ses matchs ne sont pas terminés.",
         link: { href: "/bets", label: "Voir mes paris" },
