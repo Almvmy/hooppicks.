@@ -175,6 +175,12 @@ export const FAQ: FaqGroup[] = [
         link: { href: "/settings", label: "Gérer les notifications" },
       },
       {
+        id: "suivre-match",
+        question: "Comment suivre un match sans parier dessus ?",
+        answer:
+          "Touche la cloche sur la page du match : tu es prévenu au coup d'envoi, à chaque fin de quart-temps, en cas de fin serrée et au résultat. 30 matchs suivis au plus en même temps.",
+      },
+      {
         id: "installer",
         question: "Peut-on installer HoopPicks comme une application ?",
         answer:

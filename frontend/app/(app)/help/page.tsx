@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, Scale, Search, Swords, Timer, Trophy, UserRound } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, Scale, Search, Swords, Timer, Trophy, UserRound, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { badgeIcon } from "@/lib/badges";
@@ -155,6 +155,14 @@ export default function HelpPage() {
               </p>
               <p>
                 Une seule sélection par match dans un ticket, pari joueur compris. Mise minimum : 10 points.
+              </p>
+            </RuleCard>
+
+            <RuleCard icon={Zap} title="Cote boostée du jour">
+              <p>
+                Chaque soirée NBA, un match à l&apos;affiche : le pari « vainqueur » y est payé{" "}
+                <strong className="text-foreground">+15 %</strong>. Un ticket qui le contient est limité à 100 points
+                de mise.
               </p>
             </RuleCard>
 
