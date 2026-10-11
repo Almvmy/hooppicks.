@@ -4,10 +4,9 @@ import { Palmares } from "@/lib/types";
 
 /**
  * Trophées gardés à vie : titres de champion de la semaine (tout HoopPicks
- * et par ligue) et duels gagnés. Vide tant qu'il n'y a rien à montrer, avec
- * une phrase qui dit comment en gagner.
+ * et par ligue) et duels gagnés.
  */
-export function PalmaresCard({ palmares, isMe }: { palmares: Palmares | undefined; isMe: boolean }) {
+export function PalmaresCard({ palmares }: { palmares: Palmares | undefined }) {
   if (!palmares) return null;
   const empty = palmares.weeklyTitles === 0 && palmares.leagueTitles.length === 0 && palmares.duelWins === 0;
 
@@ -19,11 +18,7 @@ export function PalmaresCard({ palmares, isMe }: { palmares: Palmares | undefine
           Palmarès
         </h2>
         {empty ? (
-          <p className="text-sm text-muted-foreground">
-            {isMe
-              ? "Fais le meilleur score d'une semaine (sur HoopPicks ou dans une ligue) ou gagne un duel pour décrocher ton premier trophée."
-              : "Pas encore de trophée."}
-          </p>
+          <p className="text-sm text-muted-foreground">Pas encore de trophée.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {palmares.weeklyTitles > 0 && (

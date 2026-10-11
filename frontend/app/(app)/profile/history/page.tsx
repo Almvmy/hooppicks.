@@ -30,12 +30,7 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Historique des points</h1>
-        <p className="mt-1 text-muted-foreground">
-          Tous les mouvements de ton solde virtuel.
-        </p>
-      </div>
+      <h1 className="font-heading text-2xl font-bold">Historique des points</h1>
 
       <div className="glass rounded-2xl">
         <Table>

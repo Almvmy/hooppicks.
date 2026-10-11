@@ -78,8 +78,7 @@ export default function DuelsPage() {
           Duels
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Défie un joueur sur la semaine : celui qui a le plus de points lundi 12h GMT gagne. Fin de la semaine{" "}
-          {formatBankrollReset()}.
+          Fin de la semaine {formatBankrollReset()}.
         </p>
         {finished.length > 0 && (
           <p className="mt-2 font-mono text-sm">

@@ -364,7 +364,7 @@ function PlayersTab() {
       {!isSearching && view === "blesses" && <InjuriesSection onSelect={setSelected} />}
       {!isSearching && view === "effectifs" && !teamId && (
         <p className="text-sm text-muted-foreground">
-          Choisis une équipe pour voir son effectif. Le bouton de comparaison sur deux joueurs les met côte à côte.
+          Choisis une équipe pour voir son effectif.
         </p>
       )}
 
@@ -469,7 +469,7 @@ function TeamsTab() {
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Trophy className="h-4 w-4 text-primary" />
           {sortMode === "elo"
-            ? "Force interne (Elo), celle qui sert au calcul des cotes."
+            ? "Classement Elo HoopPicks."
             : "Classement officiel NBA, par conférence."}
         </p>
         <div className="flex gap-2">
@@ -551,14 +551,7 @@ export default function PlayersPage({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">{teams ? "Équipes" : "Joueurs"}</h1>
-        <p className="mt-1 text-muted-foreground">
-          {teams
-            ? "Classement officiel par conférence, effectifs et classement Elo des 30 équipes."
-            : "Meneurs statistiques, blessés, recherche et comparateur de joueurs."}
-        </p>
-      </div>
+      <h1 className="font-heading text-2xl font-bold">{teams ? "Équipes" : "Joueurs"}</h1>
 
       {teams ? <TeamsTab /> : <PlayersTab />}
     </div>

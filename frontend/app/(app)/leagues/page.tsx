@@ -197,15 +197,10 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
-          <Shield className="h-7 w-7 text-paint" />
-          Ligues
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Crée une ligue privée ou rejoins celle de tes potes pour comparer vos pronostics.
-        </p>
-      </div>
+      <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
+        <Shield className="h-7 w-7 text-paint" />
+        Ligues
+      </h1>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>

@@ -89,7 +89,6 @@ function ThemeSetting() {
           );
         })}
       </div>
-      <p className="text-xs text-muted-foreground">« Système » suit le réglage clair/sombre de ton appareil.</p>
     </div>
   );
 }

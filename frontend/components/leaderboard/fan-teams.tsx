@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Heart, Users } from "lucide-react";
 import { TeamLogo } from "@/components/team-logo";
 import { PlayerAvatar } from "@/components/player-avatar";
-import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
+import { useTeamsByAbbreviation } from "@/lib/use-teams";
 import { LeaderboardEntry } from "@/lib/types";
 import { rankFanTeams } from "@/lib/fan-teams";
 import { cn, formatSignedPoints } from "@/lib/utils";
@@ -17,7 +17,6 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
 
   const ranking = useMemo(() => rankFanTeams(entries, teams), [entries, teams]);
 
-  const withoutTeam = entries.filter((e) => !favoriteTeamAbbreviation(e.favoriteTeam ?? undefined, teams)).length;
 
   if (ranking.length === 0) {
     return (
@@ -36,10 +35,7 @@ export function FanTeams({ entries, myTeam }: { entries: LeaderboardEntry[]; myT
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        Points moyens par supporter, sur les joueurs classés cette saison.
-        {withoutTeam > 0 && ` ${withoutTeam} joueur${withoutTeam > 1 ? "s" : ""} sans équipe favorite ne compte${withoutTeam > 1 ? "nt" : ""} pas.`}
-      </p>
+      <p className="text-sm text-muted-foreground">Points moyens par supporter cette saison.</p>
       <ol className="stagger-children flex flex-col gap-2">
         {ranking.map((team, i) => {
           const info = teams.get(team.abbreviation);

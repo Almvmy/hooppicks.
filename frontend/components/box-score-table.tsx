@@ -229,8 +229,7 @@ export function BoxScoreTable({
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground">
-        <span className="mr-1 inline-block h-2.5 w-0.5 bg-brand align-middle" /> titulaire · touche une colonne pour
-        trier, un joueur pour sa fiche
+        <span className="mr-1 inline-block h-2.5 w-0.5 bg-brand align-middle" /> titulaire
       </p>
       <PlayerGameDialog
         player={selected}

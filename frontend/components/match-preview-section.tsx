@@ -93,9 +93,6 @@ export function MatchPreviewSection({ match }: { match: Match }) {
           <SectionTitle>Forme (5 derniers matchs)</SectionTitle>
           <FormRow team={match.awayTeam} games={data.awayForm} />
           <FormRow team={match.homeTeam} games={data.homeForm} />
-          <p className="text-[11px] text-muted-foreground">
-            G : gagné · P : perdu · le plus récent à droite. Présaison et playoffs compris.
-          </p>
         </CardContent>
       </Card>
 

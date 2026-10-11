@@ -82,12 +82,10 @@ export default function SeasonPicksPage() {
           Pronostics de saison {data?.season}
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Quatre questions sur toute la saison, jusqu&apos;à {total} points à la clé, dans un classement à part.{" "}
+          Jusqu&apos;à {total} points à la clé.{" "}
           {data?.locked
             ? "Les pronostics sont clos."
-            : deadline
-              ? `Modifiables jusqu'au ${formatMatchDate(deadline)} à ${formatMatchTime(deadline)}, une semaine après le début de la saison régulière.`
-              : "Modifiables jusqu'à une semaine après le début de la saison régulière."}
+            : deadline && `Modifiables jusqu'au ${formatMatchDate(deadline)} à ${formatMatchTime(deadline)}.`}
         </p>
       </div>
 

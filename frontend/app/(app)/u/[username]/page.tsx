@@ -257,7 +257,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
         />
       </div>
 
-      <PalmaresCard palmares={profile.palmares} isMe={profile.isMe} />
+      <PalmaresCard palmares={profile.palmares} />
 
       {/* ── Face-à-face de la semaine et ligues en commun ──────────────── */}
       {!profile.isMe && (mine || profile.commonLeagues.length > 0) && (
@@ -322,7 +322,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
                 ))}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">Les tickets en attente restent privés jusqu&apos;à leur résultat.</p>
           </CardContent>
         </Card>
         {profile.bestTicket && (

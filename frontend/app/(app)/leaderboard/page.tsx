@@ -159,7 +159,7 @@ function MyPosition({
                 ? "Tu es en tête du classement."
                 : above && gap > 0
                   ? `Plus que ${gap.toLocaleString("fr-FR")} pts pour doubler ${above.username} (#${above.rank}).`
-                  : "À égalité avec le joueur devant toi : un ticket gagnant suffit."}
+                  : "À égalité avec le joueur devant toi."}
             </p>
           </div>
         </div>
@@ -272,13 +272,9 @@ function PlayersRanking({ username }: { username: string | undefined }) {
         )}
       </div>
 
-      {!isLoading && !isError && (
+      {!isLoading && !isError && all.length > 0 && (
         <p className="-mt-3 text-sm text-muted-foreground">
-          {all.length > 0
-            ? `${all.length} joueur${all.length > 1 ? "s" : ""} classé${all.length > 1 ? "s" : ""} au classement ${scope}.`
-            : null}
-          {" "}Points : le bilan de chaque semaine (gains moins mises), jamais moins de 0
-          {period === "week" ? ", depuis lundi 12h." : period === "month" ? ", semaines du mois additionnées." : ", semaines additionnées."}
+          {all.length} joueur{all.length > 1 ? "s" : ""} classé{all.length > 1 ? "s" : ""}
         </p>
       )}
 
@@ -288,8 +284,8 @@ function PlayersRanking({ username }: { username: string | undefined }) {
         <Card>
           <CardContent className="pt-6 text-sm text-muted-foreground">
             {period === "season"
-              ? "Tu n'apparais pas encore au classement : il compte les tickets résolus. Dès que ton premier ticket sera gagné ou perdu, tu y entreras."
-              : `Aucun de tes tickets n'a été résolu sur cette période : un ticket résolu suffit pour entrer au classement ${scope}.`}{" "}
+              ? "Pas encore classé : ton premier ticket réglé t'y fera entrer."
+              : "Aucun de tes tickets n'a été réglé sur cette période."}{" "}
             <Link href="/matches" className="font-medium text-primary hover:underline">
               Voir les matchs
             </Link>
@@ -301,7 +297,7 @@ function PlayersRanking({ username }: { username: string | undefined }) {
         <div className="glass flex flex-col items-center gap-3 rounded-2xl py-10 text-center">
           <Trophy className="h-8 w-8 text-muted-foreground" />
           <p className="max-w-sm text-sm text-muted-foreground">
-            Personne n&apos;est encore au classement {scope} : le premier ticket résolu prend la tête.
+            Personne n&apos;est encore au classement {scope}.
           </p>
           <Link href="/matches" className="text-sm font-medium text-primary hover:underline">
             Voir les matchs

@@ -71,7 +71,7 @@ function CompareTable({ a, b }: { a: RosterPlayer; b: RosterPlayer }) {
         })}
       </div>
       <p className="text-center text-[11px] text-muted-foreground">
-        Moyennes par match, saison {a.statsSeasonLabel ?? b.statsSeasonLabel ?? "en cours"}. En vert : la meilleure des deux.
+        Moyennes par match, saison {a.statsSeasonLabel ?? b.statsSeasonLabel ?? "en cours"}
       </p>
     </div>
   );

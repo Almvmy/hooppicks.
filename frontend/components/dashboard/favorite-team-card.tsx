@@ -245,9 +245,6 @@ export function FavoriteTeamCard({
             <Heart className="h-4 w-4 text-primary" />
             Choisis ton équipe favorite
           </p>
-          <p className="text-sm text-muted-foreground">
-            Son prochain match à parier, ses blessés, ses actus, ta place parmi ses supporters : tout arrive ici.
-          </p>
           <FavoriteTeamPicker currentTeam={favoriteTeamName ?? ""} />
         </CardContent>
       </Card>

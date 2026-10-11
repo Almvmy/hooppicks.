@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, FlaskConical, Heart, LayoutGrid, List, Radio, SlidersHorizontal, Trophy, X } from "lucide-react";
+import { CalendarDays, Heart, LayoutGrid, List, Radio, SlidersHorizontal, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MatchCard } from "@/components/match-card";
@@ -332,26 +332,6 @@ export default function MatchesPage() {
             <MatchCard match={favoriteNext} />
           </div>
         </section>
-      )}
-
-      {activePhase === "preseason" && (
-        <div className="glass-inset-quiet flex items-start gap-3 rounded-2xl px-4 py-3 text-sm">
-          <FlaskConical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <p className="text-muted-foreground">
-            <strong className="text-foreground">Présaison</strong> : matchs de préparation où les titulaires jouent peu.
-            Tu peux parier dessus, mais leurs résultats ne comptent pas dans la force (Elo) des équipes.
-          </p>
-        </div>
-      )}
-
-      {activePhase === "nba_cup" && (
-        <div className="flex items-center gap-3 rounded-2xl bg-amber-400/10 px-4 py-3 text-sm shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)]">
-          <Trophy className="h-6 w-6 shrink-0 text-amber-400 light:text-amber-800" />
-          <p className="text-muted-foreground">
-            <strong className="text-foreground">Coupe NBA</strong> : phase de groupes puis élimination directe jusqu&apos;à la
-            finale. Seule la finale ne compte pas au classement de la saison.
-          </p>
-        </div>
       )}
 
       {activePhase === "playoffs" && <PlayoffSeries matches={scoped} />}

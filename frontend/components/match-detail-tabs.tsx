@@ -180,9 +180,6 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
                 <Card>
                   <CardContent className="pt-6">
                     <h2 className="font-heading text-base font-bold">Parier sur ce match</h2>
-                    <p className="text-xs text-muted-foreground">
-                      Vainqueur, écart ou total : une sélection par match et par ticket.
-                    </p>
                     <MatchOddsRow match={match} />
                   </CardContent>
                 </Card>

@@ -179,15 +179,11 @@ export default function NewsPage({ searchParams }: { searchParams: Promise<{ equ
           <NbaLogo size={30} />
           Actualités
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Les dernières nouvelles NBA, via ESPN, traduites en français.
-          {newCount > 0 && (
-            <span className="font-medium text-primary">
-              {" "}
-              {newCount} nouvelle{newCount > 1 ? "s" : ""} depuis ta dernière visite.
-            </span>
-          )}
-        </p>
+        {newCount > 0 && (
+          <p className="mt-1 font-medium text-primary">
+            {newCount} nouvelle{newCount > 1 ? "s" : ""} depuis ta dernière visite.
+          </p>
+        )}
       </div>
 
       {(teamsInFeed.length > 0 || videoCount > 0) && (

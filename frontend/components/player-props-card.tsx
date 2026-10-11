@@ -57,13 +57,7 @@ export function PlayerPropsCard({ match }: { match: Match }) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-3 pt-6">
-        <div>
-          <h2 className="font-heading text-base font-bold">Paris joueurs</h2>
-          <p className="text-xs text-muted-foreground">
-            Plus ou moins que sa moyenne de la saison. Joueur absent : sélection remboursée. Compte comme la sélection
-            de ce match dans ton ticket.
-          </p>
-        </div>
+        <h2 className="font-heading text-base font-bold">Paris joueurs</h2>
         {markets.length > 1 && (
           // Largeur selon le libellé, et défilement horizontal : les cinq
           // statistiques ne tiennent pas toutes sur une ligne de téléphone.

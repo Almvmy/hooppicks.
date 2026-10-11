@@ -27,10 +27,7 @@ export function FollowMatchButton({ match, className }: { match: Match; classNam
         follow ? [...ids, match.id] : ids.filter((id) => id !== match.id)
       );
       if (follow) {
-        toast.success("Match suivi", {
-          description:
-            "Coup d'envoi, fins de quart-temps, fin serrée et résultat. Sur téléphone, active les notifications de l'appareil dans Paramètres.",
-        });
+        toast.success("Match suivi");
       }
     },
     onError: (error) => toast.error(error instanceof Error && error.message ? error.message : "Impossible de suivre ce match."),

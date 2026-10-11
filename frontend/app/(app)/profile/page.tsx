@@ -218,7 +218,7 @@ export default function ProfilePage() {
         </StatTile>
       </div>
 
-      <PalmaresCard palmares={palmaresQuery.data} isMe />
+      <PalmaresCard palmares={palmaresQuery.data} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         {/* ── Colonne principale : jeu ──────────────────────────────── */}
