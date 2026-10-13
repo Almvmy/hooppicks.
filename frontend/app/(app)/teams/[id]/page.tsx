@@ -12,7 +12,7 @@ import { TeamLogo } from "@/components/team-logo";
 import { TeamRoster } from "@/components/team-roster";
 import { MatchCard } from "@/components/match-card";
 import { fetchTeamRankings } from "@/lib/api/teams";
-import { fetchMatches } from "@/lib/api/matches";
+import { fetchTeamMatches } from "@/lib/api/matches";
 
 export default function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -24,8 +24,8 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
   });
 
   const { data: matches, isLoading: isLoadingMatches, isError: isMatchesError } = useQuery({
-    queryKey: ["matches"],
-    queryFn: fetchMatches,
+    queryKey: ["matches", "team", id],
+    queryFn: () => fetchTeamMatches(id),
     staleTime: 60 * 1000,
   });
 

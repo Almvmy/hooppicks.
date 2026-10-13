@@ -9,7 +9,7 @@ import { TeamLogo } from "@/components/team-logo";
 import { NbaLogo } from "@/components/nba-logo";
 import { ArticleImage, NewBadge, NextMatchLink, TeamLogos, VideoBadge } from "@/components/news/news-parts";
 import { fetchNews } from "@/lib/api/news";
-import { fetchMatches } from "@/lib/api/matches";
+import { DEFAULT_PAST_DAYS, fetchMatches } from "@/lib/api/matches";
 import { fetchProfile } from "@/lib/api/auth";
 import { cn, formatRelativeTime, getDayLabel } from "@/lib/utils";
 import { nextMatchByTeam, recordNewsVisit, teamsOf, useNewsThreshold } from "@/lib/news";
@@ -119,8 +119,8 @@ export default function NewsPage({ searchParams }: { searchParams: Promise<{ equ
   });
   // Même clé que la page Matchs : sert au raccourci « Prochain match ».
   const { data: matches, dataUpdatedAt: matchesLoadedAt } = useQuery({
-    queryKey: ["matches"],
-    queryFn: fetchMatches,
+    queryKey: ["matches", "window", DEFAULT_PAST_DAYS],
+    queryFn: () => fetchMatches(),
     staleTime: 60 * 1000,
   });
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });

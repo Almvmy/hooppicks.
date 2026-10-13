@@ -7,7 +7,7 @@ import { WEEKLY_BANKROLL, formatBankrollReset, formatSignedPoints } from "@/lib/
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchWallet } from "@/lib/api/wallet";
 import { fetchBets } from "@/lib/api/bets";
-import { fetchMatches } from "@/lib/api/matches";
+import { DEFAULT_PAST_DAYS, fetchMatches } from "@/lib/api/matches";
 import { fetchLeaderboard, fetchMyStanding } from "@/lib/api/leaderboard";
 import { fetchNews } from "@/lib/api/news";
 import { fetchMyLeagues } from "@/lib/api/leagues";
@@ -38,8 +38,8 @@ export default function DashboardPage() {
   const standingQuery = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding, refetchInterval: 60_000 });
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
   const matchesQuery = useQuery({
-    queryKey: ["matches"],
-    queryFn: fetchMatches,
+    queryKey: ["matches", "window", DEFAULT_PAST_DAYS],
+    queryFn: () => fetchMatches(),
     refetchInterval: 60 * 1000,
   });
   const leaderboardQuery = useQuery({

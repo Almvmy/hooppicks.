@@ -18,6 +18,11 @@ public interface MatchRepository extends JpaRepository<Match, String> {
 
     List<Match> findTop100ByOrderByDateDesc();
 
+    List<Match> findByDateBetween(Instant from, Instant to);
+
+    @Query("SELECT m FROM Match m WHERE m.homeTeam.id = :teamId OR m.awayTeam.id = :teamId")
+    List<Match> findByTeamId(String teamId);
+
     long countByStatus(MatchStatus status);
 
     // Bornées par Pageable plutôt qu'un findTopN fixe : le nombre à traiter

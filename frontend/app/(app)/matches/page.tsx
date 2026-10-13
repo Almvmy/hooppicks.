@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Heart, LayoutGrid, List, Radio, SlidersHorizontal, X } from "lucide-react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { CalendarDays, ChevronLeft, Heart, LayoutGrid, List, Radio, SlidersHorizontal, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { MatchCard } from "@/components/match-card";
@@ -13,7 +13,7 @@ import { NbaLogo } from "@/components/nba-logo";
 import { TeamLogo } from "@/components/team-logo";
 import { MATCH_TYPE_META } from "@/components/match-stage-badge";
 import { PlayoffSeries } from "@/components/playoff-series";
-import { fetchMatches } from "@/lib/api/matches";
+import { DEFAULT_PAST_DAYS, fetchMatches } from "@/lib/api/matches";
 import { fetchProfile } from "@/lib/api/auth";
 import { useTimeZone } from "@/lib/use-time-zone";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
@@ -27,6 +27,9 @@ const STATUSES: { value: MatchStatus | "all"; label: string }[] = [
   { value: "live", label: "En direct" },
   { value: "finished", label: "Terminés" },
 ];
+
+/** Une saison NBA (présaison comprise) tient en moins de 300 jours. */
+const MAX_PAST_DAYS = 300;
 
 // Ordre chronologique de la saison, pour les pastilles de phase.
 const PHASES: MatchType[] = ["preseason", "regular", "nba_cup", "all_star", "play_in", "playoffs"];
@@ -52,10 +55,13 @@ export default function MatchesPage() {
   // de pastilles passaient avant le premier match sur mobile.
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data, isLoading, isError, dataUpdatedAt } = useQuery({
-    queryKey: ["matches"],
-    queryFn: fetchMatches,
+  // Deux semaines en arrière au départ ; « Plus tôt » remonte d'un mois à chaque fois.
+  const [pastDays, setPastDays] = useState(DEFAULT_PAST_DAYS);
+  const { data, isLoading, isError, isFetching, dataUpdatedAt } = useQuery({
+    queryKey: ["matches", "window", pastDays],
+    queryFn: () => fetchMatches(pastDays),
     refetchInterval: 60 * 1000, // scores et statuts en direct : on suit
+    placeholderData: keepPreviousData,
   });
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const teams = useTeamsByAbbreviation();
@@ -198,6 +204,17 @@ export default function MatchesPage() {
         <div ref={stripRef} className="glass-scroll edge-scroll relative flex gap-2 overflow-x-auto pb-0.5" role="tablist" aria-label="Soirée">
           {isLoading &&
             Array.from({ length: 7 }).map((_, i) => <Skeleton key={i} className="h-14 w-16 shrink-0 rounded-2xl" />)}
+          {!isLoading && pastDays < MAX_PAST_DAYS && (
+            <button
+              type="button"
+              onClick={() => setPastDays((d) => Math.min(d + 30, MAX_PAST_DAYS))}
+              disabled={isFetching}
+              className="glass-inset-quiet flex shrink-0 flex-col items-center justify-center rounded-2xl px-3 py-1.5 text-muted-foreground hover:text-foreground disabled:opacity-60"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="text-[11px] font-semibold">{isFetching ? "…" : "Plus tôt"}</span>
+            </button>
+          )}
           {days.map((day) => {
             const first = byDay.get(day)![0];
             const { top, bottom } = formatNightChip(new Date(first.date), timeZone);

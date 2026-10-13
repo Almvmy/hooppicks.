@@ -3,18 +3,36 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TeamLogo } from "@/components/team-logo";
-import { fetchMatches } from "@/lib/api/matches";
+import { DEFAULT_PAST_DAYS, fetchMatches, fetchMatchesByIds } from "@/lib/api/matches";
 import { BetSelection, Match } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+/** Au-delà, les plus anciens tickets s'affichent sans logo plutôt que d'alourdir l'appel. */
+const MAX_EXTRA_IDS = 200;
+
 /**
- * Matchs indexés par id, depuis le même cache ["matches"] que la page Matchs :
- * un pari ne stocke que l'id de son match, c'est ce qui permet de retrouver
- * les équipes (et leurs logos) sans nouvel appel ni changement backend.
+ * Matchs indexés par id : un pari ne stocke que l'id de son match. Ceux des
+ * deux dernières semaines viennent du même cache que la page Matchs ; ceux
+ * de tickets plus anciens (matchIds) sont chargés à part, eux seuls.
  */
-export function useMatchesById(): Map<string, Match> {
-  const { data } = useQuery({ queryKey: ["matches"], queryFn: fetchMatches, staleTime: 60 * 1000 });
-  return useMemo(() => new Map((data ?? []).map((m) => [m.id, m])), [data]);
+export function useMatchesById(matchIds: string[] = []): Map<string, Match> {
+  const { data } = useQuery({
+    queryKey: ["matches", "window", DEFAULT_PAST_DAYS],
+    queryFn: () => fetchMatches(),
+    staleTime: 60 * 1000,
+  });
+  const missing = useMemo(() => {
+    if (!data) return [];
+    const known = new Set(data.map((m) => m.id));
+    return [...new Set(matchIds)].filter((id) => !known.has(id)).slice(0, MAX_EXTRA_IDS);
+  }, [data, matchIds]);
+  const { data: extra } = useQuery({
+    queryKey: ["matches", "ids", missing.join(",")],
+    queryFn: () => fetchMatchesByIds(missing),
+    enabled: missing.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  return useMemo(() => new Map([...(data ?? []), ...(extra ?? [])].map((m) => [m.id, m])), [data, extra]);
 }
 
 /**

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,8 @@ export function RecentActivity({
   bets: PlacedBet[];
   isLoading: boolean;
 }) {
-  const matchesById = useMatchesById();
+  const betMatchIds = useMemo(() => bets.flatMap((b) => b.selections.map((s) => s.matchId)), [bets]);
+  const matchesById = useMatchesById(betMatchIds);
 
   return (
     <Card>

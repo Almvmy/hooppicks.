@@ -1,8 +1,30 @@
 import { apiFetch } from "@/lib/api/http";
 import { Match, PlayerBoxScore, PlayerProp } from "@/lib/types";
 
-export async function fetchMatches(): Promise<Match[]> {
-  return apiFetch<Match[]>("/matches");
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Au-delà de la semaine de jeu, aucun match n'est ouvert aux paris (synchro jusqu'à J+7). */
+const DAYS_AHEAD = 8;
+export const DEFAULT_PAST_DAYS = 14;
+
+function utcDay(offsetDays: number): string {
+  return new Date(Date.now() + offsetDays * DAY_MS).toISOString().slice(0, 10);
+}
+
+/**
+ * Matchs autour d'aujourd'hui, pas toute la saison : la réponse grossissait
+ * chaque semaine. La page Matchs remonte plus loin à la demande (pastDays).
+ */
+export async function fetchMatches(pastDays: number = DEFAULT_PAST_DAYS): Promise<Match[]> {
+  return apiFetch<Match[]>(`/matches?from=${utcDay(-pastDays)}&to=${utcDay(DAYS_AHEAD)}`);
+}
+
+export async function fetchTeamMatches(teamId: string): Promise<Match[]> {
+  return apiFetch<Match[]>(`/matches?teamId=${encodeURIComponent(teamId)}`);
+}
+
+export async function fetchMatchesByIds(ids: string[]): Promise<Match[]> {
+  if (ids.length === 0) return [];
+  return apiFetch<Match[]>(`/matches?ids=${ids.map(encodeURIComponent).join(",")}`);
 }
 
 export async function fetchMatchById(id: string): Promise<Match | undefined> {

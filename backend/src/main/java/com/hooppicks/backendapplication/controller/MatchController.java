@@ -12,6 +12,10 @@ import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -35,9 +39,35 @@ public class MatchController {
         this.pickPercentagesService = pickPercentagesService;
     }
 
+    static final int MAX_IDS = 200;
+
+    /**
+     * Sans filtre, toute la base : une réponse qui grossit chaque semaine de
+     * la saison (et le calcul des pourcentages de choix avec). L'app demande
+     * donc une fenêtre de dates (from/to, jours UTC inclus), la saison d'une
+     * équipe (teamId) ou des matchs précis (ids, ceux de ses paris). Le cas
+     * sans filtre reste pour les onglets ouverts avant la mise à jour.
+     */
     @GetMapping
-    public List<MatchDto> getAllMatches() {
-        List<Match> matches = matchRepository.findAll();
+    public List<MatchDto> getAllMatches(@RequestParam(required = false) String from,
+                                        @RequestParam(required = false) String to,
+                                        @RequestParam(required = false) String teamId,
+                                        @RequestParam(required = false) String ids) {
+        List<Match> matches;
+        if (ids != null) {
+            List<String> wanted = Arrays.stream(ids.split(",")).map(String::trim).filter(s -> !s.isEmpty())
+                    .distinct().limit(MAX_IDS).toList();
+            matches = matchRepository.findAllById(wanted);
+        } else if (teamId != null) {
+            matches = matchRepository.findByTeamId(teamId);
+        } else if (from != null || to != null) {
+            Instant start = from == null ? Instant.EPOCH : LocalDate.parse(from).atStartOfDay(ZoneOffset.UTC).toInstant();
+            Instant end = to == null ? Instant.parse("9999-12-31T00:00:00Z")
+                    : LocalDate.parse(to).plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
+            matches = matchRepository.findByDateBetween(start, end);
+        } else {
+            matches = matchRepository.findAll();
+        }
         Map<String, PickPercentagesDto> percentages = pickPercentagesService.forMatches(
                 matches.stream().map(Match::getId).toList());
         return matches.stream()

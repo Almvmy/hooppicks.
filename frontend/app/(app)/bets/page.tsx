@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Clock, Layers, Minus, Radio, Ticket, TrendingDown, TrendingUp, Undo2, X } from "lucide-react";
@@ -230,7 +230,8 @@ function SummaryTile({ label, children, hint }: { label: string; children: React
 
 export default function BetsPage() {
   const { data, isLoading, isError } = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
-  const matchesById = useMatchesById();
+  const betMatchIds = useMemo(() => (data ?? []).flatMap((b) => b.selections.map((s) => s.matchId)), [data]);
+  const matchesById = useMatchesById(betMatchIds);
   const [filter, setFilter] = useState<Filter>("all");
 
   const bets = data ?? [];
