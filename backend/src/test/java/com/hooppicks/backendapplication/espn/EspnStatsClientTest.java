@@ -9,6 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
@@ -16,6 +18,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -317,5 +321,14 @@ class EspnStatsClientTest {
         for (String ours : List.of("GSW", "NOP", "NYK", "SAS", "UTA", "WAS", "LAL", "BOS")) {
             assertThat(EspnStatsClient.fromEspnAbbreviation(EspnStatsClient.toEspnAbbreviation(ours))).isEqualTo(ours);
         }
+    }
+
+    @Test
+    void un_404_ne_relance_pas_l_appel() {
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class)))
+                .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", null, null, null));
+
+        assertThat(client.fetchSeasonStats("5457832")).isEmpty();
+        verify(restTemplate, times(1)).exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class));
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
@@ -707,6 +708,11 @@ public class EspnStatsClient {
         for (int attempt = 1; attempt <= 2; attempt++) {
             try {
                 return restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class).getBody();
+            } catch (HttpClientErrorException.NotFound e) {
+                // Rien à cette adresse (recrue sans stats, match pas encore publié) :
+                // redemander 11 s plus tard donnait la même réponse et retardait tout le lot.
+                log.debug("ESPN : rien à {}", url);
+                return null;
             } catch (Exception e) {
                 log.warn("Appel ESPN échoué (tentative {}/2) : {}", attempt, e.getMessage());
                 if (attempt == 2) break;
