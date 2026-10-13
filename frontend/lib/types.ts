@@ -33,7 +33,6 @@ export interface UserProfile {
   notifyLeagueActivity: boolean;
   notifyFavoriteTeam: boolean;
   emailVerified: boolean;
-  appInstalled: boolean;
 }
 
 export interface NotificationPreferences {

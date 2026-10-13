@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IosInstallDialog, useInstallState } from "@/components/install-app";
 import { isStandalone, promptInstall } from "@/lib/install-prompt";
-import { fetchProfile } from "@/lib/api/auth";
 import { canNudge, recordNudge, useNudge } from "@/lib/nudge";
 import { enablePush, getPushState, PushState } from "@/lib/push";
 
@@ -65,15 +64,8 @@ function NudgeCard({
 function useInstallNudge(): [boolean, () => void] {
   const state = useInstallState();
   const [visible, dismiss] = useNudge("install");
-  // Ouverte dans le navigateur, l'app déjà installée ne se reconnaît pas : le serveur, lui,
-  // sait si ce compte l'a déjà ouverte depuis l'écran d'accueil.
-  const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const eligible =
-    visible &&
-    profile !== undefined &&
-    !profile.appInstalled &&
-    (state === "promptable" || state === "ios") &&
-    window.matchMedia("(pointer: coarse)").matches;
+    visible && (state === "promptable" || state === "ios") && window.matchMedia("(pointer: coarse)").matches;
   return [eligible, dismiss];
 }
 

@@ -18,9 +18,7 @@ public record UserProfileDto(
         boolean notifyBetResults,
         boolean notifyLeagueActivity,
         boolean notifyFavoriteTeam,
-        boolean emailVerified,
-        /** A déjà ouvert l'app depuis l'écran d'accueil (sur n'importe quel appareil). */
-        boolean appInstalled
+        boolean emailVerified
 ) {
     public static UserProfileDto from(User user, int winRate, int totalBets, int currentWinStreak) {
         return new UserProfileDto(
@@ -39,8 +37,7 @@ public record UserProfileDto(
                 user.isNotifyBetResults(),
                 user.isNotifyLeagueActivity(),
                 user.isNotifyFavoriteTeam(),
-                user.isEmailVerified(),
-                user.getAppInstalledAt() != null
+                user.isEmailVerified()
         );
     }
 }
