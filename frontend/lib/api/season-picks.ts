@@ -8,7 +8,7 @@ export interface SeasonQuestion {
 
 export interface SeasonPicksOverview {
   season: string;
-  /** Premier match de saison régulière : null tant qu'il n'est pas connu. */
+  /** Fin des pronostics : premier match de saison régulière + 7 jours, null tant qu'il n'est pas connu. */
   deadline: string | null;
   locked: boolean;
   questions: SeasonQuestion[];

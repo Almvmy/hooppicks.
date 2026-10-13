@@ -14,6 +14,7 @@ import { InjuryPill, PlayerHeadshot, playerName } from "@/components/players/pla
 import { TeamNews } from "@/components/news/team-news";
 import { fetchTeamRoster } from "@/lib/api/teams";
 import { fetchFavoriteTeamStats } from "@/lib/api/favorite-team";
+import { fetchSeasonPicks, SeasonPicksOverview } from "@/lib/api/season-picks";
 import { rankFanTeams } from "@/lib/fan-teams";
 import { getTeamColor } from "@/lib/team-colors";
 import { useFavoriteTeam, useTeamsByAbbreviation } from "@/lib/use-teams";
@@ -28,6 +29,17 @@ function zoneOf(seed: number | null): { label: string; className: string } | nul
 }
 
 // Série ESPN ("W3" / "L2") en clair.
+// Avant le premier match de saison régulière, le classement ESPN montre
+// encore le bilan final de la saison passée : on le dit, sinon « 64V - 18D,
+// 2 défaites de suite » se lit comme la saison qui commence.
+function previousSeasonLabel(data: SeasonPicksOverview | undefined, now: number): string | null {
+  if (!data) return null;
+  const opener = data.deadline ? new Date(data.deadline).getTime() - 7 * 24 * 60 * 60 * 1000 : null;
+  if (opener !== null && now >= opener) return null;
+  const start = Number(data.season.slice(0, 4));
+  return `Saison ${start - 1}-${String(start).slice(2)}`;
+}
+
 function streakLabel(streak: string | null): string | null {
   const m = streak?.match(/^([WL])(\d+)$/);
   if (!m) return null;
@@ -210,6 +222,9 @@ export function FavoriteTeamCard({
 }) {
   const { team, isLoading } = useFavoriteTeam();
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
+  const [now] = useState(() => Date.now());
+  const { data: seasonPicks } = useQuery({ queryKey: ["season-picks"], queryFn: fetchSeasonPicks, staleTime: 5 * 60 * 1000 });
+  const pastSeason = previousSeasonLabel(seasonPicks, now);
 
   const rosterQuery = useQuery({
     queryKey: ["team-roster", team?.id],
@@ -285,6 +300,11 @@ export function FavoriteTeamCard({
             </p>
             <h2 className="truncate font-heading text-xl font-bold">{team.name}</h2>
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              {pastSeason && (
+                <span className="rounded-full border border-border px-2 py-px text-[10px] font-semibold uppercase tracking-wide">
+                  {pastSeason}
+                </span>
+              )}
               {team.wins !== null && team.losses !== null && (
                 <span className="font-mono font-semibold text-foreground">
                   {team.wins}V - {team.losses}D
