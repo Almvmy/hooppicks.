@@ -102,7 +102,18 @@ public class EmailService {
         // Laisse l'exception remonter : les deux appelants (reset mot de passe,
         // vérification email) attrapent déjà l'échec pour ne jamais bloquer le
         // flux principal : même comportement qu'avec l'ancien JavaMailSender.
-        restTemplate.postForEntity(apiUrl, new HttpEntity<>(body, headers), String.class);
+        String response = restTemplate.postForEntity(apiUrl, new HttpEntity<>(body, headers), String.class).getBody();
+        // Le messageId permet de retrouver l'envoi dans les journaux Brevo
+        // (Transactionnel > Logs) quand un e-mail accepté n'arrive pas.
+        log.info("E-mail « {} » accepté par Brevo pour {} : {}", subject, mask(to), response);
+    }
+
+    /** « jean.dupont@gmail.com » → « je***@gmail.com » : assez pour s'y retrouver, sans l'adresse en clair dans les logs. */
+    public static String mask(String email) {
+        if (email == null) return "?";
+        int at = email.indexOf('@');
+        if (at < 0) return "***";
+        return email.substring(0, Math.min(2, at)) + "***" + email.substring(at);
     }
 
     private record BrevoEmailRequest(Contact sender, List<Contact> to, String subject, String textContent) {

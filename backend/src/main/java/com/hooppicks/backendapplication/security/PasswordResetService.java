@@ -60,10 +60,18 @@ public class PasswordResetService {
      */
     @Transactional
     public void requestReset(String email) {
-        if (isRateLimited(email)) return;
+        // Tracé côté serveur seulement (adresse masquée) : la réponse au
+        // client reste identique, mais un e-mail jamais parti s'explique.
+        if (isRateLimited(email)) {
+            log.info("Reset mot de passe ignoré pour {} : plus de {} demandes en une heure", EmailService.mask(email), MAX_REQUESTS_PER_WINDOW);
+            return;
+        }
 
         Optional<User> userOpt = userRepository.findByEmail(email);
-        if (userOpt.isEmpty()) return;
+        if (userOpt.isEmpty()) {
+            log.info("Reset mot de passe ignoré pour {} : aucun compte avec cette adresse", EmailService.mask(email));
+            return;
+        }
 
         User user = userOpt.get();
         tokenRepository.deleteByUserId(user.getId()); // un seul token valide à la fois

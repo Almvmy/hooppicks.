@@ -13,4 +13,11 @@ class EmailServiceTest {
         assertThat(EmailService.cleanKey("'xkeysib-abc'")).isEqualTo("xkeysib-abc");
         assertThat(EmailService.cleanKey(null)).isEmpty();
     }
+
+    @Test
+    void masque_l_adresse_dans_les_logs() {
+        assertThat(EmailService.mask("jean.dupont@gmail.com")).isEqualTo("je***@gmail.com");
+        assertThat(EmailService.mask("a@b.co")).isEqualTo("a***@b.co");
+        assertThat(EmailService.mask(null)).isEqualTo("?");
+    }
 }
