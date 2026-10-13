@@ -4,9 +4,7 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 
 ## En attente (technique)
 
-- [ ] **Remettre le backend en ligne** : l'essai Railway a expiré, l'app en ligne ne répond plus (« Application not found »). La carte Wave est refusée (prépayée) : il faut une carte bancaire, ou l'espace de travail d'un proche qui paie et t'invite. Avant de migrer : sauvegarder la base si elle est encore accessible.
-- [ ] **Pousser les commits locaux** une fois les tests passés.
-- [ ] **Tester les notifications push** en production (HTTPS), sur iPhone depuis l'app ajoutée à l'écran d'accueil. Vérifier que le « subject » VAPID est renseigné.
+- [ ] **Activer et tester les notifications push** en production : ajouter `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans Railway (le push y est désactivé), puis tester sur iPhone depuis l'app ajoutée à l'écran d'accueil.
 
 ## Coupe NBA (avant mi-novembre)
 
