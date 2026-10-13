@@ -34,12 +34,28 @@ async function currentSubscription(): Promise<PushSubscription | null> {
   return registration.pushManager.getSubscription();
 }
 
+let serverKey: Promise<boolean> | null = null;
+
+// Serveur sans clés VAPID (404) : rien à proposer, sinon on inviterait à
+// activer des notifications qui n'arriveraient jamais.
+function serverHasPush(): Promise<boolean> {
+  serverKey ??= apiFetch<{ publicKey: string }>("/push/public-key").then(
+    () => true,
+    () => {
+      serverKey = null;
+      return false;
+    }
+  );
+  return serverKey;
+}
+
 export async function getPushState(): Promise<PushState> {
   // Testé avant les API : Safari iOS hors app installée n'expose même pas PushManager.
   if (isIosDevice() && !isStandalone()) return "needs-install";
   if (!hasPushApis()) return "unsupported";
   if (Notification.permission === "denied") return "denied";
-  return (await currentSubscription()) ? "enabled" : "disabled";
+  if (await currentSubscription()) return "enabled";
+  return (await serverHasPush()) ? "disabled" : "unavailable";
 }
 
 // Clé VAPID base64url → octets, le format attendu par pushManager.subscribe.

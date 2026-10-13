@@ -28,4 +28,6 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 
 ## Idées en vrac
 
+- [ ] **Badge « Dans la poche »** : app installée et notifications activées (petite récompense visible, sans points).
+
 <!-- Ajouter ici les nouvelles idées au fil de l'eau. -->

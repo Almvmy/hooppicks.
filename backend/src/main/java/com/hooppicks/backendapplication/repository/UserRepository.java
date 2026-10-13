@@ -24,6 +24,8 @@ public interface UserRepository extends JpaRepository<User, String> {
     // --- Vue d'ensemble de la console admin ---
     long countByCreatedAtAfter(java.time.Instant since);
 
+    long countByAppInstalledAtIsNotNull();
+
     @Query("SELECT COALESCE(SUM(u.walletBalance), 0) FROM User u")
     long sumWalletBalances();
 

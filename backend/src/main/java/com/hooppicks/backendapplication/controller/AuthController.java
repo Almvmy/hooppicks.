@@ -304,6 +304,20 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    /** Appelé par l'app ouverte depuis l'écran d'accueil ; seule la première fois est gardée. */
+    @PostMapping("/app-installed")
+    public ResponseEntity<Void> appInstalled(HttpServletRequest request) {
+        String userId = sessionStore.getUserIdFromRequest(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+        userRepository.findById(userId).ifPresent(user -> {
+            if (user.getAppInstalledAt() == null) {
+                user.setAppInstalledAt(java.time.Instant.now());
+                userRepository.save(user);
+            }
+        });
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();

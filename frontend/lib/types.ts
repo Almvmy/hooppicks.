@@ -365,6 +365,8 @@ export interface AdminOverview {
   matchesByType: Record<string, number>;
   rosterPlayers: number;
   playersWithoutStats: number;
+  usersWithPush: number;
+  usersWithApp: number;
   lastSyncAt: string | null;
   lastGamesSynced: number;
   lastBetsResolved: number;

@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPromptCapture } from "@/components/install-app";
+import { AppInstallReporter } from "@/components/app-nudges";
 import "./globals.css";
 
 // Polices dans le dépôt plutôt que next/font/google : celui-ci les retélécharge
@@ -77,6 +78,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             <InstallPromptCapture />
+            <AppInstallReporter />
           </QueryProvider>
         </ThemeProvider>
       </body>

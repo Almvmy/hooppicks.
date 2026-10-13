@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Coins, Lock, Ticket, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Coins, Lock, Smartphone, Ticket, UserPlus, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MATCH_TYPE_META } from "@/components/match-stage-badge";
@@ -89,6 +89,7 @@ export function AdminOverview() {
   }
 
   const fr = (n: number) => n.toLocaleString("fr-FR");
+  const percent = (part: number, total: number) => (total === 0 ? "0 %" : `${Math.round((part * 100) / total)} %`);
   // Une synchro planifiée tourne toutes les 5 min : au-delà de 15 min sans
   // nouvelle, quelque chose bloque (quota balldontlie, serveur relancé…).
   // Comparée à l'heure de la dernière réponse du serveur : rendu pur.
@@ -106,6 +107,21 @@ export function AdminOverview() {
           value={fr(data.pointsInCirculation)}
           hint={`${fr(data.pointsStaked7d)} misés cette semaine`}
           icon={Coins}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Kpi
+          label="App installée"
+          value={fr(data.usersWithApp)}
+          hint={`${percent(data.usersWithApp, data.totalUsers)} des joueurs l'ont ouverte depuis l'écran d'accueil`}
+          icon={Smartphone}
+        />
+        <Kpi
+          label="Notifications activées"
+          value={fr(data.usersWithPush)}
+          hint={`${percent(data.usersWithPush, data.totalUsers)} des joueurs, sur au moins un appareil`}
+          icon={BellRing}
         />
       </div>
 

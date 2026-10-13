@@ -3,6 +3,7 @@ package com.hooppicks.backendapplication.admin;
 import com.hooppicks.backendapplication.entity.BetStatus;
 import com.hooppicks.backendapplication.entity.MatchType;
 import com.hooppicks.backendapplication.nba.AdminSyncStatus;
+import com.hooppicks.backendapplication.push.PushSubscriptionRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import com.hooppicks.backendapplication.repository.RosterPlayerRepository;
@@ -37,6 +38,7 @@ public class AdminOverviewService {
             long pointsInCirculation, long pendingBets,
             long totalMatches, long lockedMatches, long unlinkedMatches, Map<String, Long> matchesByType,
             long rosterPlayers, long playersWithoutStats,
+            long usersWithPush, long usersWithApp,
             Instant lastSyncAt, int lastGamesSynced, int lastBetsResolved, String syncMode,
             List<DailyPoint> series
     ) {}
@@ -46,23 +48,27 @@ public class AdminOverviewService {
     private final MatchRepository matchRepository;
     private final RosterPlayerRepository rosterPlayerRepository;
     private final AdminSyncStatus adminSyncStatus;
+    private final PushSubscriptionRepository pushSubscriptionRepository;
     private final Clock clock;
 
     @Autowired
     public AdminOverviewService(UserRepository userRepository, BetRepository betRepository,
                                 MatchRepository matchRepository, RosterPlayerRepository rosterPlayerRepository,
-                                AdminSyncStatus adminSyncStatus) {
-        this(userRepository, betRepository, matchRepository, rosterPlayerRepository, adminSyncStatus, Clock.systemUTC());
+                                AdminSyncStatus adminSyncStatus, PushSubscriptionRepository pushSubscriptionRepository) {
+        this(userRepository, betRepository, matchRepository, rosterPlayerRepository, adminSyncStatus,
+                pushSubscriptionRepository, Clock.systemUTC());
     }
 
     AdminOverviewService(UserRepository userRepository, BetRepository betRepository,
                          MatchRepository matchRepository, RosterPlayerRepository rosterPlayerRepository,
-                         AdminSyncStatus adminSyncStatus, Clock clock) {
+                         AdminSyncStatus adminSyncStatus, PushSubscriptionRepository pushSubscriptionRepository,
+                         Clock clock) {
         this.userRepository = userRepository;
         this.betRepository = betRepository;
         this.matchRepository = matchRepository;
         this.rosterPlayerRepository = rosterPlayerRepository;
         this.adminSyncStatus = adminSyncStatus;
+        this.pushSubscriptionRepository = pushSubscriptionRepository;
         this.clock = clock;
     }
 
@@ -93,6 +99,8 @@ public class AdminOverviewService {
                 byType,
                 rosterPlayerRepository.count(),
                 rosterPlayerRepository.countByStatsUpdatedAtIsNull(),
+                pushSubscriptionRepository.countDistinctUsers(),
+                userRepository.countByAppInstalledAtIsNotNull(),
                 adminSyncStatus.getLastSyncAt(),
                 adminSyncStatus.getLastGamesSynced(),
                 adminSyncStatus.getLastBetsResolved(),

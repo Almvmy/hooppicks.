@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/matches",
-  "/bets",
-  "/leaderboard",
-  "/profile",
-  "/leagues",
-  "/duels",
-  "/saison",
-];
+import { isProtectedPath } from "@/lib/protected-routes";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
 
-  if (!isProtected) {
+  if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }
 

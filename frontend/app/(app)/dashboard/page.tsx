@@ -26,6 +26,7 @@ import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
 import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
+import { AppNudges } from "@/components/app-nudges";
 import { BoostCard } from "@/components/dashboard/boost-card";
 import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
 import { useBoost } from "@/lib/boost";
@@ -131,6 +132,7 @@ export default function DashboardPage() {
           toute la colonne au-delà de l'écran (page qui glissait sur téléphone). */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
+          <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
           <FavoriteTeamCard
             matches={matchesQuery.data}
             leaderboard={leaderboardQuery.data ?? []}

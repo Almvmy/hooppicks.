@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api/http";
+import { offerPushNotifications } from "@/components/app-nudges";
 import type { Match } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -22,12 +23,17 @@ export function FollowMatchButton({ match, className }: { match: Match; classNam
 
   const mutation = useMutation({
     mutationFn: (follow: boolean) => apiFetch<void>(`/matches/${match.id}/follow`, { method: follow ? "POST" : "DELETE" }),
-    onSuccess: (_, follow) => {
+    onSuccess: async (_, follow) => {
       queryClient.setQueryData<string[]>(["follows"], (ids = []) =>
         follow ? [...ids, match.id] : ids.filter((id) => id !== match.id)
       );
       if (follow) {
-        toast.success("Match suivi");
+        const offered = await offerPushNotifications(queryClient, {
+          title: "Match suivi",
+          description: "Active les notifications pour recevoir les fins de quart-temps et le résultat, même app fermée.",
+          iosHint: true,
+        });
+        if (!offered) toast.success("Match suivi");
       }
     },
     onError: (error) => toast.error(error instanceof Error && error.message ? error.message : "Impossible de suivre ce match."),

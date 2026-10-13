@@ -26,7 +26,7 @@ export function InstallPromptCapture() {
   return null;
 }
 
-function useInstallState() {
+export function useInstallState() {
   return useSyncExternalStore(subscribeInstallState, getInstallState, getServerInstallState);
 }
 
@@ -39,7 +39,7 @@ const IOS_STEPS = [
   { icon: CheckCircle2, text: "Touche « Ajouter » : HoopPicks s'ouvre ensuite en plein écran, comme une app." },
 ];
 
-function IosInstallDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function IosInstallDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">

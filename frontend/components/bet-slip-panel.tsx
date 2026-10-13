@@ -13,6 +13,7 @@ import type { BetSelection } from "@/lib/types";
 import { cn, formatBankrollReset, WEEKLY_BANKROLL, formatOdds } from "@/lib/utils";
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 import { isBoostedSelection, useBoost } from "@/lib/boost";
+import { offerPushNotifications } from "@/components/app-nudges";
 
 export function BetSlipPanel() {
   const { selections, stake, setStake, toggleSelection, clear, totalOdds, potentialPayout } =
@@ -41,11 +42,15 @@ export function BetSlipPanel() {
     const mutation = useMutation({
     mutationFn: ({ selections, stake }: { selections: BetSelection[]; stake: number }) =>
       placeBet(selections, stake),
-    onSuccess: () => {
-      toast.success("Ticket validé !");
+    onSuccess: async () => {
       clear();
       queryClient.invalidateQueries({ queryKey: ["bets"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      const offered = await offerPushNotifications(queryClient, {
+        title: "Ticket validé !",
+        description: "Active les notifications pour connaître le résultat dès qu'il tombe.",
+      });
+      if (!offered) toast.success("Ticket validé !");
     },
     onError: (error) => {
       // Le serveur explique le refus en clair (match commencé, solde…) :

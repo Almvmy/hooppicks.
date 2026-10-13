@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginUser } from "@/lib/api/auth";
 
-export default function LoginPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ from?: string; expired?: string }> }) {
   const router = useRouter();
   // Page demandée avant la connexion (lien d'invitation de ligue…) : on y
   // retourne après, au lieu de toujours renvoyer au tableau de bord.
-  const { from } = use(searchParams);
+  const { from, expired } = use(searchParams);
   const destination = safeRedirectTarget(from);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,6 +41,11 @@ export default function LoginPage({ searchParams }: { searchParams: Promise<{ fr
         <CardTitle className="font-heading text-xl">Connexion</CardTitle>
       </CardHeader>
       <CardContent>
+        {expired && (
+          <p className="mb-4 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
+            Ta session a expiré, reconnecte-toi.
+          </p>
+        )}
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Adresse e-mail</Label>

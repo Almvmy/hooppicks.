@@ -76,4 +76,9 @@ public class User {
     @CreationTimestamp
     @Column(columnDefinition = "timestamptz")
     private Instant createdAt;
+
+    // Première ouverture depuis l'app ajoutée à l'écran d'accueil : sert à
+    // mesurer, dans la console admin, si les invitations à installer marchent.
+    @Column(columnDefinition = "timestamptz")
+    private Instant appInstalledAt;
 }
