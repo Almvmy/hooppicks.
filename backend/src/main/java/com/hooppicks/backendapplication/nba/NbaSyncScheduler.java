@@ -24,6 +24,7 @@ import java.util.stream.LongStream;
 public class NbaSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(NbaSyncScheduler.class);
+    static final int DAYS_AHEAD = 7;
 
     private final NbaSyncService nbaSyncService;
     private final AdminSyncStatus adminSyncStatus;
@@ -60,9 +61,11 @@ public class NbaSyncScheduler {
             LocalDate start = LocalDate.parse(windowStart);
             dates = LongStream.rangeClosed(0, windowDays).mapToObj(start::plusDays).toList();
         } else {
-            // Mode normal (saison en cours) : hier/aujourd'hui/demain.
+            // Mode normal : d'hier à dans 7 jours. On peut parier sur toute la
+            // semaine de jeu (jusqu'au lundi 12h GMT) : avec hier/aujourd'hui/
+            // demain seulement, les matchs suivants n'existaient pas encore.
             LocalDate today = LocalDate.now();
-            dates = List.of(today.minusDays(1), today, today.plusDays(1));
+            dates = LongStream.rangeClosed(-1, DAYS_AHEAD).mapToObj(today::plusDays).toList();
         }
 
         String mode = useFixedWindow ? "fixe " + windowStart : "glissante";

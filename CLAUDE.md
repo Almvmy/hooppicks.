@@ -23,7 +23,7 @@ Pronostics NBA en points virtuels (pas d'argent réel). Monorepo `backend/` (Spr
 - `@Transactional` + verrou pessimiste (`UserRepository.findByIdForUpdate`, `SELECT ... FOR UPDATE`) pour empêcher un double-débit sur double-clic/double-onglet.
 - Un seul match par ticket (`Set<matchId>` dédupliqué côté serveur) : deux issues contradictoires sur le même match n'ont pas de sens.
 - Les cotes appliquées viennent toujours des matchs rechargés côté serveur, jamais de `request.selections().odds()` envoyé par le client (protection contre une cote périmée renvoyée volontairement).
-- Ne sont ouverts aux paris que les matchs qui commencent avant la fin de la semaine de jeu (lundi 12h GMT) : un pari compte pour la semaine où il est posé, sinon on misait le solde de fin de semaine sur des matchs des semaines suivantes et le score d'une semaine close bougeait encore. Même règle côté frontend (`isBettable`).
+- Ne sont ouverts aux paris que les matchs qui commencent avant la fin de la semaine de jeu (lundi 12h GMT) : un pari compte pour la semaine où il est posé, sinon on misait le solde de fin de semaine sur des matchs des semaines suivantes et le score d'une semaine close bougeait encore. Même règle côté frontend (`isBettable`). Pour que ces matchs existent, la synchro couvre d'hier à J+7 (`NbaSyncScheduler.DAYS_AHEAD`, pages balldontlie suivies par curseur, 3 au plus).
 - 8 sélections au plus, mise minimum 10 pts (`PlaceBetRequest`). Libellés de sélection et de match construits côté serveur (`BetController.selectionLabel`), jamais repris du client : ils s'affichent dans l'historique et les notifications.
 - Couvert par [`BetControllerTest`](backend/src/test/java/com/hooppicks/backendapplication/controller/BetControllerTest.java).
 
