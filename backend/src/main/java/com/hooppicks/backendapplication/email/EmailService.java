@@ -1,5 +1,8 @@
 package com.hooppicks.backendapplication.email;
 
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +22,8 @@ import java.util.List;
 @Service
 public class EmailService {
 
+    private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+
     private final RestTemplate restTemplate;
 
     @Value("${brevo.api-key}")
@@ -34,6 +39,32 @@ public class EmailService {
 
     public EmailService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+    }
+
+    /**
+     * Une clé collée dans les variables d'hébergement arrive souvent avec un
+     * retour à la ligne ou des guillemets : Brevo la refuse alors en 401 sans
+     * aucun message, ce qui ressemble à une clé fausse.
+     */
+    static String cleanKey(String raw) {
+        if (raw == null) return "";
+        String key = raw.strip();
+        if (key.length() >= 2 && (key.startsWith("\"") && key.endsWith("\"") || key.startsWith("'") && key.endsWith("'"))) {
+            key = key.substring(1, key.length() - 1).strip();
+        }
+        return key;
+    }
+
+    // Diagnostic au démarrage sans jamais afficher la clé : son préfixe dit
+    // si c'est bien une clé API (les clés SMTP ne marchent pas avec l'API).
+    @PostConstruct
+    void logConfiguration() {
+        String key = cleanKey(apiKey);
+        log.info("Brevo : clé {}… ({} caractères), expéditeur {}",
+                key.length() >= 8 ? key.substring(0, 8) : "(vide)", key.length(), fromAddress);
+        if (!key.startsWith("xkeysib-")) {
+            log.warn("Clé Brevo inattendue : une clé API commence par « xkeysib- » (une clé SMTP « xsmtpsib- » est refusée par l'API)");
+        }
     }
 
     public void sendPasswordResetEmail(String to, String username, String resetLink) {
@@ -57,7 +88,7 @@ public class EmailService {
 
     private void send(String to, String subject, String textContent) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("api-key", apiKey);
+        headers.set("api-key", cleanKey(apiKey));
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
