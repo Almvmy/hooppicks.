@@ -21,7 +21,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // désactivé pour l'instant : simplifie l'apprentissage, pas pour la prod
+                // Sans jeton CSRF : la protection vient du cookie de session en
+                // SameSite=Lax (application-prod.properties), qu'aucun autre site
+                // ne peut joindre à une requête POST/DELETE.
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll() // on gère nous-mêmes la protection via SessionStore/cookie, pas via Spring Security

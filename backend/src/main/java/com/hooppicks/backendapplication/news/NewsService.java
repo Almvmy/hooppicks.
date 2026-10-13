@@ -20,8 +20,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,6 +59,14 @@ public class NewsService {
     private volatile List<NewsItemDto> cache = List.of();
     private volatile Instant cachedAt = Instant.EPOCH;
     private final AtomicBoolean refreshing = new AtomicBoolean(false);
+    // Texte anglais → français. Borné : quelques jours d'articles suffisent,
+    // les plus anciens sortent du flux de toute façon.
+    private final Map<String, String> translations = Collections.synchronizedMap(new LinkedHashMap<>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 400;
+        }
+    });
 
     public NewsService(RestTemplate restTemplate, DeepLService deepLService, EspnStatsClient espnStatsClient) {
         this.restTemplate = restTemplate;
@@ -173,30 +184,36 @@ public class NewsService {
     }
 
     /**
-     * Traduit titre + description en un seul appel DeepL (2 textes par
-     * article) plutôt qu'un appel par champ : le flux entier tient dans une
-     * seule requête, ce qui compte vu que ça tourne à chaque rafraîchissement
-     * de cache (15 min), pas par visite de page.
+     * Traduit titre + description en un seul appel DeepL, et seulement les
+     * textes jamais vus : le flux change peu d'un rafraîchissement à l'autre
+     * (15 min). Tout retraduire à chaque fois dépassait le quota gratuit
+     * (500 000 caractères par mois) en une journée de trafic, et les actus
+     * repassaient en anglais.
      */
-    private List<NewsItemDto> translate(List<NewsItemDto> items) {
+    List<NewsItemDto> translate(List<NewsItemDto> items) {
         if (items.isEmpty()) return items;
 
-        List<String> texts = new ArrayList<>();
+        List<String> missing = new ArrayList<>();
         for (NewsItemDto item : items) {
-            texts.add(item.title());
-            texts.add(item.description() != null ? item.description() : "");
+            for (String text : new String[] {item.title(), item.description()}) {
+                if (text != null && !text.isBlank() && !translations.containsKey(text) && !missing.contains(text)) {
+                    missing.add(text);
+                }
+            }
+        }
+        if (!missing.isEmpty()) {
+            List<String> translated = deepLService.translateToFrench(missing);
+            if (translated.size() == missing.size()) {
+                for (int i = 0; i < missing.size(); i++) translations.put(missing.get(i), translated.get(i));
+            }
         }
 
-        List<String> translated = deepLService.translateToFrench(texts);
-        if (translated.size() != texts.size()) return items;
-
         List<NewsItemDto> result = new ArrayList<>();
-        for (int i = 0; i < items.size(); i++) {
-            NewsItemDto item = items.get(i);
-            String translatedDescription = translated.get(i * 2 + 1);
+        for (NewsItemDto item : items) {
+            String description = item.description() == null ? null : translations.getOrDefault(item.description(), item.description());
             result.add(item.withText(
-                    translated.get(i * 2),
-                    translatedDescription.isBlank() ? null : translatedDescription
+                    translations.getOrDefault(item.title(), item.title()),
+                    description == null || description.isBlank() ? null : description
             ));
         }
         return result;

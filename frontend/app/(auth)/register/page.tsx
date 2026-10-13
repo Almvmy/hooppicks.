@@ -53,7 +53,7 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Mot de passe</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={isSubmitting} className="mt-2 w-full">

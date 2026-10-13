@@ -6,6 +6,15 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 
 - [ ] **Tester les notifications push** sur iPhone depuis l'app ajoutée à l'écran d'accueil (clés VAPID en place sur Railway).
 
+## Lancement public
+
+- [ ] **Sauvegardes de la base** : activer les sauvegardes du service Postgres sur Railway (onglet Backups).
+- [ ] **Suivi des erreurs** : créer un projet Sentry gratuit et renseigner `SENTRY_DSN` (Railway) et `NEXT_PUBLIC_SENTRY_DSN` (Vercel).
+- [ ] **Clé admin** : vérifier que `ADMIN_API_KEY` est longue et aléatoire (au moins 32 caractères).
+- [ ] **Quota d'e-mails Brevo** (300 par jour en gratuit) : surveiller les inscriptions au lancement ; au-delà, les e-mails de vérification ne partent plus (non bloquant).
+- [ ] **Inscriptions en masse** : limiter le nombre d'inscriptions par adresse IP si des comptes robots apparaissent.
+- [ ] **Redéploiements** : chaque mise en ligne du backend déconnecte tout le monde (sessions en mémoire). Éviter de déployer pendant les matchs ; à terme, garder les sessions en base.
+
 ## Coupe NBA (avant mi-novembre)
 
 - [ ] **Pronostics de la Coupe** : avant le premier match, vainqueur de chaque poule, 2 repêchés, champion. Classement à part, sur le modèle des pronostics de saison (questions, verrou, réponses saisies par un admin).

@@ -27,8 +27,8 @@ function ResetPasswordForm() {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
-    if (password.length < 6) {
-      setError("Le mot de passe doit faire au moins 6 caractères.");
+    if (password.length < 8) {
+      setError("Le mot de passe doit faire au moins 8 caractères.");
       return;
     }
 

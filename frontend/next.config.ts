@@ -7,6 +7,23 @@ const nextConfig: NextConfig = {
   // localhost, la page s'affiche mais rien ne marche (connexion impossible).
   // Adresses de réseau local seulement, et sans effet en production.
   allowedDevOrigins: ["10.*.*.*", "192.168.*.*", "172.*.*.*"],
+  // Pas de CSP : images ESPN, Sentry et styles en ligne la rendraient longue
+  // et fragile. Ces en-têtes-là couvrent l'essentiel sans rien casser :
+  // l'app ne peut pas être affichée dans une iframe d'un autre site
+  // (piège à clics sur « Valider le ticket »).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
   experimental: {
     // Plus de drapeau viewTransition : depuis Next 16.4, les transitions de
     // page (<ViewTransition> de React) marchent sans configuration.
