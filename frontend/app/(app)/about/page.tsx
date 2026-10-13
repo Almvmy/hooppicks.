@@ -63,8 +63,8 @@ export default function AboutPage() {
         <CardContent className="text-sm text-muted-foreground">
           <p>
             Une question, un bug à signaler ? Écris-nous à{" "}
-            <a href="mailto:almamyksg@gmail.com" className="text-primary hover:underline">
-              almamyksg@gmail.com
+            <a href="mailto:hooppicks.app@gmail.com" className="text-primary hover:underline">
+              hooppicks.app@gmail.com
             </a>
             .
           </p>

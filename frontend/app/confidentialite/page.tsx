@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 // Page publique (hors espace connecté) : elle doit pouvoir être lue avant
 // de créer un compte.
-const CONTACT = "almamyksg@gmail.com";
+const CONTACT = "hooppicks.app@gmail.com";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

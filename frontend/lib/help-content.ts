@@ -2,7 +2,7 @@
 // code (BetController, BetResolutionService, NbaSyncScheduler…) : à mettre
 // à jour en même temps que les règles, sinon l'aide ment.
 
-export const SUPPORT_EMAIL = "almamyksg@gmail.com";
+export const SUPPORT_EMAIL = "hooppicks.app@gmail.com";
 
 export interface FaqItem {
   id: string;

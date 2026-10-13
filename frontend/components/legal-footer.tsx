@@ -16,7 +16,7 @@ export function LegalFooter({ children }: { children?: React.ReactNode }) {
         <Link href="/confidentialite" className="hover:text-foreground">
           Confidentialité
         </Link>
-        <a href="mailto:almamyksg@gmail.com" className="hover:text-foreground">
+        <a href="mailto:hooppicks.app@gmail.com" className="hover:text-foreground">
           Contact
         </a>
       </nav>
