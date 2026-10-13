@@ -4,7 +4,7 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 
 ## En attente (technique)
 
-- [ ] **Activer et tester les notifications push** en production : ajouter `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` dans Railway (le push y est désactivé), puis tester sur iPhone depuis l'app ajoutée à l'écran d'accueil.
+- [ ] **Tester les notifications push** sur iPhone depuis l'app ajoutée à l'écran d'accueil (clés VAPID en place sur Railway).
 
 ## Coupe NBA (avant mi-novembre)
 
