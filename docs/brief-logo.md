@@ -31,7 +31,8 @@ App française de pronostics NBA en **points virtuels** (pas d'argent réel) : o
 - Les dégradés et effets indispensables à la lecture : le logo doit marcher à plat.
 
 ## Existant
-Monogramme « HP » posé sur un ballon (`frontend/app/LogoSymbol.tsx`, `app/icon.svg`, `app/apple-icon.tsx`, `app/brand-icon.tsx`, `app/pwa-icon`), jugé pas assez fort.
+Ancien monogramme « HP » posé sur un ballon, jugé pas assez fort : remplacé en octobre 2026 par **le tir qui entre dans le panier** (ballon dans la jante, filet, tir en pointillés). Kit complet (SVG, PNG, favicon, guide d'usage) dans `docs/logo/`. Dans le code : `frontend/app/logo-geometry.ts` (dessin), `logo-mark.tsx` (composant), `LogoSymbol.tsx` (interface), `brand-icon.tsx` + `apple-icon.tsx` + `pwa-icon` (icônes d'app), `icon.svg` et `favicon.ico`.
+Trois déclinaisons du symbole : « mid » (36 à 72 px, avec le tir en pointillés : barre du haut, navigation d'accueil, connexion), « full » (≥ 72 px, accueil) et « small » (≤ 32 px, sans pointillés).
 
 ## Avant d'aller plus loin
 Vérifier que le nom « HoopPicks » n'est pas déjà déposé (INPI, EUIPO) : une app au nom très proche existe.

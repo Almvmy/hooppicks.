@@ -18,7 +18,7 @@ export default function manifest(): MetadataRoute.Manifest {
       },
       { src: "/pwa-icon/192", sizes: "192x192", type: "image/png" },
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png" },
-      // Le tile orange plein remplit déjà tout le carré, et le monogramme
+      // La tuile Nuit remplit tout le carré et le symbole (60 % de la largeur)
       // tient dans la zone sûre centrale (80 %) : utilisable tel quel quand
       // Android découpe l'icône en cercle ou en goutte.
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png", purpose: "maskable" },

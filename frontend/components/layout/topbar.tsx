@@ -50,7 +50,7 @@ export function Topbar() {
       {/* La topbar porte la marque en permanence désormais (plus dans la
           sidebar) : une seule barre continue en haut, sidebar en dessous. */}
       <Link href="/dashboard" className="flex items-center gap-2">
-        <LogoSymbol variant="compact" className="h-7 w-7 shrink-0" />
+        <LogoSymbol variant="mid" className="h-10 w-10 shrink-0" />
         {/* Wordmark caché sous sm : à 402px de large, le garder ici fait
             toucher le solde et la cloche. */}
         <span className="hidden font-heading text-xl font-bold tracking-tight sm:inline">

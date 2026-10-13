@@ -1,26 +1,21 @@
+import { LogoMark } from "@/app/logo-mark";
+
 type LogoSymbolProps = {
   className?: string;
-  /** Historique : "full" ajoutait 2 coutures de plus que "compact" au check.
-   *  Le monogramme HP reste lisible avec les 4 coutures même à 20-28px (testé),
-   *  donc les deux variantes rendent désormais la même chose : le prop reste
-   *  pour ne pas casser les appelants existants. */
-  variant?: "full" | "compact";
+  /** "compact" (défaut) : version simplifiée, sans pointillés, pour les
+   *  petites tailles (≤ 32 px).
+   *  "mid" : version moyenne du kit, pour les en-têtes (36 à 72 px).
+   *  "full" : avec le tir en pointillés fins, à partir de 72 px. */
+  variant?: "full" | "mid" | "compact";
 };
 
-export const LogoSymbol = ({ className = "w-10 h-10" }: LogoSymbolProps) => (
-  <svg viewBox="0 0 184 184" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="92" cy="92" r="92" fill="#FF7A1A" />
-    <path d="M92,0 V184" stroke="#0B1120" strokeWidth="5" opacity="0.54" />
-    <path d="M0,92 H184" stroke="#0B1120" strokeWidth="5" opacity="0.6" />
-    <path d="M24.25,29.77c40,35,38.83,88.18-1.17,123.18" stroke="#0B1120" strokeWidth="5" opacity="0.6" />
-    <path d="M155.31,25.25c-40,35-38.06,96.55,1.94,131.55" stroke="#0B1120" strokeWidth="5" opacity="0.6" />
-    <path
-      d="M27.65,122.93V46.28h13.51v32.19h30.83v-32.19h13.51v76.65h-13.51v-32.41h-30.83v32.41h-13.51Z"
-      fill="#F1F5F9"
-    />
-    <path
-      d="M100.92,122.93V46.28h31.61c4.91,0,9.23.95,12.96,2.85,3.72,1.9,6.66,4.58,8.82,8.05,2.16,3.47,3.24,7.57,3.24,12.32v1.53c0,4.67-1.1,8.76-3.29,12.26-2.2,3.5-5.18,6.21-8.94,8.1-3.76,1.9-8.02,2.85-12.79,2.85h-18.09v28.69h-13.51ZM114.43,82.31h16.75c3.87,0,6.98-1.02,9.33-3.07,2.35-2.04,3.52-4.85,3.52-8.43v-1.09c0-3.58-1.15-6.39-3.46-8.43-2.31-2.04-5.44-3.07-9.38-3.07h-16.75v24.09Z"
-      fill="#0B1120"
-    />
-  </svg>
+// Symbole de marque : un tir qui entre dans le panier. La jante et le filet
+// prennent la couleur du texte (--foreground), donc blanc en Nuit, marine
+// sur le sable ; le ballon reste orange de marque dans les deux thèmes.
+export const LogoSymbol = ({ className = "w-10 h-10", variant = "compact" }: LogoSymbolProps) => (
+  <LogoMark
+    variant={variant === "full" ? "full" : variant === "mid" ? "medium" : "small"}
+    className={`text-foreground ${className}`}
+    arcClassName="fill-[#00E5FF] light:fill-[#0A6577]"
+  />
 );

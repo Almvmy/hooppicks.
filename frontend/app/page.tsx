@@ -132,7 +132,7 @@ export default async function HomePage() {
             Saison NBA {season} · Points virtuels
           </span>
           <h1 className="flex items-center gap-3 font-heading text-5xl font-bold tracking-tight sm:text-6xl">
-            <LogoSymbol className="h-12 w-12 shrink-0 sm:h-14 sm:w-14" />
+            <LogoSymbol variant="full" className="h-16 w-16 shrink-0 sm:h-20 sm:w-20" />
             <span>
               Hoop<span className="text-primary">Picks</span>
             </span>

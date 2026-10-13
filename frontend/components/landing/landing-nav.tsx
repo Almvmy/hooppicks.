@@ -38,7 +38,7 @@ export function LandingNav() {
   return (
     <header className="glass-chrome sticky top-0 z-30 flex h-16 items-center gap-4 px-4 sm:px-6">
       <Link href="/" className="flex shrink-0 items-center gap-2 font-heading text-lg font-bold">
-        <LogoSymbol className="h-7 w-7" />
+        <LogoSymbol variant="mid" className="h-10 w-10" />
         <span className="hidden sm:inline">
           Hoop<span className="text-primary">Picks</span>
         </span>
