@@ -401,7 +401,26 @@ export type NotificationType =
   | "system"
   | "duel"
   | "bet_progress"
-  | "match_follow";
+  | "match_follow"
+  | "feedback_reply";
+
+export type FeedbackCategory = "BUG" | "QUESTION" | "IDEA" | "OTHER";
+export type FeedbackStatus = "OPEN" | "ANSWERED" | "CLOSED";
+
+/** Message envoyé depuis « Nous écrire ». Pseudo, page et appareil : console admin seulement. */
+export interface Feedback {
+  id: string;
+  category: FeedbackCategory;
+  message: string;
+  createdAt: string;
+  status: FeedbackStatus;
+  reply: string | null;
+  repliedAt: string | null;
+  username?: string | null;
+  page?: string | null;
+  device?: string | null;
+  appInstalled?: boolean | null;
+}
 
 export interface AppNotification {
   id: string;

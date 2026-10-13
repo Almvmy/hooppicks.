@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default function GlobalError({
@@ -10,6 +12,8 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname();
+
   useEffect(() => {
     // Journalisation console pour le debug ; à remplacer par un outil de
     // suivi d'erreurs (Sentry, etc.) le jour où l'app en a un.
@@ -29,6 +33,12 @@ export default function GlobalError({
       <Button size="lg" className="mt-2" onClick={() => reset()}>
         Réessayer
       </Button>
+      <Link
+        href={`/contact?type=BUG&depuis=${encodeURIComponent(pathname)}`}
+        className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+      >
+        Signaler le problème
+      </Link>
     </div>
   );
 }

@@ -50,7 +50,7 @@ export function AdminAuditLog() {
     <Card>
       <CardContent className="flex flex-col gap-4 pt-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">Qui a fait quoi depuis la console, les 200 dernières actions.</p>
+          <p className="text-sm text-muted-foreground">200 dernières actions</p>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrer le journal">
             {CATEGORIES.map((c) => (
               <button

@@ -142,6 +142,13 @@ export const FAQ: FaqGroup[] = [
     title: "Compte et application",
     items: [
       {
+        id: "nous-ecrire",
+        question: "Comment signaler un bug ou poser une question ?",
+        answer:
+          "Depuis « Nous écrire », dans le menu de ton avatar : choisis le type de message (bug, question, idée…) et écris-nous. On te répond dans ta cloche, et tu retrouves toute la conversation sur cette page.",
+        link: { href: "/contact", label: "Nous écrire" },
+      },
+      {
         id: "email-verification",
         question: "Je n'ai pas reçu l'e-mail de confirmation.",
         answer:

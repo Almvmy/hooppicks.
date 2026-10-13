@@ -36,7 +36,6 @@ export function AdminSeasonResults() {
       <CardContent className="flex flex-col gap-4">
         <div>
           <h2 className="font-heading text-base font-bold">Résultats des pronostics de saison {data.season}</h2>
-          <p className="text-sm text-muted-foreground">À saisir une fois la réponse connue : le classement des pronostics de saison se met à jour aussitôt.</p>
         </div>
         {data.questions.map((q) => {
           const value = draft[q.key] ?? data.results[q.key] ?? "";

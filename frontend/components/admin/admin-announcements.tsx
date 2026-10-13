@@ -53,15 +53,12 @@ export function AdminAnnouncements() {
             <Megaphone className="h-4 w-4 text-primary" />
             Nouvelle annonce
           </p>
-          <p className="text-xs text-muted-foreground">
-            Arrive dans la cloche de tous les joueurs. Maintenance, nouveauté, début des playoffs… Reste bref.
-          </p>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             maxLength={MAX_LENGTH + 20}
             rows={4}
-            placeholder="Ex. : Les playoffs commencent samedi : les cotes des séries sont en ligne !"
+            placeholder="Message"
             className="glass-inset w-full resize-y rounded-xl px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Message de l'annonce"
           />

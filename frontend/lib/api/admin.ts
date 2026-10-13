@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import { AdminAuditEntry, AdminBet, AdminMatch, AdminOverview, AdminStatus, AdminUser, Match } from "@/lib/types";
+import { AdminAuditEntry, AdminBet, AdminMatch, AdminOverview, AdminStatus, AdminUser, Feedback, Match } from "@/lib/types";
 
 export async function fetchAdminStatus(): Promise<AdminStatus> {
   return apiFetch<AdminStatus>("/console/status");
@@ -98,4 +98,16 @@ export async function adjustWallet(userId: string, amount: number, reason: strin
 
 export async function sendAnnouncement(message: string, push: boolean): Promise<{ recipients: number }> {
   return apiFetch("/console/announcements", { method: "POST", body: JSON.stringify({ message, push }) });
+}
+
+export async function fetchAdminFeedback(status?: string): Promise<{ items: Feedback[]; openCount: number }> {
+  return apiFetch(`/console/feedback${status ? `?status=${status}` : ""}`);
+}
+
+export async function replyFeedback(id: string, reply: string): Promise<Feedback> {
+  return apiFetch<Feedback>(`/console/feedback/${id}/reply`, { method: "POST", body: JSON.stringify({ reply }) });
+}
+
+export async function closeFeedback(id: string, closed: boolean): Promise<Feedback> {
+  return apiFetch<Feedback>(`/console/feedback/${id}/close?closed=${closed}`, { method: "POST" });
 }

@@ -7,6 +7,7 @@ export const PROTECTED_PREFIXES = [
   "/leagues",
   "/duels",
   "/saison",
+  "/contact",
 ];
 
 export function isProtectedPath(pathname: string): boolean {

@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, LayoutDashboard, Medal, Megaphone, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Medal, Megaphone, MessageSquare, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { AdminSyncPanel } from "@/components/admin/admin-sync-panel";
@@ -11,9 +11,11 @@ import { AdminMatchesPanel } from "@/components/admin/admin-matches-panel";
 import { AdminPendingBetsPanel } from "@/components/admin/admin-pending-bets-panel";
 import { AdminUsersPanel } from "@/components/admin/admin-users-panel";
 import { AdminAnnouncements } from "@/components/admin/admin-announcements";
+import { AdminFeedbackPanel } from "@/components/admin/admin-feedback-panel";
 import { AdminAuditLog } from "@/components/admin/admin-audit-log";
 import { AdminSeasonResults } from "@/components/admin/admin-season-results";
 import { fetchProfile } from "@/lib/api/auth";
+import { fetchAdminFeedback } from "@/lib/api/admin";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -22,6 +24,7 @@ const TABS = [
   { value: "matchs", label: "Matchs", icon: CalendarDays },
   { value: "paris", label: "Paris", icon: Ticket },
   { value: "utilisateurs", label: "Utilisateurs", icon: Users },
+  { value: "messages", label: "Messages", icon: MessageSquare },
   { value: "annonces", label: "Annonces", icon: Megaphone },
   { value: "saison", label: "Saison", icon: Medal },
   { value: "journal", label: "Journal", icon: ScrollText },
@@ -36,6 +39,13 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
   const [tab, setTabState] = useState<Tab>(TABS.some((t) => t.value === onglet) ? (onglet as Tab) : "apercu");
 
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
+  // Même clé que l'onglet Messages : le compteur se met à jour dès qu'un message est traité.
+  const feedbackQuery = useQuery({
+    queryKey: ["admin-feedback", "OPEN"],
+    queryFn: () => fetchAdminFeedback("OPEN"),
+    enabled: !!profileQuery.data?.isAdmin,
+  });
+  const openFeedback = feedbackQuery.data?.openCount ?? 0;
 
   useEffect(() => {
     if (profileQuery.data && !profileQuery.data.isAdmin) {
@@ -49,7 +59,7 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
   }
 
   if (profileQuery.isError) {
-    return <p className="text-destructive">Impossible de vérifier tes accès. Recharge la page ou reconnecte-toi.</p>;
+    return <p className="text-destructive">Accès impossible à vérifier. Recharger la page.</p>;
   }
   if (profileQuery.isLoading || !profileQuery.data?.isAdmin) {
     return <BasketballLoader label="Vérification des accès..." />;
@@ -62,9 +72,6 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
           <ShieldCheck className="h-6 w-6 text-primary" />
           Console admin
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Chaque action qui modifie quelque chose est enregistrée dans le journal, avec ton pseudo.
-        </p>
       </div>
 
       <div className="glass-chrome bleed py-3 md:sticky md:top-16 md:z-20">
@@ -83,6 +90,9 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
             >
               <Icon className="h-3.5 w-3.5" />
               {label}
+              {value === "messages" && openFeedback > 0 && (
+                <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold leading-4 text-primary-foreground">{openFeedback}</span>
+              )}
             </button>
           ))}
         </div>
@@ -93,6 +103,7 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
       {tab === "matchs" && <AdminMatchesPanel />}
       {tab === "paris" && <AdminPendingBetsPanel />}
       {tab === "utilisateurs" && <AdminUsersPanel />}
+      {tab === "messages" && <AdminFeedbackPanel />}
       {tab === "annonces" && <AdminAnnouncements />}
       {tab === "saison" && <AdminSeasonResults />}
       {tab === "journal" && <AdminAuditLog />}

@@ -8,6 +8,7 @@ import com.hooppicks.backendapplication.bet.BetResolutionService;
 import com.hooppicks.backendapplication.espn.EspnPlayerStatsService;
 import com.hooppicks.backendapplication.espn.EspnRosterService;
 import com.hooppicks.backendapplication.espn.EspnStandingsService;
+import com.hooppicks.backendapplication.feedback.FeedbackService;
 import com.hooppicks.backendapplication.dto.AdminBetDto;
 import com.hooppicks.backendapplication.dto.AdminMatchDto;
 import com.hooppicks.backendapplication.dto.AdminStatusDto;
@@ -70,6 +71,7 @@ public class AdminConsoleController {
     private final com.hooppicks.backendapplication.season.SeasonPickService seasonPickService;
     private final AdminActionsService actionsService;
     private final AdminOverviewService overviewService;
+    private final FeedbackService feedbackService;
 
     public AdminConsoleController(SessionStore sessionStore, UserRepository userRepository,
                                    MatchRepository matchRepository, BetRepository betRepository,
@@ -78,7 +80,9 @@ public class AdminConsoleController {
                                    EspnRosterService espnRosterService, EspnStandingsService espnStandingsService,
                                    EspnPlayerStatsService espnPlayerStatsService, AdminAuditService auditService,
                                    AdminActionsService actionsService, AdminOverviewService overviewService,
-                                   com.hooppicks.backendapplication.season.SeasonPickService seasonPickService) {
+                                   com.hooppicks.backendapplication.season.SeasonPickService seasonPickService,
+                                   FeedbackService feedbackService) {
+        this.feedbackService = feedbackService;
         this.seasonPickService = seasonPickService;
         this.sessionStore = sessionStore;
         this.userRepository = userRepository;
@@ -406,6 +410,32 @@ public class AdminConsoleController {
         if (access.denied() != null) return access.denied();
         return run(() -> Map.of("recipients",
                 actionsService.announce(body.message(), Boolean.TRUE.equals(body.push()), access.admin())));
+    }
+
+    // --- Messages des joueurs (« Nous écrire ») ------------------------------
+
+    public record FeedbackReplyRequest(String reply) {}
+
+    @GetMapping("/feedback")
+    public ResponseEntity<?> listFeedback(@RequestParam(required = false) String status, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return ResponseEntity.ok(Map.of("items", feedbackService.forConsole(status), "openCount", feedbackService.openCount()));
+    }
+
+    @PostMapping("/feedback/{id}/reply")
+    public ResponseEntity<?> replyFeedback(@PathVariable String id, @RequestBody FeedbackReplyRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> feedbackService.reply(id, body.reply(), access.admin()));
+    }
+
+    @PostMapping("/feedback/{id}/close")
+    public ResponseEntity<?> closeFeedback(@PathVariable String id, @RequestParam(defaultValue = "true") boolean closed,
+                                           HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return run(() -> feedbackService.setClosed(id, closed, access.admin()));
     }
 
     // --------------------------------------------------------------------------

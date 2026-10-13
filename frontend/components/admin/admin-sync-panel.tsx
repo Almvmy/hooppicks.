@@ -97,10 +97,6 @@ export function AdminSyncPanel() {
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 pt-6">
-        <p className="text-sm text-muted-foreground">
-          Tout se synchronise déjà seul : matchs et paris toutes les 5 minutes, effectifs et classement chaque matin,
-          stats joueurs par lots en continu. Ces boutons servent à rattraper un trou ou à tester.
-        </p>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <SyncAction
             title="Matchs (balldontlie)"
@@ -121,7 +117,7 @@ export function AdminSyncPanel() {
           </SyncAction>
           <SyncAction
             title="Équipes (balldontlie)"
-            description="Liste des 30 franchises. À relancer seulement si une équipe manque."
+            description="Liste des 30 franchises."
             pending={teams.isPending}
             onRun={() => teams.mutate()}
           />
@@ -139,7 +135,7 @@ export function AdminSyncPanel() {
           />
           <SyncAction
             title="Stats joueurs (ESPN)"
-            description="Avance d'un seul lot (~8 joueurs). Le reste tourne en continu en tâche de fond."
+            description="Un lot d'environ 8 joueurs."
             pending={playerStats.isPending}
             onRun={() => playerStats.mutate()}
           />

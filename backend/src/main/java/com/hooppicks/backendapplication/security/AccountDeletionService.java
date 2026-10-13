@@ -6,6 +6,7 @@ import com.hooppicks.backendapplication.league.LeagueService;
 import com.hooppicks.backendapplication.push.PushSubscriptionRepository;
 import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.repository.DuelRepository;
+import com.hooppicks.backendapplication.repository.FeedbackRepository;
 import com.hooppicks.backendapplication.repository.MatchFollowRepository;
 import com.hooppicks.backendapplication.repository.WeeklyTitleRepository;
 import com.hooppicks.backendapplication.repository.SeasonPickRepository;
@@ -37,6 +38,7 @@ public class AccountDeletionService {
     private final WeeklyTitleRepository titleRepository;
     private final SeasonPickRepository seasonPickRepository;
     private final MatchFollowRepository followRepository;
+    private final FeedbackRepository feedbackRepository;
 
     public AccountDeletionService(UserRepository userRepository, LeagueRepository leagueRepository,
                                    LeagueMembershipRepository membershipRepository, LeagueService leagueService,
@@ -48,7 +50,9 @@ public class AccountDeletionService {
                                    SessionStore sessionStore, DuelRepository duelRepository,
                                    WeeklyTitleRepository titleRepository,
                                    SeasonPickRepository seasonPickRepository,
-                                   MatchFollowRepository followRepository) {
+                                   MatchFollowRepository followRepository,
+                                   FeedbackRepository feedbackRepository) {
+        this.feedbackRepository = feedbackRepository;
         this.seasonPickRepository = seasonPickRepository;
         this.followRepository = followRepository;
         this.duelRepository = duelRepository;
@@ -86,6 +90,7 @@ public class AccountDeletionService {
         titleRepository.deleteAllForUser(userId);
         seasonPickRepository.deleteAllForUser(userId);
         followRepository.deleteByUserId(userId);
+        feedbackRepository.deleteByUserId(userId);
         betRepository.deleteByUserId(userId);
         transactionRepository.deleteByUserId(userId);
         notificationRepository.deleteByUserId(userId);

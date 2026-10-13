@@ -2,6 +2,7 @@ import {
   CalendarDays,
   CircleHelp,
   House,
+  MessageSquare,
   Newspaper,
   Settings,
   ShieldCheck,
@@ -69,6 +70,7 @@ export const NAV_SECTIONS: NavSection[] = [
 export const ACCOUNT_ITEMS: (NavTab & { icon: LucideIcon; adminOnly?: boolean })[] = [
   { href: "/profile", label: "Mon profil", title: "Profil", icon: User },
   { href: "/settings", label: "Paramètres", icon: Settings },
+  { href: "/contact", label: "Nous écrire", icon: MessageSquare },
   { href: "/help", label: "Aide et règles", icon: CircleHelp },
   { href: "/admin", label: "Console admin", icon: ShieldCheck, adminOnly: true },
 ];

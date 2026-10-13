@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, Scale, Search, Swords, Timer, Trophy, UserRound, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, MessageSquare, Scale, Search, Swords, Timer, Trophy, UserRound, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { badgeIcon } from "@/lib/badges";
@@ -314,17 +314,23 @@ export default function HelpPage() {
                   {isSearching && resultCount === 0 ? "Pas trouvé ta réponse ?" : "Une question, un bug ?"}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Écris-nous en précisant ton pseudo et ce que tu faisais : on répond par e-mail.
+                  Réponse dans l&apos;app, dans ta cloche.
                 </p>
               </div>
             </div>
-            <a
-              href={mailto}
-              className="glass-inset inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium"
-            >
-              <Mail className="h-4 w-4" />
-              {SUPPORT_EMAIL}
-            </a>
+            <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+              <Link
+                href="/contact"
+                className="glass-accent inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Nous écrire
+              </Link>
+              <a href={mailto} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                Par e-mail
+              </a>
+            </div>
           </CardContent>
         </Card>
         <p className="mt-3 text-center text-xs text-muted-foreground">
