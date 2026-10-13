@@ -162,9 +162,9 @@ export function BetSlipPanel() {
           />
 
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Gain potentiel</span>
+            <span className="text-muted-foreground">À gagner au classement</span>
             <span className="font-mono font-bold text-success">
-              {potentialPayout.toLocaleString("fr-FR")} pts
+              +{Math.max(0, potentialPayout - stake).toLocaleString("fr-FR")} pts
             </span>
           </div>
 

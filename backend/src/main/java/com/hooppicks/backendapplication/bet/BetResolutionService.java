@@ -122,29 +122,21 @@ public class BetResolutionService {
             } else {
                 if (anyPush) {
                     // Gain recalculé sans les sélections remboursées. Le ticket est
-                    // mis à jour pour que "Mes paris" affiche ce qui a réellement
-                    // été crédité (mise × cote = gain reste cohérent à l'écran).
+                    // mis à jour pour que "Mes paris" affiche ce qui compte
+                    // réellement au classement (mise × cote = gain cohérent à l'écran).
                     bet.setTotalOdds(Math.round(winningOdds * 100) / 100.0);
                     bet.setPotentialPayout((int) Math.round(bet.getStake() * winningOdds));
                 }
                 bet.setStatus(BetStatus.WON);
-                if (credited) {
-                    user.setWalletBalance(user.getWalletBalance() + bet.getPotentialPayout());
-                    userRepository.save(user);
-                    logTransaction(user, TransactionType.BET_WIN, bet.getPotentialPayout(),
-                            "Pari gagné (+" + bet.getPotentialPayout() + " pts)");
-                    notify(user, NotificationType.BET_WON, "Ticket gagnant",
-                            "Ticket gagnant · " + describe(bet) + " : +" + (bet.getPotentialPayout() - bet.getStake())
-                                    + " pts de bénéfice, " + bet.getPotentialPayout() + " pts versés sur ton solde.");
-                } else {
-                    // Pari de la semaine passée : le gain compte au classement de
-                    // cette semaine-là, mais ne gonfle pas le solde neuf.
-                    int net = bet.getPotentialPayout() - bet.getStake();
-                    logTransaction(user, TransactionType.BET_WIN, 0,
-                            "Pari gagné de la semaine passée (+" + net + " pts au classement, solde déjà remis à niveau)");
-                    notify(user, NotificationType.BET_WON, "Ticket gagnant",
-                            "Ticket de la semaine passée gagnant · " + describe(bet) + " : +" + net + " pts de bénéfice pour cette semaine-là.");
-                }
+                // Le solde est un budget de mises, rien de plus : un gain ne le
+                // fait jamais remonter, il compte seulement au classement. Sinon
+                // celui qui gagnait tôt dans la semaine misait plus gros ensuite
+                // (effet boule de neige). Seul un remboursement rend la mise.
+                int net = bet.getPotentialPayout() - bet.getStake();
+                logTransaction(user, TransactionType.BET_WIN, 0, "Pari gagné (+" + net + " pts au classement)");
+                notify(user, NotificationType.BET_WON, "Ticket gagnant", credited
+                        ? "Ticket gagnant · " + describe(bet) + " : +" + net + " pts au classement."
+                        : "Ticket de la semaine passée gagnant · " + describe(bet) + " : +" + net + " pts au classement de cette semaine-là.");
             }
 
             betRepository.save(bet);
@@ -215,7 +207,7 @@ public class BetResolutionService {
         message.append(". ");
         if (lastLeg != null) message.append(lastLeg);
         else message.append("Plus que ").append(remaining.size()).append(remaining.size() > 1 ? " matchs" : " match");
-        message.append(lastLeg != null ? " Gain en jeu : " : " pour ").append(bet.getPotentialPayout()).append(" pts.");
+        message.append(lastLeg != null ? " En jeu : +" : " pour +").append(bet.getPotentialPayout() - bet.getStake()).append(" pts au classement.");
         notify(bet.getUser(), NotificationType.BET_PROGRESS, "Ton combiné tient bon", message.toString());
     }
 

@@ -151,8 +151,7 @@ export default function DashboardPage() {
           <WalletTrend
             series={week.series}
             weeklyDelta={week.net}
-            staked={week.staked}
-            won={week.won}
+            balance={walletQuery.data?.balance}
             pending={week.pending}
             isLoading={betsQuery.isLoading}
           />

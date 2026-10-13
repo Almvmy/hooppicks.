@@ -112,7 +112,11 @@ export default function HelpPage() {
             <RuleCard icon={Lock} title="Points virtuels uniquement">
               <p>
                 Chaque lundi à 12h GMT, tout le monde repart avec <strong className="text-foreground">1 000 points</strong>{" "}
-                pour la semaine. Ils n&apos;ont aucune valeur monétaire : rien ne s&apos;achète, rien ne se retire.
+                à miser pour la semaine. Ils n&apos;ont aucune valeur monétaire : rien ne s&apos;achète, rien ne se retire.
+              </p>
+              <p>
+                Ce solde est un budget : il baisse à chaque mise et ne remonte qu&apos;en cas de remboursement. Tes gains
+                vont au classement, pas sur le solde.
               </p>
             </RuleCard>
 
@@ -180,14 +184,14 @@ export default function HelpPage() {
             <RuleCard icon={Scale} title="Résultat d'un ticket">
               <ul className="flex flex-col gap-1.5">
                 <li>
-                  <strong className="text-foreground">Gagné</strong> : tu reçois mise × cote totale.
+                  <strong className="text-foreground">Gagné</strong> : (mise × cote totale) − mise en points au classement.
                 </li>
                 <li>
-                  <strong className="text-foreground">Perdu</strong> : au moins une sélection est perdante.
+                  <strong className="text-foreground">Perdu</strong> : au moins une sélection est perdante, la mise est perdue.
                 </li>
                 <li>
                   <strong className="text-foreground">Remboursé</strong>{" "}: le résultat tombe pile sur la ligne, ta mise
-                  t&apos;est rendue.
+                  revient sur ton solde.
                 </li>
                 <li>
                   Dans un combiné, une sélection à égalité compte pour une cote de 1,00 : le gain est recalculé sans elle.

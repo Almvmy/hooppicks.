@@ -31,7 +31,7 @@ export const FAQ: FaqGroup[] = [
         id: "semaine-de-jeu",
         question: "Pourquoi mon solde revient à 1 000 points le lundi ?",
         answer:
-          "Chaque lundi à 12h GMT, tout le monde repart avec 1 000 points, que tu aies tout misé, tout perdu ou beaucoup gagné. Ce solde sert seulement à parier : il ne compte pas au classement. Ainsi chaque semaine se joue à armes égales, et personne ne reste bloqué à zéro plus de quelques jours. Un pari posé avant lundi midi et réglé après compte pour la semaine où tu l'as posé : son gain va au classement de cette semaine-là, pas sur ton nouveau solde.",
+          "Chaque lundi à 12h GMT, tout le monde repart avec 1 000 points, que tu aies tout misé, tout perdu ou beaucoup gagné. Ce solde est ton budget de mises pour la semaine : il baisse à chaque ticket validé et ne remonte qu'en cas de remboursement. Tes gains, eux, vont au classement, pas sur le solde. Ainsi tout le monde a exactement 1 000 points à risquer par semaine, et personne ne reste bloqué à zéro plus de quelques jours. Un pari posé avant lundi midi et réglé après compte au classement de la semaine où tu l'as posé.",
       },
       {
         id: "plus-parier",
@@ -50,7 +50,7 @@ export const FAQ: FaqGroup[] = [
         id: "gain-combine",
         question: "Comment est calculé le gain d'un combiné ?",
         answer:
-          "Les cotes de toutes tes sélections se multiplient, puis la mise est multipliée par cette cote totale. Exemple : 1,62 × 1,96 = 3,18 ; avec 50 points misés, le gain potentiel est de 159 points. Il faut que toutes les sélections soient gagnantes.",
+          "Les cotes de toutes tes sélections se multiplient, puis la mise est multipliée par cette cote totale. Exemple : 1,62 × 1,96 = 3,18 ; avec 50 points misés, le ticket rapporte 159 − 50 = +109 points au classement. Il faut que toutes les sélections soient gagnantes.",
       },
       {
         id: "paris-joueurs",
@@ -75,7 +75,7 @@ export const FAQ: FaqGroup[] = [
         id: "quand-resolu",
         question: "Quand mon ticket est-il réglé ?",
         answer:
-          "Automatiquement, quelques minutes après la fin du dernier match du ticket (les scores sont vérifiés toutes les 5 minutes). Les points sont crédités et tu reçois une notification. Un combiné reste en attente tant que tous ses matchs ne sont pas terminés.",
+          "Automatiquement, quelques minutes après la fin du dernier match du ticket (les scores sont vérifiés toutes les 5 minutes). Les points comptent aussitôt au classement et tu reçois une notification. Un combiné reste en attente tant que tous ses matchs ne sont pas terminés.",
         link: { href: "/bets", label: "Voir mes paris" },
       },
       {
@@ -88,13 +88,13 @@ export const FAQ: FaqGroup[] = [
         id: "egalite-combine",
         question: "Une sélection de mon combiné est tombée pile sur la ligne, que se passe-t-il ?",
         answer:
-          "Elle compte pour une cote de 1,00 : ton combiné reste gagnant si toutes les autres sélections le sont, et le gain est recalculé sans elle. Exemple : 100 points sur 1,50 × 2,00 × 1,96, la dernière à égalité → 100 × 1,50 × 2,00 = 300 points. « Mes paris » affiche alors la cote et le gain réellement appliqués.",
+          "Elle compte pour une cote de 1,00 : ton combiné reste gagnant si toutes les autres sélections le sont, et le gain est recalculé sans elle. Exemple : 100 points sur 1,50 × 2,00 × 1,96, la dernière à égalité → 100 × 1,50 × 2,00 = 300, soit +200 points au classement. « Mes paris » affiche alors la cote et le résultat réellement appliqués.",
       },
       {
         id: "mise-debitee",
         question: "Ma mise a disparu de mon solde, c'est normal ?",
         answer:
-          "Oui : la mise est débitée dès que tu valides le ticket. Si le ticket est gagnant, tu reçois le gain complet (mise comprise) à sa résolution.",
+          "Oui : la mise est débitée de ton solde dès que tu valides le ticket, et elle n'y revient pas, même si tu gagnes. Le solde est un budget de mises : un ticket gagnant rapporte des points au classement (gain moins mise), seul un ticket remboursé rend la mise.",
       },
     ],
   },

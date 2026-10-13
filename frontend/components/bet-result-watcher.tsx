@@ -33,11 +33,11 @@ export function BetResultWatcher() {
 
     if (newlyWon.length > 0) {
       setCelebrating(true);
-      const total = newlyWon.reduce((sum, b) => sum + b.potentialPayout, 0);
+      const total = newlyWon.reduce((sum, b) => sum + b.potentialPayout - b.stake, 0);
       toast.success(
         newlyWon.length === 1 ? "Ticket gagnant !" : `${newlyWon.length} tickets gagnants !`,
         {
-          description: `+${total.toLocaleString("fr-FR")} pts au total. Swish !`,
+          description: `+${total.toLocaleString("fr-FR")} pts au classement. Swish !`,
           icon: <PartyPopper className="h-4 w-4 text-primary" />,
         }
       );

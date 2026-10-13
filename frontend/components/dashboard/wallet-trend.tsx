@@ -29,15 +29,13 @@ function buildPath(points: number[]): { line: string; area: string } {
 export function WalletTrend({
   series,
   weeklyDelta,
-  staked,
-  won,
+  balance,
   pending,
   isLoading,
 }: {
   series: number[];
   weeklyDelta: number;
-  staked: number;
-  won: number;
+  balance: number | undefined;
   pending: number;
   isLoading: boolean;
 }) {
@@ -92,12 +90,11 @@ export function WalletTrend({
             </svg>
 
             <div className="glass-hairline-t flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-3 text-xs">
-              <span className="text-muted-foreground" title="Mises des tickets réglés (gagnés ou perdus)">
-                Misé <span className="font-mono text-foreground">{staked.toLocaleString("fr-FR")}</span>
-              </span>
-              <span className="text-muted-foreground" title="Gains versés par les tickets gagnants, mise comprise">
-                Rapporté <span className="font-mono text-foreground">{won.toLocaleString("fr-FR")}</span>
-              </span>
+              {balance !== undefined && (
+                <span className="text-muted-foreground" title="Ce qu'il te reste à miser jusqu'à lundi 12h">
+                  Budget restant <span className="font-mono text-foreground">{balance.toLocaleString("fr-FR")}</span>
+                </span>
+              )}
               {pending > 0 && (
                 <span className="text-muted-foreground" title="Mises des tickets pas encore réglés">
                   En jeu <span className="font-mono text-foreground">{pending.toLocaleString("fr-FR")}</span>

@@ -91,7 +91,7 @@ class BetResolutionServiceTest {
     }
 
     @Test
-    void moneyline_gagnant_credite_le_solde_et_notifie() {
+    void moneyline_gagnant_compte_au_classement_sans_toucher_au_solde() {
         Match match = finishedMatch("m1", 100, 90, -2.5, 220.5);
         User user = user(1000);
         Bet bet = pendingBet(user, 10, 18, selection("m1", "moneyline", "home"));
@@ -104,15 +104,13 @@ class BetResolutionServiceTest {
         assertThat(resolved).isEqualTo(1);
         assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
         assertThat(bet.getResolvedAt()).isNotNull();
-        assertThat(user.getWalletBalance()).isEqualTo(1018);
+        // Le solde est un budget de mises : un gain ne le fait pas remonter.
+        assertThat(user.getWalletBalance()).isEqualTo(1000);
 
         ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(notifCaptor.capture());
         assertThat(notifCaptor.getValue().getType()).isEqualTo(NotificationType.BET_WON);
-        // Le ticket est nommé, et les deux chiffres sont distingués.
-        assertThat(notifCaptor.getValue().getMessage())
-                .contains("+8 pts de bénéfice")
-                .contains("18 pts versés sur ton solde");
+        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts au classement");
     }
 
     @Test
@@ -150,7 +148,7 @@ class BetResolutionServiceTest {
         verify(bankrollService).ensureCurrent(user);
         ArgumentCaptor<AppNotification> notifCaptor = ArgumentCaptor.forClass(AppNotification.class);
         verify(notificationRepository).save(notifCaptor.capture());
-        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts de bénéfice pour cette semaine-là");
+        assertThat(notifCaptor.getValue().getMessage()).contains("+8 pts au classement de cette semaine-là");
     }
 
     @Test
@@ -274,14 +272,14 @@ class BetResolutionServiceTest {
         service.resolvePendingBets();
 
         assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
-        assertThat(user.getWalletBalance()).isEqualTo(1019);
-        // Le ticket affiche ce qui a réellement été payé.
+        assertThat(user.getWalletBalance()).isEqualTo(1000);
+        // Le ticket affiche ce qui compte réellement au classement.
         assertThat(bet.getPotentialPayout()).isEqualTo(19);
         assertThat(bet.getTotalOdds()).isEqualTo(1.9);
     }
 
     @Test
-    void combine_de_trois_avec_un_push_paie_le_produit_des_deux_cotes_gagnantes() {
+    void combine_de_trois_avec_un_push_compte_le_produit_des_deux_cotes_gagnantes() {
         Match win1 = finishedMatch("m1", 100, 90, -2.5, 220.5);
         Match win2 = finishedMatch("m2", 120, 110, -2.5, 220.5); // total 230 > 220.5
         Match push = finishedMatch("m3", 110, 110, -2.5, 220); // total pile sur 220
@@ -300,7 +298,7 @@ class BetResolutionServiceTest {
         service.resolvePendingBets();
 
         assertThat(bet.getStatus()).isEqualTo(BetStatus.WON);
-        assertThat(user.getWalletBalance()).isEqualTo(1300); // 100 × 1,5 × 2
+        assertThat(user.getWalletBalance()).isEqualTo(1000);
         assertThat(bet.getPotentialPayout()).isEqualTo(300);
     }
 
@@ -310,7 +308,7 @@ class BetResolutionServiceTest {
         Match win2 = finishedMatch("m2", 120, 110, -2.5, 220.5);
         User user = user(1000);
         // 36 et pas 10 × 1,9 × 1,9 = 36,1 recalculé : le montant affiché à la
-        // pose est exactement celui versé, aucun écart d'arrondi possible.
+        // pose est exactement celui compté, aucun écart d'arrondi possible.
         Bet bet = pendingBet(user, 10, 36,
                 selection("m1", "moneyline", "home"),
                 selection("m2", "total", "over"));
@@ -320,7 +318,6 @@ class BetResolutionServiceTest {
 
         service.resolvePendingBets();
 
-        assertThat(user.getWalletBalance()).isEqualTo(1036);
         assertThat(bet.getPotentialPayout()).isEqualTo(36);
     }
 

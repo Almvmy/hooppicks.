@@ -67,7 +67,7 @@ export function AdminPendingBetsPanel() {
       b.selections.some((s) => s.matchLabel.toLowerCase().includes(needle) || s.label.toLowerCase().includes(needle))
   );
   const totalStake = (bets ?? []).reduce((sum, b) => sum + b.stake, 0);
-  const totalPayout = (bets ?? []).reduce((sum, b) => sum + b.potentialPayout, 0);
+  const totalNet = (bets ?? []).reduce((sum, b) => sum + b.potentialPayout - b.stake, 0);
 
   return (
     <Card>
@@ -79,7 +79,7 @@ export function AdminPendingBetsPanel() {
             </p>
             {bets && bets.length > 0 && (
               <p className="mt-0.5 text-sm text-muted-foreground">
-                {totalStake.toLocaleString("fr-FR")} pts engagés · jusqu&apos;à {totalPayout.toLocaleString("fr-FR")} pts à verser
+                {totalStake.toLocaleString("fr-FR")} pts engagés · jusqu&apos;à +{totalNet.toLocaleString("fr-FR")} pts au classement
               </p>
             )}
           </div>

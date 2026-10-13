@@ -30,7 +30,7 @@ export function pendingBetsSummary(bets: PlacedBet[] | undefined) {
   return {
     count: pending.length,
     stake: pending.reduce((sum, b) => sum + b.stake, 0),
-    potential: pending.reduce((sum, b) => sum + b.potentialPayout, 0),
+    potential: pending.reduce((sum, b) => sum + b.potentialPayout - b.stake, 0),
   };
 }
 
@@ -58,14 +58,9 @@ export function weekSummary(bets: PlacedBet[] | undefined, now: Date = new Date(
   }
   if (series.length === 1) series.push(0);
 
-  // Mêmes tickets pour les trois chiffres que pour la courbe (réglés
-  // seulement) : rapporté − misé = bénéfice affiché. Avant, « misé » comptait
-  // aussi les tickets en attente et remboursés, et ne collait plus au total.
   return {
     series,
     net: series[series.length - 1],
-    staked: settled.reduce((sum, b) => sum + b.stake, 0),
-    won: settled.filter((b) => b.status === "won").reduce((sum, b) => sum + b.potentialPayout, 0),
     pending: thisWeek.filter((b) => b.status === "pending").reduce((sum, b) => sum + b.stake, 0),
   };
 }

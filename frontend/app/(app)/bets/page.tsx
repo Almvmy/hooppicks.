@@ -192,13 +192,12 @@ function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<str
           </span>
           {bet.status === "pending" && (
             <span className="text-muted-foreground">
-              Gain potentiel <span className="font-mono font-bold text-foreground">{bet.potentialPayout.toLocaleString("fr-FR")} pts</span>
+              À gagner <span className="font-mono font-bold text-foreground">+{(bet.potentialPayout - bet.stake).toLocaleString("fr-FR")} pts</span>
             </span>
           )}
           {bet.status === "won" && (
             <span className="font-mono font-bold text-success">
-              +{bet.potentialPayout.toLocaleString("fr-FR")} pts
-              <span className="ml-1.5 text-xs font-normal text-muted-foreground">(+{net.toLocaleString("fr-FR")} net)</span>
+              +{net.toLocaleString("fr-FR")} pts
             </span>
           )}
           {bet.status === "lost" && (
@@ -247,7 +246,7 @@ export default function BetsPage() {
   const net = bets.reduce((sum, b) => sum + netResult(b), 0);
   const inPlay = bets.filter((b) => b.status === "pending");
   const inPlayStake = inPlay.reduce((sum, b) => sum + b.stake, 0);
-  const inPlayPotential = inPlay.reduce((sum, b) => sum + b.potentialPayout, 0);
+  const inPlayPotential = inPlay.reduce((sum, b) => sum + b.potentialPayout - b.stake, 0);
 
   const filtered = filter === "all" ? bets : bets.filter((b) => b.status === filter);
   const { page, pageCount, pageItems, setPage } = usePagination(filtered, PAGE_SIZE);
@@ -294,7 +293,7 @@ export default function BetsPage() {
             </SummaryTile>
             <SummaryTile
               label="En jeu"
-              hint={inPlay.length > 0 ? `jusqu'à ${inPlayPotential.toLocaleString("fr-FR")} pts à gagner` : "aucun ticket ouvert"}
+              hint={inPlay.length > 0 ? `jusqu'à +${inPlayPotential.toLocaleString("fr-FR")} pts au classement` : "aucun ticket ouvert"}
             >
               <CountUp value={inPlayStake} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
             </SummaryTile>
