@@ -101,23 +101,45 @@ export async function disablePush(): Promise<PushState> {
   return "disabled";
 }
 
+async function deviceSubscription(): Promise<PushSubscription | null> {
+  if (!hasPushApis()) return null;
+  const registration = await navigator.serviceWorker.getRegistration();
+  return (await registration?.pushManager.getSubscription()) ?? null;
+}
+
+// fetch direct, pas apiFetch : un 401 (session déjà expirée) ne doit pas
+// renvoyer vers la connexion au milieu d'une déconnexion ou d'une connexion.
+function postPush(path: string, body: unknown) {
+  return fetch(`/api${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 /**
- * À la déconnexion : sur un appareil partagé, le compte suivant ne doit pas
- * recevoir les notifications du précédent. Au mieux de l'effort, jamais
- * bloquant pour la déconnexion elle-même.
+ * À la déconnexion : l'abonnement est détaché du compte côté serveur (sur un
+ * appareil partagé, le compte suivant ne reçoit pas les notifications du
+ * précédent), mais gardé dans le navigateur. Le supprimer obligeait à
+ * réactiver les notifications à chaque reconnexion sur son propre téléphone.
  */
 export async function forgetPushOnThisDevice(): Promise<void> {
   try {
-    if (!hasPushApis()) return;
-    const registration = await navigator.serviceWorker.getRegistration();
-    const subscription = await registration?.pushManager.getSubscription();
-    if (!subscription) return;
-    await apiFetch<void>("/push/unsubscribe", {
-      method: "POST",
-      body: JSON.stringify({ endpoint: subscription.endpoint }),
-    }).catch(() => {});
-    await subscription.unsubscribe();
+    const subscription = await deviceSubscription();
+    if (subscription) await postPush("/push/unsubscribe", { endpoint: subscription.endpoint });
   } catch {
     // Ignoré : la déconnexion passe avant tout.
+  }
+}
+
+/** Après connexion : rattache au compte l'abonnement déjà autorisé sur cet appareil. */
+export async function reattachPushOnThisDevice(): Promise<void> {
+  try {
+    if (!hasPushApis() || Notification.permission !== "granted") return;
+    const subscription = await deviceSubscription();
+    if (subscription) await postPush("/push/subscribe?silent=true", subscription.toJSON());
+  } catch {
+    // Ignoré : au pire, le joueur réactive les notifications dans Paramètres.
   }
 }

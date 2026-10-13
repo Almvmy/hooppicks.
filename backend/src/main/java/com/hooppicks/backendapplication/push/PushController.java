@@ -39,7 +39,9 @@ public class PushController {
     }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<Void> subscribe(@RequestBody SubscribeRequest body, HttpServletRequest request) {
+    public ResponseEntity<Void> subscribe(@RequestBody SubscribeRequest body,
+                                          @RequestParam(defaultValue = "false") boolean silent,
+                                          HttpServletRequest request) {
         String userId = sessionStore.getUserIdFromRequest(request);
         if (userId == null) return ResponseEntity.status(401).build();
         if (!pushService.isEnabled()) return ResponseEntity.notFound().build();
@@ -63,7 +65,9 @@ public class PushController {
         // Confirmation immédiate sur l'appareil qui vient de s'abonner : la
         // personne voit tout de suite que ça marche (et nous aussi : c'est le
         // test de bout en bout le plus simple de toute la chaîne push).
-        if (isNew) {
+        // Silencieuse pour un appareil déjà autorisé qu'on rattache à la
+        // connexion : sinon chaque reconnexion renvoyait ce message.
+        if (isNew && !silent) {
             pushService.sendToUser(userId, new PushService.PushMessage(
                     "Notifications activées",
                     "Tu recevras ici tes résultats de paris et les coups d'envoi de tes matchs.",

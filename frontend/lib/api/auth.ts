@@ -1,19 +1,23 @@
 import { apiFetch } from "@/lib/api/http";
 import { NotificationPreferences, UpdateProfileInput, UserProfile } from "@/lib/types";
-import { forgetPushOnThisDevice } from "@/lib/push";
+import { forgetPushOnThisDevice, reattachPushOnThisDevice } from "@/lib/push";
 
 export async function registerUser(username: string, email: string, password: string): Promise<UserProfile> {
-  return apiFetch<UserProfile>("/auth/register", {
+  const profile = await apiFetch<UserProfile>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ username, email, password }),
   });
+  void reattachPushOnThisDevice();
+  return profile;
 }
 
 export async function loginUser(email: string, password: string): Promise<UserProfile> {
-  return apiFetch<UserProfile>("/auth/login", {
+  const profile = await apiFetch<UserProfile>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
+  void reattachPushOnThisDevice();
+  return profile;
 }
 
 export async function logoutUser(): Promise<void> {
