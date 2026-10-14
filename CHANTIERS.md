@@ -40,4 +40,6 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 - [ ] **Badge « Dans la poche »** : app installée et notifications activées (petite récompense visible, sans points).
 - [ ] **Handicaps alternatifs** : plusieurs lignes d'écart par match (ex. −5,5 / −2 / +3,5), chacune avec sa cote, au lieu d'une seule ligne où le favori prend le handicap négatif. À présenter repliées (« Plus d'écarts ») pour ne pas charger la page du match.
 
+- [ ] **Résumé vidéo des matchs terminés** : la vidéo officielle des highlights (chaîne YouTube de la NBA) intégrée avec le lecteur YouTube sur la page du match, onglet Résumé. Jamais de diffusion des matchs eux-mêmes (droits NBA / diffuseurs), au plus un lien vers NBA League Pass.
+
 <!-- Ajouter ici les nouvelles idées au fil de l'eau. -->
