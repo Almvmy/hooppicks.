@@ -58,6 +58,25 @@ export const viewport: Viewport = {
   themeColor: "#0B1120",
 };
 
+const RELOAD_ON_STALE_BUILD = `(function () {
+  var KEY = "hp-stale-build-reload";
+  function reloadOnce() {
+    try {
+      if (Date.now() - Number(sessionStorage.getItem(KEY) || 0) < 30000) return;
+      sessionStorage.setItem(KEY, String(Date.now()));
+    } catch (e) {}
+    location.reload();
+  }
+  window.addEventListener("error", function (e) {
+    var t = e.target, src = t && (t.src || t.href);
+    if (src && String(src).indexOf("/_next/static/") !== -1) reloadOnce();
+  }, true);
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e.reason, m = r ? String(r.name) + " " + String(r.message) : "";
+    if (/ChunkLoadError|Loading chunk|dynamically imported module|Importing a module script failed/.test(m)) reloadOnce();
+  });
+})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -69,6 +88,15 @@ export default function RootLayout({
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* App installée restée ouverte pendant un déploiement : sa page réclame
+            les fichiers de l'ancienne version, que Vercel ne sert plus, et
+            l'écran restait blanc (React n'a même pas démarré, aucune page
+            d'erreur possible). Script en ligne, actif avant tout le reste :
+            un fichier de l'app introuvable = un rechargement, qui récupère la
+            nouvelle version. Une fois par 30 s au plus, jamais en boucle. */}
+        <script dangerouslySetInnerHTML={{ __html: RELOAD_ON_STALE_BUILD }} />
+      </head>
       <body className="antialiased" suppressHydrationWarning>
         {/* Sombre par défaut (l'identité de l'app), clair ou système au choix
             dans Paramètres. disableTransitionOnChange : sans ça, chaque
