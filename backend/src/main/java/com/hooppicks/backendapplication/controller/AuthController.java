@@ -359,7 +359,7 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
-                .maxAge(60 * 60 * 24)
+                .maxAge(SessionStore.SESSION_TTL) // même réglage que SessionCookies (prolongation)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
