@@ -186,7 +186,8 @@ export function TicketArt({ ticket }: { ticket: SharedTicket }) {
   const numStr = status === "void" ? "0" : signedPlain(net);
   const numSize = numStr.length <= 2 ? 270 : numStr.length === 3 ? 250 : numStr.length === 4 ? 200 : numStr.length === 5 ? 176 : 148;
   const payoutLabel = won ? "Gain" : lost ? "Perdu" : "Remboursé";
-  const payoutValue = won ? ticket.potentialPayout : ticket.stake;
+  // Gagné : le bénéfice (gain − mise), ce qui compte au classement, comme le grand chiffre.
+  const payoutText = won ? signedPlain(net) : plainNumber(ticket.stake);
   const payoutColor = lost ? RED : won ? GREEN : TEXT;
 
   return (
@@ -315,7 +316,7 @@ export function TicketArt({ ticket }: { ticket: SharedTicket }) {
             {[
               { k: "Mise", v: plainNumber(ticket.stake), c: TEXT },
               { k: "Cote", v: `×${frCote(ticket.totalOdds)}`, c: TEXT },
-              { k: payoutLabel, v: plainNumber(payoutValue), c: payoutColor },
+              { k: payoutLabel, v: payoutText, c: payoutColor },
             ].map((x, i) => (
               <div key={x.k} style={{ display: "flex", flexDirection: "column", flex: 1, padding: "14px 0 14px 28px", borderLeft: i > 0 ? "1.5px solid rgba(255,255,255,0.12)" : "none" }}>
                 <Label color={MUTED} size={18} spacing={3.5}>{x.k}</Label>
