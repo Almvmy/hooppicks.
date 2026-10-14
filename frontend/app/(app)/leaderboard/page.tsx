@@ -309,11 +309,12 @@ function PlayersRanking({ username }: { username: string | undefined }) {
       {showPodium && (
         <div className="glass relative overflow-hidden rounded-3xl px-4 pt-3 sm:px-10">
           <CourtWatermark className="pointer-events-none absolute -right-6 -top-10 h-[220px] w-[340px] opacity-[0.05]" />
-          <div className="relative z-10 mb-9 flex justify-end sm:-mr-7">
+          <div className="relative z-10 mb-6 flex justify-end sm:-mr-7">
             <ShareImageButton
               src={`/podium/carte?periode=${period}`}
               fileName={`hooppicks-podium-${period}.png`}
               text={`Le podium HoopPicks ${scope} 🏆 Qui va détrôner @${podium[0].username} ?`}
+              discreet
             />
           </div>
           <div className="relative mx-auto flex max-w-xl items-end gap-3 sm:gap-6">

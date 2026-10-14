@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ImageDown } from "lucide-react";
+import { ImageDown, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
  * téléphone, la feuille de partage propose WhatsApp, les statuts, etc. Sans
  * partage de fichiers (ordinateur), l'image est téléchargée.
  */
-export function ShareImageButton({ src, fileName, text }: { src: string; fileName: string; text: string }) {
+/** `discreet` : simple icône, pour un bouton posé sur un visuel (podium) sans lui voler la vedette. */
+export function ShareImageButton({ src, fileName, text, discreet = false }: { src: string; fileName: string; text: string; discreet?: boolean }) {
   const [busy, setBusy] = useState(false);
 
   async function share() {
@@ -40,6 +41,23 @@ export function ShareImageButton({ src, fileName, text }: { src: string; fileNam
     } finally {
       setBusy(false);
     }
+  }
+
+  if (discreet) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="text-muted-foreground hover:text-foreground"
+        disabled={busy}
+        onClick={share}
+        aria-label="Partager l'image"
+        title="Partager l'image"
+      >
+        <Share2 className={busy ? "animate-pulse" : undefined} />
+      </Button>
+    );
   }
 
   return (
