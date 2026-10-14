@@ -14,6 +14,7 @@ import { cn, formatBankrollReset, WEEKLY_BANKROLL, formatOdds } from "@/lib/util
 import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-logo";
 import { isBoostedSelection, useBoost } from "@/lib/boost";
 import { offerPushNotifications } from "@/components/app-nudges";
+import { useLocalFlag } from "@/lib/use-local-flag";
 
 export function BetSlipPanel() {
   const { selections, stake, setStake, toggleSelection, clear, totalOdds, potentialPayout } =
@@ -32,6 +33,19 @@ export function BetSlipPanel() {
   // Chaque sélection ajoutée fait rebondir la pastille (clé qui change) :
   // ajusté pendant le rendu, pas dans un effet.
   const [expanded, setExpanded] = useState(false);
+  // Sur ordinateur, ouvert par défaut mais réductible : la carte masquait les
+  // cotes de droite de la page d'un match. Choix gardé par appareil.
+  const [desktopCollapsed, setDesktopCollapsed] = useLocalFlag("ticket-reduit");
+
+  function collapse() {
+    setExpanded(false);
+    setDesktopCollapsed(true);
+  }
+
+  function open() {
+    setExpanded(true);
+    setDesktopCollapsed(false);
+  }
   const [previousCount, setPreviousCount] = useState(selections.length);
   const [bump, setBump] = useState(0);
   if (selections.length !== previousCount) {
@@ -83,14 +97,17 @@ export function BetSlipPanel() {
           className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] md:hidden"
         />
       )}
-      {!expanded && (
+      {(!expanded || desktopCollapsed) && (
         <button
           key={bump}
           type="button"
-          onClick={() => setExpanded(true)}
-          className="slip-pop fixed right-4 z-50 flex items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-[var(--lift-strong)] md:hidden"
-          // Juste au-dessus de la bottom nav (14px + ~68px de haut + marge).
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+          onClick={open}
+          className={cn(
+            // Mobile : juste au-dessus de la bottom nav (14px + ~68px de haut + marge).
+            "slip-pop fixed bottom-[calc(env(safe-area-inset-bottom,0px)+96px)] right-4 z-50 items-center gap-2 rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-[var(--lift-strong)] md:bottom-4",
+            expanded ? "hidden" : "flex",
+            desktopCollapsed ? "md:flex" : "md:hidden"
+          )}
           aria-label={`Ouvrir le ticket (${selections.length} sélection${selections.length > 1 ? "s" : ""})`}
         >
           <TicketIcon className="h-4 w-4" />
@@ -102,7 +119,8 @@ export function BetSlipPanel() {
         className={cn(
           "glass island fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-2xl pb-[env(safe-area-inset-bottom)]",
           "md:inset-x-auto md:bottom-4 md:right-4 md:w-80 md:rounded-2xl md:pb-0",
-          !expanded && "hidden md:block"
+          !expanded && "hidden",
+          desktopCollapsed ? "md:hidden" : "md:block"
         )}
       >
         {/* Bordure haute lumineuse orange → cyan, signature visuelle du BetSlip */}
@@ -111,11 +129,13 @@ export function BetSlipPanel() {
         <div className="flex items-center justify-between px-4 py-3 shadow-[inset_0_-1px_0_var(--hairline)]">
           <div className="flex items-center gap-2 font-heading font-bold">
             <TicketIcon className="h-4 w-4 text-primary" />
-            Ticket ({selections.length}
-            <span className="font-normal text-muted-foreground">/{MAX_SELECTIONS}</span>)
+            <span>
+              Ticket ({selections.length}
+              <span className="font-normal text-muted-foreground">/{MAX_SELECTIONS}</span>)
+            </span>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setExpanded(false)} aria-label="Réduire le ticket" className="md:hidden">
+            <button onClick={collapse} aria-label="Réduire le ticket">
               <ChevronDown className="h-4 w-4 text-muted-foreground hover:text-foreground" />
             </button>
             <button onClick={clear} aria-label="Vider le ticket">
