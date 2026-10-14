@@ -13,7 +13,7 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 - [ ] **Clé admin** : vérifier que `ADMIN_API_KEY` est longue et aléatoire (au moins 32 caractères).
 - [ ] **Quota d'e-mails Brevo** (300 par jour en gratuit) : surveiller les inscriptions au lancement ; au-delà, les e-mails de vérification ne partent plus (non bloquant).
 - [ ] **Inscriptions en masse** : limiter le nombre d'inscriptions par adresse IP si des comptes robots apparaissent.
-- [ ] **Redéploiements** : chaque mise en ligne du backend déconnecte tout le monde (sessions en mémoire). Éviter de déployer pendant les matchs ; à terme, garder les sessions en base.
+- [x] **Redéploiements** : sessions gardées en base depuis octobre 2026, une mise en ligne ne déconnecte plus personne.
 
 ## Coupe NBA (avant mi-novembre)
 
@@ -38,5 +38,6 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 ## Idées en vrac
 
 - [ ] **Badge « Dans la poche »** : app installée et notifications activées (petite récompense visible, sans points).
+- [ ] **Handicaps alternatifs** : plusieurs lignes d'écart par match (ex. −5,5 / −2 / +3,5), chacune avec sa cote, au lieu d'une seule ligne où le favori prend le handicap négatif. À présenter repliées (« Plus d'écarts ») pour ne pas charger la page du match.
 
 <!-- Ajouter ici les nouvelles idées au fil de l'eau. -->
