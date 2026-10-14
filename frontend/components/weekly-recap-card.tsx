@@ -1,4 +1,4 @@
-import { LogoSymbol } from "@/app/LogoSymbol";
+import { LogoMark } from "@/app/logo-mark";
 
 /** Partagée avec l'image générée de la carte (share-card-art), pour qu'elles disent la même chose. */
 export function headlineFor(streak: number, weeklyDelta: number): string {
@@ -26,75 +26,108 @@ export function WeeklyRecapCard({
   streak: number;
   seasonLabel: string;
 }) {
-  const headline = headlineFor(streak, weeklyDelta);
+  const [line1, line2] = headlineFor(streak, weeklyDelta).split("\n");
 
   return (
     // island : la carte à partager garde son look Nuit (marine) en thème
     // clair aussi, pour qu'une capture partagée ressemble toujours à HoopPicks.
-    <div className="recap-sheen island relative w-full max-w-[420px] overflow-hidden rounded-xl border border-border bg-gradient-to-br from-secondary to-background p-6">
-      <svg
-        aria-hidden
-        viewBox="0 0 300 200"
-        className="pointer-events-none absolute -bottom-16 -right-10 w-[280px] opacity-[0.18]"
-        fill="none"
-      >
-        <path
-          d="M80 0 C140 50 140 150 80 200 M170 -10 C230 50 230 150 170 210"
-          stroke="var(--primary)"
-          strokeWidth="3"
-        />
-      </svg>
+    <div className="relative w-full max-w-[420px] overflow-hidden rounded-[14px] border border-white/10 bg-[#0B1120] shadow-[0_20px_48px_rgba(0,0,0,.55),0_0_0_1px_rgba(255,255,255,.05)]">
+      {/* Accent gauche orange */}
+      <div className="absolute bottom-0 left-0 top-0 w-1 rounded-l-[14px] bg-primary" />
 
-      <div className="relative flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LogoSymbol variant="compact" className="h-5 w-5 shrink-0" />
-          <span className="font-heading text-sm font-bold">
-            Hoop<span className="text-primary">Picks</span>
-          </span>
-        </div>
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {seasonLabel}
-        </span>
+      {/* Filigrane logo full en fond */}
+      <div className="pointer-events-none absolute -bottom-6 -right-7 opacity-[0.07]">
+        <LogoMark
+          variant="full"
+          width={200}
+          height={200}
+          rim="#F4EFE4"
+          arc="#F4EFE4"
+          ball="#F4EFE4"
+          seam="#0B1120"
+        />
       </div>
 
-      <p className="relative mt-6 font-heading text-2xl font-bold leading-tight tracking-tight sm:text-3xl">
-        {headline.split("\n").map((line, i) => (
-          <span key={i} className={i === 1 ? "text-primary" : undefined}>
-            {i === 1 && <br />}
-            {line}
+      <div className="relative px-[22px] pb-[18px] pt-5">
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-[9px]">
+            <LogoMark
+              variant="medium"
+              width={34}
+              height={34}
+              className="shrink-0 text-foreground"
+            />
+            <span className="font-condensed text-[16px] font-extrabold leading-none tracking-[.02em] text-foreground">
+              Hoop<span className="text-primary">Picks</span>
+            </span>
+          </div>
+          <span className="font-condensed text-[11px] font-bold uppercase tracking-[.13em] text-[#334155]">
+            {seasonLabel}
           </span>
-        ))}
-      </p>
+        </div>
 
-      <div className="relative mt-6 flex items-end justify-between">
-        <div className="flex gap-5">
-          <div>
-            <div
-              className={`font-mono text-xl font-bold ${
-                weeklyDelta >= 0 ? "text-success" : "text-destructive"
+        {/* Divider */}
+        <div className="mb-[14px] h-px bg-white/[0.07]" />
+
+        {/* Headline condensed italic */}
+        <div className="mb-4 leading-[.95]">
+          <span className="block font-condensed text-[32px] font-black italic uppercase tracking-[.01em] text-foreground">
+            {line1}
+          </span>
+          <span className="block font-condensed text-[32px] font-black italic uppercase tracking-[.01em] text-primary">
+            {line2}
+          </span>
+        </div>
+
+        {/* Bandelette papier pour les stats */}
+        <div className="flex items-stretch rounded-[8px] bg-[#F4EFE4] px-4 py-[13px]">
+          {/* Points */}
+          <div className="flex flex-1 flex-col items-start">
+            <span
+              className={`font-condensed text-[28px] font-black italic leading-none ${
+                weeklyDelta >= 0 ? "text-[#15803d]" : "text-[#b91c1c]"
               }`}
             >
               {weeklyDelta > 0 ? "+" : ""}
               {weeklyDelta.toLocaleString("fr-FR")}
-            </div>
-            <div className="mt-1 font-mono text-[9px] font-medium tracking-wider text-muted-foreground">
-              POINTS SEMAINE
-            </div>
+            </span>
+            <span className="mt-1 font-condensed text-[10px] font-bold uppercase tracking-[.10em] text-[#6B6558]">
+              Points
+            </span>
           </div>
-          <div>
-            <div className="font-mono text-xl font-bold">{rank ? `#${rank}` : "-"}</div>
-            <div className="mt-1 font-mono text-[9px] font-medium tracking-wider text-muted-foreground">
-              CLASSEMENT{totalPlayers ? ` / ${totalPlayers}` : ""}
-            </div>
+
+          <div className="w-px self-stretch bg-[#D9D2C1]" />
+
+          {/* Classement */}
+          <div className="flex flex-1 flex-col items-center">
+            <span className="font-condensed text-[28px] font-black italic leading-none text-[#0B1120]">
+              {rank ? `#${rank}` : "–"}
+            </span>
+            <span className="mt-1 text-center font-condensed text-[10px] font-bold uppercase tracking-[.10em] text-[#6B6558]">
+              Classement{totalPlayers ? ` / ${totalPlayers}` : ""}
+            </span>
           </div>
-          <div>
-            <div className="font-mono text-xl font-bold">{winRate}%</div>
-            <div className="mt-1 font-mono text-[9px] font-medium tracking-wider text-muted-foreground">
-              RÉUSSITE
-            </div>
+
+          <div className="w-px self-stretch bg-[#D9D2C1]" />
+
+          {/* Réussite */}
+          <div className="flex flex-1 flex-col items-end">
+            <span className="font-condensed text-[28px] font-black italic leading-none text-[#0B1120]">
+              {winRate}%
+            </span>
+            <span className="mt-1 font-condensed text-[10px] font-bold uppercase tracking-[.10em] text-[#6B6558]">
+              Réussite
+            </span>
           </div>
         </div>
-        <span className="text-sm font-semibold text-muted-foreground">@{username}</span>
+
+        {/* Username */}
+        <div className="mt-[10px] flex justify-end">
+          <span className="font-condensed text-[12px] font-bold tracking-[.04em] text-[#334155]">
+            @{username}
+          </span>
+        </div>
       </div>
     </div>
   );

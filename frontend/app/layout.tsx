@@ -28,6 +28,18 @@ const jetbrainsMono = localFont({
   weight: "100 800",
 });
 
+// Barlow Condensed : typo condensée pour les îles marines (recap card, stats
+// importantes). Partagée avec les images d'aperçu OG (lib/share-fonts.ts).
+const barlowCondensed = localFont({
+  src: [
+    { path: "./fonts/share/barlow-condensed-latin-700-normal.woff", weight: "700", style: "normal" },
+    { path: "./fonts/share/barlow-condensed-latin-800-normal.woff", weight: "800", style: "normal" },
+    { path: "./fonts/share/barlow-condensed-latin-900-normal.woff", weight: "900", style: "normal" },
+    { path: "./fonts/share/barlow-condensed-latin-900-italic.woff", weight: "900", style: "italic" },
+  ],
+  variable: "--font-condensed",
+});
+
 export const metadata: Metadata = {
   // Adresse absolue des images d'aperçu (liens partagés sur WhatsApp & co.).
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://hooppicks.vercel.app"),
@@ -85,7 +97,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable}`}
       suppressHydrationWarning
     >
       <head>

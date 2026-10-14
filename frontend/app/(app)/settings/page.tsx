@@ -20,6 +20,7 @@ import {
   updateNotificationPreferences,
 } from "@/lib/api/auth";
 import { NotificationPreferences } from "@/lib/types";
+import { PageHeader } from "@/components/page-header";
 import { DisplaySettingsCard } from "@/components/settings/display-settings-card";
 import { PushDeviceSetting } from "@/components/settings/push-device-setting";
 
@@ -378,10 +379,7 @@ function DeleteAccountZone() {
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Paramètres</h1>
-        <p className="mt-1 text-muted-foreground">Compte, notifications et affichage.</p>
-      </div>
+      <PageHeader badge="Mon compte" title="Paramètres" subtitle="Compte, notifications et affichage." />
 
       <Card>
         <CardContent className="flex flex-col gap-6 pt-6">

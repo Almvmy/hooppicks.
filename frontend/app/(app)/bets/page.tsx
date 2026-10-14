@@ -17,6 +17,7 @@ import { LiveStatus, liveClockLabel, useLiveMatch, useLiveStatus, withLiveScore 
 import { PLAYER_PROP_MARKETS, isPlayerPropMarket, normalizePlayerName, propStatValue } from "@/lib/player-props";
 import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
+import { PageHeader } from "@/components/page-header";
 
 const PAGE_SIZE = 8;
 
@@ -254,13 +255,7 @@ export default function BetsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="flex items-center gap-2.5 font-heading text-2xl font-bold">
-          <Ticket className="h-7 w-7 text-primary" />
-          Mes paris
-        </h1>
-        <p className="mt-1 text-muted-foreground">Tes tickets, leur avancement match par match et ton bilan.</p>
-      </div>
+      <PageHeader badge="Mes tickets" title="Mes paris" subtitle="Avancement et bilan." />
 
       {isLoading && <BasketballLoader label="Chargement de tes tickets..." />}
       {isError && <p className="text-destructive">Impossible de charger tes paris.</p>}
