@@ -66,3 +66,7 @@ export function plainNumber(n: number): string {
 export function signedPlain(n: number): string {
   return `${n > 0 ? "+" : n < 0 ? "−" : ""}${plainNumber(n)}`;
 }
+
+/** Classement public (même route que la page Classement), pour la carte du podium. */
+export const fetchSharedLeaderboard = (period: "season" | "month" | "week") =>
+  get<import("@/lib/types").LeaderboardEntry[]>(period === "season" ? "/leaderboard" : `/leaderboard?period=${period}`, true);

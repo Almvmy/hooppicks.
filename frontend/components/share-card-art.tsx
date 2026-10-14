@@ -2,6 +2,7 @@
 //  - TicketArt : aperçu d'un ticket partagé (1200×630), un vrai coupon papier
 //  - PlayerArt : aperçu d'un profil joueur (1200×630), une carte à collectionner
 //  - RecapArt  : carte « récap de la semaine » en image carrée (1080×1080)
+//  - PodiumArt : les 3 premiers du classement, en image carrée (1080×1080)
 // Satori : styles en ligne uniquement, chaque bloc en display flex, pas de
 // classes ni de hooks. Polices : voir lib/share-fonts.ts (à passer à ImageResponse).
 // Partout, le logo est le vrai : panier + ballon + tir en pointillés
@@ -9,6 +10,7 @@
 
 import { LogoMark } from "@/app/logo-mark";
 import { SITE_URL, SharedPlayer, SharedTicket, plainNumber, signedPlain } from "@/lib/share";
+import type { LeaderboardEntry } from "@/lib/types";
 import { headlineFor } from "@/components/weekly-recap-card";
 
 const NAVY = "#0B1120";
@@ -484,6 +486,139 @@ export function RecapArt({ player, seasonLabel }: { player: SharedPlayer; season
               <Label color={MUTED} size={22} spacing={1.5} upper={false}>{HOST}</Label>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- podium */
+
+// Or, argent, bronze : les mêmes que le podium de la page Classement.
+const MEDAL = {
+  1: { color: "#F5B700", deep: "#8A6400", glow: "rgba(245,183,0,0.32)" },
+  2: { color: "#C3CCD8", deep: "#5E6B7D", glow: "rgba(195,204,216,0.2)" },
+  3: { color: "#D98A3D", deep: "#7A4416", glow: "rgba(217,138,61,0.22)" },
+} as const;
+
+function Crown({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={Math.round(size * 0.78)} viewBox="-8 -8 116 86">
+      <path d="M6 64 L0 14 L28 36 L50 0 L72 36 L100 14 L94 64 Z" fill={color} />
+      <rect x="6" y="58" width="88" height="14" rx="3" fill={color} />
+      <circle cx="0" cy="14" r="7" fill={color} />
+      <circle cx="50" cy="2" r="7" fill={color} />
+      <circle cx="100" cy="14" r="7" fill={color} />
+    </svg>
+  );
+}
+
+/** Une marche du podium : le joueur au-dessus, la marche (et son rang) en dessous. */
+function PodiumStep({ entry, place }: { entry: LeaderboardEntry | undefined; place: 1 | 2 | 3 }) {
+  const m = MEDAL[place];
+  const first = place === 1;
+  const stepHeight = { 1: 175, 2: 125, 3: 90 }[place];
+  const jersey = first ? 140 : 112;
+  const width = first ? 340 : 290;
+
+  if (!entry) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width }}>
+        <div style={{ display: "flex", width: jersey, height: jersey, borderRadius: jersey / 2, border: "4px dashed rgba(255,255,255,0.22)" }} />
+        <div style={{ display: "flex", fontFamily: COND, fontWeight: 700, fontSize: 34, color: MUTED, marginTop: 22, marginBottom: 26, textTransform: "uppercase", letterSpacing: 2 }}>Place libre</div>
+        <div style={{ display: "flex", justifyContent: "center", width, height: stepHeight, background: "rgba(255,255,255,0.05)", borderRadius: "18px 18px 0 0", paddingTop: place === 3 ? 8 : 14 }}>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: { 1: 132, 2: 96, 3: 70 }[place], lineHeight: 1, color: "rgba(255,255,255,0.18)" }}>{String(place)}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const name = entry.username;
+  const nameSize = name.length <= 8 ? (first ? 54 : 44) : name.length <= 12 ? (first ? 44 : 36) : first ? 36 : 30;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width }}>
+      {first && (
+        <div style={{ display: "flex", marginBottom: 10 }}>
+          <Crown size={76} color={m.color} />
+        </div>
+      )}
+      <Jersey number={entry.avatarNumber} size={jersey} colorway={entry.avatarColorway} ring={m.color} />
+      <div style={{ display: "flex", maxWidth: width - 10, marginTop: first ? 22 : 20, fontFamily: COND, fontWeight: 800, fontSize: nameSize, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${name}`}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: first ? 58 : 46, lineHeight: 1, color: first ? m.color : TEXT }}>{signedPlain(entry.points)}</div>
+        <Label color={MUTED} size={first ? 24 : 20} spacing={2}>pts</Label>
+      </div>
+      <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: first ? 24 : 21, color: MUTED, marginTop: 6, marginBottom: 20 }}>{`${entry.winRate}% de réussite`}</div>
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          justifyContent: "center",
+          width,
+          height: stepHeight,
+          borderRadius: "18px 18px 0 0",
+          background: `linear-gradient(180deg, ${m.color} 0%, ${m.deep} 100%)`,
+          boxShadow: `0 -10px 60px ${m.glow}`,
+          paddingTop: place === 3 ? 8 : 14,
+        }}
+      >
+        {/* liseré clair en haut de la marche */}
+        <div style={{ position: "absolute", left: 0, top: 0, width, height: 8, display: "flex", borderRadius: "18px 18px 0 0", background: "rgba(255,255,255,0.45)" }} />
+        <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: { 1: 132, 2: 96, 3: 70 }[place], lineHeight: 1, color: "rgba(11,17,32,0.82)" }}>{String(entry.rank)}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Le podium du classement en image carrée (1080×1080), pour l'envoyer en
+ * photo ou en statut. `title` = la période (« de la semaine »…), `dateLabel`
+ * = la date qui va avec, `total` = joueurs classés.
+ */
+export function PodiumArt({ entries, title, dateLabel, total }: { entries: LeaderboardEntry[]; title: string; dateLabel: string; total: number }) {
+  const [first, second, third] = entries;
+  const leader = first?.username;
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} />
+      {/* faisceau doré sur la 1re place */}
+      <div style={{ position: "absolute", left: 140, top: 160, width: 800, height: 800, display: "flex", background: "radial-gradient(circle at 50% 55%, rgba(245,183,0,0.24) 0%, rgba(245,183,0,0.08) 32%, rgba(245,183,0,0) 50%)" }} />
+      {/* sol de la salle sous le podium */}
+      <div style={{ position: "absolute", left: 0, top: 930, width: 1080, height: 150, display: "flex", background: "linear-gradient(180deg, #1A2440 0%, #0B1120 100%)" }} />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "56px 70px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={ORANGE} size={24} spacing={5}>Classement</Label>
+            <Label color={MUTED} size={24} spacing={3}>{dateLabel}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 10 }}>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 96, lineHeight: 0.95, letterSpacing: -1, textTransform: "uppercase" }}>Le podium</div>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 40, lineHeight: 1, letterSpacing: 6, textTransform: "uppercase", color: ORANGE, marginTop: 8 }}>{title}</div>
+        </div>
+      </div>
+
+      {/* 2e, 1er, 3e : le premier au centre, plus haut */}
+      <div style={{ position: "absolute", left: 0, top: 0, width: 1080, height: 930, display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 18 }}>
+        <PodiumStep entry={second} place={2} />
+        <PodiumStep entry={first} place={1} />
+        <PodiumStep entry={third} place={3} />
+      </div>
+
+      <div style={{ position: "absolute", left: 0, top: 930, width: 1080, height: 150, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 70px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 44, lineHeight: 1, textTransform: "uppercase", color: ORANGE, maxWidth: 640, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {leader ? `Qui va détrôner @${leader} ?` : "La place est à prendre"}
+          </div>
+          <Label color={MUTED} size={22} spacing={2}>{`${plainNumber(total)} joueur${total > 1 ? "s" : ""} classé${total > 1 ? "s" : ""}`}</Label>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+          <Label color={TEXT} size={26} spacing={1.5} upper={false}>{HOST}</Label>
+          <Label color={MUTED} size={20} spacing={2}>Pronostics NBA · sans argent</Label>
         </div>
       </div>
     </div>
