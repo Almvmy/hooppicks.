@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import { PlayerArt } from "@/components/share-card-art";
+import { NotFoundArt, PlayerArt } from "@/components/share-card-art";
+import { shareFonts } from "@/lib/share-fonts";
 import { fetchSharedPlayer } from "@/lib/share";
 
 export const alt = "Joueur HoopPicks";
@@ -8,14 +9,9 @@ export const contentType = "image/png";
 
 export default async function Image({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-  const player = await fetchSharedPlayer(decodeURIComponent(username));
+  const [player, fonts] = await Promise.all([fetchSharedPlayer(decodeURIComponent(username)), shareFonts()]);
   if (!player) {
-    return new ImageResponse(
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#0B1120", color: "white", fontSize: 64 }}>
-        HoopPicks
-      </div>,
-      size
-    );
+    return new ImageResponse(<NotFoundArt title="Joueur introuvable" hint="Ce profil n'existe pas (ou plus)." />, { ...size, fonts });
   }
-  return new ImageResponse(<PlayerArt player={player} />, size);
+  return new ImageResponse(<PlayerArt player={player} />, { ...size, fonts });
 }

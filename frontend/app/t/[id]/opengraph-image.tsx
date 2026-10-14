@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import { TicketArt } from "@/components/share-card-art";
+import { NotFoundArt, TicketArt } from "@/components/share-card-art";
+import { shareFonts } from "@/lib/share-fonts";
 import { fetchSharedTicket } from "@/lib/share";
 
 export const alt = "Ticket HoopPicks";
@@ -8,14 +9,9 @@ export const contentType = "image/png";
 
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ticket = await fetchSharedTicket(id);
+  const [ticket, fonts] = await Promise.all([fetchSharedTicket(id), shareFonts()]);
   if (!ticket) {
-    return new ImageResponse(
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#0B1120", color: "white", fontSize: 64 }}>
-        HoopPicks
-      </div>,
-      size
-    );
+    return new ImageResponse(<NotFoundArt title="Ticket introuvable" hint="Ce lien n'est plus valide." />, { ...size, fonts });
   }
-  return new ImageResponse(<TicketArt ticket={ticket} />, size);
+  return new ImageResponse(<TicketArt ticket={ticket} />, { ...size, fonts });
 }
