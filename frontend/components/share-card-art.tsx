@@ -169,27 +169,6 @@ function shortDate(iso: string | null): string {
   }
 }
 
-/** Code-barres décoratif, déterministe (même pseudo → même motif). */
-function Barcode({ seed, width, height, color }: { seed: string; width: number; height: number; color: string }) {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
-  const bars: { x: number; w: number }[] = [];
-  let x = 0;
-  while (x < width) {
-    h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-    const w = 2 + (h % 4);
-    if ((h >>> 8) % 3 !== 0) bars.push({ x, w });
-    x += w + 2 + ((h >>> 4) % 3);
-  }
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      {bars.filter((b) => b.x + b.w <= width).map((b, i) => (
-        <rect key={i} x={b.x} y={0} width={b.w} height={height} fill={color} />
-      ))}
-    </svg>
-  );
-}
-
 /* ----------------------------------------------------------------- ticket */
 
 export function TicketArt({ ticket }: { ticket: SharedTicket }) {
@@ -206,7 +185,7 @@ export function TicketArt({ ticket }: { ticket: SharedTicket }) {
   const combo = legsAll.length > 1;
   const numStr = status === "void" ? "0" : signedPlain(net);
   const numSize = numStr.length <= 2 ? 270 : numStr.length === 3 ? 250 : numStr.length === 4 ? 200 : numStr.length === 5 ? 176 : 148;
-  const payoutLabel = won ? "Rendu" : lost ? "Perdu" : "Rendu";
+  const payoutLabel = won ? "Gain" : lost ? "Perdu" : "Remboursé";
   const payoutValue = won ? ticket.potentialPayout : ticket.stake;
   const payoutColor = lost ? RED : won ? GREEN : TEXT;
 
@@ -363,10 +342,19 @@ function Stat({ k, v, hint, accent = false, grow = 1 }: { k: string; v: string; 
   );
 }
 
+// Surnom seul (« Thunder », « Trail Blazers ») : le nom complet ne tenait pas
+// sur la carte. Thunder, Heat, Magic et Jazz se disent au singulier.
+const SINGULAR_NICKNAMES = new Set(["Thunder", "Heat", "Magic", "Jazz"]);
+
+function supporterOf(fullName: string): string {
+  const nickname = fullName.endsWith("Trail Blazers") ? "Trail Blazers" : fullName.trim().split(/\s+/).pop() ?? fullName;
+  return `Supporter ${SINGULAR_NICKNAMES.has(nickname) ? "du" : "des"} ${nickname}`;
+}
+
 export function PlayerArt({ player }: { player: SharedPlayer }) {
   const hasRank = player.seasonRank != null;
   const n = Math.max(0, Math.min(99, Math.round(player.avatarNumber)));
-  const team = player.favoriteTeam ? `Supporter des ${player.favoriteTeam}` : "Joueur HoopPicks";
+  const team = player.favoriteTeam ? supporterOf(player.favoriteTeam) : "Joueur HoopPicks";
   const nameSize = player.username.length <= 9 ? 46 : player.username.length <= 13 ? 38 : 30;
   return (
     <div style={{ position: "relative", display: "flex", width: 1200, height: 630, color: TEXT, fontFamily: BODY }}>
