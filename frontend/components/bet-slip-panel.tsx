@@ -181,11 +181,17 @@ export function BetSlipPanel() {
             onChange={(e) => setStake(Number(e.target.value))}
           />
 
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">À gagner au classement</span>
-            <span className="font-mono font-bold text-success">
-              +{Math.max(0, potentialPayout - stake).toLocaleString("fr-FR")} pts
-            </span>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">À gagner au classement</span>
+              <span className="font-mono font-bold text-success">
+                +{Math.max(0, potentialPayout - stake).toLocaleString("fr-FR")} pts
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Si perdu</span>
+              <span className="font-mono">−{(stake || 0).toLocaleString("fr-FR")} pts au classement</span>
+            </div>
           </div>
 
           {/* Le solde vit ici plutôt qu'en haut de l'écran : c'est au moment de

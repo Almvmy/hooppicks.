@@ -187,7 +187,7 @@ export default function HelpPage() {
                   <strong className="text-foreground">Gagné</strong> : (mise × cote totale) − mise en points au classement.
                 </li>
                 <li>
-                  <strong className="text-foreground">Perdu</strong> : au moins une sélection est perdante, la mise est perdue.
+                  <strong className="text-foreground">Perdu</strong> : au moins une sélection est perdante, ta mise est retirée de tes points de la semaine (jamais sous 0).
                 </li>
                 <li>
                   <strong className="text-foreground">Remboursé</strong>{" "}: le résultat tombe pile sur la ligne, ta mise

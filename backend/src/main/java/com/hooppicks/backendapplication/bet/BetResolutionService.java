@@ -103,8 +103,11 @@ public class BetResolutionService {
                 bet.setStatus(BetStatus.LOST);
                 logTransaction(user, TransactionType.BET_LOSS, 0,
                         "Pari perdu (" + bet.getSelections().size() + " sélection(s))");
-                notify(user, NotificationType.BET_LOST, "Ticket perdu",
-                        "Ticket perdu · " + describe(bet) + " : mise de " + bet.getStake() + " pts perdue.");
+                // « au classement » : la mise est déjà sortie du solde à la pose, c'est
+                // le classement de la semaine qui perd ces points (jamais sous 0).
+                notify(user, NotificationType.BET_LOST, "Ticket perdu", credited
+                        ? "Ticket perdu · " + describe(bet) + " : −" + bet.getStake() + " pts au classement de la semaine."
+                        : "Ticket de la semaine passée perdu · " + describe(bet) + " : −" + bet.getStake() + " pts au classement de cette semaine-là.");
             } else if (allPush) {
                 // Aucune sélection perdue, mais aucune vraiment gagnée non plus (égalité pile sur le seuil) : on rembourse la mise
                 bet.setStatus(BetStatus.VOID);
