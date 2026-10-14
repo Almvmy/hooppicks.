@@ -878,6 +878,20 @@
 
 /* Pastille du ticket (mobile) : petit rebond à chaque sélection ajoutée,
    pour qu'on voie où elle part sans déplier le ticket. */
+/* Progression d'une diapositive de la vitrine (components/landing/feature-carousel.tsx) */
+@keyframes hp-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+/* Référencée ici, sinon Tailwind retire ces keyframes (seulement appelées depuis le JS). */
+.hp-progress {
+  transform-origin: left;
+  animation: hp-progress var(--hp-slide-ms, 4500ms) linear forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hp-progress { animation: none; transform: scaleX(1); }
+}
+
 @keyframes slip-pop {
   0% { transform: scale(1); }
   35% { transform: scale(1.12); }

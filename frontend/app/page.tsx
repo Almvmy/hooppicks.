@@ -13,14 +13,6 @@ import { NbaLogo } from "@/components/nba-logo";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { KickoffCountdown } from "@/components/landing/kickoff-countdown";
 import { FeatureCarousel } from "@/components/landing/feature-carousel";
-import {
-  BadgesPreview,
-  ComboPreview,
-  LeaderboardSlidePreview,
-  LeaguePreview,
-  MatchPreview,
-  PlayerStatsPreview,
-} from "@/components/landing/feature-previews";
 import { CountUpOnView } from "@/components/motion/count-up-on-view";
 import { InstallAppButton } from "@/components/install-app";
 import { LegalFooter } from "@/components/legal-footer";
@@ -67,37 +59,43 @@ export default async function HomePage() {
       id: "paris",
       title: "Parie sur chaque match",
       description: "Vainqueur, écart ou total de points : choisis ton marché, la cote est figée au moment où tu valides.",
-      preview: <MatchPreview match={nextMatch} />,
+      image: "/images/carousel/slide-paris.jpg",
+      alt: "Page d'un match dans l'app : cotes vainqueur, écart et total, une cote choisie",
     },
     {
       id: "combines",
       title: "Monte des combinés",
       description: "Enchaîne plusieurs matchs dans un même ticket : les cotes se multiplient.",
-      preview: <ComboPreview />,
+      image: "/images/carousel/slide-combines.jpg",
+      alt: "Ticket combiné de trois matchs ouvert, cote totale et gain possible",
     },
     {
       id: "classement",
       title: "Grimpe au classement",
       description: "Chaque point gagné compte dans le classement général, mis à jour après chaque match.",
-      preview: <LeaderboardSlidePreview entries={topPlayers} />,
+      image: "/images/carousel/slide-classement.jpg",
+      alt: "Podium du classement de la semaine",
     },
     {
       id: "ligues",
       title: "Défie tes amis",
       description: "Crée une ligue privée, partage son code à 6 caractères et suivez votre propre classement.",
-      preview: <LeaguePreview />,
+      image: "/images/carousel/slide-ligues.jpg",
+      alt: "Page d'une ligue privée entre amis",
     },
     {
       id: "badges",
       title: "Débloque des badges",
       description: "Séries, gros coups, combinés : tes exploits laissent une trace sur ton profil.",
-      preview: <BadgesPreview />,
+      image: "/images/carousel/slide-badges.jpg",
+      alt: "Badges débloqués sur le profil",
     },
     {
       id: "stats",
       title: "Analyse avant de parier",
       description: "Effectifs à jour, joueurs blessés, moyennes de la saison et feuille de match détaillée.",
-      preview: <PlayerStatsPreview />,
+      image: "/images/carousel/slide-stats.jpg",
+      alt: "Feuille de match d'un match NBA terminé, avec la note de chaque joueur",
     },
   ];
 
