@@ -154,6 +154,34 @@ public class PalmaresService {
 
     public record LeagueTitles(String leagueName, long count) {}
 
+    public record Champion(String username, int avatarNumber, String avatarPosition, String avatarColorway,
+                           String avatarIcon, String favoriteTeam, long points) {}
+
+    /** `week` = lundi de la semaine gagnée ; liste vide si elle n'a pas (encore) de champion. */
+    public record Champions(LocalDate week, List<Champion> champions) {}
+
+    /**
+     * Champion(s) de la semaine de jeu qui vient de finir, sur tout HoopPicks
+     * (leagueId null) ou dans une ligue. Seulement la semaine précédente :
+     * un vieux titre n'a pas à s'afficher comme celui « de la semaine
+     * dernière ». Vide tant qu'elle n'est pas attribuée (24 h au plus).
+     */
+    @Transactional(readOnly = true)
+    public Champions lastWeekChampions(String leagueId) {
+        LocalDate week = BankrollService.weekOf(clock.instant()).minusWeeks(1);
+        List<WeeklyTitle> titles = leagueId == null
+                ? titleRepository.findByWeekAndLeagueIdIsNull(week)
+                : titleRepository.findByWeekAndLeagueId(week, leagueId);
+        Map<String, Long> points = new HashMap<>();
+        titles.forEach(t -> points.put(t.getUserId(), t.getPoints()));
+        List<Champion> champions = userRepository.findAllById(points.keySet()).stream()
+                .map(u -> new Champion(u.getUsername(), u.getAvatarNumber(), u.getAvatarPosition(), u.getAvatarColorway(),
+                        u.getAvatarIcon(), u.getFavoriteTeam(), points.get(u.getId())))
+                .sorted(Comparator.comparing(Champion::username, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new Champions(week, champions);
+    }
+
     public record Palmares(long weeklyTitles, List<LeagueTitles> leagueTitles, long duelWins, Long bestWeek) {}
 
     @Transactional(readOnly = true)

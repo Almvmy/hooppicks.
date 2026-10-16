@@ -3,6 +3,7 @@
 //  - PlayerArt : aperçu d'un profil joueur (1200×630), une carte à collectionner
 //  - RecapArt  : carte « récap de la semaine » en image carrée (1080×1080)
 //  - PodiumArt : les 3 premiers du classement, en image carrée (1080×1080)
+//  - ChampionArt : le champion de la semaine passée, en image carrée (1080×1080)
 // Satori : styles en ligne uniquement, chaque bloc en display flex, pas de
 // classes ni de hooks. Polices : voir lib/share-fonts.ts (à passer à ImageResponse).
 // Partout, le logo est le vrai : panier + ballon + tir en pointillés
@@ -10,7 +11,7 @@
 
 import { LogoMark } from "@/app/logo-mark";
 import { SITE_URL, SharedPlayer, SharedTicket, plainNumber, signedPlain } from "@/lib/share";
-import type { LeaderboardEntry } from "@/lib/types";
+import type { LeaderboardEntry, WeekChampion } from "@/lib/types";
 import { headlineFor } from "@/components/weekly-recap-card";
 
 const NAVY = "#0B1120";
@@ -619,6 +620,77 @@ export function PodiumArt({ entries, title, dateLabel, total }: { entries: Leade
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
           <Label color={TEXT} size={26} spacing={1.5} upper={false}>{HOST}</Label>
           <Label color={MUTED} size={20} spacing={2}>Pronostics NBA · sans argent</Label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------------------------------------- champion */
+
+/**
+ * Le ou les champions de la semaine passée, en image carrée (1080×1080).
+ * Un seul : grand maillot au centre. Ex æquo : jusqu'à 3 maillots côte à côte.
+ */
+export function ChampionArt({ champions, weekLabel }: { champions: WeekChampion[]; weekLabel: string }) {
+  const gold = MEDAL[1];
+  const solo = champions.length === 1;
+  const shown = champions.slice(0, 3);
+  const c = shown[0];
+  const nameSize = !c ? 100 : c.username.length <= 8 ? 128 : c.username.length <= 12 ? 104 : 82;
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} slab={{ color: "#2A2108", left: 600, width: 680 }} />
+      <div style={{ position: "absolute", left: 90, top: 150, width: 900, height: 900, display: "flex", background: "radial-gradient(circle at 50% 42%, rgba(245,183,0,0.26) 0%, rgba(245,183,0,0.07) 34%, rgba(245,183,0,0) 52%)" }} />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "56px 70px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={gold.color} size={24} spacing={5}>Palmarès</Label>
+            <Label color={MUTED} size={24} spacing={3}>{weekLabel}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", marginTop: 10 }}>
+          <Crown size={solo ? 120 : 96} color={gold.color} />
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 40, letterSpacing: 7, textTransform: "uppercase", color: gold.color, marginTop: 14 }}>
+            {solo ? "Champion de la semaine" : "Champions de la semaine"}
+          </div>
+
+          {solo && c ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 34 }}>
+              <Jersey number={c.avatarNumber} size={230} colorway={c.avatarColorway} ring={gold.color} />
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: nameSize, lineHeight: 1, marginTop: 40, maxWidth: 940, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${c.username}`}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14 }}>
+                <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 96, lineHeight: 1, color: gold.color }}>{signedPlain(c.points)}</div>
+                <Label color={MUTED} size={34} spacing={3}>pts</Label>
+              </div>
+              {c.favoriteTeam && (
+                <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 28, color: MUTED, marginTop: 12 }}>{supporterOf(c.favoriteTeam)}</div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 56, marginTop: 48 }}>
+              {shown.map((p) => (
+                <div key={p.username} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 260 }}>
+                  <Jersey number={p.avatarNumber} size={170} colorway={p.avatarColorway} ring={gold.color} />
+                  <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: p.username.length <= 9 ? 54 : 42, lineHeight: 1, marginTop: 30, maxWidth: 260, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${p.username}`}</div>
+                  <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 56, lineHeight: 1, color: gold.color, marginTop: 10 }}>{signedPlain(p.points)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 44, lineHeight: 1, textTransform: "uppercase", color: ORANGE }}>
+            {solo ? "Qui va le détrôner ?" : "Qui va les détrôner ?"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+            <Label color={TEXT} size={26} spacing={1.5} upper={false}>{HOST}</Label>
+            <Label color={MUTED} size={20} spacing={2}>Pronostics NBA · sans argent</Label>
+          </div>
         </div>
       </div>
     </div>

@@ -485,6 +485,22 @@ export interface Duel {
 }
 
 /** Trophées gardés à vie (PalmaresService). */
+/** Champion(s) de la semaine passée (GET /palmares/champions). `week` = lundi de cette semaine, « 2026-10-05 ». */
+export interface WeekChampion {
+  username: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
+  favoriteTeam: string | null;
+  points: number;
+}
+
+export interface WeekChampions {
+  week: string;
+  champions: WeekChampion[];
+}
+
 export interface Palmares {
   weeklyTitles: number;
   leagueTitles: { leagueName: string; count: number }[];

@@ -23,6 +23,7 @@ import {
   reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
+import { fetchWeekChampions } from "@/lib/api/palmares";
 import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 
 // Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
@@ -51,6 +52,8 @@ export default function LeagueDetailPage({
   // La semaine relance la course entre amis chaque lundi, quand l'écart
   // de la saison est devenu trop grand pour être comblé.
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
+  // Champion(s) de la ligue la semaine passée : couronne à côté du pseudo.
+  const championsQuery = useQuery({ queryKey: ["week-champions", id], queryFn: () => fetchWeekChampions(id), staleTime: 10 * 60 * 1000 });
   const leaderboardQuery = useQuery({
     queryKey: ["league-leaderboard", id, period],
     queryFn: () => fetchLeagueLeaderboard(id, period),
@@ -211,6 +214,7 @@ export default function LeagueDetailPage({
                   : "Aucun ticket réglé dans cette ligue pour l'instant."
             }
             currentUsername={profile?.username}
+            champions={new Set(championsQuery.data?.champions.map((c) => c.username))}
           />
         </div>
 

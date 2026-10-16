@@ -17,6 +17,8 @@ import { TeamLogo } from "@/components/team-logo";
 import { CountUp } from "@/components/motion/count-up";
 import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/trends";
 import { FanTeams } from "@/components/leaderboard/fan-teams";
+import { ChampionBanner, ChampionCrown } from "@/components/leaderboard/champion-banner";
+import { fetchWeekChampions } from "@/lib/api/palmares";
 import { ShareImageButton } from "@/components/share-image-button";
 import { fetchLeaderboard, leaderboardQueryKey } from "@/lib/api/leaderboard";
 import { fetchProfile } from "@/lib/api/auth";
@@ -54,11 +56,13 @@ function PodiumSpot({
   place,
   teams,
   isMe,
+  isChampion,
 }: {
   entry: LeaderboardEntry;
   place: 1 | 2 | 3;
   teams: ReturnType<typeof useTeamsByAbbreviation>;
   isMe: boolean;
+  isChampion: boolean;
 }) {
   // Rang réel de l'entrée (une égalité peut donner deux 2e), mais la marche
   // et la médaille suivent la place sur le podium.
@@ -88,6 +92,7 @@ function PodiumSpot({
       </div>
       <span className="flex max-w-full items-center gap-1.5 font-heading text-sm font-bold group-hover:underline sm:text-base">
         <span className="truncate">{entry.username}</span>
+        {isChampion && <ChampionCrown />}
         {favorite && <TeamLogo abbreviation={favorite} logoUrl={teams.get(favorite)?.logoUrl} size={18} />}
       </span>
       {isMe && <span className="text-[11px] font-semibold text-primary">C&apos;est toi</span>}
@@ -190,6 +195,9 @@ function PlayersRanking({ username }: { username: string | undefined }) {
   });
   const teams = useTeamsByAbbreviation();
   const [query, setQuery] = useState("");
+  // Champion(s) de la semaine passée : bandeau en tête et couronne à côté du pseudo.
+  const championsQuery = useQuery({ queryKey: ["week-champions"], queryFn: () => fetchWeekChampions(), staleTime: 10 * 60 * 1000 });
+  const champions = new Set(championsQuery.data?.champions.map((c) => c.username));
 
   const all = data ?? [];
   const normalizedQuery = normalizeForSearch(query.trim());
@@ -246,6 +254,8 @@ function PlayersRanking({ username }: { username: string | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {championsQuery.data && <ChampionBanner data={championsQuery.data} />}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Période">
           <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -325,6 +335,7 @@ function PlayersRanking({ username }: { username: string | undefined }) {
                 place={(i + 1) as 1 | 2 | 3}
                 teams={teams}
                 isMe={entry.username === username}
+                isChampion={champions.has(entry.username)}
               />
             ))}
             {podium.length < 2 && <PodiumGhost place={2} />}
@@ -342,6 +353,7 @@ function PlayersRanking({ username }: { username: string | undefined }) {
             isError={isError}
             currentUsername={username}
             showTrends
+            champions={champions}
             emptyMessage={isSearching ? `Aucun joueur ne correspond à « ${query.trim()} ».` : undefined}
           />
         </div>

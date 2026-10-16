@@ -1,5 +1,6 @@
 "use client";
 
+import { ChampionCrown } from "@/components/leaderboard/champion-banner";
 import { useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
@@ -62,6 +63,7 @@ export function LeaderboardTable({
   emptyMessage = "Aucun joueur pour l'instant.",
   currentUsername,
   showTrends = false,
+  champions,
 }: {
   entries: LeaderboardEntry[] | undefined;
   isLoading: boolean;
@@ -70,6 +72,8 @@ export function LeaderboardTable({
   currentUsername?: string;
   /** Évolution du rang, forme récente et série (classement général). */
   showTrends?: boolean;
+  /** Pseudos des champions de la semaine passée : couronne à côté du nom. */
+  champions?: Set<string>;
 }) {
   const bodyRef = useRef<HTMLTableSectionElement>(null);
   const teams = useTeamsByAbbreviation();
@@ -173,6 +177,7 @@ export function LeaderboardTable({
                     size="xs"
                   />
                   {entry.username}
+                  {champions?.has(entry.username) && <ChampionCrown />}
                   <FavoriteTeamBadge favoriteTeam={entry.favoriteTeam} teams={teams} />
                   {showTrends && <StreakBadge streak={entry.streak} />}
                 </Link>

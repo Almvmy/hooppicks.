@@ -88,4 +88,40 @@ class PalmaresServiceTest {
         verify(weekRepository).save(any());
         verify(notificationRepository, never()).save(any());
     }
+
+    @Test
+    void champions_de_la_semaine_passee_seulement_et_tries() {
+        WeeklyTitle a = new WeeklyTitle();
+        a.setUserId("u1");
+        a.setWeek(LAST);
+        a.setPoints(420);
+        WeeklyTitle b = new WeeklyTitle();
+        b.setUserId("u2");
+        b.setWeek(LAST);
+        b.setPoints(420);
+        when(titleRepository.findByWeekAndLeagueIdIsNull(LAST)).thenReturn(List.of(a, b));
+        User zed = new User();
+        zed.setId("u1");
+        zed.setUsername("Zed");
+        User awa = new User();
+        awa.setId("u2");
+        awa.setUsername("awa");
+        when(userRepository.findAllById(any())).thenReturn(List.of(zed, awa));
+
+        PalmaresService.Champions result = service.lastWeekChampions(null);
+
+        assertThat(result.week()).isEqualTo(LAST);
+        assertThat(result.champions()).extracting(PalmaresService.Champion::username).containsExactly("awa", "Zed");
+        assertThat(result.champions()).allMatch(c -> c.points() == 420);
+        verify(titleRepository, never()).findByWeekAndLeagueId(any(), any());
+    }
+
+    @Test
+    void champions_d_une_ligue() {
+        when(titleRepository.findByWeekAndLeagueId(LAST, "l1")).thenReturn(List.of());
+        when(userRepository.findAllById(any())).thenReturn(List.of());
+
+        assertThat(service.lastWeekChampions("l1").champions()).isEmpty();
+        verify(titleRepository).findByWeekAndLeagueId(LAST, "l1");
+    }
 }

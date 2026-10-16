@@ -43,6 +43,12 @@ export function formatShortDateTime(date: Date, timeZone = resolveTimeZone()): s
 }
 
 /** "05 oct. 2026" : date avec année (historique des paris et transactions). */
+/** « Semaine du 5 octobre » à partir du lundi d'une semaine de jeu (« 2026-10-05 »), en GMT. */
+export function weekLabel(monday: string): string {
+  const day = new Date(`${monday}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "UTC" });
+  return `Semaine du ${day}`;
+}
+
 export function formatLongDate(date: Date, timeZone = resolveTimeZone()): string {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", timeZone });
 }
