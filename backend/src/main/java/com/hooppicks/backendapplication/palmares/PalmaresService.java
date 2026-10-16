@@ -23,6 +23,14 @@ import java.util.*;
 @Service
 public class PalmaresService {
 
+    /**
+     * Première semaine de jeu qui compte au palmarès (lundi 12 octobre 2026,
+     * lancement public). Les semaines d'avant n'étaient que des essais : pas de
+     * titre attribué, ni bandeau ni couronne, rien dans le palmarès des profils,
+     * même si des titres de cette période restent en base.
+     */
+    public static final LocalDate FIRST_WEEK = LocalDate.of(2026, 10, 12);
+
     private static final Logger log = LoggerFactory.getLogger(PalmaresService.class);
     private static final Duration GRACE = Duration.ofHours(24);
 
@@ -36,6 +44,7 @@ public class PalmaresService {
     private final DuelRepository duelRepository;
     private final PushService pushService;
     private final Clock clock;
+    private final LocalDate firstWeek;
 
     @Autowired
     public PalmaresService(BetRepository betRepository, WeeklyTitleRepository titleRepository,
@@ -44,14 +53,15 @@ public class PalmaresService {
                            NotificationRepository notificationRepository, DuelRepository duelRepository,
                            PushService pushService) {
         this(betRepository, titleRepository, weekRepository, leagueRepository, membershipRepository, userRepository,
-                notificationRepository, duelRepository, pushService, Clock.system(BankrollService.ZONE));
+                notificationRepository, duelRepository, pushService, Clock.system(BankrollService.ZONE), FIRST_WEEK);
     }
 
     PalmaresService(BetRepository betRepository, WeeklyTitleRepository titleRepository,
                     PalmaresWeekRepository weekRepository, LeagueRepository leagueRepository,
                     LeagueMembershipRepository membershipRepository, UserRepository userRepository,
                     NotificationRepository notificationRepository, DuelRepository duelRepository,
-                    PushService pushService, Clock clock) {
+                    PushService pushService, Clock clock, LocalDate firstWeek) {
+        this.firstWeek = firstWeek;
         this.betRepository = betRepository;
         this.titleRepository = titleRepository;
         this.weekRepository = weekRepository;
@@ -74,7 +84,7 @@ public class PalmaresService {
         LocalDate lastEnded = current.minusWeeks(1);
         int done = 0;
         for (LocalDate week : settledWeeks()) {
-            if (!week.isBefore(current) || weekRepository.existsById(week)) continue;
+            if (week.isBefore(firstWeek) || !week.isBefore(current) || weekRepository.existsById(week)) continue;
             Instant start = BankrollService.startOf(week);
             Instant end = start.plus(Duration.ofDays(7));
             if (betRepository.countAllPendingPlacedBetween(start, end) > 0 && now.isBefore(end.plus(GRACE))) continue;
@@ -169,6 +179,7 @@ public class PalmaresService {
     @Transactional(readOnly = true)
     public Champions lastWeekChampions(String leagueId) {
         LocalDate week = BankrollService.weekOf(clock.instant()).minusWeeks(1);
+        if (week.isBefore(firstWeek)) return new Champions(week, List.of());
         List<WeeklyTitle> titles = leagueId == null
                 ? titleRepository.findByWeekAndLeagueIdIsNull(week)
                 : titleRepository.findByWeekAndLeagueId(week, leagueId);
@@ -186,7 +197,8 @@ public class PalmaresService {
 
     @Transactional(readOnly = true)
     public Palmares of(String userId) {
-        List<WeeklyTitle> titles = titleRepository.findByUserIdOrderByWeekDesc(userId);
+        List<WeeklyTitle> titles = titleRepository.findByUserIdOrderByWeekDesc(userId).stream()
+                .filter(t -> !t.getWeek().isBefore(firstWeek)).toList();
         long global = titles.stream().filter(t -> t.getLeagueId() == null).count();
         Map<String, Long> byLeague = new TreeMap<>();
         for (WeeklyTitle t : titles) {

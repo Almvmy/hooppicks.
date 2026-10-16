@@ -35,7 +35,7 @@ class PalmaresServiceTest {
     void setUp() {
         service = new PalmaresService(betRepository, titleRepository, weekRepository, leagueRepository,
                 membershipRepository, userRepository, notificationRepository, mock(DuelRepository.class),
-                mock(PushService.class), Clock.fixed(NOW, BankrollService.ZONE));
+                mock(PushService.class), Clock.fixed(NOW, BankrollService.ZONE), LocalDate.MIN);
         when(userRepository.findById(any())).thenAnswer(inv -> {
             User u = new User();
             u.setId(inv.getArgument(0));
@@ -123,5 +123,22 @@ class PalmaresServiceTest {
 
         assertThat(service.lastWeekChampions("l1").champions()).isEmpty();
         verify(titleRepository).findByWeekAndLeagueId(LAST, "l1");
+    }
+
+    @Test
+    void rien_avant_la_premiere_semaine_officielle() {
+        PalmaresService launched = new PalmaresService(betRepository, titleRepository, weekRepository, leagueRepository,
+                membershipRepository, userRepository, notificationRepository, mock(DuelRepository.class),
+                mock(PushService.class), Clock.fixed(NOW, BankrollService.ZONE), LocalDate.of(2026, 10, 5));
+        when(betRepository.findSettledWeeks()).thenReturn(List.of(LAST.atStartOfDay()));
+        WeeklyTitle old = new WeeklyTitle();
+        old.setUserId("u1");
+        old.setWeek(LAST);
+        when(titleRepository.findByUserIdOrderByWeekDesc("u1")).thenReturn(List.of(old));
+
+        assertThat(launched.recordEndedWeeks()).isZero();
+        assertThat(launched.lastWeekChampions(null).champions()).isEmpty();
+        assertThat(launched.of("u1").weeklyTitles()).isZero();
+        verify(titleRepository, never()).findByWeekAndLeagueIdIsNull(any());
     }
 }
