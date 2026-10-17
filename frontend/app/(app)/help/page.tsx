@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronDown, Layers, Lock, Mail, Medal, MessageCircleQuestion, MessageSquare, Scale, Search, Swords, Timer, Trophy, UserRound, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown, FileText, Layers, Lock, Mail, Medal, MessageCircleQuestion, MessageSquare, Scale, Search, Swords, Timer, Trophy, UserRound, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { badgeIcon } from "@/lib/badges";
@@ -24,6 +24,9 @@ const BADGE_RULES = [
   { icon: "eye", name: "Lucide", condition: "Un ticket gagné en pariant contre ton équipe favorite." },
   { icon: "users", name: "Contre la foule", condition: "Une sélection gagnante que moins de 20 % des joueurs avaient choisie (5 pronostics au moins)." },
 ];
+
+// Servi tel quel depuis public/ : à remplacer par la nouvelle version quand le manuel change.
+const MANUAL_PDF = "/manuel-hooppicks.pdf";
 
 const SECTIONS = [
   { id: "regles", label: "Règles" },
@@ -102,6 +105,24 @@ export default function HelpPage() {
               </a>
             ))}
           </nav>
+        )}
+
+        {!isSearching && (
+          <a
+            href={MANUAL_PDF}
+            target="_blank"
+            rel="noopener"
+            className="glass-inset mt-4 flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-tint/[0.06]"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <FileText className="h-4 w-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Manuel d&apos;utilisation</span>
+              <span className="block text-xs text-muted-foreground">PDF, toute l&apos;app expliquée</span>
+            </span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </a>
         )}
       </div>
 

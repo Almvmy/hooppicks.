@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>HoopPicks · Manuel d'utilisation</title>
+<style>
+  @font-face { font-family: "Barlow"; font-weight: 500; src: url("../../frontend/app/fonts/share/barlow-latin-500-normal.woff") format("woff"); }
+  @font-face { font-family: "Barlow"; font-weight: 700; src: url("../../frontend/app/fonts/share/barlow-latin-700-normal.woff") format("woff"); }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url("../../frontend/app/fonts/share/barlow-condensed-latin-700-normal.woff") format("woff"); }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 800; src: url("../../frontend/app/fonts/share/barlow-condensed-latin-800-normal.woff") format("woff"); }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 900; src: url("../../frontend/app/fonts/share/barlow-condensed-latin-900-normal.woff") format("woff"); }
+  @font-face { font-family: "Barlow Condensed"; font-weight: 900; font-style: italic; src: url("../../frontend/app/fonts/share/barlow-condensed-latin-900-italic.woff") format("woff"); }
+
+  :root {
+    --ink: #121A2E;
+    --navy: #0B1120;
+    --jersey: #1A2440;
+    --brand: #FF7A1A;
+    --brand-dark: #A13C0A;
+    --sand: #ECE3D3;
+    --cream: #F6F0E5;
+    --paper: #FBF8F2;
+    --muted: #5F5242;
+    --line: #E1D5C1;
+    --paint: #5A4BA8;
+    --success: #296930;
+    --danger: #B42318;
+  }
+
+  @page {
+    size: A4;
+    margin: 20mm 17mm 20mm 17mm;
+    @bottom-left {
+      content: "HoopPicks · Manuel d'utilisation";
+      font: 700 8pt "Barlow Condensed";
+      letter-spacing: 0.08em; text-transform: uppercase; color: #8A7B66;
+    }
+    @bottom-right {
+      content: counter(page);
+      font: 800 10pt "Barlow Condensed"; color: #A13C0A;
+    }
+  }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+  @page back { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font: 500 10.2pt/1.55 "Barlow", sans-serif; color: var(--ink); }
+  strong { font-weight: 700; }
+  p { margin: 0 0 2.6mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.2mm; }
+  li::marker { color: var(--brand); font-weight: 700; }
+
+  /* ---------- Couverture ---------- */
+  .cover {
+    page: cover; height: 297mm; position: relative; overflow: hidden; color: #F1F5F9;
+    background:
+      radial-gradient(120mm 120mm at 85% 18%, rgba(255,122,26,0.28), transparent 70%),
+      radial-gradient(140mm 110mm at 10% 95%, rgba(145,132,217,0.22), transparent 70%),
+      linear-gradient(160deg, #1A2440 0%, #0B1120 70%);
+  }
+  .cover .stripes { position: absolute; inset: 0; opacity: 0.07;
+    background: repeating-linear-gradient(-35deg, #fff 0 1px, transparent 1px 9mm); }
+  .cover .court { position: absolute; right: -40mm; bottom: -40mm; width: 170mm; height: 170mm; opacity: 0.10;
+    border: 1.4mm solid #fff; border-radius: 50%; }
+  .cover .court::after { content: ""; position: absolute; inset: 30mm; border: 1mm solid #fff; border-radius: 50%; }
+  .cover .logo { position: absolute; left: 20mm; top: 22mm; width: 82mm; }
+  .cover .title { position: absolute; left: 20mm; top: 78mm; width: 105mm; }
+  .cover .eyebrow { font: 800 11pt "Barlow Condensed"; letter-spacing: 0.22em; text-transform: uppercase; color: var(--brand); }
+  .cover h1 { font: italic 900 50pt/0.92 "Barlow Condensed"; text-transform: uppercase; margin: 4mm 0 6mm; letter-spacing: -0.01em; }
+  .cover h1 span { color: var(--brand); }
+  .cover .lead { font-size: 12.5pt; line-height: 1.5; color: #CBD5E1; max-width: 86mm; }
+  .cover .pills { margin-top: 9mm; display: flex; flex-wrap: wrap; gap: 2.5mm; max-width: 88mm; }
+  .cover .pill { font: 700 9pt "Barlow Condensed"; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 1.6mm 3.6mm; border-radius: 99px; border: 0.3mm solid rgba(255,255,255,0.25); color: #E2E8F0; }
+  .cover .phones { position: absolute; right: 14mm; top: 70mm; width: 80mm; height: 170mm; }
+  .cover .phones .phone { position: absolute; }
+  .cover .phones .p1 { width: 62mm; right: 0; top: 0; transform: rotate(5deg); }
+  .cover .phones .p2 { width: 50mm; left: 6mm; top: 62mm; transform: rotate(-6deg); opacity: 0.95; }
+  .cover .foot { position: absolute; left: 20mm; right: 20mm; bottom: 16mm; display: flex; justify-content: space-between;
+    font: 700 9pt "Barlow Condensed"; letter-spacing: 0.14em; text-transform: uppercase; color: #94A3B8;
+    border-top: 0.3mm solid rgba(255,255,255,0.15); padding-top: 4mm; }
+
+  /* Téléphone : cadre sobre autour d'une capture de l'app */
+  .phone { background: #0E1424; border-radius: 9mm; padding: 2.4mm; box-shadow: 0 6mm 14mm rgba(0,0,0,0.35), inset 0 0 0 0.4mm #3B4660; }
+  .phone img { display: block; width: 100%; border-radius: 6.8mm; }
+
+  /* ---------- Sommaire ---------- */
+  .toc { break-after: page; }
+  .toc h2 { font: italic 900 32pt/1 "Barlow Condensed"; text-transform: uppercase; margin: 6mm 0 2mm; }
+  .toc .intro { color: var(--muted); max-width: 140mm; margin-bottom: 9mm; }
+  .toc ol { list-style: none; padding: 0; margin: 0; }
+  .toc ol li { display: flex; align-items: baseline; gap: 4mm; padding: 3.6mm 0; border-bottom: 0.3mm solid var(--line); margin: 0; }
+  .toc .n { font: 900 20pt/1 "Barlow Condensed"; color: var(--brand); width: 12mm; }
+  .toc .t { font: 800 14pt "Barlow Condensed"; text-transform: uppercase; letter-spacing: 0.02em; }
+  .toc .s { color: var(--muted); font-size: 9.5pt; flex: 1; }
+  .toc .pg { font: 800 13pt "Barlow Condensed"; color: var(--brand-dark); }
+  .toc .key { margin-top: 10mm; }
+
+  /* ---------- Chapitres ---------- */
+  .chapter { break-before: page; }
+  .chapter-head { position: relative; border-radius: 5mm; overflow: hidden; color: #F1F5F9; padding: 7mm 9mm 6mm; margin-bottom: 6mm;
+    background: radial-gradient(70mm 50mm at 95% 0%, rgba(255,122,26,0.35), transparent 70%), linear-gradient(150deg, #1A2440, #0B1120); }
+  .chapter-head::after { content: ""; position: absolute; inset: 0; opacity: 0.06;
+    background: repeating-linear-gradient(-35deg, #fff 0 1px, transparent 1px 7mm); }
+  .chapter-head .num { font: italic 900 40pt/0.8 "Barlow Condensed"; color: var(--brand); }
+  .chapter-head h2 { font: italic 900 27pt/1 "Barlow Condensed"; text-transform: uppercase; margin: 2mm 0 2mm; }
+  .chapter-head p { margin: 0; color: #CBD5E1; max-width: 130mm; font-size: 10.5pt; }
+
+  h3 { font: 800 15pt/1.15 "Barlow Condensed"; text-transform: uppercase; letter-spacing: 0.02em; margin: 5.5mm 0 2.2mm;
+    display: flex; align-items: center; gap: 2.5mm; break-after: avoid; }
+  h3::before { content: ""; width: 1.6mm; height: 5mm; border-radius: 1mm; background: var(--brand); }
+  h4 { font: 800 11.5pt "Barlow Condensed"; text-transform: uppercase; letter-spacing: 0.04em; color: var(--brand-dark); margin: 4mm 0 1.5mm; break-after: avoid; }
+
+  .split { display: grid; grid-template-columns: 1fr 46mm; gap: 7mm; align-items: start; }
+  figure { break-inside: avoid; }
+  .split.left { grid-template-columns: 46mm 1fr; }
+  .split.slim { grid-template-columns: 1fr 38mm; }
+  figure { margin: 0; }
+  figcaption { margin-top: 3mm; font: 700 8.5pt/1.35 "Barlow Condensed"; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); text-align: center; }
+
+  .callout { border-radius: 3.5mm; padding: 4mm 5mm; margin: 4mm 0; background: var(--cream); border: 0.3mm solid var(--line); break-inside: avoid; }
+  .callout .label { font: 800 9pt "Barlow Condensed"; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-dark); margin-bottom: 1.5mm; }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+  .callout.dark { background: linear-gradient(150deg, #1A2440, #0B1120); color: #E2E8F0; border: none; }
+  .callout.dark .label { color: var(--brand); }
+  .callout.dark strong { color: #fff; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; margin: 3mm 0 4mm; }
+  .cards.three { grid-template-columns: 1fr 1fr 1fr; }
+  .card { border: 0.3mm solid var(--line); border-radius: 3.5mm; padding: 3.5mm 4mm; background: #fff; break-inside: avoid; }
+  .card .k { font: 800 12pt "Barlow Condensed"; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 1mm; display: flex; align-items: center; gap: 2mm; }
+  .card .k .tag { font: 800 8pt "Barlow Condensed"; letter-spacing: 0.08em; padding: 0.6mm 2mm; border-radius: 99px; background: var(--brand); color: var(--ink); }
+  .card p { margin: 0; font-size: 9.6pt; color: #3B3428; }
+
+  .steps { list-style: none; padding: 0; counter-reset: s; }
+  .steps li { position: relative; padding-left: 10mm; margin-bottom: 3mm; counter-increment: s; }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: -0.3mm; width: 6.5mm; height: 6.5mm; border-radius: 50%;
+    background: var(--ink); color: var(--brand); font: 900 10pt/6.5mm "Barlow Condensed"; text-align: center; }
+
+  .results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 3mm 0; }
+  .res { border-radius: 3.5mm; padding: 3.5mm 4mm; color: #fff; break-inside: avoid; }
+  .res .k { font: 900 13pt "Barlow Condensed"; text-transform: uppercase; }
+  .res p { margin: 1mm 0 0; font-size: 9.2pt; line-height: 1.45; opacity: 0.95; }
+  .res.won { background: #296930; } .res.lost { background: #8F1D14; } .res.void { background: #4B4F63; }
+
+  .example { display: flex; gap: 3mm; margin: 3mm 0; font: 700 10pt "Barlow Condensed"; }
+  .chip { padding: 1.4mm 3.2mm; border-radius: 99px; background: var(--ink); color: #fff; letter-spacing: 0.04em; }
+  .chip.o { background: var(--brand); color: var(--ink); }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9.6pt; break-inside: auto; }
+  th { text-align: left; font: 800 9pt "Barlow Condensed"; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--ink); padding: 2.4mm 3.5mm; }
+  th:first-child { border-radius: 2.5mm 0 0 0; } th:last-child { border-radius: 0 2.5mm 0 0; }
+  td { padding: 2.2mm 3.5mm; border-bottom: 0.3mm solid var(--line); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--paper); }
+  tr { break-inside: avoid; }
+  td.b { font: 800 10.5pt "Barlow Condensed"; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+
+  .nav5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2.5mm; margin: 3mm 0 4mm; }
+  .nav5 div { background: var(--ink); color: #fff; border-radius: 3mm; padding: 3mm; text-align: center; }
+  .nav5 b { display: block; font: 800 11pt "Barlow Condensed"; text-transform: uppercase; color: var(--brand); }
+  .nav5 span { font-size: 8.3pt; color: #CBD5E1; line-height: 1.3; display: block; margin-top: 1mm; }
+
+  .keep { break-inside: avoid; }
+  .badges { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; break-inside: avoid; }
+  .badges table { margin: 2mm 0 0; font-size: 9pt; }
+  .badges td.b { white-space: normal; font-size: 10pt; }
+  .muted { color: var(--muted); }
+
+  /* ---------- Dos ---------- */
+  .back { page: back; break-before: page; height: 297mm; position: relative; overflow: hidden; color: #F1F5F9;
+    background: radial-gradient(130mm 110mm at 50% 40%, rgba(255,122,26,0.25), transparent 70%), linear-gradient(160deg, #1A2440, #0B1120);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .back img { width: 46mm; }
+  .back h2 { font: italic 900 40pt/1 "Barlow Condensed"; text-transform: uppercase; margin: 8mm 0 3mm; }
+  .back h2 span { color: var(--brand); }
+  .back p { color: #CBD5E1; max-width: 120mm; margin: 0 auto 2mm; }
+  .back .url { margin-top: 8mm; font: 800 14pt "Barlow Condensed"; letter-spacing: 0.08em; color: var(--brand); }
+  .back .small { position: absolute; bottom: 14mm; left: 0; right: 0; font-size: 8.5pt; color: #94A3B8; }
+</style>
+</head>
+<body>
+
+<!-- ==================== COUVERTURE ==================== -->
+<section class="cover">
+  <div class="stripes"></div>
+  <div class="court"></div>
+  <img class="logo" src="../logo/svg/hooppicks-lockup-horizontal.svg" alt="HoopPicks">
+  <div class="title">
+    <div class="eyebrow">Manuel d'utilisation</div>
+    <h1>Pronostique<br>la <span>NBA</span><br>entre amis</h1>
+    <p class="lead">Tout ce qu'il faut savoir pour parier, grimper au classement et battre tes amis, avec des points virtuels : aucun argent réel n'est en jeu.</p>
+    <div class="pills">
+      <span class="pill">1000 pts chaque semaine</span>
+      <span class="pill">Ligues & duels</span>
+      <span class="pill">Direct des matchs</span>
+      <span class="pill">Badges</span>
+    </div>
+  </div>
+  <div class="phones">
+    <div class="phone p2"><img src="../../frontend/public/images/carousel/slide-classement.jpg" alt=""></div>
+    <div class="phone p1"><img src="../../frontend/public/images/carousel/slide-paris.jpg" alt=""></div>
+  </div>
+  <div class="foot"><span>hooppicks.vercel.app</span><span>Édition octobre 2026</span></div>
+</section>
+
+<!-- ==================== SOMMAIRE ==================== -->
+<section class="toc">
+  <h2>Au programme</h2>
+  <p class="intro">HoopPicks est un jeu de pronostics sur les matchs NBA. Ce manuel suit l'ordre dans lequel tu découvriras l'app : de ton premier ticket jusqu'au titre de champion de la semaine.</p>
+  <ol>
+    <li><span class="n">01</span><span class="t">Premiers pas</span><span class="s">Compte, installation, se repérer</span><span class="pg" data-toc="c1"></span></li>
+    <li><span class="n">02</span><span class="t">La semaine de jeu</span><span class="s">1000 points, solde et classement</span><span class="pg" data-toc="c2"></span></li>
+    <li><span class="n">03</span><span class="t">Parier</span><span class="s">Marchés, ticket, règles, résultats</span><span class="pg" data-toc="c3"></span></li>
+    <li><span class="n">04</span><span class="t">La page d'un match</span><span class="s">Direct, stats, suivre un match</span><span class="pg" data-toc="c4"></span></li>
+    <li><span class="n">05</span><span class="t">La compétition</span><span class="s">Classement, ligues, duels, saison</span><span class="pg" data-toc="c5"></span></li>
+    <li><span class="n">06</span><span class="t">Ton profil</span><span class="s">Avatar, palmarès, badges, partage</span><span class="pg" data-toc="c6"></span></li>
+    <li><span class="n">07</span><span class="t">L'actu NBA</span><span class="s">Actus, joueurs, équipes</span><span class="pg" data-toc="c7"></span></li>
+    <li><span class="n">08</span><span class="t">Ton compte</span><span class="s">Notifications, paramètres, aide</span><span class="pg" data-toc="c8"></span></li>
+  </ol>
+  <div class="callout dark key">
+    <div class="label">L'essentiel en 4 points</div>
+    <ul>
+      <li>Chaque <strong>lundi à 12h GMT</strong>, tout le monde repart avec <strong>1000 points</strong> à miser.</li>
+      <li>Un ticket gagné rapporte son <strong>bénéfice au classement</strong> ; une mauvaise semaine ne fait jamais perdre les points déjà acquis.</li>
+      <li>On parie sur le <strong>vainqueur</strong>, l'<strong>écart</strong>, le <strong>total de points</strong> ou les <strong>stats d'un joueur</strong>.</li>
+      <li>Le meilleur de la semaine est sacré <strong>champion</strong>, sur tout HoopPicks et dans chaque ligue.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ==================== 01 ==================== -->
+<section class="chapter" id="c1">
+  <div class="chapter-head">
+    <div class="num">01</div>
+    <h2>Premiers pas</h2>
+    <p>Créer ton compte, installer l'app sur ton téléphone et trouver ton chemin.</p>
+  </div>
+
+  <h3>Créer un compte</h3>
+  <p>Depuis la page d'accueil, touche <strong>Créer un compte</strong> et renseigne un pseudo, une adresse e-mail et un mot de passe de <strong>8 caractères au moins</strong>. Tu es connecté tout de suite.</p>
+  <p>Un e-mail de confirmation t'est envoyé. Tant que tu n'as pas cliqué sur le lien, une bannière te le rappelle, mais elle ne bloque rien : tu peux jouer normalement. « Renvoyer le lien » permet de le redemander.</p>
+  <p>Mot de passe oublié ? Le lien <strong>Mot de passe oublié</strong> de la page de connexion t'envoie un e-mail de réinitialisation, valable 30 minutes.</p>
+  <div class="callout">
+    <div class="label">Bon à savoir</div>
+    <p>Ta connexion dure <strong>60 jours</strong> et se prolonge à chaque visite : tant que tu ouvres l'app au moins une fois tous les deux mois, tu restes connecté.</p>
+  </div>
+
+  <h3>Installer l'app sur ton téléphone</h3>
+  <p>HoopPicks s'installe sur l'écran d'accueil comme une vraie application, sans passer par un store.</p>
+  <div class="cards">
+    <div class="card"><div class="k">Android</div><p>Touche <strong>Installer</strong> quand l'app le propose, ou ouvre le menu de Chrome → <strong>Installer l'application</strong>.</p></div>
+    <div class="card"><div class="k">iPhone</div><p>Dans <strong>Safari</strong>, touche <strong>Partager</strong> puis <strong>Sur l'écran d'accueil</strong>. Sur iPhone, les notifications ne marchent que dans l'app installée.</p></div>
+  </div>
+
+  <h3>Se repérer</h3>
+  <p>Cinq rubriques, dans la barre du bas sur téléphone et à gauche sur ordinateur :</p>
+  <div class="nav5">
+    <div><b>Accueil</b><span>Ton tableau de bord</span></div>
+    <div><b>Matchs</b><span>Calendrier et paris</span></div>
+    <div><b>Mes paris</b><span>Tes tickets</span></div>
+    <div><b>Compétition</b><span>Classement, ligues, duels, saison</span></div>
+    <div><b>NBA</b><span>Actus, joueurs, équipes</span></div>
+  </div>
+  <p>Ton compte (profil, paramètres, Nous écrire, aide) est dans le <strong>menu de ton avatar</strong>, en haut à droite. Juste à côté, la pastille affiche tes <strong>points de classement</strong> et ton rang.</p>
+
+  <h3>Le tableau de bord</h3>
+  <p>C'est ta page d'accueil une fois connecté. Tu y trouves :</p>
+  <ul>
+    <li>ton <strong>solde de la semaine</strong>, ta réussite, tes points et ton rang de la semaine, tes paris en cours ;</li>
+    <li>ton <strong>équipe favorite</strong> : son prochain match, ses blessés, tes paris pour ou contre elle, ses actus ;</li>
+    <li>la <strong>cote boostée du jour</strong> et le <strong>match à la une</strong> ;</li>
+    <li>les <strong>combinés du jour</strong> : « le sûr » (deux favoris) et « le coup » (trois outsiders), ajoutés à ton ticket en une touche ;</li>
+    <li>les prochains matchs, tes derniers tickets, ta semaine en cours, le classement, tes ligues et les actus.</li>
+  </ul>
+</section>
+
+<!-- ==================== 02 ==================== -->
+<section class="chapter" id="c2">
+  <div class="chapter-head">
+    <div class="num">02</div>
+    <h2>La semaine de jeu</h2>
+    <p>Chaque semaine, tout le monde repart à égalité. C'est la règle qui fait tout HoopPicks.</p>
+  </div>
+
+  <div class="callout dark">
+    <div class="label">Le lundi à 12h GMT</div>
+    <p>Tout le monde repart avec <strong>1000 points</strong>, quel que soit son solde de la semaine passée. Midi, parce que les matchs de la nuit sont finis et les suivants pas encore commencés.</p>
+  </div>
+
+  <div class="split slim">
+    <div>
+      <h3>Ton solde : un budget de mises</h3>
+      <p>Tes 1000 points servent à miser pendant la semaine. Le solde <strong>baisse à chaque mise</strong> et ne remonte que si un ticket est <strong>remboursé</strong>. Un ticket gagné ne recrédite pas le solde : son bénéfice part au classement.</p>
+      <p class="muted">Pourquoi ? Sans ça, celui qui gagnait tôt dans la semaine misait de plus en plus gros. Ici, chacun a exactement 1000 points à risquer par semaine.</p>
+      <h3>Quels matchs sont ouverts ?</h3>
+      <p>Tu peux parier sur tous les matchs qui commencent <strong>avant la fin de la semaine</strong> (lundi 12h GMT). Les matchs suivants s'ouvrent la semaine d'après : un pari compte toujours pour la semaine où il est posé.</p>
+      <p>Un <strong>récap de ta semaine</strong> arrive dans la cloche chaque lundi.</p>
+    </div>
+    <figure style="margin-top:6mm">
+      <div class="phone"><img src="../../frontend/public/images/carousel/slide-combines.jpg" alt=""></div>
+      <figcaption>Le ticket : gain possible au classement et solde de la semaine</figcaption>
+    </figure>
+  </div>
+
+  <h3>Ton score : le classement</h3>
+  <p>Chaque semaine vaut ton <strong>bénéfice net</strong> : les bénéfices de tes tickets gagnés, moins les mises de tes tickets perdus. Une semaine ne descend <strong>jamais sous 0</strong>. Ton classement de la saison additionne tes semaines : une mauvaise semaine ne te fait jamais perdre les points déjà acquis.</p>
+  <div class="cards three">
+    <div class="card"><div class="k">Ticket gagné</div><p>Mise 100, cote 2,50 : gain 250, soit <strong>+150</strong> au classement.</p></div>
+    <div class="card"><div class="k">Ticket perdu</div><p>Mise 100 : <strong>−100</strong> sur ta semaine (jamais sous 0 au total de la semaine).</p></div>
+    <div class="card"><div class="k">Remboursé</div><p>La mise revient sur ton solde, <strong>0</strong> au classement.</p></div>
+  </div>
+
+</section>
+
+<!-- ==================== 03 ==================== -->
+<section class="chapter" id="c3">
+  <div class="chapter-head">
+    <div class="num">03</div>
+    <h2>Parier</h2>
+    <p>Choisis tes cotes, compose ton ticket, valide. Le reste se règle tout seul.</p>
+  </div>
+
+  <div class="split">
+    <div>
+      <h3 style="margin-top:0">Les paris possibles</h3>
+      <div class="cards">
+        <div class="card"><div class="k">Vainqueur</div><p>Qui gagne le match.</p></div>
+        <div class="card"><div class="k">Écart</div><p>Un handicap : avec « BOS −4,5 », Boston doit gagner d'au moins 5 points.</p></div>
+        <div class="card"><div class="k">Total</div><p>Plus ou moins de points marqués à deux qu'une ligne (ex. 228,5).</p></div>
+        <div class="card"><div class="k">Paris joueurs</div><p>Plus ou moins de X points, rebonds, passes, tirs à 3 points ou points + rebonds + passes, pour les meilleurs joueurs de chaque équipe. La ligne est leur moyenne de la saison.</p></div>
+      </div>
+    </div>
+    <figure>
+      <div class="phone"><img src="../../frontend/public/images/carousel/slide-paris.jpg" alt=""></div>
+      <figcaption>Les cotes d'un match</figcaption>
+    </figure>
+  </div>
+
+  <h3>Une cote, c'est quoi ?</h3>
+  <p>Un multiplicateur. Avec une cote de <strong>1,80</strong>, 100 points misés en rapportent 180 si le pari passe : <strong>80 points de bénéfice</strong> au classement. Plus la cote est haute, moins l'issue est probable.</p>
+
+  <div>
+    <div>
+      <h3>Composer ton ticket</h3>
+      <ol class="steps">
+        <li>Va dans <strong>Matchs</strong>. Les matchs sont regroupés par <strong>soirée NBA</strong> : choisis la soirée dans la bande du haut. Filtres et vue en liste compacte sont juste à côté.</li>
+        <li>Touche une cote : elle s'ajoute à ton <strong>ticket</strong>. Pour les paris joueurs, ouvre la page du match, onglet Paris.</li>
+        <li>Ajoute d'autres matchs si tu veux : c'est un <strong>combiné</strong>, les cotes se multiplient, mais toutes les sélections doivent passer.</li>
+        <li>Indique ta <strong>mise</strong>, regarde ce que tu peux gagner au classement, puis <strong>valide</strong>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="label">Les règles du ticket</div>
+    <ul>
+      <li>Une seule sélection par match, <strong>8 sélections</strong> au plus.</li>
+      <li>Mise minimum : <strong>10 points</strong>.</li>
+      <li>Plus de pari possible une fois le match commencé.</li>
+      <li>Les cotes sont fixées et ne bougent pas : celle que tu vois est celle appliquée. Pour un pari joueur, si sa moyenne a changé entre-temps, le pari est refusé et la nouvelle ligne t'est indiquée.</li>
+    </ul>
+  </div>
+
+  <div class="callout dark keep">
+    <div class="label">La cote boostée du jour</div>
+    <p>Chaque soir, le <strong>choc de la soirée</strong> a sa cote « vainqueur » boostée de <strong>+15 %</strong>. Un ticket qui la contient est limité à <strong>100 points</strong> de mise.</p>
+  </div>
+
+  <h3>Après le match</h3>
+  <p>Les tickets se règlent automatiquement, quelques minutes après la fin des matchs. Rien à faire de ton côté.</p>
+  <div class="results">
+    <div class="res won"><div class="k">Gagné</div><p>Toutes les sélections sont bonnes. Ton bénéfice (gain − mise) compte au classement de la semaine.</p></div>
+    <div class="res lost"><div class="k">Perdu</div><p>Au moins une sélection est fausse. La mise est retirée de ta semaine, jamais en dessous de 0.</p></div>
+    <div class="res void"><div class="k">Remboursé</div><p>Tout tombe pile sur la ligne, ou le joueur n'a pas joué. La mise revient sur ton solde.</p></div>
+  </div>
+  <p>Dans un combiné, une sélection qui tombe pile sur la ligne compte pour une cote de <strong>1,00</strong> : le ticket reste gagnant si les autres le sont, et le gain est recalculé sans elle.</p>
+  <p>Dans <strong>Mes paris</strong>, tu suis chaque ticket en direct :</p>
+  <div class="example"><span class="chip">LAL (V) · bien parti</span><span class="chip o">19 pts · il en faut 23</span></div>
+  <p>Un ticket réglé peut être <strong>partagé</strong> par lien, avec un aperçu en image sur WhatsApp.</p>
+</section>
+
+<!-- ==================== 04 ==================== -->
+<section class="chapter" id="c4">
+  <div class="chapter-head">
+    <div class="num">04</div>
+    <h2>La page d'un match</h2>
+    <p>Tout pour décider avant le coup d'envoi, et tout suivre pendant le match.</p>
+  </div>
+
+  <div class="split">
+    <div>
+      <h3 style="margin-top:0">En haut de la page</h3>
+      <p>Le score, en direct pendant le match, avec le quart-temps et le chrono. La phase (présaison, Coupe NBA, playoffs…), et tes paris en attente sur ce match.</p>
+
+      <h3>Suivre un match</h3>
+      <p>Touche la <strong>cloche</strong> pour être prévenu :</p>
+      <ul>
+        <li>du coup d'envoi ;</li>
+        <li>de chaque fin de quart-temps et de la mi-temps ;</li>
+        <li>d'une <strong>fin de match serrée</strong> (2 minutes ou moins, 5 points d'écart ou moins) ;</li>
+        <li>du résultat final.</li>
+      </ul>
+    </div>
+    <figure>
+      <div class="phone"><img src="../../frontend/public/images/carousel/slide-stats.jpg" alt=""></div>
+      <figcaption>La feuille de match, avec la note de chaque joueur</figcaption>
+    </figure>
+  </div>
+
+  <h3>Les onglets</h3>
+  <table>
+    <tr><th style="width:32%">Moment</th><th>Ce que tu y trouves</th></tr>
+    <tr><td class="b">Avant le match</td><td><strong>Paris</strong> (cotes et paris joueurs), <strong>Avant-match</strong> (forme des deux équipes, dernières confrontations), <strong>Effectifs</strong> (rotation probable et grands absents), <strong>Actus</strong>.</td></tr>
+    <tr><td class="b">Pendant et après</td><td><strong>Résumé</strong> (quarts-temps, homme du match, probabilité de victoire, meilleurs joueurs), <strong>Temps forts</strong>, <strong>Stats</strong>, <strong>Feuille de match</strong>, <strong>Tirs</strong> sur le terrain, <strong>Actus</strong>.</td></tr>
+  </table>
+  <div class="callout">
+    <div class="label">La note HoopPicks</div>
+    <p>Chaque joueur reçoit une note sur 10, calculée d'après sa feuille de match. Le mieux noté est l'<strong>homme du match</strong>.</p>
+  </div>
+</section>
+
+<!-- ==================== 05 ==================== -->
+<section class="chapter" id="c5">
+  <div class="chapter-head">
+    <div class="num">05</div>
+    <h2>La compétition</h2>
+    <p>Classement, ligues entre amis, duels en face à face et pronostics de saison.</p>
+  </div>
+
+  <div class="split">
+    <div>
+      <h3 style="margin-top:0">Le classement</h3>
+      <ul>
+        <li>Trois périodes : <strong>saison</strong>, <strong>mois</strong> ou <strong>semaine</strong>.</li>
+        <li>Les flèches ↑ ↓ montrent ton évolution depuis la veille ; à côté, ta forme sur les 5 derniers tickets et ta série en cours.</li>
+        <li><strong>Fans par équipe</strong> : le classement des supporters de chaque équipe, à la moyenne de points par fan.</li>
+        <li>Le podium se partage en image avec le petit bouton de partage.</li>
+      </ul>
+      <div class="callout dark">
+        <div class="label">Champion de la semaine</div>
+        <p>Le meilleur score de la semaine passée a son <strong>bandeau doré</strong> en tête du classement et une <strong>couronne</strong> à côté de son pseudo. Chaque ligue a aussi son champion.</p>
+      </div>
+    </div>
+    <figure>
+      <div class="phone"><img src="../../frontend/public/images/carousel/slide-classement.jpg" alt=""></div>
+      <figcaption>Le podium de la semaine</figcaption>
+    </figure>
+  </div>
+
+  <div>
+    <div>
+      <h3>Les ligues</h3>
+      <p>Crée une <strong>ligue privée</strong>, ou rejoins-en une avec un <strong>code d'invitation</strong> à 6 caractères ou un lien. Dans une ligue :</p>
+      <ul>
+        <li>son <strong>classement</strong> (saison, mois ou semaine) ;</li>
+        <li>la liste des <strong>membres</strong> ;</li>
+        <li>le <strong>fil d'activité</strong> : paris, gains, arrivées, avec une réaction par élément 👍 🔥 👎.</li>
+      </ul>
+      <p>Partage l'invitation depuis la page de la ligue. Tu peux la quitter à tout moment.</p>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="k">Duels <span class="tag">1 contre 1</span></div><p>Défie un joueur sur la semaine en cours, depuis <strong>Compétition → Duels</strong> ou son profil. S'il accepte, celui qui a le plus de points de classement à la fin de la semaine gagne. Un duel par adversaire et par semaine.</p></div>
+    <div class="card"><div class="k">Pronostics de saison</div><p>Dans <strong>Compétition → Saison</strong>, choisis le champion NBA, les finalistes de l'Est et de l'Ouest et le meilleur bilan. Modifiables jusqu'à une semaine après le premier match de saison régulière. Classement à part.</p></div>
+  </div>
+</section>
+
+<!-- ==================== 06 ==================== -->
+<section class="chapter" id="c6">
+  <div class="chapter-head">
+    <div class="num">06</div>
+    <h2>Ton profil</h2>
+    <p>Ton avatar, tes stats, ton palmarès et tes badges.</p>
+  </div>
+
+  <div class="split slim">
+    <div>
+      <h3 style="margin-top:0">Sur ta page Profil</h3>
+      <ul>
+        <li>Personnalise ton <strong>avatar</strong> : numéro, poste, couleurs, style de jeu.</li>
+        <li>Choisis ton <strong>équipe favorite</strong>.</li>
+        <li>Consulte tes points, ta réussite, ta série, ton meilleur ticket et ton récap de la semaine.</li>
+        <li>Ton <strong>palmarès</strong> : titres de champion de la semaine et duels gagnés.</li>
+        <li>Partage ta <strong>carte de profil</strong>, par lien ou en image.</li>
+      </ul>
+      <h4>Le profil des autres</h4>
+      <p>Touche un pseudo pour ouvrir un profil : points, rangs, séries, palmarès, derniers tickets <strong>réglés</strong> (jamais ceux en attente), badges débloqués, ligues en commun et votre face-à-face de la semaine. Tu peux le défier en duel depuis là.</p>
+    </div>
+    <figure>
+      <div class="phone"><img src="../../frontend/public/images/carousel/slide-badges.jpg" alt=""></div>
+      <figcaption>Les badges débloqués</figcaption>
+    </figure>
+  </div>
+
+  <h3>Les badges</h3>
+  <div class="badges">
+    <table class="half">
+      <tr><th>Badge</th><th>Pour le débloquer</th></tr>
+      <tr><td class="b">Premier ticket</td><td>Place ton tout premier pari.</td></tr>
+      <tr><td class="b">Habitué</td><td>10 paris placés.</td></tr>
+      <tr><td class="b">Vétéran</td><td>50 paris placés.</td></tr>
+      <tr><td class="b">Main chaude</td><td>3 paris gagnés d'affilée.</td></tr>
+      <tr><td class="b">Sur un nuage</td><td>5 paris gagnés d'affilée.</td></tr>
+      <tr><td class="b">Sniper</td><td>Au moins 10 paris réglés avec 60 % de réussite.</td></tr>
+    </table>
+    <table class="half">
+      <tr><th>Badge</th><th>Pour le débloquer</th></tr>
+      <tr><td class="b">Roi du multiple</td><td>Un ticket d'au moins 3 sélections.</td></tr>
+      <tr><td class="b">Gros coup</td><td>Un ticket avec au moins 500 points de bénéfice.</td></tr>
+      <tr><td class="b">Gros joueur</td><td>2000 points misés au total.</td></tr>
+      <tr><td class="b">Fidèle</td><td>10 sélections en faveur de ton équipe favorite.</td></tr>
+      <tr><td class="b">Lucide</td><td>Un ticket gagné en pariant contre ton équipe favorite.</td></tr>
+      <tr><td class="b">Contre la foule</td><td>Une sélection gagnante que moins de 20 % des joueurs avaient choisie.</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== 07 ==================== -->
+<section class="chapter" id="c7">
+  <div class="chapter-head">
+    <div class="num">07</div>
+    <h2>L'actu NBA</h2>
+    <p>Les infos qui comptent avant de parier : actus, blessés, statistiques.</p>
+  </div>
+
+  <div class="cards three">
+    <div class="card"><div class="k">Actus</div><p>Les dernières news NBA d'ESPN, traduites en français, avec un raccourci vers le prochain match des équipes concernées.</p></div>
+    <div class="card"><div class="k">Joueurs</div><p>Meneurs statistiques, blessés, recherche, et <strong>comparateur</strong> de deux joueurs. Touche un joueur pour sa fiche : photo, moyennes, derniers matchs.</p></div>
+    <div class="card"><div class="k">Équipes</div><p>Le classement officiel par conférence. Une équipe ouvre sa page : effectif, prochains et derniers matchs, actus.</p></div>
+  </div>
+  <div class="callout">
+    <div class="label">Avant de parier</div>
+    <p>Jette un œil aux <strong>blessés</strong> et à l'onglet <strong>Effectifs</strong> du match : un titulaire absent change tout, surtout pour les paris joueurs.</p>
+  </div>
+</section>
+
+<!-- ==================== 08 ==================== -->
+<section class="chapter" id="c8">
+  <div class="chapter-head">
+    <div class="num">08</div>
+    <h2>Ton compte</h2>
+    <p>Notifications, réglages, et comment nous joindre.</p>
+  </div>
+
+  <h3>Notifications</h3>
+  <p>La <strong>cloche</strong> en haut de l'écran regroupe tes notifications : résultats et avancée de tes paris, coups d'envoi, matchs suivis, ton équipe favorite, duels, ligues, réponses de l'équipe. L'ouvrir marque tout comme lu.</p>
+  <p>Pour les recevoir aussi sur ton téléphone, active les <strong>notifications push</strong> dans <strong>Paramètres</strong> (sur iPhone, depuis l'app installée).</p>
+
+  <h3>Paramètres</h3>
+  <ul>
+    <li>Choisir quelles notifications recevoir, et activer le push sur cet appareil.</li>
+    <li>Choisir le <strong>thème</strong> (Nuit, Parquet ou celui du téléphone) et le <strong>fuseau horaire</strong> des heures affichées.</li>
+    <li>Changer ton <strong>pseudo</strong>, ton <strong>e-mail</strong> ou ton <strong>mot de passe</strong> (mot de passe actuel demandé). Un nouveau pseudo se répercute partout, mais un ancien lien vers ton profil ne marchera plus.</li>
+    <li><strong>Supprimer définitivement ton compte</strong> : irréversible, mot de passe demandé.</li>
+  </ul>
+  <p class="muted">Changer ou réinitialiser ton mot de passe déconnecte tes autres appareils, par sécurité.</p>
+
+  <div class="cards">
+    <div class="card"><div class="k">Nous écrire</div><p>Dans le menu de ton avatar : envoie un bug, une question ou une idée. La réponse arrive dans ta cloche, et la conversation reste sur la page. En cas de plantage, « Signaler le problème » ouvre le formulaire déjà rempli.</p></div>
+    <div class="card"><div class="k">Aide et règles</div><p>Les règles du jeu et les questions fréquentes, avec une recherche (pas besoin des accents : « rembourse » trouve « remboursé »). Ce manuel y est aussi.</p></div>
+  </div>
+
+  <h3>À propos et confidentialité</h3>
+  <p>La page <strong>À propos</strong> rappelle qu'aucun argent réel n'est en jeu ; la page <strong>Confidentialité</strong> détaille les données conservées et ce que les autres joueurs voient. HoopPicks est un projet indépendant, non affilié à la NBA, à ses équipes ni à ESPN.</p>
+</section>
+
+<!-- ==================== DOS ==================== -->
+<section class="back">
+  <img src="../logo/svg/hooppicks-mark.svg" alt="">
+  <h2>À toi de <span>jouer</span></h2>
+  <p>Pose ton premier ticket, invite tes amis dans une ligue, et vise la couronne du champion de la semaine.</p>
+  <div class="url">hooppicks.vercel.app</div>
+  <div class="small">Points virtuels uniquement, aucun argent réel. HoopPicks n'est pas affilié à la NBA.</div>
+</section>
+
+</body>
+</html>
