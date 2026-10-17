@@ -1,123 +1,169 @@
 # Manuel d'utilisation : HoopPicks
 
-HoopPicks te fait pronostiquer sur les matchs de la saison NBA avec des **points virtuels** (aucun argent réel n'est en jeu). Grimpe dans le classement, débloque des badges, et défie tes amis dans des ligues privées.
+HoopPicks te fait pronostiquer sur les matchs de la saison NBA avec des **points virtuels** (aucun argent réel n'est en jeu). Chaque semaine, tout le monde repart à égalité : grimpe au classement, deviens champion de la semaine, défie tes amis en ligue ou en duel.
 
 ## Créer un compte
 
-Depuis la page d'accueil, clique sur **Créer un compte** et renseigne un pseudo, une adresse e-mail et un mot de passe. Tu démarres automatiquement avec **1000 points**.
+Depuis la page d'accueil, clique sur **Créer un compte** et renseigne un pseudo, une adresse e-mail et un mot de passe (8 caractères au moins).
 
-Si tu as déjà un compte, **Se connecter** avec ton e-mail et ton mot de passe. En cas de mot de passe oublié, un lien **Mot de passe oublié** t'envoie un e-mail de réinitialisation (valable 30 minutes).
+Si tu as déjà un compte, **Se connecter** avec ton e-mail et ton mot de passe. En cas d'oubli, le lien **Mot de passe oublié** t'envoie un e-mail de réinitialisation (valable 30 minutes).
 
-À l'inscription, un e-mail de confirmation t'est envoyé. Tant que tu n'as pas cliqué sur le lien, une bannière te le rappelle en haut de l'app : ça ne bloque rien, tu peux utiliser HoopPicks normalement en attendant. Le lien "Renvoyer le lien" dans la bannière permet de le redemander si besoin.
+À l'inscription, un e-mail de confirmation t'est envoyé. Tant que tu n'as pas cliqué sur le lien, une bannière te le rappelle : ça ne bloque rien. « Renvoyer le lien » permet de le redemander.
+
+Ta session dure 60 jours et se prolonge à chaque visite : tu restes connecté tant que tu ouvres l'app au moins une fois tous les deux mois.
+
+## Installer l'app
+
+Sur téléphone, HoopPicks s'installe sur l'écran d'accueil comme une vraie application :
+- **Android / Chrome** : bouton **Installer** dans l'app, ou menu du navigateur → « Installer l'application ».
+- **iPhone** : dans Safari, bouton **Partager** → **Sur l'écran d'accueil**. Sur iPhone, les notifications ne fonctionnent que dans l'app installée.
+
+## Se repérer
+
+Cinq rubriques, dans la barre du bas sur téléphone et à gauche sur ordinateur :
+- **Accueil** : ton tableau de bord.
+- **Matchs** : le calendrier et les paris.
+- **Mes paris** : tes tickets.
+- **Compétition** : Classement, Ligues, Duels, Saison.
+- **NBA** : Actus, Joueurs, Équipes.
+
+Ton compte (profil, paramètres, Nous écrire, aide) est dans le menu de ton avatar, en haut à droite. En haut de l'écran, la pastille affiche tes **points de classement** et ton rang.
+
+## La semaine de jeu
+
+- Chaque **lundi à 12h GMT**, tout le monde repart avec **1000 points**, quel que soit son solde de la semaine passée.
+- Ce solde est ton **budget de mises** pour la semaine : il baisse à chaque mise et ne remonte que si un ticket est remboursé. Un ticket gagné ne recrédite pas le solde : son bénéfice compte au **classement**.
+- Tu ne peux parier que sur les matchs qui commencent avant la fin de la semaine (lundi 12h GMT). Les suivants s'ouvrent la semaine d'après.
 
 ## Le tableau de bord
 
-Ta page d'accueil une fois connecté. Tu y retrouves :
-- Ton **solde de points** actuel, ton taux de réussite et ton rang dans le classement.
-- Les **prochains matchs** de la semaine.
-- Tes **derniers tickets** de paris.
-- L'évolution de ton solde sur les 7 derniers jours.
-- Le **top classement** et les dernières **actualités NBA**.
+Ta page d'accueil une fois connecté :
+- Ton **solde de la semaine**, ton taux de réussite, tes points et ton rang de la semaine, tes paris en cours.
+- Ton **équipe favorite** : son prochain match, ses blessés, tes paris pour ou contre elle, ses actus.
+- La **cote boostée du jour** et le **match à la une**.
+- Les **combinés du jour** : « le sûr » (deux favoris) et « le coup » (trois outsiders), ajoutés à ton ticket en une touche.
+- Les prochains matchs, tes derniers tickets, ta semaine en cours, le classement, tes ligues et les actus.
 
 ## Placer un pari
 
-1. Va dans **Matchs** pour voir le calendrier de la saison.
-2. Sur un match pas encore commencé, choisis une cote parmi les marchés proposés :
-   - **Moneyline** : qui gagne le match.
-   - **Spread** : qui gagne avec un écart de points donné.
-   - **Total** : si le score cumulé des deux équipes sera au-dessus (over) ou en dessous (under) d'une ligne fixée.
-3. Chaque sélection s'ajoute à ton **ticket** (visible dans un panneau dédié). Tu peux combiner plusieurs matchs différents dans un même ticket (un **pari combiné**) : les cotes se multiplient entre elles.
-4. Indique ta **mise** en points, vérifie le gain potentiel affiché, puis valide.
+1. Va dans **Matchs**. Les matchs sont regroupés par soirée NBA ; choisis la soirée dans la bande en haut. Les filtres (phase, conférence, équipe) et la vue en liste compacte sont à côté.
+2. Ouvre un match ou choisis directement une cote :
+   - **Vainqueur** : qui gagne le match.
+   - **Écart** (handicap) : qui gagne avec un écart de points donné.
+   - **Total** : plus ou moins de points marqués à deux qu'une ligne fixée.
+   - **Paris joueurs** (page du match, onglet Paris) : plus ou moins de X points, rebonds, passes, tirs à 3 points ou points + rebonds + passes pour les meilleurs joueurs de chaque équipe. La ligne est leur moyenne de la saison.
+3. Chaque sélection s'ajoute à ton **ticket**. Tu peux combiner plusieurs matchs (un **combiné**) : les cotes se multiplient.
+4. Indique ta **mise**, vérifie ce que tu peux gagner au classement, puis valide.
 
-**Règles importantes :**
-- Un même match ne peut apparaître qu'une seule fois par ticket.
-- Une fois un match commencé, il n'est plus possible de parier dessus.
-- Les cotes affichées au moment où tu valides sont celles réellement appliquées : pas de mauvaise surprise après coup.
-- Ta mise est débitée de ton solde immédiatement ; le gain (mise × cote totale) est crédité seulement si tout le ticket est gagnant.
-
-Retrouve l'historique de tous tes tickets (en attente, gagnés, perdus, remboursés) dans **Mes paris**.
+**Règles :**
+- Une seule sélection par match dans un ticket, 8 sélections au plus.
+- Mise minimum : 10 points.
+- Une fois un match commencé, on ne peut plus parier dessus.
+- Les cotes sont fixées et ne bougent pas : celle que tu vois est celle appliquée. Pour un pari joueur, si sa moyenne a changé entre-temps, le pari est refusé et la nouvelle ligne t'est indiquée.
+- **Cote boostée du jour** : chaque soir, le « choc de la soirée » a sa cote « vainqueur » boostée de 15 %. Un ticket qui la contient est limité à 100 points de mise.
 
 ### Que devient un ticket après le match ?
 
-Dès qu'un match se termine, le système résout automatiquement les paris concernés (pas besoin de rien faire) :
-- **Gagné** : toutes les sélections du ticket sont correctes → le gain potentiel est crédité.
-- **Perdu** : au moins une sélection est incorrecte → rien n'est crédité (la mise reste débitée).
-- **Remboursé (push)** : toutes les sélections du ticket tombent pile sur la ligne (ex. spread exact) → la mise est remboursée, sans gain.
-- Dans un **combiné**, une sélection qui tombe pile sur la ligne compte pour une cote de 1,00 : le ticket reste gagnant si les autres le sont, et le gain est recalculé sans elle (ex. 100 pts sur 1,50 × 2,00 × 1,91 avec la dernière à égalité → 100 × 1,50 × 2,00 = 300 pts).
+Les paris se règlent automatiquement, quelques minutes après la fin des matchs :
+- **Gagné** : toutes les sélections sont correctes. Ton bénéfice (gain − mise) compte au classement de la semaine.
+- **Perdu** : au moins une sélection est fausse. La mise est retirée de ton classement de la semaine (jamais en dessous de 0 sur la semaine).
+- **Remboursé** : toutes les sélections tombent pile sur la ligne, ou le joueur d'un pari joueur n'a pas joué. La mise revient sur ton solde.
+- Dans un **combiné**, une sélection qui tombe pile sur la ligne compte pour une cote de 1,00 : le ticket reste gagnant si les autres le sont, et le gain est recalculé sans elle.
 
-## Joueurs & équipes
+Dans **Mes paris**, tu suis chaque ticket en direct (« bien parti », « 19 pts · il en faut 23 ») et tu retrouves ton bilan. Un ticket réglé peut être partagé par lien.
 
-La page **Joueurs & équipes** te permet d'explorer les infos NBA indépendamment de tes paris :
-- **Joueurs** : cherche un joueur par nom (2 caractères min). Clique sur un résultat pour ouvrir sa **carte joueur** : photo, poste, taille/poids, statut blessure éventuel (Out, Day-To-Day...), et ses moyennes de la saison en cours (points, rebonds, passes...).
-- **Équipes** : classement des 30 équipes, en **force interne (Elo, celle qui sert au calcul des cotes)** ou en **classement officiel NBA** par conférence (victoires/défaites, série en cours, écart au top). Déplie une équipe pour voir son effectif actuel.
+## La page d'un match
 
-Sur un match terminé, la **feuille de match** (box score) détaille les statistiques de chaque joueur ayant joué (minutes, points, rebonds, passes, tirs...) : accessible depuis la page du match.
+- **En haut** : le score (en direct pendant le match), la phase (présaison, Coupe NBA, playoffs…) et tes paris en attente sur ce match.
+- **La cloche** : **suivre ce match** pour être prévenu du coup d'envoi, de chaque fin de quart-temps, d'une fin de match serrée et du résultat.
+- **Avant le match** : Paris, Avant-match (forme des deux équipes, dernières confrontations), Effectifs (rotation probable et grands absents), Actus.
+- **Pendant et après** : Résumé (quarts-temps, homme du match, probabilité de victoire, meilleurs joueurs), Temps forts, Stats, Feuille de match, Tirs, Actus.
 
-## Ligues
-
-Crée une **ligue privée** pour comparer tes pronostics avec tes amis, ou rejoins-en une avec un **code d'invitation** à 6 caractères.
-
-Dans une ligue, tu retrouves :
-- Le **classement propre à la ligue** (indépendant du classement global).
-- La liste des **membres**.
-- Le **fil d'activité récente** (arrivées, départs...).
-
-Le code d'invitation de ta ligue est visible sur sa page : partage-le pour inviter du monde. Tu peux **quitter** une ligue à tout moment.
+La **note HoopPicks** d'un joueur (sur 10) est calculée d'après sa feuille de match.
 
 ## Classement
 
-**Classement** affiche le top des joueurs toutes ligues confondues, basé sur les gains cumulés et le taux de réussite. Clique sur un pseudo pour voir son **profil public**.
+Chaque semaine de jeu vaut ton **bénéfice net** (gains moins mises perdues), **jamais moins de 0**. Le classement de la saison additionne tes semaines : une mauvaise semaine ne te fait jamais perdre les points déjà acquis.
+- Périodes : **saison**, **mois** ou **semaine**.
+- Flèches ↑/↓ : ton évolution depuis la veille. À côté, ta forme sur les 5 derniers tickets et ta série en cours.
+- **Champion de la semaine** : le meilleur score de la semaine passée a son bandeau en tête du classement et une couronne à côté de son pseudo. Il y a aussi un champion par ligue.
+- **Fans par équipe** : le classement des supporters de chaque équipe (moyenne de points par fan).
+- Le podium se partage en image avec le petit bouton de partage.
 
-## Profil public d'un joueur
+## Ligues
 
-En cliquant sur un pseudo (classement, membres d'une ligue, fil d'activité), tu accèdes à son profil : sa carte joueur, son taux de réussite, ses paris joués, et **uniquement les badges qu'il a débloqués** (les objectifs encore verrouillés restent privés, visibles seulement par le joueur lui-même sur sa propre page Profil).
+Crée une **ligue privée** ou rejoins-en une avec un **code d'invitation** à 6 caractères ou un lien d'invitation. Dans une ligue :
+- son **classement** (saison, mois ou semaine) ;
+- les **membres** ;
+- le **fil d'activité** (paris, gains, arrivées), avec une réaction par élément (👍 🔥 👎).
+
+Partage l'invitation depuis la page de la ligue. Tu peux **quitter** une ligue à tout moment.
+
+## Duels
+
+Défie un joueur en **1 contre 1** sur la semaine en cours, depuis **Compétition → Duels** ou son profil. S'il accepte, celui qui a le plus de points de classement à la fin de la semaine gagne. Un duel par adversaire et par semaine.
+
+## Pronostics de saison
+
+Dans **Compétition → Saison**, choisis le champion NBA, les finalistes de l'Est et de l'Ouest et le meilleur bilan de la saison régulière. Les choix restent modifiables jusqu'à une semaine après le premier match de la saison régulière. Ils ont leur propre classement, séparé de celui des semaines.
 
 ## Profil
 
-Sur ta page **Profil**, tu peux :
-- Personnaliser ta **carte joueur** : numéro de maillot, poste (PG/SG/SF/PF/C), palette de couleurs, style de jeu.
-- Voir et partager ta **carte de récap hebdomadaire**.
-- Choisir ton **équipe favorite** NBA.
-- Suivre tes **badges** débloqués et ceux encore à obtenir (les débloqués remontent en premier, avec un compteur "X/9 débloqués") :
+Sur ta page **Profil** :
+- personnalise ton **avatar** (numéro, poste, couleurs, style) et choisis ton **équipe favorite** ;
+- consulte tes points, ta réussite, ta série, ton meilleur ticket, ton récap de la semaine et ton **palmarès** (titres de champion, duels gagnés) ;
+- partage ta **carte de profil**, par lien ou en image ;
+- suis tes **badges** :
 
 | Badge | Condition |
 |---|---|
 | Premier ticket | Place ton tout premier pari |
-| Habitué | 10 paris placés au total |
-| Vétéran | 50 paris placés au total |
+| Habitué | 10 paris placés |
+| Vétéran | 50 paris placés |
 | Main chaude | 3 paris gagnés d'affilée |
 | Sur un nuage | 5 paris gagnés d'affilée |
-| Sniper | Au moins 10 paris résolus avec 60% de réussite |
-| Roi du multiple | Un ticket combinant au moins 3 sélections |
-| Gros coup | Un ticket rapportant au moins 500 points |
-| Gros joueur | 2000 points misés au total (toutes mises cumulées) |
+| Sniper | Au moins 10 paris réglés avec 60 % de réussite |
+| Roi du multiple | Un ticket d'au moins 3 sélections |
+| Gros coup | Un ticket avec au moins 500 points de bénéfice |
+| Gros joueur | 2000 points misés au total |
+| Fidèle | 10 sélections en faveur de ton équipe favorite |
+| Lucide | Un ticket gagné en pariant contre ton équipe favorite |
+| Contre la foule | Une sélection gagnante que moins de 20 % des joueurs avaient choisie |
 
-## Actualités
+## Profil public d'un joueur
 
-**Actualités** regroupe les dernières news NBA (source ESPN), traduites automatiquement en français et classées par jour.
+En touchant un pseudo, tu ouvres son profil : ses points et rangs, sa réussite, ses séries, son palmarès, ses derniers tickets **réglés** (jamais ceux en attente), ses badges débloqués, vos ligues en commun et votre face-à-face de la semaine. Tu peux le défier en duel depuis là.
+
+## NBA
+
+- **Actus** : les dernières news NBA (ESPN), traduites en français, avec un raccourci vers le prochain match des équipes concernées.
+- **Joueurs** : meneurs statistiques, blessés, recherche, et **comparateur** de deux joueurs. Touche un joueur pour voir sa fiche (photo, moyennes, derniers matchs).
+- **Équipes** : le classement officiel par conférence. Une équipe ouvre sa page : effectif, prochains et derniers matchs, actus.
 
 ## Notifications
 
-Une cloche dans la navigation t'alerte : match sur le point de commencer, résultat d'un pari, activité dans une ligue. Personnalise quels types de notifications tu reçois dans **Paramètres**.
+La cloche en haut de l'écran regroupe tes notifications : résultats et avancée de tes paris, coup d'envoi, matchs suivis, ton équipe favorite, duels, ligues, réponses de l'équipe. L'ouvrir marque tout comme lu.
 
-## Paramètres du compte
+Pour les recevoir aussi sur ton téléphone, active les **notifications push** dans **Paramètres** (sur iPhone, depuis l'app installée).
 
-Depuis **Paramètres**, tu peux :
-- Changer ton **pseudo** (avec confirmation du mot de passe) : le changement est immédiat et se répercute partout dans l'app (classement, ligues...). Un ancien lien de profil vers ton pseudo précédent ne fonctionnera plus après le changement.
-- Changer ton mot de passe (avec confirmation de l'ancien).
-- Changer ton adresse e-mail (avec confirmation du mot de passe) : la nouvelle adresse redevient à vérifier.
-- Activer/désactiver chaque type de notification.
-- **Supprimer définitivement ton compte** (irréversible : demande confirmation par mot de passe).
+## Nous écrire
 
-Changer ton mot de passe ou en réinitialiser un déconnecte automatiquement toutes tes autres sessions actives, par sécurité.
+**Nous écrire** (menu de l'avatar) : envoie un bug, une question ou une idée. La réponse de l'équipe arrive dans ta cloche, et toute la conversation reste sur cette page. En cas de plantage, le lien « Signaler le problème » ouvre le formulaire déjà rempli.
+
+## Paramètres
+
+Depuis **Paramètres** :
+- choisir quelles notifications recevoir et activer le push sur cet appareil ;
+- choisir le **thème** (Nuit, Parquet ou celui du téléphone) et le **fuseau horaire** d'affichage des heures ;
+- changer ton **pseudo**, ton **e-mail** ou ton **mot de passe** (mot de passe actuel demandé). Changer de pseudo se répercute partout, mais un ancien lien vers ton profil ne marchera plus ;
+- **supprimer définitivement ton compte** (irréversible, mot de passe demandé).
+
+Changer ou réinitialiser ton mot de passe déconnecte tes autres appareils, par sécurité.
 
 ## Aide et support
 
-L'icône **?** en haut à droite (ou **Aide et support** dans le menu de ton avatar, sur mobile) ouvre la page d'aide :
-- les **règles** du jeu (types de paris, combinés, résultat d'un ticket, badges) ;
-- les **questions fréquentes**, avec une recherche (pas besoin des accents : « rembourse » trouve « remboursé ») ;
-- un **contact** par e-mail pour signaler un problème.
+**Aide et règles** (menu de l'avatar, ou **?** en haut à droite sur ordinateur) : les règles du jeu et les questions fréquentes, avec une recherche (pas besoin des accents : « rembourse » trouve « remboursé »).
 
-## À propos
+## À propos et confidentialité
 
-La page **À propos** (menu de ton avatar) rappelle qu'aucun argent réel n'est en jeu et résume les données conservées sur ton compte.
+La page **À propos** rappelle qu'aucun argent réel n'est en jeu ; la page **Confidentialité** détaille les données conservées et ce que les autres joueurs voient. HoopPicks est un projet indépendant, non affilié à la NBA.
