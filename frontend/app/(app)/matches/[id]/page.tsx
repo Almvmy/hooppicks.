@@ -70,6 +70,7 @@ export default function MatchDetailPage({
         // filigranes dépassent, et avec hidden, mettre le focus sur la cloche
         // faisait défiler l'en-tête de côté.
         <Card
+          size="sm"
           style={faceOffBackground(match, 18)}
           className="relative overflow-hidden supports-[overflow:clip]:overflow-clip"
         >
@@ -78,7 +79,7 @@ export default function MatchDetailPage({
               logos plus petits, sans la ligne conférence · division (déjà sur la
               page de l'équipe). Carré et haut, il poussait les onglets hors de
               l'écran du téléphone. */}
-          <CardContent className="relative flex flex-col gap-3 pt-4">
+          <CardContent className="relative flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <NbaLogo size={22} />
@@ -86,14 +87,16 @@ export default function MatchDetailPage({
               </div>
               <FollowMatchButton match={match} className="h-9 w-9 shrink-0" />
             </div>
-            <MatchStageBadge match={match} className="-mt-1 justify-center" />
-
-            <FaceOffTeams match={match} logoSize={64} morph nameClassName="text-lg" scoreClassName="text-3xl" />
+            <FaceOffTeams match={match} logoSize={52} morph nameClassName="text-base" scoreClassName="text-3xl" />
             <MyBetChip match={match} className="mx-auto max-w-full" />
 
-            <p className="text-center font-mono text-sm text-muted-foreground">
-              {getDayLabel(new Date(match.date))} · {formatMatchTime(new Date(match.date))}
-            </p>
+            {/* Phase (présaison, playoffs…) et date sur une seule ligne : une ligne de moins sur téléphone. */}
+            <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
+              <MatchStageBadge match={match} />
+              <p className="font-mono text-xs text-muted-foreground">
+                {getDayLabel(new Date(match.date))} · {formatMatchTime(new Date(match.date))}
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
