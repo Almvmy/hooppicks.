@@ -11,11 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#0B1120",
     theme_color: "#0B1120",
     icons: [
-      {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
-      },
+      // Pas l'icon.svg de l'onglet : sans fond, elle donnerait une icône
+      // d'app transparente sur l'écran d'accueil.
       { src: "/pwa-icon/192", sizes: "192x192", type: "image/png" },
       { src: "/pwa-icon/512", sizes: "512x512", type: "image/png" },
       // La tuile Nuit remplit tout le carré et le symbole (60 % de la largeur)
