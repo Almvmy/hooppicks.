@@ -19,9 +19,17 @@ import java.util.stream.Stream;
 /**
  * Paris joueurs : « plus / moins de X » points, rebonds, passes décisives,
  * tirs à 3 points réussis ou points + rebonds + passes, pour les deux meilleurs joueurs de chaque équipe
- * dans la statistique. Ligne = moyenne de la saison (effectif ESPN), toujours
+ * dans la statistique. Ligne = moyenne de référence (effectif ESPN), toujours
  * en x,5 : pas d'égalité possible. Cote fixe des deux côtés, comme l'écart et
  * le total.
+ *
+ * Moyenne de référence en début de saison (choix du propriétaire) : elle part
+ * de la saison précédente et glisse vers la saison en cours, 10 % par match
+ * joué, puis 100 % saison en cours dès le 10e match. Repartir de zéro donnait
+ * des lignes faciles à battre (une star à 12 points sur son premier match
+ * aurait eu « plus de 12,5 » au match suivant) ; attendre 10 matchs privait
+ * de paris joueurs pendant trois semaines. Sans saison précédente (rookie) :
+ * saison en cours seule, à partir de 5 matchs.
  *
  * Les lignes sont recalculées à la volée (pas stockées sur le match) : le
  * serveur les recalcule au moment du pari et refuse si elle a bougé depuis
@@ -34,8 +42,11 @@ public class PlayerPropsService {
     public static final String MARKET = "player_points";
     public static final double ODDS = OddsService.EVEN_ODDS;
     static final int PLAYERS_PER_TEAM = 2;
-    // Moyenne fiable : au moins quelques matchs joués.
+    // Moyenne fiable : au moins quelques matchs joués. C'est aussi la durée du
+    // glissement de la saison précédente vers la saison en cours.
     static final int MIN_GAMES = 10;
+    // Sans saison précédente (rookie) : saison en cours seule, à partir de là.
+    static final int ROOKIE_MIN_GAMES = 5;
     // Feuille de match ESPN absente après ce délai : on rembourse la sélection
     // plutôt que de bloquer le ticket indéfiniment.
     static final Duration STATS_GRACE = Duration.ofHours(18);
@@ -48,25 +59,31 @@ public class PlayerPropsService {
      */
     public enum Stat {
         POINTS("player_points", "pts", 0) {
-            Double average(RosterPlayer p) { return p.getPointsPerGame(); }
+            Double current(RosterPlayer p) { return p.getPointsPerGame(); }
+            Double previous(RosterPlayer p) { return p.getPrevPointsPerGame(); }
             int value(PlayerMatchStat s) { return s.getPoints(); }
         },
         REBOUNDS("player_rebounds", "rbd", 5) {
-            Double average(RosterPlayer p) { return p.getReboundsPerGame(); }
+            Double current(RosterPlayer p) { return p.getReboundsPerGame(); }
+            Double previous(RosterPlayer p) { return p.getPrevReboundsPerGame(); }
             int value(PlayerMatchStat s) { return s.getRebounds(); }
         },
         ASSISTS("player_assists", "pd", 4) {
-            Double average(RosterPlayer p) { return p.getAssistsPerGame(); }
+            Double current(RosterPlayer p) { return p.getAssistsPerGame(); }
+            Double previous(RosterPlayer p) { return p.getPrevAssistsPerGame(); }
             int value(PlayerMatchStat s) { return s.getAssists(); }
         },
         THREES("player_threes", "tirs à 3 pts", 2) {
-            Double average(RosterPlayer p) { return p.getThreePointersMadePerGame(); }
+            Double current(RosterPlayer p) { return p.getThreePointersMadePerGame(); }
+            Double previous(RosterPlayer p) { return p.getPrevThreePointersMadePerGame(); }
             int value(PlayerMatchStat s) { return s.getThreePointsMade(); }
         },
         POINTS_REBOUNDS_ASSISTS("player_pra", "pts+rbd+pd", 0) {
-            Double average(RosterPlayer p) {
-                if (p.getPointsPerGame() == null || p.getReboundsPerGame() == null || p.getAssistsPerGame() == null) return null;
-                return p.getPointsPerGame() + p.getReboundsPerGame() + p.getAssistsPerGame();
+            Double current(RosterPlayer p) {
+                return sum(p.getPointsPerGame(), p.getReboundsPerGame(), p.getAssistsPerGame());
+            }
+            Double previous(RosterPlayer p) {
+                return sum(p.getPrevPointsPerGame(), p.getPrevReboundsPerGame(), p.getPrevAssistsPerGame());
             }
             int value(PlayerMatchStat s) { return s.getPoints() + s.getRebounds() + s.getAssists(); }
         };
@@ -82,8 +99,28 @@ public class PlayerPropsService {
             this.minAverage = minAverage;
         }
 
-        abstract Double average(RosterPlayer p);
+        /** Moyenne de la saison en cours chez ESPN. */
+        abstract Double current(RosterPlayer p);
+        /** Moyenne de la saison précédente (null si inconnue). */
+        abstract Double previous(RosterPlayer p);
         abstract int value(PlayerMatchStat s);
+
+        /** Moyenne de référence de la ligne (cf. la classe), null si le joueur n'a pas de ligne. */
+        Double average(RosterPlayer p) {
+            int games = p.getGamesPlayed() == null ? 0 : p.getGamesPlayed();
+            Double now = current(p);
+            if (games >= MIN_GAMES) return now;
+            Double before = previous(p);
+            boolean hasPrevious = before != null && p.getPrevGamesPlayed() != null && p.getPrevGamesPlayed() >= MIN_GAMES;
+            if (!hasPrevious) return games >= ROOKIE_MIN_GAMES ? now : null;
+            if (games == 0 || now == null) return before;
+            double weight = (double) games / MIN_GAMES;
+            return (1 - weight) * before + weight * now;
+        }
+
+        private static Double sum(Double a, Double b, Double c) {
+            return a == null || b == null || c == null ? null : a + b + c;
+        }
 
         public static Optional<Stat> of(String market) {
             return Stream.of(values()).filter(st -> st.market.equals(market)).findFirst();
@@ -107,7 +144,6 @@ public class PlayerPropsService {
         List<Team> teams = List.of(match.getAwayTeam(), match.getHomeTeam());
         List<List<RosterPlayer>> rosters = teams.stream()
                 .map(team -> rosterRepository.findByTeamIdOrderByLastNameAsc(team.getId()).stream()
-                        .filter(p -> p.getGamesPlayed() != null && p.getGamesPlayed() >= MIN_GAMES)
                         .filter(p -> !"Out".equalsIgnoreCase(p.getInjuryStatus()))
                         .toList())
                 .toList();
@@ -116,6 +152,7 @@ public class PlayerPropsService {
             for (int i = 0; i < teams.size(); i++) {
                 String abbreviation = teams.get(i).getAbbreviation();
                 rosters.get(i).stream()
+                        // Pas de moyenne de référence (rookie à moins de 5 matchs, petit échantillon) : pas de ligne.
                         .filter(p -> stat.average(p) != null && stat.average(p) >= stat.minAverage)
                         .sorted(Comparator.comparingDouble((RosterPlayer p) -> stat.average(p)).reversed())
                         .limit(PLAYERS_PER_TEAM)

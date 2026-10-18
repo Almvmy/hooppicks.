@@ -168,4 +168,44 @@ class PlayerPropsServiceTest {
         assertThat(service.evaluate(over("Jalen Brunson", 26.5), match(), TIP_OFF.plus(Duration.ofHours(19))))
                 .isEqualTo(Optional.of(LegResult.PUSH));
     }
+
+    private RosterPlayer newSeason(String id, Double ppg, int games, double prevPpg, int prevGames) {
+        RosterPlayer p = player(id, "Star", "Joueur" + id, ppg == null ? 0 : ppg, games, null);
+        if (ppg == null) p.setPointsPerGame(null);
+        p.setPrevGamesPlayed(prevGames);
+        p.setPrevPointsPerGame(prevPpg);
+        return p;
+    }
+
+    private double pointsLine(RosterPlayer p) {
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("nyk")).thenReturn(List.of(p));
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
+        return service.propsFor(match()).stream().filter(x -> x.market().equals(PlayerPropsService.MARKET))
+                .findFirst().orElseThrow().average();
+    }
+
+    @Test
+    void debut_de_saison_la_ligne_glisse_de_la_saison_passee_vers_la_saison_en_cours() {
+        // 27 pts la saison passée, mauvais premier match à 12 : 10 % seulement de la nouvelle saison.
+        assertThat(pointsLine(newSeason("1", 12.0, 1, 27.0, 70))).isCloseTo(25.5, org.assertj.core.data.Offset.offset(1e-9));
+        // À mi-chemin (5 matchs) : moitié-moitié.
+        assertThat(pointsLine(newSeason("1", 21.0, 5, 27.0, 70))).isCloseTo(24.0, org.assertj.core.data.Offset.offset(1e-9));
+        // Dès le 10e match : saison en cours seule.
+        assertThat(pointsLine(newSeason("1", 21.0, 10, 27.0, 70))).isEqualTo(21.0);
+        // Aucun match encore joué cette saison : saison passée.
+        assertThat(pointsLine(newSeason("1", null, 0, 27.0, 70))).isEqualTo(27.0);
+    }
+
+    @Test
+    void rookie_sans_saison_passee_a_partir_de_cinq_matchs() {
+        RosterPlayer rookie = newSeason("1", 18.0, 4, 0, 0);
+        rookie.setPrevPointsPerGame(null);
+        rookie.setPrevGamesPlayed(null);
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("nyk")).thenReturn(List.of(rookie));
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
+        assertThat(service.propsFor(match())).isEmpty();
+
+        rookie.setGamesPlayed(5);
+        assertThat(pointsLine(rookie)).isEqualTo(18.0);
+    }
 }

@@ -34,7 +34,8 @@ function selection(match: Match, prop: PlayerProp, outcome: "over" | "under"): B
 }
 
 /**
- * Paris joueurs : plus/moins que la moyenne de la saison, en points, rebonds,
+ * Paris joueurs : plus/moins que la moyenne de la saison (mêlée à la saison
+ * passée sur les 10 premiers matchs, cf. PlayerPropsService), en points, rebonds,
  * passes ou les trois cumulés. Rien n'est affiché s'il n'y en a pas
  * (présaison, moyennes pas encore synchronisées).
  */

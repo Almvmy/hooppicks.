@@ -58,7 +58,7 @@ Ta page d'accueil une fois connecté :
    - **Vainqueur** : qui gagne le match.
    - **Écart** (handicap) : qui gagne avec un écart de points donné.
    - **Total** : plus ou moins de points marqués à deux qu'une ligne fixée.
-   - **Paris joueurs** (page du match, onglet Paris) : plus ou moins de X points, rebonds, passes, tirs à 3 points ou points + rebonds + passes pour les meilleurs joueurs de chaque équipe. La ligne est leur moyenne de la saison.
+   - **Paris joueurs** (page du match, onglet Paris) : plus ou moins de X points, rebonds, passes, tirs à 3 points ou points + rebonds + passes pour les meilleurs joueurs de chaque équipe. La ligne est leur moyenne de la saison. En début de saison, elle part de leur moyenne de la saison passée et glisse vers la nouvelle à chaque match joué ; dès le 10e match, seule la saison en cours compte.
 3. Chaque sélection s'ajoute à ton **ticket**. Tu peux combiner plusieurs matchs (un **combiné**) : les cotes se multiplient.
 4. Indique ta **mise**, vérifie ce que tu peux gagner au classement, puis valide.
 

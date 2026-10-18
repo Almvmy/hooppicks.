@@ -65,6 +65,17 @@ public class EspnPlayerStatsService {
     }
 
     private void apply(RosterPlayer player, PlayerSeasonStatsRow row) {
+        // Nouvelle saison chez ESPN : les moyennes en base deviennent celles de
+        // la saison précédente avant d'être remplacées.
+        if (player.getStatsSeasonLabel() != null && row.seasonLabel() != null
+                && !row.seasonLabel().equals(player.getStatsSeasonLabel())) {
+            player.setPrevSeasonLabel(player.getStatsSeasonLabel());
+            player.setPrevGamesPlayed(player.getGamesPlayed());
+            player.setPrevPointsPerGame(player.getPointsPerGame());
+            player.setPrevReboundsPerGame(player.getReboundsPerGame());
+            player.setPrevAssistsPerGame(player.getAssistsPerGame());
+            player.setPrevThreePointersMadePerGame(player.getThreePointersMadePerGame());
+        }
         player.setStatsSeasonLabel(row.seasonLabel());
         player.setGamesPlayed(row.gamesPlayed());
         player.setGamesStarted(row.gamesStarted());

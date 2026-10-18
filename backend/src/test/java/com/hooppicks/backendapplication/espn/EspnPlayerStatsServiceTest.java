@@ -87,4 +87,34 @@ class EspnPlayerStatsServiceTest {
         verify(rosterPlayerRepository, never()).save(failing);
         verify(rosterPlayerRepository).save(ok);
     }
+
+    @Test
+    void nouvelle_saison_chez_espn_garde_les_moyennes_de_la_saison_passee() {
+        RosterPlayer p = player("400");
+        p.setStatsSeasonLabel("2025-26");
+        p.setGamesPlayed(70);
+        p.setPointsPerGame(27.0);
+        p.setReboundsPerGame(8.0);
+        when(rosterPlayerRepository.findAllOrderByStatsUpdatedAtAscNullsFirst(any(Pageable.class)))
+                .thenReturn(List.of(p));
+        when(espnStatsClient.fetchSeasonStats("400")).thenReturn(Optional.of(
+                new PlayerSeasonStatsRow("2026-27", 1, 1, 34.0, 12.0, 6.0, 4.0, 1.0, 0.0, 3.0, 40.0, 20.0, 80.0, 1.0)
+        ));
+
+        service.syncBatch();
+
+        assertThat(p.getPrevSeasonLabel()).isEqualTo("2025-26");
+        assertThat(p.getPrevGamesPlayed()).isEqualTo(70);
+        assertThat(p.getPrevPointsPerGame()).isEqualTo(27.0);
+        assertThat(p.getPrevReboundsPerGame()).isEqualTo(8.0);
+        assertThat(p.getPointsPerGame()).isEqualTo(12.0);
+
+        // Même saison au passage suivant : la saison passée n'est pas écrasée.
+        when(espnStatsClient.fetchSeasonStats("400")).thenReturn(Optional.of(
+                new PlayerSeasonStatsRow("2026-27", 2, 2, 34.0, 20.0, 6.0, 4.0, 1.0, 0.0, 3.0, 40.0, 20.0, 80.0, 1.0)
+        ));
+        service.syncBatch();
+        assertThat(p.getPrevPointsPerGame()).isEqualTo(27.0);
+        assertThat(p.getPointsPerGame()).isEqualTo(20.0);
+    }
 }

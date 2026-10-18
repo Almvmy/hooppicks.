@@ -61,5 +61,15 @@ public class RosterPlayer {
     private Double threePointPct;
     private Double freeThrowPct;
     private Double threePointersMadePerGame;
+
+    // Moyennes de la saison précédente, gardées quand ESPN passe le joueur à
+    // une nouvelle saison : en début de saison, la ligne des paris joueurs
+    // part d'elles et glisse vers la saison en cours (cf. PlayerPropsService).
+    private String prevSeasonLabel;
+    private Integer prevGamesPlayed;
+    private Double prevPointsPerGame;
+    private Double prevReboundsPerGame;
+    private Double prevAssistsPerGame;
+    private Double prevThreePointersMadePerGame;
     private Instant statsUpdatedAt;
 }
