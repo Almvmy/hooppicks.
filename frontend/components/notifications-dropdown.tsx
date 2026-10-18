@@ -24,6 +24,7 @@ const DESTINATION: Partial<Record<NotificationType, string>> = {
   match_follow: "/matches",
   favorite_team: "/matches",
   feedback_reply: "/contact",
+  season_picks: "/saison",
 };
 
 export function NotificationsDropdown() {

@@ -18,11 +18,10 @@ public class SeasonPickController {
         this.sessionStore = sessionStore;
     }
 
+    // Public : un lien partagé montre la page à qui n'a pas de compte (sans pronostics à lui).
     @GetMapping
     public ResponseEntity<?> overview(HttpServletRequest request) {
-        String userId = sessionStore.getUserIdFromRequest(request);
-        if (userId == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(service.overview(userId));
+        return ResponseEntity.ok(service.overview(sessionStore.getUserIdFromRequest(request)));
     }
 
     public record PickRequest(String question, String team) {}

@@ -1,8 +1,11 @@
 package com.hooppicks.backendapplication.season;
 
 import com.hooppicks.backendapplication.bankroll.BankrollService;
+import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 @Service
 public class SeasonPickService {
 
+    private static final Logger log = LoggerFactory.getLogger(SeasonPickService.class);
+
     public record Question(String key, String label, int points) {}
 
     public static final List<Question> QUESTIONS = List.of(
@@ -36,24 +41,32 @@ public class SeasonPickService {
     private final MatchRepository matchRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final SeasonMilestoneRepository milestoneRepository;
+    private final NotificationRepository notificationRepository;
+    private final PushService pushService;
     private final Clock clock;
 
     @Autowired
     public SeasonPickService(SeasonPickRepository pickRepository, SeasonResultRepository resultRepository,
                              MatchRepository matchRepository, TeamRepository teamRepository,
-                             UserRepository userRepository) {
-        this(pickRepository, resultRepository, matchRepository, teamRepository, userRepository,
-                Clock.system(BankrollService.ZONE));
+                             UserRepository userRepository, SeasonMilestoneRepository milestoneRepository,
+                             NotificationRepository notificationRepository, PushService pushService) {
+        this(pickRepository, resultRepository, matchRepository, teamRepository, userRepository, milestoneRepository,
+                notificationRepository, pushService, Clock.system(BankrollService.ZONE));
     }
 
     SeasonPickService(SeasonPickRepository pickRepository, SeasonResultRepository resultRepository,
                       MatchRepository matchRepository, TeamRepository teamRepository,
-                      UserRepository userRepository, Clock clock) {
+                      UserRepository userRepository, SeasonMilestoneRepository milestoneRepository,
+                      NotificationRepository notificationRepository, PushService pushService, Clock clock) {
         this.pickRepository = pickRepository;
         this.resultRepository = resultRepository;
         this.matchRepository = matchRepository;
         this.teamRepository = teamRepository;
         this.userRepository = userRepository;
+        this.milestoneRepository = milestoneRepository;
+        this.notificationRepository = notificationRepository;
+        this.pushService = pushService;
         this.clock = clock;
     }
 
@@ -122,8 +135,11 @@ public class SeasonPickService {
                            Map<String, String> myPicks, Map<String, String> results,
                            /** Après le verrou seulement : sinon on copierait les choix des autres. */
                            Map<String, Map<String, Integer>> community,
-                           List<Standing> leaderboard) {}
+                           List<Standing> leaderboard,
+                           /** Joueurs qui ont fait au moins un pronostic. */
+                           int participants) {}
 
+    /** userId null : visiteur sans compte (lien partagé), sans pronostics à lui. */
     @Transactional(readOnly = true)
     public Overview overview(String userId) {
         String season = currentSeason();
@@ -136,21 +152,106 @@ public class SeasonPickService {
         Map<String, String> results = resultRepository.findBySeason(season).stream()
                 .collect(Collectors.toMap(SeasonResult::getQuestion, SeasonResult::getTeamAbbreviation));
 
-        Map<String, Map<String, Integer>> community = new HashMap<>();
-        if (locked) {
-            Map<String, List<SeasonPick>> byQuestion = all.stream().collect(Collectors.groupingBy(SeasonPick::getQuestion));
-            byQuestion.forEach((q, picks) -> {
-                Map<String, Long> counts = picks.stream().collect(Collectors.groupingBy(SeasonPick::getTeamAbbreviation, Collectors.counting()));
-                Map<String, Integer> pct = new LinkedHashMap<>();
-                counts.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                        .forEach(e -> pct.put(e.getKey(), (int) Math.round(e.getValue() * 100.0 / picks.size())));
-                community.put(q, pct);
-            });
-        }
+        Map<String, Map<String, Integer>> community = locked ? split(all) : Map.of();
 
         List<Standing> leaderboard = results.isEmpty() ? List.of() : standings(all, results);
+        int participants = (int) all.stream().map(SeasonPick::getUserId).distinct().count();
         return new Overview(season, deadline == null ? null : deadline.toString(), locked, QUESTIONS, mine, results,
-                community, leaderboard);
+                community, leaderboard, participants);
+    }
+
+    /** Répartition des choix par question, en pourcentage, de la plus choisie à la moins choisie. */
+    private static Map<String, Map<String, Integer>> split(List<SeasonPick> all) {
+        Map<String, Map<String, Integer>> community = new HashMap<>();
+        all.stream().collect(Collectors.groupingBy(SeasonPick::getQuestion)).forEach((q, picks) -> {
+            Map<String, Long> counts = picks.stream().collect(Collectors.groupingBy(SeasonPick::getTeamAbbreviation, Collectors.counting()));
+            Map<String, Integer> pct = new LinkedHashMap<>();
+            counts.entrySet().stream()
+                    .sorted(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+                    .forEach(e -> pct.put(e.getKey(), (int) Math.round(e.getValue() * 100.0 / picks.size())));
+            community.put(q, pct);
+        });
+        return community;
+    }
+
+    static final Duration REMINDER_BEFORE = Duration.ofHours(24);
+
+    /**
+     * Rappel la veille du verrou (pronostics incomplets) puis révélation des
+     * choix au verrou : chaque étape une seule fois par saison, notée en base.
+     * Pas de rappel une fois le verrou passé (serveur éteint à l'heure dite).
+     */
+    @Transactional
+    public void runMilestones() {
+        String season = currentSeason();
+        Instant deadline = deadline(season);
+        if (deadline == null) return;
+        Instant now = clock.instant();
+        if (now.isBefore(deadline.minus(REMINDER_BEFORE))) return;
+
+        SeasonMilestone milestone = milestoneRepository.findById(season).orElseGet(() -> {
+            SeasonMilestone m = new SeasonMilestone();
+            m.setSeason(season);
+            return m;
+        });
+        if (milestone.getRevealedAt() != null) return;
+        boolean locked = !now.isBefore(deadline);
+        if (milestone.getReminderSentAt() == null) {
+            if (!locked) sendReminders(season);
+            milestone.setReminderSentAt(now);
+        }
+        if (locked) {
+            reveal(season);
+            milestone.setRevealedAt(now);
+        }
+        milestoneRepository.save(milestone);
+    }
+
+    private void sendReminders(String season) {
+        Map<String, Long> picksByUser = pickRepository.findBySeason(season).stream()
+                .collect(Collectors.groupingBy(SeasonPick::getUserId, Collectors.counting()));
+        int sent = 0;
+        for (User user : userRepository.findAll()) {
+            long missing = QUESTIONS.size() - picksByUser.getOrDefault(user.getId(), 0L);
+            if (missing <= 0) continue;
+            String message = missing == QUESTIONS.size()
+                    ? "Pronostics de saison : plus que 24 h pour désigner ton champion, tes finalistes et le meilleur bilan."
+                    : "Pronostics de saison : plus que 24 h, il t'en manque " + missing + ".";
+            notify(user, message, "Pronostics de saison");
+            sent++;
+        }
+        log.info("Pronostics de saison {} : rappel envoyé à {} joueur(s)", season, sent);
+    }
+
+    private void reveal(String season) {
+        List<SeasonPick> all = pickRepository.findBySeason(season);
+        Map<String, Integer> champions = split(all).getOrDefault("champion", Map.of());
+        if (champions.isEmpty()) return;
+        Map.Entry<String, Integer> top = champions.entrySet().iterator().next();
+        String topName = teamRepository.findAll().stream().filter(t -> t.getAbbreviation().equals(top.getKey()))
+                .map(Team::getName).findFirst().orElse(top.getKey());
+        Map<String, String> championOf = all.stream().filter(p -> p.getQuestion().equals("champion"))
+                .collect(Collectors.toMap(SeasonPick::getUserId, SeasonPick::getTeamAbbreviation, (a, b) -> a));
+
+        Set<String> participants = all.stream().map(SeasonPick::getUserId).collect(Collectors.toSet());
+        for (User user : userRepository.findAllById(participants)) {
+            String mine = championOf.get(user.getId());
+            String suffix = mine == null ? ""
+                    : mine.equals(top.getKey()) ? " Tu es avec la majorité."
+                    : " Toi, tu fais partie des " + champions.getOrDefault(mine, 0) + " % qui voient autrement.";
+            notify(user, "Pronostics de saison révélés : champion le plus choisi, " + topName + " (" + top.getValue() + " %)." + suffix,
+                    "Les pronostics sont révélés");
+        }
+        log.info("Pronostics de saison {} révélés à {} joueur(s)", season, participants.size());
+    }
+
+    private void notify(User user, String message, String pushTitle) {
+        AppNotification n = new AppNotification();
+        n.setUser(user);
+        n.setType(NotificationType.SEASON_PICKS);
+        n.setMessage(message.length() > 255 ? message.substring(0, 255) : message);
+        notificationRepository.save(n);
+        pushService.sendToUser(user.getId(), new PushService.PushMessage(pushTitle, message, "/saison"));
     }
 
     private List<Standing> standings(List<SeasonPick> picks, Map<String, String> results) {

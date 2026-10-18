@@ -6,7 +6,6 @@ export const PROTECTED_PREFIXES = [
   "/profile",
   "/leagues",
   "/duels",
-  "/saison",
   "/contact",
 ];
 

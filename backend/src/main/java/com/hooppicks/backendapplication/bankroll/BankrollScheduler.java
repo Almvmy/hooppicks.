@@ -26,10 +26,13 @@ public class BankrollScheduler {
     private final NbaSyncService nbaSyncService;
     private final com.hooppicks.backendapplication.duel.DuelService duelService;
     private final com.hooppicks.backendapplication.palmares.PalmaresService palmaresService;
+    private final com.hooppicks.backendapplication.season.SeasonPickService seasonPickService;
 
     public BankrollScheduler(BankrollService bankrollService, NbaSyncService nbaSyncService,
                              com.hooppicks.backendapplication.duel.DuelService duelService,
-                             com.hooppicks.backendapplication.palmares.PalmaresService palmaresService) {
+                             com.hooppicks.backendapplication.palmares.PalmaresService palmaresService,
+                             com.hooppicks.backendapplication.season.SeasonPickService seasonPickService) {
+        this.seasonPickService = seasonPickService;
         this.duelService = duelService;
         this.palmaresService = palmaresService;
         this.bankrollService = bankrollService;
@@ -49,6 +52,11 @@ public class BankrollScheduler {
             palmaresService.recordEndedWeeks();
         } catch (Exception e) {
             log.error("Attribution du palmarès en échec", e);
+        }
+        try {
+            seasonPickService.runMilestones();
+        } catch (Exception e) {
+            log.error("Rappel ou révélation des pronostics de saison en échec", e);
         }
         try {
             if (!bankrollService.rollOverNeeded()) return;

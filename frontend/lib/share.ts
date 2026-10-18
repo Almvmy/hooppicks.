@@ -73,3 +73,10 @@ export const fetchSharedLeaderboard = (period: "season" | "month" | "week") =>
 
 /** Champion(s) de la semaine passée, pour leur carte de partage. */
 export const fetchSharedChampions = () => get<import("@/lib/types").WeekChampions>("/palmares/champions", true);
+
+/** Les 30 équipes (sigle, nom, logo), pour dessiner les cartes des pronostics de saison. */
+export const fetchSharedTeams = () => get<import("@/lib/types").TeamRank[]>("/teams");
+
+/** Pronostics de saison vus sans compte : répartition des choix une fois verrouillés. */
+export const fetchSharedSeasonPicks = () =>
+  get<import("@/lib/api/season-picks").SeasonPicksOverview>("/season-picks", true);

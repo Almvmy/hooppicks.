@@ -17,8 +17,11 @@ export interface SeasonPicksOverview {
   /** Répartition des choix, visible une fois verrouillé seulement. */
   community: Record<string, Record<string, number>>;
   leaderboard: { username: string; points: number; correct: number }[];
+  /** Joueurs qui ont fait au moins un pronostic. */
+  participants: number;
 }
 
+/** Public : sans compte, la page se voit sans pronostics à soi (lien partagé). */
 export async function fetchSeasonPicks(): Promise<SeasonPicksOverview> {
   return apiFetch<SeasonPicksOverview>("/season-picks");
 }

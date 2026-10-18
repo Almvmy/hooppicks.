@@ -402,7 +402,8 @@ export type NotificationType =
   | "duel"
   | "bet_progress"
   | "match_follow"
-  | "feedback_reply";
+  | "feedback_reply"
+  | "season_picks";
 
 export type FeedbackCategory = "BUG" | "QUESTION" | "IDEA" | "OTHER";
 export type FeedbackStatus = "OPEN" | "ANSWERED" | "CLOSED";

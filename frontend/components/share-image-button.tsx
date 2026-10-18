@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
  * partage de fichiers (ordinateur), l'image est téléchargée.
  */
 /** `discreet` : simple icône, pour un bouton posé sur un visuel (podium) sans lui voler la vedette. */
-export function ShareImageButton({ src, fileName, text, discreet = false }: { src: string; fileName: string; text: string; discreet?: boolean }) {
+export function ShareImageButton({ src, fileName, text, discreet = false, label = "Partager l'image" }: { src: string; fileName: string; text: string; discreet?: boolean; label?: string }) {
   const [busy, setBusy] = useState(false);
 
   async function share() {
@@ -63,7 +63,7 @@ export function ShareImageButton({ src, fileName, text, discreet = false }: { sr
   return (
     <Button type="button" variant="lit" size="sm" className="gap-1.5" disabled={busy} onClick={share}>
       <ImageDown className="h-3.5 w-3.5" />
-      {busy ? "Préparation…" : "Partager l'image"}
+      {busy ? "Préparation…" : label}
     </Button>
   );
 }

@@ -4,6 +4,9 @@
 //  - RecapArt  : carte « récap de la semaine » en image carrée (1080×1080)
 //  - PodiumArt : les 3 premiers du classement, en image carrée (1080×1080)
 //  - ChampionArt : le champion de la semaine passée, en image carrée (1080×1080)
+//  - SeasonPicksArt : les pronostics de saison d'un joueur (1080×1080)
+//  - SeasonStatsArt : la répartition des pronostics de saison, après le verrou (1080×1080)
+//  - SeasonTeaserArt : aperçu du lien vers la page Saison (1200×630)
 // Satori : styles en ligne uniquement, chaque bloc en display flex, pas de
 // classes ni de hooks. Polices : voir lib/share-fonts.ts (à passer à ImageResponse).
 // Partout, le logo est le vrai : panier + ballon + tir en pointillés
@@ -13,6 +16,7 @@ import { LogoMark } from "@/app/logo-mark";
 import { SITE_URL, SharedPlayer, SharedTicket, plainNumber, signedPlain } from "@/lib/share";
 import type { LeaderboardEntry, WeekChampion } from "@/lib/types";
 import { headlineFor } from "@/components/weekly-recap-card";
+import { getTeamColor } from "@/lib/team-colors";
 
 const NAVY = "#0B1120";
 const NAVY2 = "#111A2E";
@@ -709,6 +713,208 @@ export function NotFoundArt({ title, hint }: { title: string; hint: string }) {
         <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 92, lineHeight: 1, letterSpacing: 1, textTransform: "uppercase", marginTop: 20 }}>{title}</div>
         <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 30, color: MUTED, marginTop: 14 }}>{hint}</div>
         <Label color={ORANGE} size={26} spacing={1.5} upper={false}>{HOST}</Label>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------ pronostics saison */
+
+export interface SeasonArtTeam {
+  abbreviation: string;
+  name: string;
+  logoUrl: string | null;
+}
+
+/** Logo d'équipe sur un disque à sa couleur ; sigle à la place si le logo manque. */
+function TeamDisc({ team, size }: { team: SeasonArtTeam | undefined; size: number }) {
+  const color = team ? getTeamColor(team.abbreviation) : "#3B4660";
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: `radial-gradient(circle at 50% 40%, ${color} 0%, ${NAVY2} 78%)`,
+        boxShadow: `0 0 0 ${Math.max(3, size * 0.025)}px rgba(255,255,255,0.14), 0 ${size * 0.08}px ${size * 0.3}px ${color}55`,
+      }}
+    >
+      {team?.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={team.logoUrl} width={Math.round(size * 0.72)} height={Math.round(size * 0.72)} alt="" style={{ objectFit: "contain" }} />
+      ) : (
+        <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: Math.round(size * 0.34), color: TEXT }}>
+          {team?.abbreviation ?? "?"}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SeasonFooter({ left }: { left: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 44, lineHeight: 1, textTransform: "uppercase", color: ORANGE }}>
+        {left}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+        <Label color={TEXT} size={26} spacing={1.5} upper={false}>{`${HOST}/saison`}</Label>
+        <Label color={MUTED} size={20} spacing={2}>Pronostics NBA · sans argent</Label>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Les pronostics de saison d'un joueur (1080×1080) : le champion en grand,
+ * les finalistes et le meilleur bilan en dessous. Choix lus dans l'adresse
+ * (le joueur partage les siens), jamais dans la base : rien n'est exposé avant le verrou.
+ */
+export function SeasonPicksArt({
+  username,
+  season,
+  picks,
+}: {
+  username: string | null;
+  season: string;
+  picks: { champion?: SeasonArtTeam; east?: SeasonArtTeam; west?: SeasonArtTeam; best?: SeasonArtTeam };
+}) {
+  const champColor = picks.champion ? getTeamColor(picks.champion.abbreviation) : ORANGE;
+  const small = [
+    { label: "Finaliste Est", team: picks.east },
+    { label: "Finaliste Ouest", team: picks.west },
+    { label: "Meilleur bilan", team: picks.best },
+  ];
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} slab={{ color: "#162036", left: 560, width: 700 }} />
+      <div style={{ position: "absolute", left: 140, top: 120, width: 800, height: 640, display: "flex", background: `radial-gradient(circle at 50% 50%, ${champColor}40 0%, ${champColor}12 36%, rgba(0,0,0,0) 62%)` }} />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "56px 70px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={ORANGE} size={24} spacing={5}>Pronostics de saison</Label>
+            <Label color={MUTED} size={24} spacing={3}>{`Saison ${season}`}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 24 }}>
+          <Label color={MUTED} size={30} spacing={6}>{username ? `Les pronos de @${username}` : "Mes pronos"}</Label>
+          <div style={{ display: "flex", marginTop: 28 }}>
+            <TeamDisc team={picks.champion} size={300} />
+          </div>
+          <div style={{ display: "flex", marginTop: 30 }}>
+            <Label color={ORANGE} size={34} spacing={8} weight={800}>Champion NBA</Label>
+          </div>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 104, lineHeight: 1, textTransform: "uppercase", marginTop: 10, maxWidth: 940, whiteSpace: "nowrap", overflow: "hidden" }}>
+            {picks.champion?.name ?? "À choisir"}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40, flex: 1 }}>
+          {small.map(({ label, team }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 18, width: 300, padding: "18px 20px", borderRadius: 24, background: "rgba(255,255,255,0.05)", border: "2px solid rgba(255,255,255,0.08)", height: 150 }}>
+              <TeamDisc team={team} size={96} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Label color={MUTED} size={20} spacing={2}>{label}</Label>
+                <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 40, lineHeight: 1, textTransform: "uppercase", maxWidth: 160, whiteSpace: "nowrap", overflow: "hidden" }}>
+                  {team?.name ?? "—"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <SeasonFooter left="Et toi, qui sera champion ?" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Ce que pense HoopPicks (1080×1080) : pour chaque question, les 3 équipes
+ * les plus choisies avec leur part. Seulement après le verrou.
+ */
+export function SeasonStatsArt({
+  season,
+  participants,
+  rows,
+}: {
+  season: string;
+  participants: number;
+  rows: { label: string; top: { team: SeasonArtTeam | undefined; abbreviation: string; pct: number }[] }[];
+}) {
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} />
+      <div style={{ position: "absolute", left: 600, top: -120, width: 700, height: 700, display: "flex", background: "radial-gradient(circle at 50% 50%, rgba(255,122,26,0.22) 0%, rgba(255,122,26,0) 60%)" }} />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "56px 70px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={ORANGE} size={24} spacing={5}>Pronostics de saison</Label>
+            <Label color={MUTED} size={24} spacing={3}>{`Saison ${season}`}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 84, lineHeight: 0.95, textTransform: "uppercase" }}>La révélation</div>
+          <Label color={MUTED} size={26} spacing={3}>{`Les choix de ${plainNumber(participants)} joueur${participants > 1 ? "s" : ""}`}</Label>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 22, marginTop: 30, flex: 1 }}>
+          {rows.map((row) => (
+            <div key={row.label} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <Label color={ORANGE} size={22} spacing={4} weight={800}>{row.label}</Label>
+              <div style={{ display: "flex", gap: 14 }}>
+                {row.top.map((t, i) => (
+                  <div key={t.abbreviation} style={{ position: "relative", display: "flex", alignItems: "center", gap: 14, width: 300, height: 82, padding: "0 16px", borderRadius: 18, overflow: "hidden", background: "rgba(255,255,255,0.05)" }}>
+                    <div style={{ position: "absolute", left: 0, top: 0, width: Math.max(8, Math.round((t.pct / 100) * 300)), height: 82, display: "flex", background: i === 0 ? "rgba(255,122,26,0.30)" : "rgba(255,255,255,0.08)" }} />
+                    <TeamDisc team={t.team} size={56} />
+                    <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 34, lineHeight: 1, textTransform: "uppercase", width: 90, whiteSpace: "nowrap", overflow: "hidden" }}>
+                      {t.abbreviation}
+                    </div>
+                    <div style={{ display: "flex", flexShrink: 0, whiteSpace: "nowrap", fontFamily: COND, fontWeight: 900, fontSize: 40, lineHeight: 1, color: i === 0 ? ORANGE : TEXT, marginLeft: "auto" }}>{`${t.pct}%`}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <SeasonFooter left="Rendez-vous en juin" />
+      </div>
+    </div>
+  );
+}
+
+/** Aperçu du lien vers la page Saison (1200×630). */
+export function SeasonTeaserArt({ season, participants, revealed }: { season: string; participants: number; revealed: boolean }) {
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1200, height: 630, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1200} h={630} slab={{ color: "#1D2840", left: 700, width: 600 }} />
+      <div style={{ position: "absolute", left: 640, top: -80, width: 700, height: 700, display: "flex", background: "radial-gradient(circle at 50% 50%, rgba(255,122,26,0.28) 0%, rgba(255,122,26,0) 60%)" }} />
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", width: 1200, height: 630, padding: "50px 64px" }}>
+        <Lockup mark={112} text={52} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <Label color={ORANGE} size={26} spacing={6}>{`Pronostics de saison ${season}`}</Label>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 108, lineHeight: 0.92, textTransform: "uppercase" }}>
+            {revealed ? "Qui voit qui champion ?" : "Qui sera champion ?"}
+          </div>
+          <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 30, color: MUTED }}>
+            {revealed
+              ? "Les choix de tous les joueurs sont révélés."
+              : participants > 0
+                ? `${plainNumber(participants)} joueur${participants > 1 ? "s ont" : " a"} déjà pronostiqué. À ton tour.`
+                : "Champion, finalistes, meilleur bilan : à toi de jouer."}
+          </div>
+        </div>
+        <Label color={TEXT} size={26} spacing={1.5} upper={false}>{`${HOST}/saison`}</Label>
       </div>
     </div>
   );
