@@ -15,6 +15,19 @@ import { SelectionTeamLogo, useMatchesById } from "@/components/selection-team-l
 import { isBoostedSelection, useBoost } from "@/lib/boost";
 import { offerPushNotifications } from "@/components/app-nudges";
 import { useLocalFlag } from "@/lib/use-local-flag";
+import { fireConfetti } from "@/lib/confetti";
+import { useSeasonLaunch } from "@/lib/season-launch";
+
+function markFirstSeasonTicket(season: string): boolean {
+  const key = `hp-premier-ticket-${season}`;
+  try {
+    if (localStorage.getItem(key)) return false;
+    localStorage.setItem(key, "1");
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function BetSlipPanel() {
   const { selections, stake, setStake, toggleSelection, clear, totalOdds, potentialPayout } =
@@ -24,6 +37,7 @@ export function BetSlipPanel() {
   const { data: wallet } = useQuery({ queryKey: ["wallet"], queryFn: fetchWallet });
   const matchesById = useMatchesById();
   const boost = useBoost();
+  const launch = useSeasonLaunch();
 
   // Mobile uniquement : réduit par défaut en pastille dans le coin, déplié
   // seulement quand on la touche. Avant, il se dépliait à chaque sélection
@@ -56,15 +70,20 @@ export function BetSlipPanel() {
     const mutation = useMutation({
     mutationFn: ({ selections, stake }: { selections: BetSelection[]; stake: number }) =>
       placeBet(selections, stake),
-    onSuccess: async () => {
+    onSuccess: async (_data, { selections: placed }) => {
+      // Premier ticket de la saison régulière, une fois par appareil et par saison.
+      const firstOfSeason = launch && placed.some((s) => matchesById.get(s.matchId)?.type === "regular")
+        ? markFirstSeasonTicket(launch.season)
+        : false;
+      if (firstOfSeason) fireConfetti();
       clear();
       queryClient.invalidateQueries({ queryKey: ["bets"] });
       queryClient.invalidateQueries({ queryKey: ["wallet"] });
       const offered = await offerPushNotifications(queryClient, {
-        title: "Ticket validé !",
+        title: firstOfSeason ? "Premier ticket de la saison !" : "Ticket validé !",
         description: "Active les notifications pour connaître le résultat dès qu'il tombe.",
       });
-      if (!offered) toast.success("Ticket validé !");
+      if (!offered) toast.success(firstOfSeason ? "Premier ticket de la saison, bonne chance !" : "Ticket validé !");
     },
     onError: (error) => {
       // Le serveur explique le refus en clair (match commencé, solde…) :

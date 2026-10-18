@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Flame, Ticket } from "lucide-react";
 import { TeamLogo } from "@/components/team-logo";
 import { fetchBets } from "@/lib/api/bets";
-import { useBoost } from "@/lib/boost";
+import { boostedOdds, useBoost } from "@/lib/boost";
 import { liveClockLabel, useLiveStatus, withLiveScore } from "@/lib/live";
 import type { Match, Team } from "@/lib/types";
 import { cn, formatMatchTime } from "@/lib/utils";
@@ -67,7 +67,7 @@ export function CompactMatchRow({ match: synced }: { match: Match }) {
         <TeamLine team={match.homeTeam} score={match.homeScore} ahead={started && home > away} showScore={started} />
       </span>
       <span className="flex w-4 shrink-0 flex-col items-center gap-1">
-        {boost?.matchId === match.id && <Flame className="h-3.5 w-3.5 text-primary" aria-label="Cote boostée" />}
+        {boostedOdds(boost, match.id) && <Flame className="h-3.5 w-3.5 text-primary" aria-label="Cote boostée" />}
         {hasBet && <Ticket className="h-3.5 w-3.5 text-primary" aria-label="Tu as un pari sur ce match" />}
       </span>
     </Link>

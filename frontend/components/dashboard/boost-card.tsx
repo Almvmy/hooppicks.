@@ -12,8 +12,8 @@ import { formatMatchDate, formatMatchTime, isBettable } from "@/lib/utils";
 /** Le match à la cote boostée de la soirée, avec ses deux cotes « vainqueur » boostées. */
 export function BoostCard({ matches }: { matches: Match[] | undefined }) {
   const boost = useBoost();
-  const match = boost ? matches?.find((m) => m.id === boost.matchId) : undefined;
-  if (!boost || !match || !isBettable(match)) return null;
+  const match = boost?.matchId ? matches?.find((m) => m.id === boost.matchId) : undefined;
+  if (!boost || !match || !isBettable(match) || boost.homeOdds === null || boost.awayOdds === null) return null;
 
   const date = new Date(match.date);
   const sides = [

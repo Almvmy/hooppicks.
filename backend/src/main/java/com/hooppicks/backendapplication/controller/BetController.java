@@ -148,15 +148,15 @@ public class BetController {
 
         // Cote boostée du jour : pari « vainqueur » sur le match de la soirée,
         // ticket plafonné à BoostService.MAX_STAKE.
-        String boostedMatchId = boostService.chosenMatchId().orElse(null);
+        Set<String> boostedMatchIds = boostService.boostedMatchIds();
         boolean boosted = request.selections().stream()
-                .anyMatch(s -> "moneyline".equals(s.market()) && s.matchId().equals(boostedMatchId));
+                .anyMatch(s -> "moneyline".equals(s.market()) && boostedMatchIds.contains(s.matchId()));
         if (boosted && request.stake() > BoostService.MAX_STAKE) {
             return ResponseEntity.badRequest().body("Cote boostée : mise limitée à " + BoostService.MAX_STAKE + " pts par ticket.");
         }
 
         double totalOdds = request.selections().stream()
-                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch, boostedMatchId))
+                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch, boostedMatchIds))
                 .reduce(1, (a, b) -> a * b);
         int potentialPayout = (int) Math.min(Integer.MAX_VALUE, Math.round(request.stake() * totalOdds));
 
@@ -186,7 +186,7 @@ public class BetController {
             } else {
                 selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             }
-            selection.setOdds(oddsFor(s, matchesById, propsByMatch, boostedMatchId));
+            selection.setOdds(oddsFor(s, matchesById, propsByMatch, boostedMatchIds));
             bet.getSelections().add(selection);
         });
 
@@ -243,11 +243,11 @@ public class BetController {
     }
 
     private double oddsFor(PlaceBetRequest.SelectionInput s, Map<String, Match> matches,
-                           Map<String, PlayerPropsService.PlayerProp> props, String boostedMatchId) {
+                           Map<String, PlayerPropsService.PlayerProp> props, Set<String> boostedMatchIds) {
         PlayerPropsService.PlayerProp prop = props.get(s.matchId());
         if (prop != null) return "over".equals(s.outcome()) ? prop.overOdds() : prop.underOdds();
         double odds = resolveOdds(matches.get(s.matchId()), s.market(), s.outcome());
-        return "moneyline".equals(s.market()) && s.matchId().equals(boostedMatchId) ? BoostService.boosted(odds) : odds;
+        return "moneyline".equals(s.market()) && boostedMatchIds.contains(s.matchId()) ? BoostService.boosted(odds) : odds;
     }
 
     private static String formatLine(double value) {

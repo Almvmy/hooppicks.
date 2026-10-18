@@ -1,4 +1,4 @@
-import type { Boost } from "@/lib/boost";
+import { boostedOdds, type Boost } from "@/lib/boost";
 import type { BetSelection, Match } from "@/lib/types";
 import { isBettable } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ const WINDOW_MS = 30 * 60 * 60 * 1000;
 
 function moneyline(match: Match, outcome: "home" | "away", boost: Boost | null | undefined): BetSelection {
   const team = outcome === "home" ? match.homeTeam : match.awayTeam;
-  const boosted = boost?.matchId === match.id;
+  const boosted = boostedOdds(boost, match.id);
   return {
     id: `${match.id}-moneyline-${outcome}`,
     matchId: match.id,
@@ -25,8 +25,8 @@ function moneyline(match: Match, outcome: "home" | "away", boost: Boost | null |
     outcome,
     label: `${team.abbreviation} (V)`,
     odds: outcome === "home"
-      ? boosted ? boost!.homeOdds : match.odds.moneylineHome
-      : boosted ? boost!.awayOdds : match.odds.moneylineAway,
+      ? boosted ? boosted.homeOdds : match.odds.moneylineHome
+      : boosted ? boosted.awayOdds : match.odds.moneylineAway,
   };
 }
 

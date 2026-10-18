@@ -87,4 +87,40 @@ class BoostServiceTest {
                 Clock.fixed(Instant.parse("2026-10-23T03:00:00Z"), ZoneOffset.UTC));
         assertThat(morning.currentNight()).isEqualTo(LocalDate.of(2026, 10, 22));
     }
+
+    private Match openingNight() {
+        // Soirée d'ouverture le 20 octobre (premier match à 23h30 GMT), deux matchs.
+        Match opener = match("ouv1", team("NYK", 50, 32), team("BOS", 58, 24), 1.8, 2.0, MatchType.REGULAR);
+        opener.setDate(Instant.parse("2026-10-20T23:30:00Z"));
+        Match second = match("ouv2", team("LAL", 45, 37), team("GSW", 48, 34), 2.1, 1.75, MatchType.REGULAR);
+        second.setDate(Instant.parse("2026-10-21T02:00:00Z"));
+        when(matchRepository.findFirstByTypeAndDateAfterOrderByDateAsc(eq(MatchType.REGULAR), any()))
+                .thenReturn(Optional.of(opener));
+        when(matchRepository.findByDateBetween(Instant.parse("2026-10-20T12:00:00Z"), Instant.parse("2026-10-21T12:00:00Z")))
+                .thenReturn(List.of(opener, second));
+        return opener;
+    }
+
+    @Test
+    void soiree_d_ouverture_annoncee_a_l_avance_tous_ses_matchs_boostes() {
+        BoostService before = new BoostService(boostRepository, matchRepository,
+                Clock.fixed(Instant.parse("2026-10-18T15:00:00Z"), ZoneOffset.UTC));
+        openingNight();
+        when(boostRepository.findById(any())).thenReturn(Optional.empty());
+
+        BoostService.Boost boost = before.current().orElseThrow();
+
+        assertThat(boost.matchId()).isNull();
+        assertThat(boost.openingNight()).isTrue();
+        assertThat(boost.matches()).extracting(BoostService.BoostedOdds::matchId).containsExactly("ouv1", "ouv2");
+        assertThat(before.boostedMatchIds()).containsExactlyInAnyOrder("ouv1", "ouv2");
+    }
+
+    @Test
+    void soiree_d_ouverture_passee_plus_de_boost_sur_ses_matchs_a_l_affichage() {
+        openingNight();
+        when(boostRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThat(service.current()).isEmpty(); // le 22, rien à booster ce soir-là
+    }
 }

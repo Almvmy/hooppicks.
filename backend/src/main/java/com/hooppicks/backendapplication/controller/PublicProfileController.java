@@ -41,6 +41,7 @@ public class PublicProfileController {
     private final LeagueMembershipRepository membershipRepository;
     private final com.hooppicks.backendapplication.palmares.PalmaresService palmaresService;
     private final com.hooppicks.backendapplication.badge.CrowdService crowdService;
+    private final com.hooppicks.backendapplication.season.SeasonCalendar seasonCalendar;
 
     private static final int RECENT_TICKETS = 10;
 
@@ -49,8 +50,10 @@ public class PublicProfileController {
                                     FavoriteTeamService favoriteTeamService, LeaderboardService leaderboardService,
                                     LeagueMembershipRepository membershipRepository,
                                     com.hooppicks.backendapplication.palmares.PalmaresService palmaresService,
-                                    com.hooppicks.backendapplication.badge.CrowdService crowdService) {
+                                    com.hooppicks.backendapplication.badge.CrowdService crowdService,
+                                    com.hooppicks.backendapplication.season.SeasonCalendar seasonCalendar) {
         this.crowdService = crowdService;
+        this.seasonCalendar = seasonCalendar;
         this.palmaresService = palmaresService;
         this.leaderboardService = leaderboardService;
         this.membershipRepository = membershipRepository;
@@ -104,6 +107,7 @@ public class PublicProfileController {
                 best, common, isMe, palmaresService.of(user.getId()));
 
         return ResponseEntity.ok(PublicProfileDto.from(user, winRate, (int) totalBets, badgeService.computeBadges(bets,
-                favoriteTeamService.badgeFacts(user.getFavoriteTeam(), bets), crowdService.wonAgainstCrowd(bets)), extras));
+                favoriteTeamService.badgeFacts(user.getFavoriteTeam(), bets), crowdService.wonAgainstCrowd(bets),
+                seasonCalendar.playedOpeningNight(bets)), extras));
     }
 }

@@ -23,6 +23,7 @@ const BADGE_RULES = [
   { icon: "heart", name: "Fidèle", condition: "10 sélections en faveur de ton équipe favorite." },
   { icon: "eye", name: "Lucide", condition: "Un ticket gagné en pariant contre ton équipe favorite." },
   { icon: "users", name: "Contre la foule", condition: "Une sélection gagnante que moins de 20 % des joueurs avaient choisie (5 pronostics au moins)." },
+  { icon: "sparkles", name: "Soirée d'ouverture", condition: "Un ticket sur un match de la soirée d'ouverture de la saison." },
 ];
 
 // Servi tel quel depuis public/ : à remplacer par la nouvelle version quand le manuel change.

@@ -24,6 +24,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -101,7 +102,7 @@ class BetControllerTest {
         HttpServletRequest request = authenticatedRequest("u1");
         when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
         when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
-        when(boostService.chosenMatchId()).thenReturn(Optional.of("m1"));
+        when(boostService.boostedMatchIds()).thenReturn(Set.of("m1"));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(moneylineHome("m1")), 100), request);
 
@@ -116,7 +117,7 @@ class BetControllerTest {
         HttpServletRequest request = authenticatedRequest("u1");
         when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
         when(matchRepository.findById("m1")).thenReturn(Optional.of(scheduledMatch("m1")));
-        when(boostService.chosenMatchId()).thenReturn(Optional.of("m1"));
+        when(boostService.boostedMatchIds()).thenReturn(Set.of("m1"));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(moneylineHome("m1")), 101), request);
 

@@ -39,8 +39,16 @@ public class BadgeService {
         return computeBadges(bets, favorite, false);
     }
 
-    /** wonAgainstCrowd : cf. CrowdService (calcul à part, il lit la répartition des pronostics). */
     public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite, boolean wonAgainstCrowd) {
+        return computeBadges(bets, favorite, wonAgainstCrowd, false);
+    }
+
+    /**
+     * wonAgainstCrowd : cf. CrowdService (calcul à part, il lit la répartition des pronostics).
+     * openingNight : cf. SeasonCalendar#playedOpeningNight, soirée d'ouverture de la saison en cours.
+     */
+    public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite, boolean wonAgainstCrowd,
+                                        boolean openingNight) {
         long totalPlaced = bets.size();
         long totalResolved = bets.stream()
                 .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST)
@@ -86,6 +94,8 @@ public class BadgeService {
                 favorite.wonTicketAgainst(), "eye"));
         badges.add(new BadgeDto("contrarian", "Contre la foule",
                 "Gagne une sélection que moins de 20 % des joueurs avaient choisie.", wonAgainstCrowd, "users"));
+        badges.add(new BadgeDto("opening_night", "Soirée d'ouverture",
+                "Pose un ticket sur un match de la soirée d'ouverture de la saison.", openingNight, "sparkles"));
 
         return badges;
     }

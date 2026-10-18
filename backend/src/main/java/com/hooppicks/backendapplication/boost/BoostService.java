@@ -4,6 +4,7 @@ import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.DailyBoostRepository;
 import com.hooppicks.backendapplication.repository.MatchRepository;
+import com.hooppicks.backendapplication.season.SeasonCalendar;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -11,9 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Cote boostée du jour : un match par soirée NBA (12h GMT → 12h GMT, comme la
@@ -25,6 +24,10 @@ import java.util.Optional;
  * égalité le plus serré selon les cotes. Choisi au premier besoin puis figé en
  * base pour toute la soirée. Les cotes boostées viennent toujours d'ici, côté
  * serveur, comme les autres cotes.
+ *
+ * <p>Soirée d'ouverture de la saison (choix du propriétaire) : tous ses matchs
+ * de saison régulière ont leur cote « vainqueur » boostée, quel que soit le
+ * moment où le ticket est posé, avec le même plafond de mise.
  */
 @Service
 public class BoostService {
@@ -35,37 +38,76 @@ public class BoostService {
 
     private final DailyBoostRepository boostRepository;
     private final MatchRepository matchRepository;
+    private final SeasonCalendar calendar;
     private final Clock clock;
 
     @Autowired
-    public BoostService(DailyBoostRepository boostRepository, MatchRepository matchRepository) {
-        this(boostRepository, matchRepository, Clock.system(BankrollService.ZONE));
+    public BoostService(DailyBoostRepository boostRepository, MatchRepository matchRepository, SeasonCalendar calendar) {
+        this(boostRepository, matchRepository, calendar, Clock.system(BankrollService.ZONE));
     }
 
     BoostService(DailyBoostRepository boostRepository, MatchRepository matchRepository, Clock clock) {
+        this(boostRepository, matchRepository, new SeasonCalendar(matchRepository, clock), clock);
+    }
+
+    BoostService(DailyBoostRepository boostRepository, MatchRepository matchRepository, SeasonCalendar calendar, Clock clock) {
         this.boostRepository = boostRepository;
         this.matchRepository = matchRepository;
+        this.calendar = calendar;
         this.clock = clock;
     }
 
-    public record Boost(String matchId, double factor, int maxStake, double homeOdds, double awayOdds) {}
+    public record BoostedOdds(String matchId, double homeOdds, double awayOdds) {}
 
-    /** Le boost de la soirée en cours, s'il y a un match à booster. */
+    /**
+     * matchId/homeOdds/awayOdds : le choc de la soirée (null s'il n'y en a pas).
+     * matches : tous les matchs boostés, choc compris (plusieurs seulement pour
+     * la soirée d'ouverture, tant qu'elle n'est pas passée).
+     */
+    public record Boost(String matchId, double factor, int maxStake, Double homeOdds, Double awayOdds,
+                        boolean openingNight, List<BoostedOdds> matches) {}
+
+    /** Les boosts en cours : choc de la soirée et, à son approche, la soirée d'ouverture. */
     public Optional<Boost> current() {
         LocalDate night = currentNight();
-        Optional<String> matchId = boostRepository.findById(night).map(DailyBoost::getMatchId)
-                .or(() -> choose(night));
-        return matchId.flatMap(matchRepository::findById)
-                .map(m -> new Boost(m.getId(), FACTOR, MAX_STAKE, boosted(m.getMoneylineHome()), boosted(m.getMoneylineAway())));
+        Optional<Match> choc = boostRepository.findById(night).map(DailyBoost::getMatchId)
+                .or(() -> choose(night))
+                .flatMap(matchRepository::findById);
+
+        Map<String, BoostedOdds> all = new LinkedHashMap<>();
+        choc.ifPresent(m -> all.put(m.getId(), odds(m)));
+        List<Match> opening = upcomingOpeningNight();
+        opening.stream().filter(m -> m.getMoneylineHome() > 1 && m.getMoneylineAway() > 1)
+                .forEach(m -> all.putIfAbsent(m.getId(), odds(m)));
+        if (all.isEmpty()) return Optional.empty();
+
+        return Optional.of(new Boost(choc.map(Match::getId).orElse(null), FACTOR, MAX_STAKE,
+                choc.map(m -> boosted(m.getMoneylineHome())).orElse(null),
+                choc.map(m -> boosted(m.getMoneylineAway())).orElse(null),
+                !opening.isEmpty(), List.copyOf(all.values())));
     }
 
     /**
-     * Match boosté de la soirée s'il est déjà choisi, sans jamais le choisir :
-     * pour la pose d'un pari, dont la transaction ne doit pas risquer un
-     * conflit d'écriture (le choix se fait à l'affichage, avant tout pari).
+     * Matchs boostés pour la pose d'un pari : le choc de la soirée s'il est
+     * déjà choisi (jamais choisi ici : la transaction du pari ne doit pas
+     * risquer un conflit d'écriture, le choix se fait à l'affichage) et ceux
+     * de la soirée d'ouverture.
      */
-    public Optional<String> chosenMatchId() {
-        return boostRepository.findById(currentNight()).map(DailyBoost::getMatchId);
+    public Set<String> boostedMatchIds() {
+        Set<String> ids = new HashSet<>(calendar.openingNightMatchIds());
+        boostRepository.findById(currentNight()).map(DailyBoost::getMatchId).ifPresent(ids::add);
+        return ids;
+    }
+
+    // Soirée d'ouverture pas encore terminée : ses matchs restent affichés boostés.
+    private List<Match> upcomingOpeningNight() {
+        Optional<LocalDate> night = calendar.openingNight();
+        if (night.isEmpty() || night.get().isBefore(currentNight())) return List.of();
+        return calendar.openingNightMatches();
+    }
+
+    private static BoostedOdds odds(Match m) {
+        return new BoostedOdds(m.getId(), boosted(m.getMoneylineHome()), boosted(m.getMoneylineAway()));
     }
 
     // En décimal exact : en double, 1,7 × 1,15 vaut 1,9549999… et s'arrondirait à 1,95.

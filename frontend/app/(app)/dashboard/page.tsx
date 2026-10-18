@@ -28,6 +28,7 @@ import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
 import { AppNudges } from "@/components/app-nudges";
 import { BoostCard } from "@/components/dashboard/boost-card";
+import { SeasonCountdownCard } from "@/components/dashboard/season-countdown-card";
 import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
 import { useBoost } from "@/lib/boost";
 import { CountUp } from "@/components/motion/count-up";
@@ -126,6 +127,8 @@ export default function DashboardPage() {
           },
         ]}
       />
+
+      <SeasonCountdownCard matches={matchesQuery.data} />
 
       {/* min-w-0 sur les colonnes : un élément de grille ne rétrécit pas sous
           la largeur de son contenu, une ligne trop longue d'une carte élargissait

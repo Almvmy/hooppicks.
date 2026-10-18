@@ -1,13 +1,12 @@
 import { OddsButton } from "@/components/odds-button";
 import { Match } from "@/lib/types";
-import { useBoost } from "@/lib/boost";
+import { boostedOdds, useBoost } from "@/lib/boost";
 import { winChances, formatLine } from "@/lib/utils";
 
 export function MatchOddsRow({ match }: { match: Match }) {
   const { odds } = match;
-  // Cote boostée du jour : le pari « vainqueur » de ce match payé +15 %.
-  const boost = useBoost();
-  const boosted = boost?.matchId === match.id ? boost : null;
+  // Cote boostée : le pari « vainqueur » de ce match payé +15 %.
+  const boosted = boostedOdds(useBoost(), match.id);
   // Chances de victoire tirées des cotes, marge retirée (somme = 100 %).
   // Seulement pour le vainqueur : spread/total ont la même cote des deux
   // côtés, le chiffre serait toujours 50 %.
