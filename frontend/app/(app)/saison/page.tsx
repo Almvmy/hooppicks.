@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ChevronRight, Lock, Medal, Search, Sparkles, Trophy, Users, X } from "lucide-react";
+import { Check, ChevronRight, Lock, Medal, Play, Search, Sparkles, Trophy, Users, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,9 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TeamLogo } from "@/components/team-logo";
 import { ShareButton } from "@/components/share-button";
 import { ShareImageButton } from "@/components/share-image-button";
+import { SeasonStory } from "@/components/season-story";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchSeasonPicks, saveSeasonPick, SeasonPicksOverview, SeasonQuestion } from "@/lib/api/season-picks";
-import { countdownParts, useNow } from "@/lib/season-launch";
+import { countdownParts, useNow, useSeasonLaunch } from "@/lib/season-launch";
 import { CONFERENCE_OF, formatChance, seasonChances } from "@/lib/season-odds";
 import { getTeamColor } from "@/lib/team-colors";
 import { useTeamsByAbbreviation } from "@/lib/use-teams";
@@ -75,11 +76,13 @@ function Hero({
   anonymous,
   username,
   now,
+  onReplayIntro,
 }: {
   data: SeasonPicksOverview;
   anonymous: boolean;
   username: string | undefined;
   now: number;
+  onReplayIntro: (() => void) | null;
 }) {
   const deadline = data.deadline ? new Date(data.deadline) : null;
   const done = Object.keys(data.myPicks).length;
@@ -164,6 +167,16 @@ function Hero({
             text={data.locked ? "Les pronostics de saison HoopPicks sont révélés :" : "Qui sera champion NBA ? Fais tes pronostics de saison sur HoopPicks :"}
             label={data.locked ? "Partager la page" : "Inviter à pronostiquer"}
           />
+          {onReplayIntro && (
+            <button
+              type="button"
+              onClick={onReplayIntro}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-jersey-foreground/85 ring-1 ring-white/15 transition-colors hover:bg-white/10"
+            >
+              <Play className="h-3.5 w-3.5 text-brand" />
+              Revoir l&apos;intro de la saison
+            </button>
+          )}
         </div>
         {anonymous && (
           <p className="-mt-2 text-xs text-jersey-muted">
@@ -412,6 +425,9 @@ export default function SeasonPicksPage() {
   const anonymous = !profileQuery.data && (profileQuery.isError || profileQuery.failureCount > 0);
   const { data, isLoading, isError } = useQuery({ queryKey: ["season-picks"], queryFn: fetchSeasonPicks });
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const launch = useSeasonLaunch();
+  const introAvailable = !anonymous && !!launch && now >= new Date(launch.openingNightStart).getTime();
 
   const mutation = useMutation({
     mutationFn: ({ question, team }: { question: string; team: string }) => saveSeasonPick(question, team),
@@ -437,7 +453,14 @@ export default function SeasonPicksPage() {
 
       {data && (
         <>
-          <Hero data={data} anonymous={anonymous} username={profileQuery.data?.username} now={now} />
+          <Hero
+            data={data}
+            anonymous={anonymous}
+            username={profileQuery.data?.username}
+            now={now}
+            onReplayIntro={introAvailable ? () => setStoryOpen(true) : null}
+          />
+          <SeasonStory open={storyOpen} onClose={() => setStoryOpen(false)} />
 
           <div className="grid gap-4 lg:grid-cols-2">
             {data.questions.map((q) => (
