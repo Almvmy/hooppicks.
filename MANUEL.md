@@ -44,6 +44,13 @@ Ta page d'accueil une fois connecté :
 - Les **combinés du jour** : « le sûr » (deux favoris) et « le coup » (trois outsiders), ajoutés à ton ticket en une touche.
 - Les prochains matchs, tes derniers tickets, ta semaine en cours, le classement, tes ligues et les actus.
 
+## Le lancement de la saison
+
+- Avant le premier match, un **compte à rebours** s'affiche en haut de l'accueil, et sur les pages de connexion et d'inscription.
+- Le jour de l'ouverture, une **intro de la saison** s'ouvre en plein écran, façon story : ton équipe et ses chances de titre, les favoris HoopPicks, tes pronostics de saison, tes chiffres. Touche à droite pour avancer, à gauche pour revenir, appui long pour mettre en pause. Tu peux la revoir depuis la page **Saison**.
+- **Soirée d'ouverture** : le soir du premier match de la saison régulière, tous les matchs ont leur cote « vainqueur » boostée de 15 % (mise limitée à 100 points), et un badge est à gagner.
+- Ton premier ticket sur un match de saison régulière est fêté avec des confettis.
+
 ## Placer un pari
 
 1. Va dans **Matchs**. Les matchs sont regroupés par soirée NBA ; choisis la soirée dans la bande en haut. Les filtres (phase, conférence, équipe) et la vue en liste compacte sont à côté.
@@ -60,7 +67,7 @@ Ta page d'accueil une fois connecté :
 - Mise minimum : 10 points.
 - Une fois un match commencé, on ne peut plus parier dessus.
 - Les cotes sont fixées et ne bougent pas : celle que tu vois est celle appliquée. Pour un pari joueur, si sa moyenne a changé entre-temps, le pari est refusé et la nouvelle ligne t'est indiquée.
-- **Cote boostée du jour** : chaque soir, le « choc de la soirée » a sa cote « vainqueur » boostée de 15 %. Un ticket qui la contient est limité à 100 points de mise.
+- **Cote boostée du jour** : chaque soir, le « choc de la soirée » a sa cote « vainqueur » boostée de 15 %. Un ticket qui la contient est limité à 100 points de mise. Le soir de l'ouverture de la saison, ce sont tous les matchs qui sont boostés, même si le ticket est posé avant.
 
 ### Que devient un ticket après le match ?
 
@@ -105,7 +112,17 @@ Défie un joueur en **1 contre 1** sur la semaine en cours, depuis **Compétitio
 
 ## Pronostics de saison
 
-Dans **Compétition → Saison**, choisis le champion NBA, les finalistes de l'Est et de l'Ouest et le meilleur bilan de la saison régulière. Les choix restent modifiables jusqu'à une semaine après le premier match de la saison régulière. Ils ont leur propre classement, séparé de celui des semaines.
+Dans **Compétition → Saison**, quatre choix pour toute la saison, jusqu'à 700 points dans un classement à part (il ne touche pas aux points des semaines) :
+- **Champion NBA** : 300 points ;
+- **Finaliste de l'Est** et **finaliste de l'Ouest** : 150 points chacun, choisis dans leur conférence ;
+- **Meilleur bilan** de la saison régulière : 100 points.
+
+Les choix restent modifiables jusqu'à une semaine après le premier match de la saison régulière ; un compte à rebours l'indique en haut de la page.
+- Les équipes sont classées selon l'**estimation HoopPicks** de leurs chances (par exemple « 21 % » pour le titre), tirée de l'Elo qui fixe les cotes : un repère, pas une certitude.
+- La page s'ouvre même sans compte : partage-la avec « Inviter à pronostiquer ». Pour choisir, il suffit de créer un compte.
+- **Partager mes pronos** envoie tes choix en image.
+- La veille de la clôture, un rappel arrive si tu n'as pas fini.
+- **La révélation** : les choix de chacun restent secrets jusqu'à la clôture, pour tout le monde. Ensuite, chaque question montre la part de joueurs derrière chaque équipe et combien pensent comme toi ; une notification annonce le champion le plus choisi, et l'image « La révélation » se partage.
 
 ## Profil
 
@@ -113,6 +130,7 @@ Sur ta page **Profil** :
 - personnalise ton **avatar** (numéro, poste, couleurs, style) et choisis ton **équipe favorite** ;
 - consulte tes points, ta réussite, ta série, ton meilleur ticket, ton récap de la semaine et ton **palmarès** (titres de champion, duels gagnés) ;
 - partage ta **carte de profil**, par lien ou en image ;
+- invite tes amis : le lien de ton profil sert d'invitation, et chaque ami qui crée son compte depuis ce lien est compté pour toi. 3 amis inscrits débloquent le badge Recruteur ;
 - suis tes **badges** :
 
 | Badge | Condition |
@@ -129,6 +147,8 @@ Sur ta page **Profil** :
 | Fidèle | 10 sélections en faveur de ton équipe favorite |
 | Lucide | Un ticket gagné en pariant contre ton équipe favorite |
 | Contre la foule | Une sélection gagnante que moins de 20 % des joueurs avaient choisie |
+| Soirée d'ouverture | Un ticket sur un match de la soirée d'ouverture de la saison |
+| Recruteur | 3 amis inscrits avec ton lien d'invitation |
 
 ## Profil public d'un joueur
 
@@ -138,11 +158,12 @@ En touchant un pseudo, tu ouvres son profil : ses points et rangs, sa réussite,
 
 - **Actus** : les dernières news NBA (ESPN), traduites en français, avec un raccourci vers le prochain match des équipes concernées.
 - **Joueurs** : meneurs statistiques, blessés, recherche, et **comparateur** de deux joueurs. Touche un joueur pour voir sa fiche (photo, moyennes, derniers matchs).
-- **Équipes** : le classement officiel par conférence. Une équipe ouvre sa page : effectif, prochains et derniers matchs, actus.
+- **Équipes** : le classement officiel par conférence, ou les **power rankings** HoopPicks (les équipes classées selon leur force Elo, mise à jour après chaque match, avec les places gagnées ou perdues en 7 jours et leurs chances de titre). Une équipe ouvre sa page : effectif, prochains et derniers matchs, actus.
+- **Agenda** : sur la page d'une équipe ou la carte de ton équipe favorite, « Ajouter ses matchs à mon agenda » abonne l'agenda de ton téléphone à tous ses matchs de saison régulière, qui se mettent à jour tout seuls.
 
 ## Notifications
 
-La cloche en haut de l'écran regroupe tes notifications : résultats et avancée de tes paris, coup d'envoi, matchs suivis, ton équipe favorite, duels, ligues, réponses de l'équipe. L'ouvrir marque tout comme lu.
+La cloche en haut de l'écran regroupe tes notifications : résultats et avancée de tes paris, coup d'envoi, matchs suivis, ton équipe favorite, duels, ligues, pronostics de saison (rappel et révélation), amis inscrits grâce à toi, réponses de l'équipe. L'ouvrir marque tout comme lu.
 
 Pour les recevoir aussi sur ton téléphone, active les **notifications push** dans **Paramètres** (sur iPhone, depuis l'app installée).
 
