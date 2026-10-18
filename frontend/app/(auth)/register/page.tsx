@@ -5,6 +5,7 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { safeRedirectTarget } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
+import { SeasonCountdownStrip } from "@/components/season-countdown-strip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +41,8 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
   }
 
   return (
+    <>
+      <SeasonCountdownStrip />
     <Card className="w-full max-w-sm border-border bg-card">
       <CardHeader>
         <CardTitle className="font-heading text-xl">Créer un compte</CardTitle>
@@ -74,5 +77,6 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
         </form>
       </CardContent>
     </Card>
+    </>
   );
 }

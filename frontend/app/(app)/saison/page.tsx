@@ -225,7 +225,7 @@ function TeamPicker({
       }}
     >
       {question && (
-        <DialogContent className="flex max-h-[85vh] max-w-md flex-col gap-3">
+        <DialogContent className="flex max-h-[85dvh] max-w-md flex-col gap-3 overflow-hidden">
           <DialogTitle>{question.label}</DialogTitle>
           <DialogDescription>
             {question.points} pts si c&apos;est juste. Équipes classées selon l&apos;estimation HoopPicks (d&apos;après l&apos;Elo).
@@ -241,7 +241,7 @@ function TeamPicker({
               className="pl-9"
             />
           </div>
-          <ul className="-mx-1 flex flex-col gap-1 overflow-y-auto px-1 pb-1">
+          <ul className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-1 pb-1">
             {shown.map(({ team, pct }, i) => {
               const isSelected = selected === team.abbreviation;
               const color = getTeamColor(team.abbreviation);
