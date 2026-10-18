@@ -424,6 +424,45 @@ public class EspnStatsClient {
         return Optional.of(games);
     }
 
+    /** Match du calendrier d'une équipe, joué ou non (scores à 0 tant qu'il n'est pas terminé). */
+    public record ScheduledGame(String eventId, Instant date, String homeAbbreviation, String awayAbbreviation,
+                                boolean completed, int homeScore, int awayScore) {}
+
+    /**
+     * Calendrier complet d'une équipe sur une saison ESPN (année de fin), joué
+     * ou à venir. Même réponse lourde que {@link #fetchTeamResults} : à
+     * réduire et garder en cache. Optional vide = ESPN injoignable.
+     */
+    public Optional<List<ScheduledGame>> fetchTeamSchedule(String abbreviation, int seasonYear, int seasonType) {
+        JsonNode root = fetchWithRetry(String.format(TEAM_SCHEDULE_URL,
+                toEspnAbbreviation(abbreviation).toLowerCase(java.util.Locale.ROOT), seasonYear, seasonType));
+        if (root == null) return Optional.empty();
+        List<ScheduledGame> games = new ArrayList<>();
+        for (JsonNode event : root.path("events")) {
+            JsonNode competition = event.path("competitions").path(0);
+            String home = null;
+            String away = null;
+            int homeScore = 0;
+            int awayScore = 0;
+            for (JsonNode c : competition.path("competitors")) {
+                String abbr = fromEspnAbbreviation(c.path("team").path("abbreviation").asText());
+                int score = (int) c.path("score").path("value").asDouble(0);
+                if ("home".equals(c.path("homeAway").asText())) {
+                    home = abbr;
+                    homeScore = score;
+                } else {
+                    away = abbr;
+                    awayScore = score;
+                }
+            }
+            Instant date = parseEventDate(event.path("date").asText(""));
+            if (home == null || away == null || date == null) continue;
+            games.add(new ScheduledGame(event.path("id").asText(), date, home, away,
+                    competition.path("status").path("type").path("completed").asBoolean(false), homeScore, awayScore));
+        }
+        return Optional.of(games);
+    }
+
     // ESPN écrit ses dates sans secondes ("2026-10-05T23:00Z"), format
     // qu'Instant.parse refuse mais qu'OffsetDateTime accepte.
     private static Instant parseEventDate(String raw) {

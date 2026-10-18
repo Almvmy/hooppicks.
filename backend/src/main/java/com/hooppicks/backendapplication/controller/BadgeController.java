@@ -49,6 +49,7 @@ public class BadgeController {
         List<Bet> bets = betRepository.findByUserIdOrderByPlacedAtDesc(userId);
         String favoriteTeam = userRepository.findById(userId).map(u -> u.getFavoriteTeam()).orElse(null);
         return ResponseEntity.ok(badgeService.computeBadges(bets, favoriteTeamService.badgeFacts(favoriteTeam, bets),
-                crowdService.wonAgainstCrowd(bets), seasonCalendar.playedOpeningNight(bets)));
+                crowdService.wonAgainstCrowd(bets), seasonCalendar.playedOpeningNight(bets),
+                userRepository.countByReferredBy(userId)));
     }
 }

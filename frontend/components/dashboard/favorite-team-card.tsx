@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamCalendarButton } from "@/components/team-calendar-button";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -333,6 +334,7 @@ export function FavoriteTeamCard({
           <Block title="Prochain match" icon={CalendarDays} className="sm:col-span-2">
             <NextMatch match={next} team={team} />
             <LastResult match={last} team={team} />
+            <TeamCalendarButton abbreviation={team.abbreviation} className="mt-3" />
           </Block>
 
           <Block title="Infirmerie" icon={Activity}>

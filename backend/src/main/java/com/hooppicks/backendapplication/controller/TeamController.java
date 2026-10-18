@@ -25,10 +25,16 @@ public class TeamController {
 
     private final TeamRepository teamRepository;
     private final RosterPlayerRepository rosterPlayerRepository;
+    private final com.hooppicks.backendapplication.power.PowerRankingService powerRankingService;
+    private final com.hooppicks.backendapplication.espn.TeamScheduleService teamScheduleService;
 
-    public TeamController(TeamRepository teamRepository, RosterPlayerRepository rosterPlayerRepository) {
+    public TeamController(TeamRepository teamRepository, RosterPlayerRepository rosterPlayerRepository,
+                          com.hooppicks.backendapplication.power.PowerRankingService powerRankingService,
+                          com.hooppicks.backendapplication.espn.TeamScheduleService teamScheduleService) {
+        this.teamScheduleService = teamScheduleService;
         this.teamRepository = teamRepository;
         this.rosterPlayerRepository = rosterPlayerRepository;
+        this.powerRankingService = powerRankingService;
     }
 
     @GetMapping
@@ -49,6 +55,24 @@ public class TeamController {
                     );
                 })
                 .toList();
+    }
+
+    /** Power rankings HoopPicks (public) : rang Elo et évolution sur 7 jours. */
+    @GetMapping("/power-rankings")
+    public List<com.hooppicks.backendapplication.power.PowerRankingService.Entry> powerRankings() {
+        return powerRankingService.rankings();
+    }
+
+    /** Calendrier de saison régulière d'une équipe (public), par sigle : sert l'abonnement agenda. */
+    @GetMapping("/{abbreviation}/schedule")
+    public org.springframework.http.ResponseEntity<List<com.hooppicks.backendapplication.espn.EspnStatsClient.ScheduledGame>> schedule(
+            @PathVariable String abbreviation) {
+        String abbr = abbreviation.toUpperCase(java.util.Locale.ROOT);
+        if (teamRepository.findAll().stream().noneMatch(t -> t.getAbbreviation().equals(abbr))) {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
+        return teamScheduleService.schedule(abbr).map(org.springframework.http.ResponseEntity::ok)
+                .orElseGet(() -> org.springframework.http.ResponseEntity.status(503).build());
     }
 
     @GetMapping("/{id}/roster")

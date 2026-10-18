@@ -3,7 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Crown, Search, Trophy, X } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, Crown, Search, Trophy, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
@@ -12,7 +12,8 @@ import { TeamLogo } from "@/components/team-logo";
 import { InjuryPill, PlayerHeadshot, PlayerTile, playerName } from "@/components/players/player-tile";
 import { PlayerCompareTray } from "@/components/players/player-compare";
 import { fetchPlayerInjuries, fetchPlayerLeaders, fetchPlayers } from "@/lib/api/players";
-import { fetchTeamRankings, fetchTeamRoster } from "@/lib/api/teams";
+import { fetchPowerRankings, fetchTeamRankings, fetchTeamRoster } from "@/lib/api/teams";
+import { formatChance, seasonChances } from "@/lib/season-odds";
 import { cn } from "@/lib/utils";
 import { useFavoriteTeam } from "@/lib/use-teams";
 import { PlayerLeaders, RosterPlayer, TeamRank } from "@/lib/types";
@@ -462,6 +463,14 @@ function TeamsTab() {
   const eloRanked = [...(data ?? [])].sort((a, b) => a.rank - b.rank);
   const eloMax = Math.max(...eloRanked.map((t) => t.eloRating));
   const eloMin = Math.min(...eloRanked.map((t) => t.eloRating));
+  const { data: power } = useQuery({
+    queryKey: ["teams", "power-rankings"],
+    queryFn: fetchPowerRankings,
+    staleTime: 10 * 60 * 1000,
+    enabled: sortMode === "elo",
+  });
+  const powerById = new Map((power ?? []).map((p) => [p.teamId, p]));
+  const titleChance = new Map(seasonChances("champion", data ?? []).map((c) => [c.team.abbreviation, c.pct]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -469,7 +478,7 @@ function TeamsTab() {
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Trophy className="h-4 w-4 text-primary" />
           {sortMode === "elo"
-            ? "Classement Elo HoopPicks."
+            ? "Power rankings HoopPicks : la force de chaque équipe (Elo), mise à jour après chaque match."
             : "Classement officiel NBA, par conférence."}
         </p>
         <div className="flex gap-2">
@@ -477,7 +486,7 @@ function TeamsTab() {
             Classement officiel
           </button>
           <button type="button" className={chipClass(sortMode === "elo")} onClick={() => setSortMode("elo")}>
-            Force (Elo)
+            Power rankings
           </button>
         </div>
       </div>
@@ -518,10 +527,35 @@ function TeamsTab() {
         // Un classement compact plutôt que 30 cartes : tout tient en un coup d'œil.
         <Card className="overflow-hidden">
           <ol className="flex flex-col">
-            {eloRanked.map((team) => (
-              <li key={team.id} className="border-t border-tint/10 first:border-t-0">
+            <li className="flex items-center gap-3 px-4 pb-1 pt-3 text-[11px] uppercase text-muted-foreground">
+              <span className="w-6 shrink-0 text-right">#</span>
+              <span className="w-8 shrink-0 text-center" title="Évolution sur 7 jours">7 j</span>
+              <span className="flex-1">Équipe</span>
+              <span className="hidden w-24 sm:block" />
+              <span className="w-12 shrink-0 text-right" title="Chances de titre, estimation HoopPicks">Titre</span>
+              <span className="w-12 shrink-0 text-right">Elo</span>
+            </li>
+            {eloRanked.map((team) => {
+              const p = powerById.get(team.id);
+              const move = p?.previousRank ? p.previousRank - p.rank : null;
+              return (
+              <li key={team.id} className="border-t border-tint/10">
                 <Link href={`/teams/${team.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-tint/5">
                   <span className="w-6 shrink-0 text-right font-mono text-xs text-muted-foreground">{team.rank}</span>
+                  <span
+                    className={cn(
+                      "flex w-8 shrink-0 items-center justify-center gap-0.5 font-mono text-[11px] font-bold",
+                      move && move > 0 ? "text-success" : move && move < 0 ? "text-destructive" : "text-muted-foreground"
+                    )}
+                    title={p?.eloChange != null ? `${p.eloChange > 0 ? "+" : ""}${p.eloChange} Elo en 7 jours` : undefined}
+                  >
+                    {move === null ? "" : move === 0 ? "=" : (
+                      <>
+                        {move > 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                        {Math.abs(move)}
+                      </>
+                    )}
+                  </span>
                   <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={24} />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{team.name}</span>
                   <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-tint/10 sm:block" aria-hidden>
@@ -532,11 +566,19 @@ function TeamsTab() {
                       }}
                     />
                   </span>
+                  <span className="w-12 shrink-0 text-right font-mono text-xs text-muted-foreground">
+                    {titleChance.has(team.abbreviation) ? formatChance(titleChance.get(team.abbreviation)!) : ""}
+                  </span>
                   <span className="w-12 shrink-0 text-right font-mono text-xs">{Math.round(team.eloRating)}</span>
                 </Link>
               </li>
-            ))}
+              );
+            })}
           </ol>
+          <p className="border-t border-tint/10 px-4 py-3 text-[11px] text-muted-foreground">
+            Flèches : places gagnées ou perdues en 7 jours. « Titre » : chances de titre selon l&apos;estimation HoopPicks
+            (d&apos;après l&apos;Elo), un repère et pas une probabilité exacte.
+          </p>
         </Card>
       )}
     </div>

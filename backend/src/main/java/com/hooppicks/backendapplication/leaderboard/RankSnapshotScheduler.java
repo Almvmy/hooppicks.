@@ -20,9 +20,12 @@ public class RankSnapshotScheduler {
     private static final Logger log = LoggerFactory.getLogger(RankSnapshotScheduler.class);
 
     private final LeaderboardService leaderboardService;
+    private final com.hooppicks.backendapplication.power.PowerRankingService powerRankingService;
 
-    public RankSnapshotScheduler(LeaderboardService leaderboardService) {
+    public RankSnapshotScheduler(LeaderboardService leaderboardService,
+                                 com.hooppicks.backendapplication.power.PowerRankingService powerRankingService) {
         this.leaderboardService = leaderboardService;
+        this.powerRankingService = powerRankingService;
     }
 
     // Midi GMT : entre deux nuits de matchs NBA (qui se jouent
@@ -39,6 +42,7 @@ public class RankSnapshotScheduler {
     public void snapshotIfMissing() {
         LocalDate today = LocalDate.now(LeaderboardService.ZONE);
         if (!leaderboardService.hasSnapshot(today)) snapshot(today);
+        else if (!powerRankingService.hasSnapshot(today)) eloSnapshot(today);
     }
 
     private void snapshot(LocalDate date) {
@@ -47,6 +51,17 @@ public class RankSnapshotScheduler {
             log.info("Photo du classement prise pour le {}", date);
         } catch (Exception e) {
             log.warn("Photo du classement échouée pour le {}", date, e);
+            Sentry.captureException(e);
+        }
+        eloSnapshot(date);
+    }
+
+    // Elo des équipes au même moment : évolution des power rankings sur une semaine.
+    private void eloSnapshot(LocalDate date) {
+        try {
+            powerRankingService.takeSnapshot(date);
+        } catch (Exception e) {
+            log.warn("Photo de l'Elo des équipes échouée pour le {}", date, e);
             Sentry.captureException(e);
         }
     }

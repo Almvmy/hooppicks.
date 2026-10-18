@@ -83,7 +83,7 @@ class AuthControllerTest {
     void register_avec_un_email_deja_pris_renvoie_409() {
         when(userRepository.findByEmail("joueur@example.com")).thenReturn(Optional.of(user("u1", "joueur@example.com", "joueur", "hash")));
 
-        RegisterRequest body = new RegisterRequest("joueur", "joueur@example.com", "motdepasse");
+        RegisterRequest body = new RegisterRequest("joueur", "joueur@example.com", "motdepasse", null);
         ResponseEntity<?> response = controller.register(body, new MockHttpServletResponse());
 
         assertThat(response.getStatusCode().value()).isEqualTo(409);
@@ -97,7 +97,7 @@ class AuthControllerTest {
         when(sessionStore.createSession(any())).thenReturn("token-abc");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        RegisterRequest body = new RegisterRequest("joueur", "joueur@example.com", "motdepasse");
+        RegisterRequest body = new RegisterRequest("joueur", "joueur@example.com", "motdepasse", null);
         ResponseEntity<?> result = controller.register(body, response);
 
         assertThat(result.getStatusCode().value()).isEqualTo(200);

@@ -32,7 +32,7 @@ export default async function SharedPlayerPage({ params }: Props) {
     { label: "Record", value: `${player.bestStreak}`, hint: "gagnés d'affilée" },
   ];
   return (
-    <ShareLanding appHref={`/u/${encodeURIComponent(player.username)}`}>
+    <ShareLanding appHref={`/u/${encodeURIComponent(player.username)}`} referrer={player.username}>
       <div className="glass flex flex-col gap-4 rounded-2xl p-5">
         <div>
           <p className="font-heading text-2xl font-bold">@{player.username}</p>

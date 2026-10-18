@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { registerUser } from "@/lib/api/auth";
+import { claimReferral } from "@/lib/api/referrals";
 
-export default function RegisterPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
+export default function RegisterPage({ searchParams }: { searchParams: Promise<{ from?: string; ref?: string }> }) {
   const router = useRouter();
   // Page demandée avant la connexion (lien d'invitation de ligue…) : on y
   // retourne après, au lieu de toujours renvoyer au tableau de bord.
-  const { from } = use(searchParams);
+  const { from, ref } = use(searchParams);
   const destination = safeRedirectTarget(from);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -28,6 +29,8 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
     setIsSubmitting(true);
     try {
       await registerUser(username, email, password);
+      // Lien d'invitation d'un ami : il est crédité (sans effet sur les points).
+      if (ref) await claimReferral(ref).catch(() => undefined);
       router.push(destination);
     } catch {
       setError("Impossible de créer le compte (e-mail déjà utilisé ?).");

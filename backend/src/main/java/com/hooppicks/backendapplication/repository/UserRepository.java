@@ -16,6 +16,10 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByUsernameIgnoreCase(String username);
+
+    long countByReferredBy(String referrerId);
+
     // Supporters d'une équipe : l'équipe favorite est stockée en nom complet
     // ("Charlotte Hornets") et Team n'a que le surnom ("Hornets"). Appelé avec
     // " " + surnom, pour que " Nets" ne corresponde pas à "Hornets".

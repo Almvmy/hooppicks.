@@ -108,6 +108,6 @@ public class PublicProfileController {
 
         return ResponseEntity.ok(PublicProfileDto.from(user, winRate, (int) totalBets, badgeService.computeBadges(bets,
                 favoriteTeamService.badgeFacts(user.getFavoriteTeam(), bets), crowdService.wonAgainstCrowd(bets),
-                seasonCalendar.playedOpeningNight(bets)), extras));
+                seasonCalendar.playedOpeningNight(bets), userRepository.countByReferredBy(user.getId())), extras));
     }
 }

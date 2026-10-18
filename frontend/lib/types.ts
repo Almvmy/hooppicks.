@@ -403,7 +403,8 @@ export type NotificationType =
   | "bet_progress"
   | "match_follow"
   | "feedback_reply"
-  | "season_picks";
+  | "season_picks"
+  | "referral";
 
 export type FeedbackCategory = "BUG" | "QUESTION" | "IDEA" | "OTHER";
 export type FeedbackStatus = "OPEN" | "ANSWERED" | "CLOSED";

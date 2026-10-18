@@ -40,15 +40,16 @@ public class BadgeService {
     }
 
     public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite, boolean wonAgainstCrowd) {
-        return computeBadges(bets, favorite, wonAgainstCrowd, false);
+        return computeBadges(bets, favorite, wonAgainstCrowd, false, 0);
     }
 
     /**
      * wonAgainstCrowd : cf. CrowdService (calcul à part, il lit la répartition des pronostics).
      * openingNight : cf. SeasonCalendar#playedOpeningNight, soirée d'ouverture de la saison en cours.
+     * recruits : amis inscrits par son lien d'invitation (cf. ReferralService).
      */
     public List<BadgeDto> computeBadges(List<Bet> bets, FavoriteTeamService.BadgeFacts favorite, boolean wonAgainstCrowd,
-                                        boolean openingNight) {
+                                        boolean openingNight, long recruits) {
         long totalPlaced = bets.size();
         long totalResolved = bets.stream()
                 .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST)
@@ -96,6 +97,9 @@ public class BadgeService {
                 "Gagne une sélection que moins de 20 % des joueurs avaient choisie.", wonAgainstCrowd, "users"));
         badges.add(new BadgeDto("opening_night", "Soirée d'ouverture",
                 "Pose un ticket sur un match de la soirée d'ouverture de la saison.", openingNight, "sparkles"));
+        badges.add(new BadgeDto("recruiter", "Recruteur",
+                "Fais inscrire 3 amis avec ton lien d'invitation.",
+                recruits >= com.hooppicks.backendapplication.referral.ReferralService.RECRUITER_GOAL, "user-plus"));
 
         return badges;
     }

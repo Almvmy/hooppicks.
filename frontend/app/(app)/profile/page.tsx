@@ -30,6 +30,7 @@ import { getTeamColor } from "@/lib/team-colors";
 import { favoriteTeamAbbreviation, useTeamsByAbbreviation } from "@/lib/use-teams";
 import { cn, formatSignedPoints, seasonLabel } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
+import { InviteFriendsCard } from "@/components/invite-friends-card";
 import { ShareImageButton } from "@/components/share-image-button";
 import { PalmaresCard } from "@/components/palmares-card";
 import { fetchMyPalmares } from "@/lib/api/palmares";
@@ -304,6 +305,8 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
+          {profile && <InviteFriendsCard username={profile.username} />}
 
           {profile && <AvatarEditor profile={profile} />}
 

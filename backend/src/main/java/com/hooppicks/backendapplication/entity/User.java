@@ -81,4 +81,8 @@ public class User {
     // mesurer, dans la console admin, si les invitations à installer marchent.
     @Column(columnDefinition = "timestamptz")
     private Instant appInstalledAt;
+
+    // Parrain (id du compte qui a invité) : posé à l'inscription par un lien
+    // d'invitation, jamais modifié ensuite. Sert au badge « Recruteur ».
+    private String referredBy;
 }

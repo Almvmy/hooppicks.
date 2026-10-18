@@ -1,5 +1,6 @@
 "use client";
 
+import { TeamCalendarButton } from "@/components/team-calendar-button";
 import { use, useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -73,7 +74,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
               <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-bold text-primary">
-                Force Elo #{team.rank}
+                Power ranking #{team.rank}
               </span>
               {team.wins !== null && team.losses !== null && (
                 <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
@@ -85,6 +86,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
               )}
             </div>
+            <TeamCalendarButton abbreviation={team.abbreviation} className="justify-center" />
           </CardContent>
         </Card>
       )}
