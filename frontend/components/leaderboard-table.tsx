@@ -112,10 +112,12 @@ export function LeaderboardTable({
         <TableRow className="border-b-0 shadow-[inset_0_-1px_0_var(--hairline)] hover:bg-transparent">
           <TableHead className="w-16">Rang</TableHead>
           <TableHead>Joueur</TableHead>
+          {/* Points juste après le joueur : sur téléphone, le tableau défile
+              et c'est la colonne qu'on veut voir sans glisser. */}
+          <TableHead className="text-right" title="Somme des semaines : le bilan de chaque semaine, jamais moins de 0">Points</TableHead>
           {showTrends && <TableHead className="hidden md:table-cell">Forme</TableHead>}
           <TableHead className="text-right">Taux de réussite</TableHead>
           <TableHead className="text-right">Paris joués</TableHead>
-          <TableHead className="text-right" title="Somme des semaines : le bilan de chaque semaine, jamais moins de 0">Points</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody ref={bodyRef} className="stagger-children">
@@ -182,6 +184,9 @@ export function LeaderboardTable({
                   {showTrends && <StreakBadge streak={entry.streak} />}
                 </Link>
               </TableCell>
+              <TableCell className="text-right font-mono font-bold">
+                {formatSignedPoints(entry.points, false)}
+              </TableCell>
               {showTrends && (
                 <TableCell className="hidden md:table-cell">
                   <RecentForm form={entry.recentForm} />
@@ -192,9 +197,6 @@ export function LeaderboardTable({
               </TableCell>
               <TableCell className="text-right text-muted-foreground">
                 {entry.totalBets}
-              </TableCell>
-              <TableCell className="text-right font-mono font-bold">
-                {formatSignedPoints(entry.points, false)}
               </TableCell>
             </TableRow>
           ))}
