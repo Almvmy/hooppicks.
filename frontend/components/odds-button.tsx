@@ -1,10 +1,18 @@
 "use client";
 
+import { createContext, useContext } from "react";
 import { Flame, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { useBetSlip } from "@/components/bet-slip-provider";
 import { BetSelection } from "@/lib/types";
 import { useOddsTrend } from "@/lib/odds-trend";
 import { cn, formatOdds } from "@/lib/utils";
+
+/**
+ * Aperçu : cotes d'un match d'une semaine de jeu suivante, visibles avant
+ * l'ouverture des paris (lundi 12h GMT) pour préparer ses tickets, mais pas
+ * encore cliquables.
+ */
+export const OddsPreviewContext = createContext(false);
 
 export function OddsButton({
   selection,
@@ -24,22 +32,26 @@ export function OddsButton({
   communityPct?: number | null;
 }) {
   const { selections, toggleSelection } = useBetSlip();
+  const preview = useContext(OddsPreviewContext);
   const isActive = selections.some((s) => s.id === selection.id);
   const trend = useOddsTrend(selection.id, selection.odds);
 
   return (
     <button
       type="button"
+      disabled={preview}
+      title={preview ? "Paris pas encore ouverts" : undefined}
       onClick={(e) => {
         e.preventDefault();
-        toggleSelection(selection);
+        if (!preview) toggleSelection(selection);
       }}
       className={cn(
         // min-h-11 = 44px : cible tactile. rounded-xl et non rounded-md.
         // border + bg-secondary/50 → glass-inset (liseré, pas de bordure).
         "flex min-h-11 flex-1 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-xs transition-all",
         isActive ? "glass-accent" : "glass-inset text-muted-foreground",
-        boostedFrom !== undefined && !isActive && "shadow-[inset_0_0_0_1px_var(--brand)]"
+        boostedFrom !== undefined && !isActive && "shadow-[inset_0_0_0_1px_var(--brand)]",
+        preview && "cursor-not-allowed opacity-60"
       )}
     >
       <span className="truncate">{label ?? selection.label}</span>

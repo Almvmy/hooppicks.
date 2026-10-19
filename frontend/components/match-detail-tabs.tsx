@@ -23,7 +23,8 @@ import {
 import { TeamLogo } from "@/components/team-logo";
 import { liveClockLabel, useLiveMatch, useLiveStatus, type LiveShot } from "@/lib/live";
 import type { Match, PlayerBoxScore } from "@/lib/types";
-import { bettingClosedReason, cn, isBettable } from "@/lib/utils";
+import { bettingClosedReason, cn, isBettable, opensLater } from "@/lib/utils";
+import { OddsPreviewContext } from "@/components/odds-button";
 
 /** Feuille de match du direct ESPN, sinon celle importée en base après le match. */
 function BoxScoreTab({
@@ -175,16 +176,25 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
       ) : (
         <div role="tabpanel" className="flex flex-col gap-4">
           {active === "paris" &&
-            (isBettable(match) ? (
-              <>
+            (isBettable(match) || opensLater(match) ? (
+              // Semaine de jeu suivante : les cotes sont déjà fixées, on les
+              // montre en aperçu pour préparer ses tickets.
+              <OddsPreviewContext.Provider value={!isBettable(match)}>
+                {!isBettable(match) && (
+                  <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground">
+                    Aperçu des cotes : {bettingClosedReason(match)}.
+                  </p>
+                )}
                 <Card>
                   <CardContent className="pt-6">
-                    <h2 className="font-heading text-base font-bold">Parier sur ce match</h2>
+                    <h2 className="font-heading text-base font-bold">
+                      {isBettable(match) ? "Parier sur ce match" : "Les cotes de ce match"}
+                    </h2>
                     <MatchOddsRow match={match} />
                   </CardContent>
                 </Card>
                 <PlayerPropsCard match={match} />
-              </>
+              </OddsPreviewContext.Provider>
             ) : (
               <p className="glass-inset-quiet rounded-xl px-3 py-2 text-center text-sm text-muted-foreground first-letter:uppercase">
                 {bettingClosedReason(match)}.
