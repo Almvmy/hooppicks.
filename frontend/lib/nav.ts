@@ -37,7 +37,16 @@ export interface NavSection {
 
 export const NAV_SECTIONS: NavSection[] = [
   { href: "/dashboard", label: "Accueil", icon: House, routes: ["/dashboard"] },
-  { href: "/matches", label: "Matchs", icon: CalendarDays, routes: ["/matches"] },
+  {
+    href: "/matches",
+    label: "Matchs",
+    icon: CalendarDays,
+    routes: ["/matches", "/paris-joueurs"],
+    tabs: [
+      { href: "/matches", label: "Matchs" },
+      { href: "/paris-joueurs", label: "Paris joueurs" },
+    ],
+  },
   { href: "/bets", label: "Mes paris", icon: Ticket, routes: ["/bets"] },
   {
     href: "/leaderboard",

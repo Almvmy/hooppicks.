@@ -1,37 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { OddsButton } from "@/components/odds-button";
 import { fetchPlayerProps } from "@/lib/api/matches";
-import { PLAYER_PROP_MARKETS } from "@/lib/player-props";
+import { PLAYER_PROP_MARKETS, decimal, propSelection as selection, shortPlayerName as shortName } from "@/lib/player-props";
 import { cn } from "@/lib/utils";
-import type { BetSelection, Match, PlayerProp, PlayerPropMarket } from "@/lib/types";
-
-function shortName(name: string) {
-  const [first, ...rest] = name.split(" ");
-  return rest.length ? `${first[0]}. ${rest.join(" ")}` : name;
-}
-
-const decimal = (value: number, digits?: number) =>
-  (digits === undefined ? value.toString() : value.toFixed(digits)).replace(".", ",");
-
-function selection(match: Match, prop: PlayerProp, outcome: "over" | "under"): BetSelection {
-  const { unit } = PLAYER_PROP_MARKETS[prop.market];
-  return {
-    id: `${match.id}-${prop.market}-${prop.playerId}-${outcome}`,
-    matchId: match.id,
-    matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
-    market: prop.market,
-    outcome,
-    // Même libellé que celui construit par le serveur (BetController.propLabel).
-    label: `${shortName(prop.playerName)} · ${outcome === "over" ? "Plus" : "Moins"} de ${decimal(prop.line)} ${unit}`,
-    odds: outcome === "over" ? prop.overOdds : prop.underOdds,
-    playerId: prop.playerId,
-    line: prop.line,
-  };
-}
+import type { Match, PlayerPropMarket } from "@/lib/types";
 
 /**
  * Paris joueurs : plus/moins que la moyenne de la saison (mêlée à la saison
@@ -58,7 +35,12 @@ export function PlayerPropsCard({ match }: { match: Match }) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-3 pt-6">
-        <h2 className="font-heading text-base font-bold">Paris joueurs</h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-heading text-base font-bold">Paris joueurs</h2>
+          <Link href="/paris-joueurs" className="text-xs font-semibold text-primary hover:underline">
+            Tous ceux de la soirée
+          </Link>
+        </div>
         {markets.length > 1 && (
           // Largeur selon le libellé, et défilement horizontal : les cinq
           // statistiques ne tiennent pas toutes sur une ligne de téléphone.
@@ -105,10 +87,12 @@ export function PlayerPropsCard({ match }: { match: Match }) {
                   <OddsButton
                     selection={selection(match, prop, "over")}
                     label={`+ de ${decimal(prop.line)}`}
+                    communityPct={prop.overPct}
                   />
                   <OddsButton
                     selection={selection(match, prop, "under")}
                     label={`− de ${decimal(prop.line)}`}
+                    communityPct={prop.overPct === null ? null : 100 - prop.overPct}
                   />
                 </div>
               </div>

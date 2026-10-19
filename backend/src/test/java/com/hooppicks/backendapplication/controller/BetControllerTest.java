@@ -302,7 +302,7 @@ class BetControllerTest {
         Match match = scheduledMatch("m1");
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
         when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
-                "player_points", "p1", "Jalen Brunson", "LAK", null, 26.5, 1.91, 1.91, 26.8)));
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 26.5, 1.91, 1.91, 26.8, null)));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
 
@@ -322,7 +322,7 @@ class BetControllerTest {
         Match match = scheduledMatch("m1");
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
         when(playerPropsService.find(match, "player_rebounds", "p2")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
-                "player_rebounds", "p2", "Nikola Jokic", "DEN", null, 12.5, 1.91, 1.91, 12.7)));
+                "player_rebounds", "p2", "Nikola Jokic", "DEN", null, 12.5, 1.91, 1.91, 12.7, null)));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(
                 new PlaceBetRequest.SelectionInput("m1", "", "player_rebounds", "under", "", 1.91, "p2", 12.5)), 100), request);
@@ -340,7 +340,7 @@ class BetControllerTest {
         Match match = scheduledMatch("m1");
         when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
         when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
-                "player_points", "p1", "Jalen Brunson", "LAK", null, 27.5, 1.91, 1.91, 27.6)));
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 27.5, 1.91, 1.91, 27.6, null)));
 
         ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(26.5)), 100), request);
 

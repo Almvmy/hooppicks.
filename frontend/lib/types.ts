@@ -200,7 +200,12 @@ export type PlayerPropMarket =
   | "player_rebounds"
   | "player_assists"
   | "player_threes"
-  | "player_pra";
+  | "player_pra"
+  | "player_pr"
+  | "player_pa"
+  | "player_ra"
+  | "player_stocks"
+  | "player_blocks";
 export type BetMarket = "moneyline" | "spread" | "total" | PlayerPropMarket;
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";
@@ -231,8 +236,14 @@ export interface PlayerProp {
   line: number;
   overOdds: number;
   underOdds: number;
-  /** Moyenne de la saison dans la statistique du marché. */
+  /** Moyenne de référence de la ligne (saison, mêlée à la précédente en début de saison). */
   average: number;
+  matchId: string;
+  /** « Day-To-Day », « Questionable »… ; jamais « Out » (pas de ligne). */
+  injuryStatus: string | null;
+  /** Part des joueurs HoopPicks sur « plus de », null si personne n'a encore choisi cette ligne. */
+  overPct: number | null;
+  picks: number;
 }
 
 export interface PlacedBet {

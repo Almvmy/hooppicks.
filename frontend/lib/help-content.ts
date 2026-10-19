@@ -56,7 +56,7 @@ export const FAQ: FaqGroup[] = [
         id: "paris-joueurs",
         question: "Comment marchent les paris joueurs ?",
         answer:
-          "Sur la page d'un match, choisis une statistique (points, rebonds, passes, tirs à 3 points réussis, ou points + rebonds + passes cumulés) puis plus ou moins que la ligne. La ligne est la moyenne du joueur sur la saison, arrondie en ,5. En début de saison, elle part de sa moyenne de la saison passée et glisse vers la nouvelle, un peu plus à chaque match joué : à partir de son 10e match, seule la saison en cours compte (un rookie a ses paris joueurs à partir de son 5e match). Le pari est réglé d'après la feuille de match, en général moins d'une heure après la fin. Si le joueur ne joue pas, ta sélection est remboursée (cote de 1,00 dans un combiné).",
+          "Sur la page d'un match, choisis une statistique (points, rebonds, passes, tirs à 3 points réussis, contres, ou un cumul : points + rebonds + passes, points + rebonds, points + passes, rebonds + passes, interceptions + contres) puis plus ou moins que la ligne. Tous ceux de la soirée sont aussi réunis dans Matchs › Paris joueurs, avec les plus joués en tête. La ligne est la moyenne du joueur sur la saison, arrondie en ,5. En début de saison, elle part de sa moyenne de la saison passée et glisse vers la nouvelle, un peu plus à chaque match joué : à partir de son 10e match, seule la saison en cours compte (un rookie a ses paris joueurs à partir de son 5e match). Le pari est réglé d'après la feuille de match, en général moins d'une heure après la fin. Si le joueur ne joue pas, ta sélection est remboursée (cote de 1,00 dans un combiné).",
         link: { href: "/matches", label: "Choisir un match" },
       },
       {

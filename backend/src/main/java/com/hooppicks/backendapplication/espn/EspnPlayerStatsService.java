@@ -75,6 +75,9 @@ public class EspnPlayerStatsService {
             player.setPrevReboundsPerGame(player.getReboundsPerGame());
             player.setPrevAssistsPerGame(player.getAssistsPerGame());
             player.setPrevThreePointersMadePerGame(player.getThreePointersMadePerGame());
+            player.setPrevStealsPerGame(player.getStealsPerGame());
+            player.setPrevBlocksPerGame(player.getBlocksPerGame());
+            player.setPrevMinutesPerGame(player.getMinutesPerGame());
         }
         player.setStatsSeasonLabel(row.seasonLabel());
         player.setGamesPlayed(row.gamesPlayed());

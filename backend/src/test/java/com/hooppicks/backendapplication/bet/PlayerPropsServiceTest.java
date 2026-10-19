@@ -47,6 +47,8 @@ class PlayerPropsServiceTest {
         p.setPointsPerGame(ppg);
         p.setGamesPlayed(games);
         p.setInjuryStatus(injury);
+        p.setMinutesPerGame(32.0);
+        p.setPrevMinutesPerGame(32.0);
         return p;
     }
 
@@ -75,18 +77,21 @@ class PlayerPropsServiceTest {
     }
 
     @Test
-    void deux_meilleurs_marqueurs_par_equipe_hors_blesses_et_petits_echantillons() {
+    void trois_meilleurs_marqueurs_par_equipe_hors_blesses_petits_echantillons_et_remplacants() {
+        RosterPlayer bench = player("6", "Banc", "Profond", 15.0, 40, null);
+        bench.setMinutesPerGame(14.0);
         when(rosterRepository.findByTeamIdOrderByLastNameAsc("nyk")).thenReturn(List.of(
                 player("1", "Jalen", "Brunson", 26.8, 40, null),
                 player("2", "Karl-Anthony", "Towns", 24.1, 40, "Out"),
                 player("3", "Mikal", "Bridges", 17.9, 40, null),
                 player("4", "Rookie", "Chaud", 30.0, 3, null),
-                player("5", "OG", "Anunoby", 16.0, 40, "Day-To-Day")));
+                player("5", "OG", "Anunoby", 16.0, 40, "Day-To-Day"),
+                bench));
         when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
 
         assertThat(service.propsFor(match()).stream().filter(p -> p.market().equals("player_points")))
                 .extracting(PlayerPropsService.PlayerProp::playerName)
-                .containsExactly("Jalen Brunson", "Mikal Bridges");
+                .containsExactly("Jalen Brunson", "Mikal Bridges", "OG Anunoby");
     }
 
     @Test
@@ -207,5 +212,46 @@ class PlayerPropsServiceTest {
 
         rookie.setGamesPlayed(5);
         assertThat(pointsLine(rookie)).isEqualTo(18.0);
+    }
+
+    @Test
+    void nouveaux_marches_lignes_et_reglement() {
+        RosterPlayer wemby = player("1", "Victor", "Wembanyama", 24.0, 40, null);
+        wemby.setReboundsPerGame(11.0);
+        wemby.setAssistsPerGame(3.5);
+        wemby.setStealsPerGame(1.2);
+        wemby.setBlocksPerGame(3.6);
+        RosterPlayer shooter = player("2", "Tireur", "Pur", 20.0, 40, null);
+        shooter.setReboundsPerGame(3.0);
+        shooter.setAssistsPerGame(2.0);
+        shooter.setStealsPerGame(0.8);
+        shooter.setBlocksPerGame(0.3);
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("nyk")).thenReturn(List.of(wemby, shooter));
+        when(rosterRepository.findByTeamIdOrderByLastNameAsc("bos")).thenReturn(List.of());
+
+        List<PlayerPropsService.PlayerProp> props = service.propsFor(match());
+        assertThat(props).filteredOn(p -> p.market().equals("player_pr") && p.playerId().equals("1"))
+                .extracting(PlayerPropsService.PlayerProp::line).containsExactly(35.5);
+        // Seuils de rôle : rebonds + passes dès 8, interceptions + contres dès 2, contres dès 1,5.
+        assertThat(props).filteredOn(p -> p.market().equals("player_ra"))
+                .extracting(PlayerPropsService.PlayerProp::playerId).containsExactly("1");
+        assertThat(props).filteredOn(p -> p.market().equals("player_stocks"))
+                .extracting(PlayerPropsService.PlayerProp::line).containsExactly(4.5);
+        assertThat(props).filteredOn(p -> p.market().equals("player_blocks"))
+                .extracting(PlayerPropsService.PlayerProp::playerId).containsExactly("1");
+
+        PlayerMatchStat sheet = stat("Victor Wembanyama", 22, "34");
+        sheet.setRebounds(12);
+        sheet.setAssists(4);
+        sheet.setSteals(2);
+        sheet.setBlocks(5);
+        when(statRepository.findByMatchIdOrderByPointsDesc("m1")).thenReturn(List.of(sheet));
+        Instant after = TIP_OFF.plus(Duration.ofHours(3));
+        BetSelection stocks = over("Victor Wembanyama", 4.5); // 2 + 5 = 7
+        stocks.setMarket("player_stocks");
+        assertThat(service.evaluate(stocks, match(), after)).contains(LegResult.WIN);
+        BetSelection pa = over("Victor Wembanyama", 27.5); // 22 + 4 = 26
+        pa.setMarket("player_pa");
+        assertThat(service.evaluate(pa, match(), after)).contains(LegResult.LOSE);
     }
 }

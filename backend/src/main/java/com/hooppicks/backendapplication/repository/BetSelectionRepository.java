@@ -19,4 +19,13 @@ public interface BetSelectionRepository extends JpaRepository<BetSelection, Stri
         GROUP BY s.matchId, s.market, s.outcome
     """)
     List<Object[]> countGroupedByMatchMarketOutcome(@Param("matchIds") List<String> matchIds);
+
+    /** Paris joueurs : nombre de sélections par match, marché, joueur et côté (plus/moins). */
+    @Query("""
+        SELECT s.matchId, s.market, s.playerId, s.outcome, COUNT(s)
+        FROM BetSelection s
+        WHERE s.matchId IN :matchIds AND s.playerId IS NOT NULL
+        GROUP BY s.matchId, s.market, s.playerId, s.outcome
+    """)
+    List<Object[]> countPropPicks(@Param("matchIds") List<String> matchIds);
 }

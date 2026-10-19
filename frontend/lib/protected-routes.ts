@@ -1,6 +1,7 @@
 export const PROTECTED_PREFIXES = [
   "/dashboard",
   "/matches",
+  "/paris-joueurs",
   "/bets",
   "/leaderboard",
   "/profile",

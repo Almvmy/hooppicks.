@@ -42,3 +42,9 @@ export async function fetchMatchBoxScore(id: string): Promise<PlayerBoxScore[]> 
 export async function fetchPlayerProps(matchId: string): Promise<PlayerProp[]> {
   return apiFetch<PlayerProp[]>(`/matches/${matchId}/props`);
 }
+
+/** Paris joueurs de plusieurs matchs (une soirée NBA, 20 matchs au plus). */
+export async function fetchPlayerPropsOf(matchIds: string[]): Promise<PlayerProp[]> {
+  if (matchIds.length === 0) return [];
+  return apiFetch<PlayerProp[]>(`/props?ids=${matchIds.map(encodeURIComponent).join(",")}`);
+}

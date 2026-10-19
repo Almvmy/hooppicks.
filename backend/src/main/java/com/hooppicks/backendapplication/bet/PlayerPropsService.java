@@ -18,8 +18,10 @@ import java.util.stream.Stream;
 
 /**
  * Paris joueurs : « plus / moins de X » points, rebonds, passes décisives,
- * tirs à 3 points réussis ou points + rebonds + passes, pour les deux meilleurs joueurs de chaque équipe
- * dans la statistique. Ligne = moyenne de référence (effectif ESPN), toujours
+ * tirs à 3 points réussis, contres et cumuls (points + rebonds + passes, points
+ * + rebonds, points + passes, rebonds + passes, interceptions + contres), pour
+ * les trois meilleurs joueurs de chaque équipe dans la statistique, parmi ceux
+ * qui jouent au moins 20 minutes. Ligne = moyenne de référence (effectif ESPN), toujours
  * en x,5 : pas d'égalité possible. Cote fixe des deux côtés, comme l'écart et
  * le total.
  *
@@ -41,7 +43,9 @@ public class PlayerPropsService {
     /** Premier marché, gardé sous ce nom : les tickets déjà posés le portent. */
     public static final String MARKET = "player_points";
     public static final double ODDS = OddsService.EVEN_ODDS;
-    static final int PLAYERS_PER_TEAM = 2;
+    static final int PLAYERS_PER_TEAM = 3;
+    // Rotation : un joueur à moins de 20 minutes a des lignes trop aléatoires.
+    static final double MIN_MINUTES = 20;
     // Moyenne fiable : au moins quelques matchs joués. C'est aussi la durée du
     // glissement de la saison précédente vers la saison en cours.
     static final int MIN_GAMES = 10;
@@ -86,6 +90,31 @@ public class PlayerPropsService {
                 return sum(p.getPrevPointsPerGame(), p.getPrevReboundsPerGame(), p.getPrevAssistsPerGame());
             }
             int value(PlayerMatchStat s) { return s.getPoints() + s.getRebounds() + s.getAssists(); }
+        },
+        POINTS_REBOUNDS("player_pr", "pts+rbd", 0) {
+            Double current(RosterPlayer p) { return sum(p.getPointsPerGame(), p.getReboundsPerGame(), 0.0); }
+            Double previous(RosterPlayer p) { return sum(p.getPrevPointsPerGame(), p.getPrevReboundsPerGame(), 0.0); }
+            int value(PlayerMatchStat s) { return s.getPoints() + s.getRebounds(); }
+        },
+        POINTS_ASSISTS("player_pa", "pts+pd", 0) {
+            Double current(RosterPlayer p) { return sum(p.getPointsPerGame(), p.getAssistsPerGame(), 0.0); }
+            Double previous(RosterPlayer p) { return sum(p.getPrevPointsPerGame(), p.getPrevAssistsPerGame(), 0.0); }
+            int value(PlayerMatchStat s) { return s.getPoints() + s.getAssists(); }
+        },
+        REBOUNDS_ASSISTS("player_ra", "rbd+pd", 8) {
+            Double current(RosterPlayer p) { return sum(p.getReboundsPerGame(), p.getAssistsPerGame(), 0.0); }
+            Double previous(RosterPlayer p) { return sum(p.getPrevReboundsPerGame(), p.getPrevAssistsPerGame(), 0.0); }
+            int value(PlayerMatchStat s) { return s.getRebounds() + s.getAssists(); }
+        },
+        STEALS_BLOCKS("player_stocks", "int+ct", 2) {
+            Double current(RosterPlayer p) { return sum(p.getStealsPerGame(), p.getBlocksPerGame(), 0.0); }
+            Double previous(RosterPlayer p) { return sum(p.getPrevStealsPerGame(), p.getPrevBlocksPerGame(), 0.0); }
+            int value(PlayerMatchStat s) { return s.getSteals() + s.getBlocks(); }
+        },
+        BLOCKS("player_blocks", "ct", 1.5) {
+            Double current(RosterPlayer p) { return p.getBlocksPerGame(); }
+            Double previous(RosterPlayer p) { return p.getPrevBlocksPerGame(); }
+            int value(PlayerMatchStat s) { return s.getBlocks(); }
         };
 
         public final String market;
@@ -136,7 +165,9 @@ public class PlayerPropsService {
     }
 
     public record PlayerProp(String market, String playerId, String playerName, String teamAbbreviation,
-                             String headshotUrl, double line, double overOdds, double underOdds, double average) {}
+                             String headshotUrl, double line, double overOdds, double underOdds, double average,
+                             /** « Day-To-Day », « Questionable »… (jamais « Out » : pas de ligne). */
+                             String injuryStatus) {}
 
     /** Paris joueurs d'un match, tous marchés (vide en présaison : les titulaires y jouent peu). */
     public List<PlayerProp> propsFor(Match match) {
@@ -145,6 +176,7 @@ public class PlayerPropsService {
         List<List<RosterPlayer>> rosters = teams.stream()
                 .map(team -> rosterRepository.findByTeamIdOrderByLastNameAsc(team.getId()).stream()
                         .filter(p -> !"Out".equalsIgnoreCase(p.getInjuryStatus()))
+                        .filter(p -> minutes(p) != null && minutes(p) >= MIN_MINUTES)
                         .toList())
                 .toList();
         List<PlayerProp> props = new ArrayList<>();
@@ -157,11 +189,25 @@ public class PlayerPropsService {
                         .sorted(Comparator.comparingDouble((RosterPlayer p) -> stat.average(p)).reversed())
                         .limit(PLAYERS_PER_TEAM)
                         .map(p -> new PlayerProp(stat.market, p.getId(), p.getFirstName() + " " + p.getLastName(),
-                                abbreviation, p.getHeadshotUrl(), line(stat.average(p)), ODDS, ODDS, stat.average(p)))
+                                abbreviation, p.getHeadshotUrl(), line(stat.average(p)), ODDS, ODDS, stat.average(p),
+                                p.getInjuryStatus()))
                         .forEach(props::add);
             }
         }
         return props;
+    }
+
+    /** Minutes par match de référence : même glissement de saison que les statistiques. */
+    static Double minutes(RosterPlayer p) {
+        int games = p.getGamesPlayed() == null ? 0 : p.getGamesPlayed();
+        Double now = p.getMinutesPerGame();
+        if (games >= MIN_GAMES) return now;
+        Double before = p.getPrevMinutesPerGame();
+        boolean hasPrevious = before != null && p.getPrevGamesPlayed() != null && p.getPrevGamesPlayed() >= MIN_GAMES;
+        if (!hasPrevious) return games >= ROOKIE_MIN_GAMES ? now : null;
+        if (games == 0 || now == null) return before;
+        double weight = (double) games / MIN_GAMES;
+        return (1 - weight) * before + weight * now;
     }
 
     public Optional<PlayerProp> find(Match match, String market, String playerId) {

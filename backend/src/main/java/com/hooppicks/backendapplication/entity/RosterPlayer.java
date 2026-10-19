@@ -71,5 +71,8 @@ public class RosterPlayer {
     private Double prevReboundsPerGame;
     private Double prevAssistsPerGame;
     private Double prevThreePointersMadePerGame;
+    private Double prevStealsPerGame;
+    private Double prevBlocksPerGame;
+    private Double prevMinutesPerGame;
     private Instant statsUpdatedAt;
 }
