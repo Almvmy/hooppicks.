@@ -9,6 +9,7 @@ import com.hooppicks.backendapplication.repository.DuelRepository;
 import com.hooppicks.backendapplication.repository.FeedbackRepository;
 import com.hooppicks.backendapplication.repository.MatchFollowRepository;
 import com.hooppicks.backendapplication.repository.WeeklyTitleRepository;
+import com.hooppicks.backendapplication.repository.PhaseTitleRepository;
 import com.hooppicks.backendapplication.repository.SeasonPickRepository;
 import com.hooppicks.backendapplication.repository.LeagueMembershipRepository;
 import com.hooppicks.backendapplication.repository.LeagueRepository;
@@ -39,6 +40,7 @@ public class AccountDeletionService {
     private final SeasonPickRepository seasonPickRepository;
     private final MatchFollowRepository followRepository;
     private final FeedbackRepository feedbackRepository;
+    private final PhaseTitleRepository phaseTitleRepository;
 
     public AccountDeletionService(UserRepository userRepository, LeagueRepository leagueRepository,
                                    LeagueMembershipRepository membershipRepository, LeagueService leagueService,
@@ -51,7 +53,9 @@ public class AccountDeletionService {
                                    WeeklyTitleRepository titleRepository,
                                    SeasonPickRepository seasonPickRepository,
                                    MatchFollowRepository followRepository,
-                                   FeedbackRepository feedbackRepository) {
+                                   FeedbackRepository feedbackRepository,
+                                   PhaseTitleRepository phaseTitleRepository) {
+        this.phaseTitleRepository = phaseTitleRepository;
         this.feedbackRepository = feedbackRepository;
         this.seasonPickRepository = seasonPickRepository;
         this.followRepository = followRepository;
@@ -88,6 +92,7 @@ public class AccountDeletionService {
 
         duelRepository.deleteAllForUser(userId);
         titleRepository.deleteAllForUser(userId);
+        phaseTitleRepository.deleteAllForUser(userId);
         seasonPickRepository.deleteAllForUser(userId);
         followRepository.deleteByUserId(userId);
         feedbackRepository.deleteByUserId(userId);

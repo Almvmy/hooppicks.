@@ -13,6 +13,11 @@ export function leaderboardQueryKey(period: LeaderboardPeriod) {
   return period === "season" ? ["leaderboard"] : ["leaderboard", period];
 }
 
+/** Classements Coupe NBA et playoffs proposés : phase commencée cette saison. */
+export async function fetchLeaderboardPhases(): Promise<{ cup: boolean; playoffs: boolean }> {
+  return apiFetch<{ cup: boolean; playoffs: boolean }>("/leaderboard/phases");
+}
+
 export type MyStanding = {
   seasonPoints: number;
   seasonRank: number | null;

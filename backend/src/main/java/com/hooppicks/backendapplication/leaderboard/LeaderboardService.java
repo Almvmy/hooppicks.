@@ -46,9 +46,7 @@ public class LeaderboardService {
     @Transactional(readOnly = true)
     public List<LeaderboardEntryDto> leaderboard(LeaderboardPeriod period) {
         ZonedDateTime now = ZonedDateTime.now(clock).withZoneSameInstant(ZONE);
-        List<Object[]> rows = period == LeaderboardPeriod.SEASON
-                ? betRepository.getLeaderboardRaw()
-                : betRepository.getLeaderboardRawSince(period.start(now));
+        List<Object[]> rows = betRepository.getLeaderboardRawSince(period.start(now), period.phase());
 
         Map<String, List<String>> results = recentResults();
         // L'historique photographie le classement saison : l'évolution n'a
@@ -83,10 +81,14 @@ public class LeaderboardService {
     @Transactional(readOnly = true)
     public Standing standing(String userId) {
         ZonedDateTime now = ZonedDateTime.now(clock).withZoneSameInstant(ZONE);
-        List<Object[]> season = betRepository.getLeaderboardRaw();
-        List<Object[]> week = betRepository.getLeaderboardRawSince(LeaderboardPeriod.WEEK.start(now));
+        List<Object[]> season = seasonRows(now);
+        List<Object[]> week = betRepository.getLeaderboardRawSince(LeaderboardPeriod.WEEK.start(now), LeaderboardPeriod.WEEK.phase());
         return new Standing(pointsOf(season, userId), ranksByUserId(season).get(userId), season.size(),
                 pointsOf(week, userId), ranksByUserId(week).get(userId), week.size());
+    }
+
+    private List<Object[]> seasonRows(ZonedDateTime now) {
+        return betRepository.getLeaderboardRawSince(LeaderboardPeriod.SEASON.start(now), LeaderboardPeriod.SEASON.phase());
     }
 
     private static long pointsOf(List<Object[]> rows, String userId) {
@@ -101,7 +103,7 @@ public class LeaderboardService {
     public void takeSnapshot(LocalDate date) {
         rankSnapshotRepository.deleteBySnapshotDate(date);
         List<RankSnapshot> snapshots = new ArrayList<>();
-        ranksByUserId(betRepository.getLeaderboardRaw()).forEach((userId, rank) -> {
+        ranksByUserId(seasonRows(ZonedDateTime.now(clock).withZoneSameInstant(ZONE))).forEach((userId, rank) -> {
             RankSnapshot s = new RankSnapshot();
             s.setUserId(userId);
             s.setRank(rank);

@@ -290,7 +290,10 @@ export interface LeaderboardEntry {
   streak: number;
 }
 
-export type LeaderboardPeriod = "season" | "month" | "week";
+/** cup / playoffs : tickets dont tous les matchs sont de la phase (Coupe NBA ; play-in et playoffs). */
+export type LeaderboardPeriod = "season" | "month" | "week" | "cup" | "playoffs";
+
+export type LeaderboardPhase = "cup" | "playoffs";
 
 export interface League {
   id: string;
@@ -514,9 +517,18 @@ export interface WeekChampions {
   champions: WeekChampion[];
 }
 
+/** Champion(s) de la Coupe NBA ou des playoffs de la saison (GET /palmares/champions?phase=), vide tant que la phase n'est pas finie. */
+export interface PhaseChampions {
+  season: string;
+  phase: LeaderboardPhase;
+  champions: WeekChampion[];
+}
+
 export interface Palmares {
   weeklyTitles: number;
   leagueTitles: { leagueName: string; count: number }[];
   duelWins: number;
   bestWeek: number | null;
+  /** leagueName null : sur tout HoopPicks. */
+  phaseTitles: { phase: LeaderboardPhase; season: string; leagueName: string | null; points: number }[];
 }

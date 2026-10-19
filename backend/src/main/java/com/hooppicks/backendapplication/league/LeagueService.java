@@ -306,9 +306,7 @@ public class LeagueService {
                 .toList();
 
         java.time.Instant since = period.start(java.time.ZonedDateTime.now(com.hooppicks.backendapplication.bankroll.BankrollService.ZONE));
-        return LeaderboardEntryDto.fromRows(since == null
-                ? betRepository.getLeaderboardRawForUsers(memberIds)
-                : betRepository.getLeaderboardRawForUsersSince(since, memberIds));
+        return LeaderboardEntryDto.fromRows(betRepository.getLeaderboardRawForUsersSince(since, period.phase(), memberIds));
     }
 
     @Transactional

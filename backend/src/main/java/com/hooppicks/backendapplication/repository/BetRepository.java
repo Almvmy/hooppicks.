@@ -9,16 +9,31 @@ import java.util.List;
 public interface BetRepository extends JpaRepository<Bet, String> {
     List<Bet> findByUserIdOrderByPlacedAtDesc(String userId);
 
-    // Les tickets de présaison ne comptent pas au classement (matchs de
-    // rodage, titulaires peu utilisés), à partir de la semaine du 19 octobre
-    // 2026 : la semaine du 12, la première officielle, a été jouée sur la
-    // présaison et garde ses points et son champion. Un ticket compte s'il
-    // n'a aucune sélection sur un match de présaison. Repris par toutes les
-    // requêtes de points (classement, duels, palmarès, récap de la semaine).
-    String COUNTED = """
-          AND (date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') < TIMESTAMP '2026-10-19'
-               OR NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
-                              WHERE bs.bet_id = b.id AND m.type = 'PRESEASON'))
+    // Phase d'un classement (`:phase`) : ALL (semaine, mois), SEASON, CUP ou
+    // PLAYOFFS, selon le type des matchs du ticket (un match sans type, pas
+    // encore relié à ESPN, compte comme de la saison régulière).
+    // - SEASON : tout sauf la présaison et les tickets 100 % play-in/playoffs.
+    //   Un match de Coupe NBA compte aussi en saison régulière, comme dans
+    //   le bilan officiel NBA. La semaine du 12 octobre 2026, première
+    //   officielle et jouée sur la présaison, garde ses points.
+    // - CUP : seulement les tickets dont tous les matchs sont de Coupe : un
+    //   ticket Coupe + saison régulière ne compte qu'en saison.
+    // - PLAYOFFS : seulement les tickets dont tous les matchs sont de play-in
+    //   ou de playoffs.
+    String PHASE_FILTER = """
+          AND (:phase = 'ALL'
+               OR (:phase = 'SEASON'
+                   AND (date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') < TIMESTAMP '2026-10-19'
+                        OR NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
+                                       WHERE bs.bet_id = b.id AND m.type = 'PRESEASON'))
+                   AND EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
+                               WHERE bs.bet_id = b.id AND COALESCE(m.type, 'REGULAR') NOT IN ('PLAY_IN', 'PLAYOFFS')))
+               OR (:phase = 'CUP'
+                   AND NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
+                                   WHERE bs.bet_id = b.id AND COALESCE(m.type, 'REGULAR') <> 'NBA_CUP'))
+               OR (:phase = 'PLAYOFFS'
+                   AND NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
+                                   WHERE bs.bet_id = b.id AND COALESCE(m.type, 'REGULAR') NOT IN ('PLAY_IN', 'PLAYOFFS'))))
     """;
 
     // Classement : chaque semaine de jeu (lundi 12h GMT) vaut son bénéfice net
@@ -34,7 +49,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
         FROM bet b
         WHERE b.status IN ('WON', 'LOST')
-    """ + COUNTED + """
+    """ + PHASE_FILTER + """
         GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
         HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
     """;
@@ -44,7 +59,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
         FROM bet b
         WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:memberIds)
-    """ + COUNTED + """
+    """ + PHASE_FILTER + """
         GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
         HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
     """;
@@ -62,29 +77,20 @@ public interface BetRepository extends JpaRepository<Bet, String> {
 
     @org.springframework.data.jpa.repository.Query(nativeQuery = true,
             value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_ALL + ") s" + LEADERBOARD_OUTER_END)
-    List<Object[]> getWeeklyScoreLeaderboard(java.time.LocalDateTime fromWeek);
+    List<Object[]> getWeeklyScoreLeaderboard(java.time.LocalDateTime fromWeek, String phase);
 
     @org.springframework.data.jpa.repository.Query(nativeQuery = true,
             value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_MEMBERS + ") s" + LEADERBOARD_OUTER_END)
-    List<Object[]> getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime fromWeek, List<String> memberIds);
-
-    /** Classement de la saison : toutes les semaines. */
-    default List<Object[]> getLeaderboardRaw() {
-        return getWeeklyScoreLeaderboard(java.time.LocalDateTime.of(1970, 1, 1, 0, 0));
-    }
+    List<Object[]> getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime fromWeek, String phase, List<String> memberIds);
 
     /**
-     * Classement depuis `since` (semaine : lundi 12h ; mois : le 1er à minuit,
-     * GMT) : semaines de jeu dont le lundi tombe à partir de cette date.
+     * Classement depuis `since` (semaine : lundi 12h ; mois : le 1er à minuit ;
+     * saison et phases : le 1er septembre, GMT) : semaines de jeu dont le
+     * lundi tombe à partir de cette date, tickets de la phase (`PHASE_FILTER`).
      * Les semaines sont repérées par leur lundi à minuit, décalé de 12 h.
      */
-    default List<Object[]> getLeaderboardRawSince(java.time.Instant since) {
-        return getWeeklyScoreLeaderboard(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC));
-    }
-
-    /** Classement d'une ligue : saison, limité à ses membres. */
-    default List<Object[]> getLeaderboardRawForUsers(List<String> memberIds) {
-        return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.of(1970, 1, 1, 0, 0), memberIds);
+    default List<Object[]> getLeaderboardRawSince(java.time.Instant since, String phase) {
+        return getWeeklyScoreLeaderboard(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC), phase);
     }
 
     /**
@@ -99,7 +105,6 @@ public interface BetRepository extends JpaRepository<Bet, String> {
         FROM bet b
         WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:userIds)
           AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
-    """ + COUNTED + """
         GROUP BY b.user_id
     """)
     List<Object[]> getWeekScores(java.time.LocalDateTime week, List<String> userIds);
@@ -111,7 +116,6 @@ public interface BetRepository extends JpaRepository<Bet, String> {
         FROM bet b
         WHERE b.status IN ('WON', 'LOST')
           AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
-    """ + COUNTED + """
         GROUP BY b.user_id
     """)
     List<Object[]> getAllWeekScores(java.time.LocalDateTime week);
@@ -120,7 +124,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
         SELECT DISTINCT date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
         FROM bet b WHERE b.status IN ('WON', 'LOST')
-    """ + COUNTED)
+    """)
     List<Object> findSettledWeeks();
 
     /** Tickets encore en attente posés pendant cette période, tous joueurs. */
@@ -139,9 +143,16 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     long countPendingPlacedBetween(List<String> userIds, java.time.Instant from, java.time.Instant to);
 
     /** Classement d'une ligue depuis `since` (même règle que getLeaderboardRawSince). */
-    default List<Object[]> getLeaderboardRawForUsersSince(java.time.Instant since, List<String> memberIds) {
-        return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC), memberIds);
+    default List<Object[]> getLeaderboardRawForUsersSince(java.time.Instant since, String phase, List<String> memberIds) {
+        return getWeeklyScoreLeaderboardForUsers(java.time.LocalDateTime.ofInstant(since.minusSeconds(12 * 3600), java.time.ZoneOffset.UTC), phase, memberIds);
     }
+
+    /** Tickets d'une phase encore en attente, posés depuis `since` (palmarès de la Coupe et des playoffs). */
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
+        SELECT COUNT(*) FROM bet b
+        WHERE b.status = 'PENDING' AND b.placed_at >= :since
+    """ + PHASE_FILTER)
+    long countPendingInPhaseSince(java.time.Instant since, String phase);
 
     // Les 10 derniers tickets résolus (gagnés/perdus) de chaque joueur, du
     // plus récent au plus ancien : forme récente et série en cours. En SQL
@@ -154,7 +165,6 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                                       ORDER BY b.resolved_at DESC NULLS LAST, b.placed_at DESC) AS rn
             FROM bet b
             WHERE b.status IN ('WON', 'LOST')
-    """ + COUNTED + """
         ) recent
         WHERE rn <= 10
         ORDER BY user_id, rn
@@ -234,13 +244,12 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     long sumPendingStakesSince(String userId, java.time.Instant since);
 
-    // [nombre de tickets résolus, bénéfice net] des paris posés entre from et
-    // to, comptés comme au classement (récap de la semaine).
-    @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
-        SELECT COUNT(*), SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)
-        FROM bet b
-        WHERE b.user_id = :userId AND b.status IN ('WON', 'LOST')
-          AND b.placed_at >= :from AND b.placed_at < :to
-    """ + COUNTED)
+    // [nombre de tickets résolus, bénéfice net] des paris posés entre from et to.
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT COUNT(b), SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END)
+        FROM Bet b
+        WHERE b.user.id = :userId AND b.status IN ('WON', 'LOST')
+          AND b.placedAt >= :from AND b.placedAt < :to
+    """)
     List<Object[]> getNetResultBetween(String userId, java.time.Instant from, java.time.Instant to);
 }

@@ -18,7 +18,8 @@ import { CountUp } from "@/components/motion/count-up";
 import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/trends";
 import { FanTeams } from "@/components/leaderboard/fan-teams";
 import { ChampionBanner, ChampionCrown } from "@/components/leaderboard/champion-banner";
-import { fetchWeekChampions } from "@/lib/api/palmares";
+import { fetchPhaseChampions, fetchWeekChampions } from "@/lib/api/palmares";
+import { isPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
 import { ShareImageButton } from "@/components/share-image-button";
 import { fetchLeaderboard, leaderboardQueryKey } from "@/lib/api/leaderboard";
 import { fetchProfile } from "@/lib/api/auth";
@@ -29,12 +30,6 @@ import { LeaderboardEntry, LeaderboardPeriod } from "@/lib/types";
 import { cn, formatSignedPoints } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
-
-const PERIODS: { value: LeaderboardPeriod; label: string; scope: string }[] = [
-  { value: "season", label: "Saison", scope: "de la saison" },
-  { value: "month", label: "Ce mois-ci", scope: "du mois" },
-  { value: "week", label: "Cette semaine", scope: "de la semaine de jeu" },
-];
 
 // Or, argent, bronze : en accent (trophée, liseré, marche du podium), jamais
 // en couleur de texte, pour rester lisibles dans les deux thèmes.
@@ -188,6 +183,7 @@ function MyPosition({
 
 function PlayersRanking({ username }: { username: string | undefined }) {
   const [period, setPeriod] = useState<LeaderboardPeriod>("season");
+  const periods = useLeaderboardPeriods();
   const { data, isLoading, isError } = useQuery({
     queryKey: leaderboardQueryKey(period),
     queryFn: () => fetchLeaderboard(period),
@@ -196,13 +192,22 @@ function PlayersRanking({ username }: { username: string | undefined }) {
   const teams = useTeamsByAbbreviation();
   const [query, setQuery] = useState("");
   // Champion(s) de la semaine passée : bandeau en tête et couronne à côté du pseudo.
-  const championsQuery = useQuery({ queryKey: ["week-champions"], queryFn: () => fetchWeekChampions(), staleTime: 10 * 60 * 1000 });
-  const champions = new Set(championsQuery.data?.champions.map((c) => c.username));
+  // Sur la Coupe NBA et les playoffs : le champion de la phase, une fois finie.
+  const phase = isPhase(period) ? period : null;
+  const championsQuery = useQuery({ queryKey: ["week-champions"], queryFn: () => fetchWeekChampions(), staleTime: 10 * 60 * 1000, enabled: !phase });
+  const phaseChampionsQuery = useQuery({
+    queryKey: ["phase-champions", phase],
+    queryFn: () => fetchPhaseChampions(phase!),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!phase,
+  });
+  const championsData = phase ? phaseChampionsQuery.data : championsQuery.data;
+  const champions = new Set(championsData?.champions.map((c) => c.username));
 
   const all = data ?? [];
   const normalizedQuery = normalizeForSearch(query.trim());
   const isSearching = normalizedQuery.length > 0;
-  const scope = PERIODS.find((p) => p.value === period)!.scope;
+  const scope = periodOption(period).scope;
 
   // Podium = les 3 premières places (hors recherche) ; le tableau reprend à la 4e.
   const showPodium = !isSearching && all.length > 0;
@@ -254,12 +259,12 @@ function PlayersRanking({ username }: { username: string | undefined }) {
 
   return (
     <div className="flex flex-col gap-6">
-      {championsQuery.data && <ChampionBanner data={championsQuery.data} />}
+      {championsData && <ChampionBanner data={championsData} />}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="glass-scroll edge-scroll flex items-center gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Période">
           <CalendarRange className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          {PERIODS.map((p) => (
+          {periods.map((p) => (
             <button key={p.value} type="button" className={chipClass(period === p.value)} onClick={() => choosePeriod(p.value)}>
               {p.label}
             </button>

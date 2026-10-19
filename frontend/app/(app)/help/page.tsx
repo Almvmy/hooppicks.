@@ -229,7 +229,7 @@ export default function HelpPage() {
             <RuleCard icon={Trophy} title="Classement et ligues">
               <p>
                 Chaque semaine te rapporte des <strong className="text-foreground">points</strong> : ton bilan (gains moins
-                mises), jamais moins de 0, et le classement additionne les semaines. Ton solde et les matchs de présaison ne comptent pas. Crée une ligue privée et partage son code à 6
+                mises), jamais moins de 0, et le classement additionne les semaines. Ton solde ne compte pas. La Coupe NBA et les playoffs ont aussi leur classement et leur champion. Crée une ligue privée et partage son code à 6
                 caractères pour avoir aussi votre classement entre amis.
               </p>
               <p>

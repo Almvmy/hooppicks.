@@ -68,11 +68,15 @@ export function signedPlain(n: number): string {
 }
 
 /** Classement public (même route que la page Classement), pour la carte du podium. */
-export const fetchSharedLeaderboard = (period: "season" | "month" | "week") =>
+export const fetchSharedLeaderboard = (period: import("@/lib/types").LeaderboardPeriod) =>
   get<import("@/lib/types").LeaderboardEntry[]>(period === "season" ? "/leaderboard" : `/leaderboard?period=${period}`, true);
 
 /** Champion(s) de la semaine passée, pour leur carte de partage. */
 export const fetchSharedChampions = () => get<import("@/lib/types").WeekChampions>("/palmares/champions", true);
+
+/** Champion(s) de la Coupe NBA ou des playoffs de la saison, pour leur carte de partage. */
+export const fetchSharedPhaseChampions = (phase: import("@/lib/types").LeaderboardPhase) =>
+  get<import("@/lib/types").PhaseChampions>(`/palmares/champions?phase=${phase}`, true);
 
 /** Les 30 équipes (sigle, nom, logo), pour dessiner les cartes des pronostics de saison. */
 export const fetchSharedTeams = () => get<import("@/lib/types").TeamRank[]>("/teams");

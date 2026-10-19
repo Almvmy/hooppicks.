@@ -90,5 +90,13 @@ public interface MatchRepository extends JpaRepository<Match, String> {
     List<Match> findFinishedMeetings(Team a, Team b);
 
     // Premier match de saison régulière : fin des pronostics de saison (SeasonPickService).
+    /** Classements Coupe NBA et playoffs : la phase a-t-elle commencé ? */
+    boolean existsByTypeInAndDateBetween(Collection<com.hooppicks.backendapplication.entity.MatchType> types,
+                                         java.time.Instant from, java.time.Instant to);
+
+    /** Palmarès des phases : finale de la Coupe, matchs des Finales NBA. */
+    List<Match> findByTypeAndStatusAndDateAfter(com.hooppicks.backendapplication.entity.MatchType type,
+                                                MatchStatus status, java.time.Instant after);
+
     java.util.Optional<Match> findFirstByTypeAndDateAfterOrderByDateAsc(com.hooppicks.backendapplication.entity.MatchType type, java.time.Instant after);
 }

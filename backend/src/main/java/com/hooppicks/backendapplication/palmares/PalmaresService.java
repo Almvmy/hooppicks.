@@ -36,6 +36,7 @@ public class PalmaresService {
 
     private final BetRepository betRepository;
     private final WeeklyTitleRepository titleRepository;
+    private final PhaseTitleRepository phaseTitleRepository;
     private final PalmaresWeekRepository weekRepository;
     private final LeagueRepository leagueRepository;
     private final LeagueMembershipRepository membershipRepository;
@@ -51,17 +52,18 @@ public class PalmaresService {
                            PalmaresWeekRepository weekRepository, LeagueRepository leagueRepository,
                            LeagueMembershipRepository membershipRepository, UserRepository userRepository,
                            NotificationRepository notificationRepository, DuelRepository duelRepository,
-                           PushService pushService) {
+                           PushService pushService, PhaseTitleRepository phaseTitleRepository) {
         this(betRepository, titleRepository, weekRepository, leagueRepository, membershipRepository, userRepository,
-                notificationRepository, duelRepository, pushService, Clock.system(BankrollService.ZONE), FIRST_WEEK);
+                notificationRepository, duelRepository, pushService, phaseTitleRepository, Clock.system(BankrollService.ZONE), FIRST_WEEK);
     }
 
     PalmaresService(BetRepository betRepository, WeeklyTitleRepository titleRepository,
                     PalmaresWeekRepository weekRepository, LeagueRepository leagueRepository,
                     LeagueMembershipRepository membershipRepository, UserRepository userRepository,
                     NotificationRepository notificationRepository, DuelRepository duelRepository,
-                    PushService pushService, Clock clock, LocalDate firstWeek) {
+                    PushService pushService, PhaseTitleRepository phaseTitleRepository, Clock clock, LocalDate firstWeek) {
         this.firstWeek = firstWeek;
+        this.phaseTitleRepository = phaseTitleRepository;
         this.betRepository = betRepository;
         this.titleRepository = titleRepository;
         this.weekRepository = weekRepository;
@@ -193,7 +195,11 @@ public class PalmaresService {
         return new Champions(week, champions);
     }
 
-    public record Palmares(long weeklyTitles, List<LeagueTitles> leagueTitles, long duelWins, Long bestWeek) {}
+    /** Titre Coupe NBA (`cup`) ou playoffs (`playoffs`) ; leagueName null : sur tout HoopPicks. */
+    public record PhaseTitleView(String phase, String season, String leagueName, long points) {}
+
+    public record Palmares(long weeklyTitles, List<LeagueTitles> leagueTitles, long duelWins, Long bestWeek,
+                           List<PhaseTitleView> phaseTitles) {}
 
     @Transactional(readOnly = true)
     public Palmares of(String userId) {
@@ -208,6 +214,10 @@ public class PalmaresService {
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .map(e -> new LeagueTitles(e.getKey(), e.getValue())).toList();
         Long bestWeek = titles.stream().map(WeeklyTitle::getPoints).max(Long::compare).orElse(null);
-        return new Palmares(global, leagues, duelRepository.countWins(userId), bestWeek);
+        List<PhaseTitleView> phaseTitles = phaseTitleRepository.findByUserIdOrderBySeasonDesc(userId).stream()
+                .sorted(Comparator.comparing((PhaseTitle t) -> t.getLeagueId() != null))
+                .map(t -> new PhaseTitleView(t.getPhase().toLowerCase(), t.getSeason(), t.getLeagueName(), t.getPoints()))
+                .toList();
+        return new Palmares(global, leagues, duelRepository.countWins(userId), bestWeek, phaseTitles);
     }
 }

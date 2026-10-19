@@ -112,7 +112,7 @@ export const FAQ: FaqGroup[] = [
         id: "classement-calcul",
         question: "Comment est calculé le classement ?",
         answer:
-          "Semaine par semaine. Tes points d'une semaine, c'est ton bilan sur les paris posés cette semaine-là : chaque ticket gagné ajoute son gain moins sa mise, chaque ticket perdu retire sa mise, un ticket remboursé ne compte pas, un ticket sur un match de présaison non plus. Ce total ne descend jamais sous 0 : une mauvaise semaine vaut 0, elle ne te fait pas perdre les points des autres. Le classement de la saison additionne tes semaines, celui du mois les semaines commencées dans le mois. Chaque ligue a aussi son propre classement, limité à ses membres.",
+          "Semaine par semaine. Tes points d'une semaine, c'est ton bilan sur les paris posés cette semaine-là : chaque ticket gagné ajoute son gain moins sa mise, chaque ticket perdu retire sa mise, un ticket remboursé ne compte pas. Ce total ne descend jamais sous 0 : une mauvaise semaine vaut 0, elle ne te fait pas perdre les points des autres. Le classement de la saison additionne tes semaines, sans les matchs de présaison ni de playoffs ; celui du mois, les semaines commencées dans le mois. Pendant la Coupe NBA et les playoffs, un classement à part ne retient que les tickets dont tous les matchs sont de la phase, avec un champion au palmarès à la fin. Un match de Coupe compte aussi pour la saison. Chaque ligue a aussi son propre classement, limité à ses membres.",
         link: { href: "/leaderboard", label: "Voir le classement" },
       },
       {

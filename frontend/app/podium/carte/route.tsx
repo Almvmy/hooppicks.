@@ -4,7 +4,7 @@ import { fetchSharedLeaderboard } from "@/lib/share";
 import { shareFonts } from "@/lib/share-fonts";
 import { seasonLabel } from "@/lib/utils";
 
-type Period = "season" | "month" | "week";
+type Period = "season" | "month" | "week" | "cup" | "playoffs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -24,6 +24,8 @@ function labels(period: Period, now: Date): { title: string; dateLabel: string }
   if (period === "month") {
     return { title: "du mois", dateLabel: now.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }) };
   }
+  if (period === "cup") return { title: "de la Coupe NBA", dateLabel: `Saison ${seasonLabel(now)}` };
+  if (period === "playoffs") return { title: "des playoffs", dateLabel: `Saison ${seasonLabel(now)}` };
   return { title: "de la saison", dateLabel: `Saison ${seasonLabel(now)}` };
 }
 
@@ -31,7 +33,7 @@ function labels(period: Period, now: Date): { title: string; dateLabel: string }
 // « Partager l'image ». Route publique, comme le classement lui-même.
 export async function GET(request: Request) {
   const raw = new URL(request.url).searchParams.get("periode");
-  const period: Period = raw === "week" || raw === "month" ? raw : "season";
+  const period: Period = raw === "week" || raw === "month" || raw === "cup" || raw === "playoffs" ? raw : "season";
   const [entries, fonts] = await Promise.all([fetchSharedLeaderboard(period), shareFonts()]);
   if (!entries) return new Response("Classement indisponible", { status: 503 });
 

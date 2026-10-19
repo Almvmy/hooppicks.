@@ -27,11 +27,14 @@ public class BankrollScheduler {
     private final com.hooppicks.backendapplication.duel.DuelService duelService;
     private final com.hooppicks.backendapplication.palmares.PalmaresService palmaresService;
     private final com.hooppicks.backendapplication.season.SeasonPickService seasonPickService;
+    private final com.hooppicks.backendapplication.palmares.PhaseChampionService phaseChampionService;
 
     public BankrollScheduler(BankrollService bankrollService, NbaSyncService nbaSyncService,
                              com.hooppicks.backendapplication.duel.DuelService duelService,
                              com.hooppicks.backendapplication.palmares.PalmaresService palmaresService,
-                             com.hooppicks.backendapplication.season.SeasonPickService seasonPickService) {
+                             com.hooppicks.backendapplication.season.SeasonPickService seasonPickService,
+                             com.hooppicks.backendapplication.palmares.PhaseChampionService phaseChampionService) {
+        this.phaseChampionService = phaseChampionService;
         this.seasonPickService = seasonPickService;
         this.duelService = duelService;
         this.palmaresService = palmaresService;
@@ -52,6 +55,11 @@ public class BankrollScheduler {
             palmaresService.recordEndedWeeks();
         } catch (Exception e) {
             log.error("Attribution du palmarès en échec", e);
+        }
+        try {
+            phaseChampionService.recordEndedPhases();
+        } catch (Exception e) {
+            log.error("Attribution des titres Coupe NBA / playoffs en échec", e);
         }
         try {
             seasonPickService.runMilestones();

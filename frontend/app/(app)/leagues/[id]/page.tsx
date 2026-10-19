@@ -23,18 +23,13 @@ import {
   reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
-import { fetchWeekChampions } from "@/lib/api/palmares";
+import { fetchPhaseChampions, fetchWeekChampions } from "@/lib/api/palmares";
+import { isPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
 import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 
 // Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
 // libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
 const REACTION_EMOJIS = ["👍", "🔥", "👎"];
-
-const LEAGUE_PERIODS: { value: LeaderboardPeriod; label: string }[] = [
-  { value: "season", label: "Saison" },
-  { value: "month", label: "Ce mois-ci" },
-  { value: "week", label: "Cette semaine" },
-];
 
 export default function LeagueDetailPage({
   params,
@@ -52,8 +47,15 @@ export default function LeagueDetailPage({
   // La semaine relance la course entre amis chaque lundi, quand l'écart
   // de la saison est devenu trop grand pour être comblé.
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
-  // Champion(s) de la ligue la semaine passée : couronne à côté du pseudo.
-  const championsQuery = useQuery({ queryKey: ["week-champions", id], queryFn: () => fetchWeekChampions(id), staleTime: 10 * 60 * 1000 });
+  const periods = useLeaderboardPeriods();
+  // Champion(s) de la ligue la semaine passée (ou de la phase sur la Coupe
+  // NBA et les playoffs) : couronne à côté du pseudo.
+  const phase = isPhase(period) ? period : null;
+  const championsQuery = useQuery<{ champions: { username: string }[] }>({
+    queryKey: phase ? ["phase-champions", phase, id] : ["week-champions", id],
+    queryFn: () => (phase ? fetchPhaseChampions(phase, id) : fetchWeekChampions(id)),
+    staleTime: 10 * 60 * 1000,
+  });
   const leaderboardQuery = useQuery({
     queryKey: ["league-leaderboard", id, period],
     queryFn: () => fetchLeagueLeaderboard(id, period),
@@ -187,7 +189,7 @@ export default function LeagueDetailPage({
       <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
         <div className="glass relative overflow-hidden rounded-2xl">
           <div className="flex gap-2 overflow-x-auto px-4 pt-4" role="group" aria-label="Période du classement">
-            {LEAGUE_PERIODS.map((p) => (
+            {periods.map((p) => (
               <button
                 key={p.value}
                 type="button"
@@ -211,7 +213,9 @@ export default function LeagueDetailPage({
                 ? "Aucun ticket réglé dans la ligue cette semaine."
                 : period === "month"
                   ? "Aucun ticket réglé dans la ligue ce mois-ci."
-                  : "Aucun ticket réglé dans cette ligue pour l'instant."
+                  : phase
+                    ? `Aucun ticket ${periodOption(period).scope} réglé dans la ligue.`
+                    : "Aucun ticket réglé dans cette ligue pour l'instant."
             }
             currentUsername={profile?.username}
             champions={new Set(championsQuery.data?.champions.map((c) => c.username))}

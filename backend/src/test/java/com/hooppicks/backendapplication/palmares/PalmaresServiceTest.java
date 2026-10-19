@@ -29,13 +29,14 @@ class PalmaresServiceTest {
     private final LeagueMembershipRepository membershipRepository = mock(LeagueMembershipRepository.class);
     private final UserRepository userRepository = mock(UserRepository.class);
     private final NotificationRepository notificationRepository = mock(NotificationRepository.class);
+    private final PhaseTitleRepository phaseTitleRepository = mock(PhaseTitleRepository.class);
     private PalmaresService service;
 
     @BeforeEach
     void setUp() {
         service = new PalmaresService(betRepository, titleRepository, weekRepository, leagueRepository,
                 membershipRepository, userRepository, notificationRepository, mock(DuelRepository.class),
-                mock(PushService.class), Clock.fixed(NOW, BankrollService.ZONE), LocalDate.MIN);
+                mock(PushService.class), phaseTitleRepository, Clock.fixed(NOW, BankrollService.ZONE), LocalDate.MIN);
         when(userRepository.findById(any())).thenAnswer(inv -> {
             User u = new User();
             u.setId(inv.getArgument(0));
@@ -129,7 +130,7 @@ class PalmaresServiceTest {
     void rien_avant_la_premiere_semaine_officielle() {
         PalmaresService launched = new PalmaresService(betRepository, titleRepository, weekRepository, leagueRepository,
                 membershipRepository, userRepository, notificationRepository, mock(DuelRepository.class),
-                mock(PushService.class), Clock.fixed(NOW, BankrollService.ZONE), LocalDate.of(2026, 10, 5));
+                mock(PushService.class), phaseTitleRepository, Clock.fixed(NOW, BankrollService.ZONE), LocalDate.of(2026, 10, 5));
         when(betRepository.findSettledWeeks()).thenReturn(List.of(LAST.atStartOfDay()));
         WeeklyTitle old = new WeeklyTitle();
         old.setUserId("u1");

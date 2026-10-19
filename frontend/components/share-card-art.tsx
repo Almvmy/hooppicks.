@@ -636,7 +636,7 @@ export function PodiumArt({ entries, title, dateLabel, total }: { entries: Leade
  * Le ou les champions de la semaine passée, en image carrée (1080×1080).
  * Un seul : grand maillot au centre. Ex æquo : jusqu'à 3 maillots côte à côte.
  */
-export function ChampionArt({ champions, weekLabel }: { champions: WeekChampion[]; weekLabel: string }) {
+export function ChampionArt({ champions, weekLabel, of = "de la semaine" }: { champions: WeekChampion[]; weekLabel: string; of?: string }) {
   const gold = MEDAL[1];
   const solo = champions.length === 1;
   const shown = champions.slice(0, 3);
@@ -659,7 +659,7 @@ export function ChampionArt({ champions, weekLabel }: { champions: WeekChampion[
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", marginTop: 10 }}>
           <Crown size={solo ? 120 : 96} color={gold.color} />
           <div style={{ display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 40, letterSpacing: 7, textTransform: "uppercase", color: gold.color, marginTop: 14 }}>
-            {solo ? "Champion de la semaine" : "Champions de la semaine"}
+            {`${solo ? "Champion" : "Champions"} ${of}`}
           </div>
 
           {solo && c ? (

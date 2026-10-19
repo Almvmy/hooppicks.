@@ -4,19 +4,33 @@ import Link from "next/link";
 import { Crown } from "lucide-react";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { ShareImageButton } from "@/components/share-image-button";
-import { WeekChampions } from "@/lib/types";
+import { LeaderboardPhase, PhaseChampions, WeekChampions } from "@/lib/types";
 import { formatSignedPoints, weekLabel } from "@/lib/utils";
 
 const GOLD = "#F5B700";
 
+const PHASE_TITLES: Record<LeaderboardPhase, { one: string; many: string; of: string }> = {
+  cup: { one: "Champion de la Coupe NBA", many: "Champions de la Coupe NBA", of: "de la Coupe NBA" },
+  playoffs: { one: "Champion des playoffs", many: "Champions des playoffs", of: "des playoffs" },
+};
+
 /**
  * Champion(s) de la semaine passée, en tête du classement toute la semaine
  * qui suit : sans ça, le titre ne se voyait que sur le profil du gagnant.
+ * Avec une phase (Coupe NBA, playoffs) : son champion, en tête de son
+ * classement une fois la phase finie.
  */
-export function ChampionBanner({ data }: { data: WeekChampions }) {
+export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions }) {
   const { champions } = data;
   if (champions.length === 0) return null;
   const solo = champions.length === 1;
+  const phase = "phase" in data ? PHASE_TITLES[data.phase] : null;
+  const heading = phase
+    ? solo ? phase.one : phase.many
+    : solo ? "Champion de la semaine dernière" : "Champions de la semaine dernière";
+  const shareText = phase
+    ? `${solo ? `@${champions[0].username} est champion` : "Les champions"} ${phase.of} ${"season" in data ? data.season : ""} sur HoopPicks 👑`
+    : `${solo ? `@${champions[0].username} est champion` : "Les champions"} de la semaine sur HoopPicks 👑 Qui va le détrôner ?`;
 
   return (
     <div
@@ -31,12 +45,12 @@ export function ChampionBanner({ data }: { data: WeekChampions }) {
       <div className="relative flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>
           <Crown className="h-3.5 w-3.5" aria-hidden />
-          {solo ? "Champion de la semaine dernière" : "Champions de la semaine dernière"}
+          {heading}
         </p>
         <ShareImageButton
-          src="/champion/carte"
-          fileName="hooppicks-champion.png"
-          text={`${solo ? `@${champions[0].username} est champion` : "Les champions"} de la semaine sur HoopPicks 👑 Qui va le détrôner ?`}
+          src={"phase" in data ? `/champion/carte?phase=${data.phase}` : "/champion/carte"}
+          fileName={"phase" in data ? `hooppicks-champion-${data.phase}.png` : "hooppicks-champion.png"}
+          text={shareText}
           discreet
         />
       </div>
@@ -55,7 +69,7 @@ export function ChampionBanner({ data }: { data: WeekChampions }) {
         ))}
       </div>
 
-      <p className="relative mt-2 text-xs text-muted-foreground">{weekLabel(data.week)}</p>
+      <p className="relative mt-2 text-xs text-muted-foreground">{"week" in data ? weekLabel(data.week) : `Saison ${data.season}`}</p>
     </div>
   );
 }

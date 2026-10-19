@@ -20,6 +20,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +34,8 @@ class LeaderboardServiceTest {
     // Mercredi 7 octobre 2026, 8h GMT.
     private static final Instant NOW = Instant.parse("2026-10-07T08:00:00Z");
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 7);
+    // Saison 2026-27 : à partir du 1er septembre.
+    private static final Instant SEASON_START = Instant.parse("2026-09-01T00:00:00Z");
 
     @BeforeEach
     void setUp() {
@@ -57,27 +60,27 @@ class LeaderboardServiceTest {
 
     @Test
     void semaine_commence_lundi_midi_heure_de_paris() {
-        when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.of());
+        when(betRepository.getLeaderboardRawSince(any(), any())).thenReturn(List.of());
 
         service.leaderboard(LeaderboardPeriod.WEEK);
 
         // Semaine de jeu : lundi 5 octobre, 12h00 GMT.
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-05T12:00:00Z"));
-        verify(betRepository, never()).getLeaderboardRaw();
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-05T12:00:00Z"), "ALL");
+        verify(betRepository, never()).getLeaderboardRawSince(any(), eq("SEASON"));
     }
 
     @Test
     void mois_commence_le_premier_a_minuit_gmt() {
-        when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.of());
+        when(betRepository.getLeaderboardRawSince(any(), any())).thenReturn(List.of());
 
         service.leaderboard(LeaderboardPeriod.MONTH);
 
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-01T00:00:00Z"));
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-01T00:00:00Z"), "ALL");
     }
 
     @Test
     void evolution_du_rang_depuis_la_derniere_photo_d_un_jour_precedent() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.of(row("a", 900), row("b", 500), row("c", 100)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.of(row("a", 900), row("b", 500), row("c", 100)));
         when(rankSnapshotRepository.findLatestDateBefore(TODAY)).thenReturn(TODAY.minusDays(1));
         // Hier : b 1er, a 3e ; c n'était pas encore classé.
         when(rankSnapshotRepository.findBySnapshotDate(TODAY.minusDays(1)))
@@ -91,7 +94,7 @@ class LeaderboardServiceTest {
 
     @Test
     void sans_historique_aucune_evolution_ni_nouveau() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.<Object[]>of(row("a", 900)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.<Object[]>of(row("a", 900)));
         when(rankSnapshotRepository.findLatestDateBefore(TODAY)).thenReturn(null);
 
         LeaderboardEntryDto entry = service.leaderboard(LeaderboardPeriod.SEASON).get(0);
@@ -102,7 +105,7 @@ class LeaderboardServiceTest {
 
     @Test
     void pas_d_evolution_sur_la_semaine_ni_le_mois() {
-        when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.<Object[]>of(row("a", 900)));
+        when(betRepository.getLeaderboardRawSince(any(), any())).thenReturn(List.<Object[]>of(row("a", 900)));
 
         LeaderboardEntryDto entry = service.leaderboard(LeaderboardPeriod.WEEK).get(0);
 
@@ -112,7 +115,7 @@ class LeaderboardServiceTest {
 
     @Test
     void forme_limitee_aux_5_derniers_et_serie_en_cours() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.of(row("a", 900), row("b", 500)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.of(row("a", 900), row("b", 500)));
         when(betRepository.getRecentResultsPerUser()).thenReturn(List.of(
                 result("a", "WON"), result("a", "WON"), result("a", "WON"), result("a", "LOST"),
                 result("a", "WON"), result("a", "LOST"), result("a", "LOST"),
@@ -129,7 +132,7 @@ class LeaderboardServiceTest {
 
     @Test
     void joueur_sans_ticket_recent_forme_vide() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.<Object[]>of(row("a", 0)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.<Object[]>of(row("a", 0)));
 
         LeaderboardEntryDto entry = service.leaderboard(LeaderboardPeriod.SEASON).get(0);
 
@@ -140,7 +143,7 @@ class LeaderboardServiceTest {
     @Test
     @SuppressWarnings("unchecked")
     void photo_remplace_celle_du_jour_avec_les_rangs_a_egalite() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.of(row("a", 900), row("b", 500), row("c", 500)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.of(row("a", 900), row("b", 500), row("c", 500)));
 
         service.takeSnapshot(TODAY);
 
@@ -155,7 +158,29 @@ class LeaderboardServiceTest {
     }
 
     @Test
+    void coupe_et_playoffs_depuis_le_debut_de_saison_avec_leur_phase() {
+        when(betRepository.getLeaderboardRawSince(any(), any())).thenReturn(List.of());
+
+        service.leaderboard(LeaderboardPeriod.CUP);
+        service.leaderboard(LeaderboardPeriod.PLAYOFFS);
+
+        verify(betRepository).getLeaderboardRawSince(SEASON_START, "CUP");
+        verify(betRepository).getLeaderboardRawSince(SEASON_START, "PLAYOFFS");
+        verifyNoInteractions(rankSnapshotRepository);
+    }
+
+    @Test
+    void saison_bascule_au_premier_septembre() {
+        assertThat(LeaderboardPeriod.seasonStart(java.time.ZonedDateTime.parse("2027-04-20T10:00:00Z")))
+                .isEqualTo(SEASON_START);
+        assertThat(LeaderboardPeriod.seasonStart(java.time.ZonedDateTime.parse("2027-09-01T00:00:00Z")))
+                .isEqualTo(Instant.parse("2027-09-01T00:00:00Z"));
+    }
+
+    @Test
     void periode_inconnue_refusee() {
+        assertThat(LeaderboardPeriod.parse("cup")).isEqualTo(LeaderboardPeriod.CUP);
+        assertThat(LeaderboardPeriod.parse("playoffs")).isEqualTo(LeaderboardPeriod.PLAYOFFS);
         assertThat(LeaderboardPeriod.parse(null)).isEqualTo(LeaderboardPeriod.SEASON);
         assertThat(LeaderboardPeriod.parse("WEEK")).isEqualTo(LeaderboardPeriod.WEEK);
         assertThatThrownBy(() -> LeaderboardPeriod.parse("year")).isInstanceOf(IllegalArgumentException.class);
@@ -163,9 +188,9 @@ class LeaderboardServiceTest {
 
     @Test
     void standing_donne_score_et_rang_avec_egalites_et_negatifs() {
-        when(betRepository.getLeaderboardRaw()).thenReturn(List.<Object[]>of(
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "SEASON")).thenReturn(List.<Object[]>of(
                 row("a", 900), row("b", 300), row("c", 300), row("d", -120)));
-        when(betRepository.getLeaderboardRawSince(any())).thenReturn(List.<Object[]>of(row("b", 50)));
+        when(betRepository.getLeaderboardRawSince(any(), eq("ALL"))).thenReturn(List.<Object[]>of(row("b", 50)));
 
         LeaderboardService.Standing c = service.standing("c");
         assertThat(c.seasonPoints()).isEqualTo(300);

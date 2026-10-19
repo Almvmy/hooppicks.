@@ -34,7 +34,7 @@ public record LeaderboardEntryDto(
     }
 
     /**
-     * Lignes brutes de BetRepository.getLeaderboardRaw / getLeaderboardRawForUsers
+     * Lignes brutes de BetRepository.getLeaderboardRawSince / getLeaderboardRawForUsersSince
      * (déjà triées par bénéfice net décroissant) -> classement. Partagé par le
      * classement général et celui des ligues, qui dupliquaient ce code.
      *

@@ -2,6 +2,7 @@ package com.hooppicks.backendapplication.controller;
 
 import com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod;
 import com.hooppicks.backendapplication.leaderboard.LeaderboardService;
+import com.hooppicks.backendapplication.palmares.PhaseChampionService;
 import com.hooppicks.backendapplication.security.SessionStore;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
+    private final PhaseChampionService phaseChampionService;
     private final SessionStore sessionStore;
 
-    public LeaderboardController(LeaderboardService leaderboardService, SessionStore sessionStore) {
+    public LeaderboardController(LeaderboardService leaderboardService, PhaseChampionService phaseChampionService,
+                                 SessionStore sessionStore) {
+        this.phaseChampionService = phaseChampionService;
         this.leaderboardService = leaderboardService;
         this.sessionStore = sessionStore;
     }
@@ -30,7 +34,13 @@ public class LeaderboardController {
         return ResponseEntity.ok(leaderboardService.standing(userId));
     }
 
-    /** period : season (défaut), month ou week. */
+    /** Classements Coupe NBA et playoffs affichés (phase commencée cette saison). */
+    @GetMapping("/phases")
+    public ResponseEntity<?> getPhases() {
+        return ResponseEntity.ok(phaseChampionService.openPhases());
+    }
+
+    /** period : season (défaut), month, week, cup ou playoffs. */
     @GetMapping
     public ResponseEntity<?> getLeaderboard(@RequestParam(required = false) String period) {
         LeaderboardPeriod parsed;
