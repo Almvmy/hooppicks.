@@ -111,6 +111,52 @@ class HighlightsServiceTest {
         verify(repo).save(m);
     }
 
+    private static final String API_JSON = """
+            {"items": [
+              {"snippet": {"title": "PISTONS at CELTICS | FULL GAME HIGHLIGHTS", "publishedAt": "2026-10-21T03:10:00Z",
+                           "resourceId": {"videoId": "api1"}}},
+              {"snippet": {"title": "sans id", "publishedAt": "2026-10-21T03:10:00Z", "resourceId": {}}}
+            ]}""";
+
+    @Test
+    void lit_la_reponse_de_l_api_youtube() throws Exception {
+        tools.jackson.databind.JsonNode json = new tools.jackson.databind.ObjectMapper().readTree(API_JSON);
+
+        List<HighlightsService.Video> videos = HighlightsService.parseApi(json);
+
+        assertThat(videos).extracting(HighlightsService.Video::id).containsExactly("api1");
+        assertThat(videos.get(0).published()).isEqualTo(Instant.parse("2026-10-21T03:10:00Z"));
+    }
+
+    @Test
+    void avec_une_cle_l_api_d_abord_puis_le_flux_si_elle_echoue() throws Exception {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        NbaSyncService sync = mock(NbaSyncService.class);
+        when(sync.tryRunExclusive(any())).thenAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return true;
+        });
+        Match m = match("Celtics", "Pistons");
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class)))
+                .thenReturn(new tools.jackson.databind.ObjectMapper().readTree(API_JSON));
+
+        assertThat(new HighlightsService(rest, repo, sync, "cle").refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsVideoId()).isEqualTo("api1");
+        verify(rest, never()).getForObject(eq(HighlightsService.FEED_URL), eq(String.class));
+
+        Match other = match("Celtics", "Pistons");
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(other));
+        when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class)))
+                .thenThrow(new RuntimeException("quota"));
+        when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed(
+                entry("rss", "PISTONS at CELTICS | FULL GAME HIGHLIGHTS", "2026-10-21T03:10:00+00:00")));
+
+        assertThat(new HighlightsService(rest, repo, sync, "cle").refresh()).isEqualTo(1);
+        assertThat(other.getHighlightsVideoId()).isEqualTo("rss");
+    }
+
     @Test
     void chaine_injoignable_rien_ne_change() {
         RestTemplate rest = mock(RestTemplate.class);

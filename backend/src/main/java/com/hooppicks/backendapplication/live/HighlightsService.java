@@ -6,7 +6,10 @@ import com.hooppicks.backendapplication.nba.NbaSyncService;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.JsonNode;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -29,12 +32,20 @@ import java.util.regex.Pattern;
  * si son titre parle de « highlights » et nomme les deux équipes, publiée
  * après le coup d'envoi ; un « full game highlights » remplace un premier
  * résumé plus court.
+ *
+ * Avec une clé YouTube Data API (`youtube.api-key`, `YOUTUBE_API_KEY` en
+ * production), les 50 dernières vidéos de la chaîne via playlistItems (1 unité
+ * de quota par lecture, sur 10 000 gratuites par jour) : plus de risque qu'un
+ * résumé passe entre deux lectures un soir chargé. Clé absente ou appel en
+ * échec : retour au flux RSS.
  */
 @Service
 public class HighlightsService {
 
     private static final Logger log = LoggerFactory.getLogger(HighlightsService.class);
     static final String FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=UCWJ2lWNubArHWmf3FIHbfcQ";
+    // Vidéos mises en ligne par la chaîne = playlist « UU » + identifiant de chaîne sans « UC ».
+    static final String API_URL = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=UUWJ2lWNubArHWmf3FIHbfcQ&key=";
     private static final Duration LOOKBACK = Duration.ofDays(2);
 
     private static final Pattern ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
@@ -47,31 +58,41 @@ public class HighlightsService {
     private final RestTemplate restTemplate;
     private final MatchRepository matchRepository;
     private final NbaSyncService nbaSyncService;
+    private final String apiKey;
 
-    public HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService) {
+    @Autowired
+    public HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
+                             @Value("${youtube.api-key:}") String apiKey) {
         this.restTemplate = restTemplate;
         this.matchRepository = matchRepository;
         this.nbaSyncService = nbaSyncService;
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
+    }
+
+    HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService) {
+        this(restTemplate, matchRepository, nbaSyncService, "");
     }
 
     /** Relie les nouveaux résumés vidéo. Renvoie le nombre de matchs mis à jour. */
     public int refresh() {
-        String xml;
-        try {
-            xml = restTemplate.getForObject(FEED_URL, String.class);
-        } catch (Exception e) {
-            log.warn("Résumés vidéo : chaîne NBA injoignable ({})", e.getMessage());
-            return 0;
+        List<Video> videos = apiKey.isEmpty() ? List.of() : fromApi();
+        if (videos.isEmpty()) {
+            try {
+                videos = parse(restTemplate.getForObject(FEED_URL, String.class));
+            } catch (Exception e) {
+                log.warn("Résumés vidéo : chaîne NBA injoignable ({})", e.getMessage());
+                return 0;
+            }
         }
-        List<Video> videos = parse(xml);
         if (videos.isEmpty()) return 0;
+        List<Video> found = videos;
         int[] updated = {0};
         Instant now = Instant.now();
         // Sous le verrou de la synchro : elle enregistre les matchs en entier,
         // une copie chargée avant notre écriture l'effacerait.
         nbaSyncService.tryRunExclusive(() -> {
             for (Match match : matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)) {
-                Video video = bestFor(match, videos);
+                Video video = bestFor(match, found);
                 if (video == null || video.id().equals(match.getHighlightsVideoId())) continue;
                 match.setHighlightsVideoId(video.id());
                 match.setHighlightsTitle(video.title());
@@ -81,6 +102,34 @@ public class HighlightsService {
         });
         if (updated[0] > 0) log.info("Résumés vidéo : {} match(s) relié(s)", updated[0]);
         return updated[0];
+    }
+
+    private List<Video> fromApi() {
+        try {
+            return parseApi(restTemplate.getForObject(API_URL + apiKey, JsonNode.class));
+        } catch (Exception e) {
+            // Jamais le message : il peut contenir l'adresse appelée, donc la clé.
+            log.warn("Résumés vidéo : API YouTube en échec ({}), retour au flux RSS", e.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
+    static List<Video> parseApi(JsonNode response) {
+        List<Video> videos = new ArrayList<>();
+        if (response == null) return videos;
+        for (JsonNode item : response.path("items")) {
+            JsonNode snippet = item.path("snippet");
+            String id = snippet.path("resourceId").path("videoId").asText("");
+            String title = snippet.path("title").asText("");
+            String published = snippet.path("publishedAt").asText("");
+            if (id.isEmpty() || title.isEmpty() || published.isEmpty()) continue;
+            try {
+                videos.add(new Video(id, title.trim(), Instant.parse(published)));
+            } catch (Exception ignored) {
+                // Date illisible : vidéo ignorée.
+            }
+        }
+        return videos;
     }
 
     static List<Video> parse(String xml) {
