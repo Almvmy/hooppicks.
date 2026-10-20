@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Clock, Layers, Minus, Radio, Ticket, TrendingDown, TrendingUp, Undo2, X } from "lucide-react";
@@ -118,8 +118,10 @@ function SelectionRow({
       <div className="flex min-w-0 items-center gap-3">
         <SelectionTeamLogo selection={selection} matchesById={matchesById} size={32} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{selection.label}</p>
-          <p className="truncate text-xs text-muted-foreground">{selection.matchLabel}</p>
+          {/* En entier, sur plusieurs lignes au besoin : coupé, un pari joueur
+              (« Plus de 23,5 pts · Cade Cunningham ») devenait illisible sur téléphone. */}
+          <p className="break-words text-sm font-medium">{selection.label}</p>
+          <p className="break-words text-xs text-muted-foreground">{selection.matchLabel}</p>
           <MatchState match={match} live={live} />
           {propValue !== undefined && selection.propLine != null && (
             <PropProgress
@@ -144,7 +146,7 @@ function SelectionRow({
   );
 }
 
-function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<string, Match> }) {
+function TicketCard({ bet, matchesById, highlighted }: { bet: PlacedBet; matchesById: Map<string, Match>; highlighted: boolean }) {
   const config = STATUS_CONFIG[bet.status];
   const isParlay = bet.selections.length > 1;
   const states = bet.selections.map((s) => legState(s, matchesById.get(s.matchId)));
@@ -152,7 +154,7 @@ function TicketCard({ bet, matchesById }: { bet: PlacedBet; matchesById: Map<str
   const net = netResult(bet);
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card id={`ticket-${bet.id}`} className={cn("relative scroll-mt-24 overflow-hidden", highlighted && "ring-2 ring-primary")}>
       <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", config.strip)} />
       <CardContent className="flex flex-col gap-3 pl-6 pt-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -253,6 +255,28 @@ export default function BetsPage() {
   const filtered = filter === "all" ? bets : bets.filter((b) => b.status === filter);
   const { page, pageCount, pageItems, setPage } = usePagination(filtered, PAGE_SIZE);
 
+  // Ticket ouvert depuis l'accueil (/bets#ticket-…) : sa page, puis défilement
+  // jusqu'à lui, encadré quelques secondes.
+  const [target] = useState(() =>
+    typeof window !== "undefined" && window.location.hash.startsWith("#ticket-") ? window.location.hash.slice("#ticket-".length) : null
+  );
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [targetHandled, setTargetHandled] = useState(false);
+  if (data && target && !targetHandled) {
+    setTargetHandled(true);
+    const index = data.findIndex((b) => b.id === target);
+    if (index >= 0) {
+      setPage(Math.floor(index / PAGE_SIZE) + 1);
+      setHighlighted(target);
+    }
+  }
+  useEffect(() => {
+    if (!highlighted) return;
+    document.getElementById(`ticket-${highlighted}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const timer = window.setTimeout(() => setHighlighted(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [highlighted]);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader badge="Mes tickets" title="Mes paris" subtitle="Avancement et bilan." />
@@ -319,7 +343,7 @@ export default function BetsPage() {
 
           <div className="flex flex-col gap-3">
             {pageItems.map((bet) => (
-              <TicketCard key={bet.id} bet={bet} matchesById={matchesById} />
+              <TicketCard key={bet.id} bet={bet} matchesById={matchesById} highlighted={bet.id === highlighted} />
             ))}
           </div>
 

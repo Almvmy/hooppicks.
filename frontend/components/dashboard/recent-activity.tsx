@@ -46,7 +46,12 @@ export function RecentActivity({
 
         {!isLoading &&
           bets.map((bet) => (
-            <div key={bet.id} className="glass-inset-quiet rounded-xl p-3">
+            // Touché, le ticket s'ouvre en entier dans Mes paris.
+            <Link
+              key={bet.id}
+              href={`/bets#ticket-${bet.id}`}
+              className="glass-inset-quiet block rounded-xl p-3 transition-colors hover:bg-tint/[0.06]"
+            >
               <div className="flex items-center justify-between">
                 <Badge variant={STATUS_CONFIG[bet.status].variant} className="text-[11px]">
                   {STATUS_CONFIG[bet.status].label}
@@ -74,11 +79,11 @@ export function RecentActivity({
                     <SelectionTeamLogo key={s.id} selection={s} matchesById={matchesById} size={20} />
                   ))}
                 </span>
-                <p className="truncate text-sm text-muted-foreground">
+                <p className="line-clamp-2 text-sm text-muted-foreground">
                   {bet.selections.map((s) => s.label).join(" · ")}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
       </CardContent>
     </Card>
