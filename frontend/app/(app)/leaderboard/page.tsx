@@ -146,6 +146,10 @@ function MyPosition({
             <span className="font-heading text-4xl font-bold tabular-nums">#{me.rank}</span>
             <RankChange entry={me} />
           </span>
+          {/* Son propre maillot, au milieu des autres : c'est là qu'on a envie de le changer. */}
+          <Link href="/maillot?suite=/leaderboard" title="Modifier mon maillot" aria-label="Modifier mon maillot" className="shrink-0 transition-transform hover:scale-105">
+            <PlayerAvatar number={me.avatarNumber} position={me.avatarPosition} colorway={me.avatarColorway} icon={me.avatarIcon} size="md" />
+          </Link>
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Ta position · {rankTitle(me.rank, total)}

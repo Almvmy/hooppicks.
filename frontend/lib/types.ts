@@ -13,8 +13,9 @@ export interface WalletData {
 }
 
 export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
-export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal";
-export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker";
+export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal" | "gold" | "navy" | "black";
+/** crown : réservée aux joueurs titrés (champion de la semaine, de la Coupe NBA ou des playoffs). */
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown";
 
 export interface UserProfile {
   username: string;
@@ -33,6 +34,9 @@ export interface UserProfile {
   notifyLeagueActivity: boolean;
   notifyFavoriteTeam: boolean;
   emailVerified: boolean;
+  /** false : maillot par défaut, jamais personnalisé. */
+  avatarCustomized: boolean;
+  unlockedAvatarIcons: AvatarIcon[];
 }
 
 export interface NotificationPreferences {

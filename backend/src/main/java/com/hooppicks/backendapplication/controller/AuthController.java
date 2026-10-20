@@ -41,11 +41,6 @@ import java.util.Set;
 
 public class AuthController {
 
-    private static final Set<String> VALID_POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
-    private static final Set<String> VALID_COLORWAYS =
-            Set.of("orange", "purple", "blue", "green", "red", "teal");
-    private static final Set<String> VALID_ICONS =
-            Set.of("dunk", "three", "handles", "defense", "playmaker");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -56,6 +51,7 @@ public class AuthController {
     private final AccountDeletionService accountDeletionService;
     private final EmailVerificationService emailVerificationService;
     private final BadgeService badgeService;
+    private final com.hooppicks.backendapplication.avatar.AvatarService avatarService;
 
     @org.springframework.beans.factory.annotation.Value("${app.cookie-same-site:Lax}")
     private String cookieSameSite;
@@ -67,7 +63,8 @@ public class AuthController {
                           SessionStore sessionStore, BetRepository betRepository,
                           LoginAttemptService loginAttemptService, PasswordResetService passwordResetService,
                           AccountDeletionService accountDeletionService, EmailVerificationService emailVerificationService,
-                          BadgeService badgeService) {
+                          BadgeService badgeService, com.hooppicks.backendapplication.avatar.AvatarService avatarService) {
+        this.avatarService = avatarService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.sessionStore = sessionStore;
@@ -92,6 +89,7 @@ public class AuthController {
         // Directement dans la semaine de jeu en cours, avec le solde par défaut :
         // pas de remise à niveau ni de message « nouveau système » à l'inscription.
         user.setBankrollWeek(BankrollService.weekOf(java.time.Instant.now()));
+        com.hooppicks.backendapplication.avatar.AvatarService.applyDefaults(user);
         userRepository.save(user);
 
         emailVerificationService.requestVerification(user);
@@ -159,19 +157,26 @@ public class AuthController {
 
         if (request.favoriteTeam() != null) {
             user.setFavoriteTeam(request.favoriteTeam());
+            com.hooppicks.backendapplication.avatar.AvatarService.followFavoriteTeam(user);
         }
+        boolean avatarTouched = false;
         if (request.avatarNumber() != null) {
             user.setAvatarNumber(Math.max(0, Math.min(99, request.avatarNumber())));
+            avatarTouched = true;
         }
-        if (request.avatarPosition() != null && VALID_POSITIONS.contains(request.avatarPosition())) {
+        if (request.avatarPosition() != null && com.hooppicks.backendapplication.avatar.AvatarService.POSITIONS.contains(request.avatarPosition())) {
             user.setAvatarPosition(request.avatarPosition());
+            avatarTouched = true;
         }
-        if (request.avatarColorway() != null && VALID_COLORWAYS.contains(request.avatarColorway())) {
+        if (request.avatarColorway() != null && com.hooppicks.backendapplication.avatar.AvatarService.COLORWAYS.contains(request.avatarColorway())) {
             user.setAvatarColorway(request.avatarColorway());
+            avatarTouched = true;
         }
-        if (request.avatarIcon() != null && VALID_ICONS.contains(request.avatarIcon())) {
+        if (request.avatarIcon() != null && avatarService.canUseIcon(user.getId(), request.avatarIcon())) {
             user.setAvatarIcon(request.avatarIcon());
+            avatarTouched = true;
         }
+        if (avatarTouched) user.setAvatarCustomized(true);
 
         userRepository.save(user);
         return ResponseEntity.ok(buildProfileDto(user));
@@ -349,7 +354,8 @@ public class AuthController {
         List<Bet> orderedBets = betRepository.findByUserIdOrderByPlacedAtDesc(user.getId());
         int currentWinStreak = badgeService.computeWinStreak(orderedBets);
 
-        return UserProfileDto.from(user, winRate, (int) totalBets, currentWinStreak);
+        return UserProfileDto.from(user, winRate, (int) totalBets, currentWinStreak,
+                user.getId() == null ? java.util.List.of() : avatarService.unlockedIcons(user.getId()));
     }
 
     private void setSessionCookie(HttpServletResponse response, String userId) {

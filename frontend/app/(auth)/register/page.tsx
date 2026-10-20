@@ -32,7 +32,8 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
       await registerUser(username, email, password);
       // Lien d'invitation d'un ami : il est crédité (sans effet sur les points).
       if (ref) await claimReferral(ref).catch(() => undefined);
-      router.push(destination);
+      // Choisir son maillot tout de suite, quand l'envie est là (« Plus tard » possible).
+      router.push(`/maillot?bienvenue=1&suite=${encodeURIComponent(destination)}`);
     } catch {
       setError("Impossible de créer le compte (e-mail déjà utilisé ?).");
     } finally {

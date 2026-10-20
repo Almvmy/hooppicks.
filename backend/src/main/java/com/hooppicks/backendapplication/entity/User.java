@@ -47,6 +47,11 @@ public class User {
     @Column(columnDefinition = "varchar(255) default 'dunk'")
     private String avatarIcon = "dunk";
 
+    // Maillot choisi par le joueur (null = jamais touché : le maillot par
+    // défaut suit son équipe favorite, cf. AvatarService). Booléen nullable :
+    // une colonne NOT NULL ne s'ajoute pas à une table déjà remplie.
+    private Boolean avatarCustomized;
+
     @Column(columnDefinition = "boolean default false")
     private boolean isAdmin = false;
 

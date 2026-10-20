@@ -12,6 +12,8 @@ public interface WeeklyTitleRepository extends JpaRepository<WeeklyTitle, String
 
     List<WeeklyTitle> findByUserIdOrderByWeekDesc(String userId);
 
+    boolean existsByUserIdAndWeekGreaterThanEqual(String userId, LocalDate week);
+
     List<WeeklyTitle> findByWeekAndLeagueIdIsNull(LocalDate week);
 
     List<WeeklyTitle> findByWeekAndLeagueId(LocalDate week, String leagueId);

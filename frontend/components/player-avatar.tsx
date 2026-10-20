@@ -1,4 +1,4 @@
-import { Flame, Target, Sparkles, Shield, Compass } from "lucide-react";
+import { Flame, Target, Sparkles, Shield, Compass, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarColorway, AvatarIcon, AvatarPosition } from "@/lib/types";
 
@@ -9,6 +9,9 @@ export const AVATAR_COLORWAYS: Record<AvatarColorway, { from: string; to: string
   green: { from: "#22C55E", to: "#15803D", label: "Émeraude" },
   red: { from: "#EF4444", to: "#B91C1C", label: "Grenat" },
   teal: { from: "#14B8A6", to: "#0F766E", label: "Lagon" },
+  gold: { from: "#F5B700", to: "#B7791F", label: "Or" },
+  navy: { from: "#2B4C8C", to: "#0B1A3F", label: "Marine" },
+  black: { from: "#4B5563", to: "#111827", label: "Ébène" },
 };
 
 export const AVATAR_ICONS: Record<AvatarIcon, { icon: React.ElementType; label: string }> = {
@@ -17,6 +20,12 @@ export const AVATAR_ICONS: Record<AvatarIcon, { icon: React.ElementType; label: 
   handles: { icon: Sparkles, label: "Dribbleur" },
   defense: { icon: Shield, label: "Défenseur" },
   playmaker: { icon: Compass, label: "Meneur" },
+  crown: { icon: Crown, label: "Champion" },
+};
+
+/** Icônes à débloquer, avec ce qu'il faut pour les avoir. */
+export const LOCKED_AVATAR_ICONS: Partial<Record<AvatarIcon, string>> = {
+  crown: "Deviens champion de la semaine (ou d'une ligue) pour la débloquer.",
 };
 
 export const AVATAR_POSITIONS: AvatarPosition[] = ["PG", "SG", "SF", "PF", "C"];

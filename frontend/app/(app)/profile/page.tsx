@@ -295,11 +295,13 @@ export default function ProfilePage() {
                     src={`/p/${encodeURIComponent(profile.username)}/carte`}
                     fileName={`hooppicks-${profile.username}.png`}
                     text="Ma semaine sur HoopPicks 🏀 Viens me défier !"
+                    ownJersey
                   />
                   <ShareButton
                     path={`/p/${encodeURIComponent(profile.username)}`}
                     text="Viens me défier sur HoopPicks, les pronostics NBA entre amis 🏀"
                     label="Partager le lien"
+                    ownJersey
                   />
                 </div>
               </div>

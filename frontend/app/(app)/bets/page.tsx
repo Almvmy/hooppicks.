@@ -214,6 +214,7 @@ function TicketCard({ bet, matchesById, highlighted }: { bet: PlacedBet; matches
             path={`/t/${bet.id}`}
             text={`Ticket gagnant sur HoopPicks : +${net.toLocaleString("fr-FR")} pts 🏀`}
             className="self-end"
+            ownJersey
           />
         )}
       </CardContent>

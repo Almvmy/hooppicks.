@@ -5,6 +5,7 @@ import {
   MessageSquare,
   Newspaper,
   Settings,
+  Shirt,
   ShieldCheck,
   Ticket,
   Trophy,
@@ -78,6 +79,7 @@ export const NAV_SECTIONS: NavSection[] = [
 /** Compte : menu de l'avatar (et bas de la barre latérale), hors navigation principale. */
 export const ACCOUNT_ITEMS: (NavTab & { icon: LucideIcon; adminOnly?: boolean })[] = [
   { href: "/profile", label: "Mon profil", title: "Profil", icon: User },
+  { href: "/maillot", label: "Mon maillot", title: "Maillot", icon: Shirt },
   { href: "/settings", label: "Paramètres", icon: Settings },
   { href: "/contact", label: "Nous écrire", icon: MessageSquare },
   { href: "/help", label: "Aide et règles", icon: CircleHelp },

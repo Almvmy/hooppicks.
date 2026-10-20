@@ -49,6 +49,9 @@ const COLORWAYS: Record<string, { from: string; to: string }> = {
   green: { from: "#22C55E", to: "#15803D" },
   red: { from: "#EF4444", to: "#B91C1C" },
   teal: { from: "#14B8A6", to: "#0F766E" },
+  gold: { from: "#F5B700", to: "#B7791F" },
+  navy: { from: "#2B4C8C", to: "#0B1A3F" },
+  black: { from: "#4B5563", to: "#111827" },
 };
 
 type Tone = "won" | "lost" | "void";

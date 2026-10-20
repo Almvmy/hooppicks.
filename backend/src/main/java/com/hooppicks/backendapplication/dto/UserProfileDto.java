@@ -18,9 +18,12 @@ public record UserProfileDto(
         boolean notifyBetResults,
         boolean notifyLeagueActivity,
         boolean notifyFavoriteTeam,
-        boolean emailVerified
+        boolean emailVerified,
+        boolean avatarCustomized,
+        java.util.List<String> unlockedAvatarIcons
 ) {
-    public static UserProfileDto from(User user, int winRate, int totalBets, int currentWinStreak) {
+    public static UserProfileDto from(User user, int winRate, int totalBets, int currentWinStreak,
+                                      java.util.List<String> unlockedAvatarIcons) {
         return new UserProfileDto(
                 user.getUsername(),
                 user.getEmail(),
@@ -37,7 +40,9 @@ public record UserProfileDto(
                 user.isNotifyBetResults(),
                 user.isNotifyLeagueActivity(),
                 user.isNotifyFavoriteTeam(),
-                user.isEmailVerified()
+                user.isEmailVerified(),
+                Boolean.TRUE.equals(user.getAvatarCustomized()),
+                unlockedAvatarIcons
         );
     }
 }

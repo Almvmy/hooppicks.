@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ImageDown, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useJerseyCheck } from "@/lib/jersey-nudge";
 
 /**
  * Partage une image générée (carte de partage) comme une photo : sur
@@ -11,8 +12,11 @@ import { Button } from "@/components/ui/button";
  * partage de fichiers (ordinateur), l'image est téléchargée.
  */
 /** `discreet` : simple icône, pour un bouton posé sur un visuel (podium) sans lui voler la vedette. */
-export function ShareImageButton({ src, fileName, text, discreet = false, label = "Partager l'image" }: { src: string; fileName: string; text: string; discreet?: boolean; label?: string }) {
+/** `ownJersey` : l'image montre le maillot du joueur, rappel s'il est encore celui par défaut. */
+export function ShareImageButton({ src, fileName, text, discreet = false, label = "Partager l'image", ownJersey = false }: { src: string; fileName: string; text: string; discreet?: boolean; label?: string; ownJersey?: boolean }) {
   const [busy, setBusy] = useState(false);
+  const jerseyCheck = useJerseyCheck();
+  const onClick = () => (ownJersey ? jerseyCheck(share) : share());
 
   async function share() {
     setBusy(true);
@@ -51,7 +55,7 @@ export function ShareImageButton({ src, fileName, text, discreet = false, label 
         size="icon-sm"
         className="text-muted-foreground hover:text-foreground"
         disabled={busy}
-        onClick={share}
+        onClick={onClick}
         aria-label="Partager l'image"
         title="Partager l'image"
       >
@@ -61,7 +65,7 @@ export function ShareImageButton({ src, fileName, text, discreet = false, label 
   }
 
   return (
-    <Button type="button" variant="lit" size="sm" className="gap-1.5" disabled={busy} onClick={share}>
+    <Button type="button" variant="lit" size="sm" className="gap-1.5" disabled={busy} onClick={onClick}>
       <ImageDown className="h-3.5 w-3.5" />
       {busy ? "Préparation…" : label}
     </Button>

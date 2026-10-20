@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { updateProfile } from "@/lib/api/auth";
 import { AvatarColorway, AvatarIcon, AvatarPosition, UserProfile } from "@/lib/types";
@@ -13,13 +14,28 @@ import {
   AVATAR_COLORWAYS,
   AVATAR_ICONS,
   AVATAR_POSITIONS,
+  LOCKED_AVATAR_ICONS,
 } from "@/components/player-avatar";
 import { PlayerCard } from "@/components/player-card";
 
-export function AvatarEditor({ profile }: { profile: UserProfile }) {
+/**
+ * `alwaysOpen` : éditeur déplié sans bouton Fermer (page « Ton maillot »),
+ * `onSaved` appelé une fois enregistré.
+ */
+export function AvatarEditor({
+  profile,
+  alwaysOpen = false,
+  onSaved,
+}: {
+  profile: UserProfile;
+  alwaysOpen?: boolean;
+  onSaved?: () => void;
+}) {
   const queryClient = useQueryClient();
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingState, setIsEditing] = useState(false);
+  const isEditing = alwaysOpen || isEditingState;
+  const unlocked = new Set(profile.unlockedAvatarIcons ?? []);
   const [number, setNumber] = useState(profile.avatarNumber);
   const [position, setPosition] = useState<AvatarPosition>(profile.avatarPosition);
   const [colorway, setColorway] = useState<AvatarColorway>(profile.avatarColorway);
@@ -30,14 +46,19 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
       updateProfile({ avatarNumber: number, avatarPosition: position, avatarColorway: colorway, avatarIcon: icon }),
     onSuccess: (updated) => {
       queryClient.setQueryData(["profile"], updated);
-      toast.success("Carte joueur mise à jour !");
+      // Le maillot s'affiche aussi dans le classement, les ligues…
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      toast.success("Maillot enregistré !");
+      onSaved?.();
     },
     onError: () => {
       toast.error("Impossible d'enregistrer ta carte. Réessaie.");
     },
   });
 
+  // Un maillot par défaut se valide tel quel : le garder est aussi un choix.
   const hasChanges =
+    !profile.avatarCustomized ||
     number !== profile.avatarNumber ||
     position !== profile.avatarPosition ||
     colorway !== profile.avatarColorway ||
@@ -58,10 +79,12 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="font-heading text-lg">Ta carte joueur</CardTitle>
-        <Button variant="outline" size="sm" onClick={toggleEditing}>
-          {isEditing ? "Fermer" : "Modifier"}
-        </Button>
+        <CardTitle className="font-heading text-lg">Ton maillot</CardTitle>
+        {!alwaysOpen && (
+          <Button variant="outline" size="sm" onClick={toggleEditing}>
+            {isEditing ? "Fermer" : "Modifier"}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div className="flex items-center gap-5">
@@ -148,18 +171,23 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(AVATAR_ICONS) as AvatarIcon[]).map((key) => {
                   const { icon: Icon, label } = AVATAR_ICONS[key];
+                  const lockHint = LOCKED_AVATAR_ICONS[key];
+                  const locked = !!lockHint && !unlocked.has(key);
                   return (
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setIcon(key)}
+                      onClick={() => (locked ? toast(lockHint) : setIcon(key))}
                       aria-pressed={icon === key}
+                      aria-disabled={locked}
+                      title={locked ? lockHint : undefined}
                       className={cn(
                         "flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors",
-                        icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground"
+                        icon === key ? "glass-accent" : "glass-inset text-muted-foreground hover:text-foreground",
+                        locked && "opacity-50"
                       )}
                     >
-                      <Icon className="h-3.5 w-3.5" />
+                      {locked ? <Lock className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                       {label}
                     </button>
                   );
@@ -172,7 +200,7 @@ export function AvatarEditor({ profile }: { profile: UserProfile }) {
               disabled={!hasChanges || mutation.isPending}
               className="w-fit"
             >
-              {mutation.isPending ? "Enregistrement..." : "Enregistrer ma carte"}
+              {mutation.isPending ? "Enregistrement..." : "Enregistrer mon maillot"}
             </Button>
           </>
         )}

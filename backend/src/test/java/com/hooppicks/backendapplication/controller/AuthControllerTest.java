@@ -51,6 +51,8 @@ class AuthControllerTest {
     private EmailVerificationService emailVerificationService;
     @Mock
     private BadgeService badgeService;
+    @Mock
+    private com.hooppicks.backendapplication.avatar.AvatarService avatarService;
 
     private AuthController controller;
 
@@ -58,7 +60,7 @@ class AuthControllerTest {
     void setUp() {
         controller = new AuthController(userRepository, passwordEncoder, sessionStore, betRepository,
                 loginAttemptService, passwordResetService, accountDeletionService, emailVerificationService,
-                badgeService);
+                badgeService, avatarService);
         lenient().when(betRepository.getUserStats(any())).thenReturn(Collections.emptyList());
         lenient().when(betRepository.findByUserIdOrderByPlacedAtDesc(any())).thenReturn(Collections.emptyList());
     }
@@ -177,6 +179,8 @@ class AuthControllerTest {
         User user = user("u1", "joueur@example.com", "joueur", "hash");
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
 
+        when(avatarService.canUseIcon("u1", "three")).thenReturn(true);
+
         UpdateProfileRequest body = new UpdateProfileRequest("Lakers", 23, "SG", "blue", "three");
         controller.updateProfile(body, request);
 
@@ -185,7 +189,21 @@ class AuthControllerTest {
         assertThat(user.getAvatarPosition()).isEqualTo("SG");
         assertThat(user.getAvatarColorway()).isEqualTo("blue");
         assertThat(user.getAvatarIcon()).isEqualTo("three");
+        assertThat(user.getAvatarCustomized()).isTrue();
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateProfile_refuse_une_icone_non_debloquee() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        User user = user("u1", "joueur@example.com", "joueur", "hash");
+        when(userRepository.findById("u1")).thenReturn(Optional.of(user));
+        when(avatarService.canUseIcon("u1", "crown")).thenReturn(false);
+
+        controller.updateProfile(new UpdateProfileRequest(null, null, null, null, "crown"), request);
+
+        assertThat(user.getAvatarIcon()).isEqualTo("dunk");
+        assertThat(user.getAvatarCustomized()).isNull();
     }
 
     @Test

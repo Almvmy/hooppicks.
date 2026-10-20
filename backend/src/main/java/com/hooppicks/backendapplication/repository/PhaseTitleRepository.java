@@ -11,6 +11,8 @@ public interface PhaseTitleRepository extends JpaRepository<PhaseTitle, String> 
 
     List<PhaseTitle> findByUserIdOrderBySeasonDesc(String userId);
 
+    boolean existsByUserId(String userId);
+
     List<PhaseTitle> findBySeasonAndPhaseAndLeagueIdIsNull(String season, String phase);
 
     List<PhaseTitle> findBySeasonAndPhaseAndLeagueId(String season, String phase, String leagueId);
