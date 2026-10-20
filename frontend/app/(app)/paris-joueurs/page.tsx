@@ -60,8 +60,9 @@ function PropLine({ match, prop }: { match: Match; prop: PlayerProp }) {
 
 function PlayerCard({ group, slipMatchIds }: { group: PlayerGroup; slipMatchIds: Map<string, string> }) {
   const { match } = group;
-  const opponent = match.homeTeam.abbreviation === group.teamAbbreviation ? match.awayTeam : match.homeTeam;
   const atHome = match.homeTeam.abbreviation === group.teamAbbreviation;
+  const team = atHome ? match.homeTeam : match.awayTeam;
+  const opponent = atHome ? match.awayTeam : match.homeTeam;
   const otherSelection = slipMatchIds.get(match.id);
   const preview = !isBettable(match);
 
@@ -82,7 +83,7 @@ function PlayerCard({ group, slipMatchIds }: { group: PlayerGroup; slipMatchIds:
                 href={`/matches/${match.id}`}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                <TeamLogo abbreviation={group.teamAbbreviation} logoUrl={null} size={14} />
+                <TeamLogo abbreviation={group.teamAbbreviation} logoUrl={team.logoUrl} size={14} />
                 {group.teamAbbreviation} {atHome ? "contre" : "à"} {opponent.abbreviation} · {formatMatchTime(new Date(match.date))}
               </Link>
             </div>
