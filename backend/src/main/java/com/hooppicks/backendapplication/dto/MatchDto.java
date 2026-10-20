@@ -14,7 +14,8 @@ public record MatchDto(
         Integer homeScore,
         Integer awayScore,
         MatchOddsDto odds,
-        PickPercentagesDto pickPercentages
+        PickPercentagesDto pickPercentages,
+        String highlightsVideoId
 ) {
     public static MatchDto from(Match match) {
         return from(match, null);
@@ -33,7 +34,8 @@ public record MatchDto(
                 match.getHomeScore(),
                 match.getAwayScore(),
                 MatchOddsDto.from(match),
-                pickPercentages
+                pickPercentages,
+                match.getHighlightsVideoId()
         );
     }
 }

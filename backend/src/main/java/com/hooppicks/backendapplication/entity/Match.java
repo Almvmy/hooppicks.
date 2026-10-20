@@ -53,6 +53,12 @@ public class Match {
     private String stageLabel;
     private String seriesSummary;
 
+    // Résumé vidéo officiel (chaîne YouTube de la NBA), relié après le match
+    // par HighlightsService. Titre gardé pour préférer un « full game
+    // highlights » à un premier extrait trouvé.
+    private String highlightsVideoId;
+    private String highlightsTitle;
+
     // Notifications « ton équipe favorite » déjà envoyées pour ce match (une
     // seule fois chacune, cf. FavoriteTeamNotifier). Boolean nullable : une
     // colonne NOT NULL ne s'ajoute pas à une table qui a déjà des lignes.

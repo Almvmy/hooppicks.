@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { HighlightsVideo } from "@/components/highlights-video";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -75,9 +76,10 @@ function StickyScore({ match }: { match: Match }) {
   );
 }
 
-type Tab = "paris" | "avant" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
+type Tab = "video" | "paris" | "avant" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
 
 const LABELS: Record<Tab, string> = {
+  video: "Vidéo",
   paris: "Paris",
   avant: "Avant-match",
   resume: "Résumé",
@@ -118,7 +120,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
   }, []);
   const started = match.status !== "scheduled";
 
-  const tabs: Tab[] = !started
+  const baseTabs: Tab[] = !started
     ? ["paris", "avant", "effectifs", "actus"]
     : live
       ? ([
@@ -132,6 +134,8 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
       : match.status === "finished"
         ? ["feuille", "actus"]
         : ["effectifs", "actus"];
+  // Résumé vidéo officiel en premier : c'est ce qu'on vient voir après le match.
+  const tabs: Tab[] = match.status === "finished" && match.highlightsVideoId ? ["video", ...baseTabs] : baseTabs;
   const active: Tab = tabs.includes(requested as Tab) ? (requested as Tab) : tabs[0];
 
   function select(next: Tab) {
@@ -200,6 +204,10 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
                 {bettingClosedReason(match)}.
               </p>
             ))}
+
+          {active === "video" && match.highlightsVideoId && (
+            <HighlightsVideo videoId={match.highlightsVideoId} title={`${match.awayTeam.name} à ${match.homeTeam.name} : le résumé`} />
+          )}
 
           {active === "resume" && live && (
             <>
