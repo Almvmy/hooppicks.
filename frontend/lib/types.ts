@@ -14,8 +14,8 @@ export interface WalletData {
 
 export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
 export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal" | "gold" | "navy" | "black";
-/** crown : réservée aux joueurs titrés (champion de la semaine, de la Coupe NBA ou des playoffs). */
-export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown";
+/** À débloquer : crown (joueur titré : champion de la semaine, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée). */
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak";
 
 export interface UserProfile {
   username: string;

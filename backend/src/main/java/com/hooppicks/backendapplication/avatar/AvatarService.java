@@ -1,6 +1,8 @@
 package com.hooppicks.backendapplication.avatar;
 
+import com.hooppicks.backendapplication.badge.BadgeService;
 import com.hooppicks.backendapplication.entity.User;
+import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.palmares.PalmaresService;
 import com.hooppicks.backendapplication.repository.PhaseTitleRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
@@ -24,9 +26,10 @@ import java.util.Set;
  * suit l'équipe favorite tant que le joueur n'a pas touché à son maillot
  * (`User.avatarCustomized`).
  *
- * Icône « Couronne » réservée aux joueurs déjà titrés (champion de la
- * semaine, de la Coupe NBA ou des playoffs, sur tout HoopPicks ou dans une
- * ligue) : une raison de revenir dans l'éditeur.
+ * Icônes à débloquer, une raison de revenir dans l'éditeur : « Couronne »
+ * pour les joueurs déjà titrés (champion de la semaine, de la Coupe NBA ou
+ * des playoffs, sur tout HoopPicks ou dans une ligue), « Inarrêtable » après
+ * 5 tickets gagnés d'affilée (même règle que le badge « Sur un nuage »).
  */
 @Service
 public class AvatarService {
@@ -35,8 +38,10 @@ public class AvatarService {
 
     public static final Set<String> POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
     public static final Set<String> COLORWAYS = Set.of("orange", "purple", "blue", "green", "red", "teal", "gold", "navy", "black");
-    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown");
+    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak");
     public static final String CROWN = "crown";
+    public static final String STREAK = "streak";
+    private static final int STREAK_TO_UNLOCK = 5;
 
     private static final List<String> FREE_ICONS = List.of("dunk", "three", "handles", "defense", "playmaker");
     private static final List<String> POSITION_ORDER = List.of("PG", "SG", "SF", "PF", "C");
@@ -65,9 +70,14 @@ public class AvatarService {
     private final UserRepository userRepository;
     private final WeeklyTitleRepository weeklyTitleRepository;
     private final PhaseTitleRepository phaseTitleRepository;
+    private final BetRepository betRepository;
+    private final BadgeService badgeService;
 
     public AvatarService(UserRepository userRepository, WeeklyTitleRepository weeklyTitleRepository,
-                         PhaseTitleRepository phaseTitleRepository) {
+                         PhaseTitleRepository phaseTitleRepository, BetRepository betRepository,
+                         BadgeService badgeService) {
+        this.betRepository = betRepository;
+        this.badgeService = badgeService;
         this.userRepository = userRepository;
         this.weeklyTitleRepository = weeklyTitleRepository;
         this.phaseTitleRepository = phaseTitleRepository;
@@ -98,14 +108,20 @@ public class AvatarService {
     /** Icônes réservées que ce joueur a débloquées. */
     @Transactional(readOnly = true)
     public List<String> unlockedIcons(String userId) {
-        boolean titled = weeklyTitleRepository.existsByUserIdAndWeekGreaterThanEqual(userId, PalmaresService.FIRST_WEEK)
-                || phaseTitleRepository.existsByUserId(userId);
-        return titled ? List.of(CROWN) : List.of();
+        List<String> unlocked = new java.util.ArrayList<>();
+        if (weeklyTitleRepository.existsByUserIdAndWeekGreaterThanEqual(userId, PalmaresService.FIRST_WEEK)
+                || phaseTitleRepository.existsByUserId(userId)) {
+            unlocked.add(CROWN);
+        }
+        if (badgeService.computeBestWinStreak(betRepository.findByUserIdOrderByPlacedAtDesc(userId)) >= STREAK_TO_UNLOCK) {
+            unlocked.add(STREAK);
+        }
+        return unlocked;
     }
 
     public boolean canUseIcon(String userId, String icon) {
         if (!ICONS.contains(icon)) return false;
-        return !CROWN.equals(icon) || unlockedIcons(userId).contains(CROWN);
+        return !(CROWN.equals(icon) || STREAK.equals(icon)) || unlockedIcons(userId).contains(icon);
     }
 
     // Comptes créés avant les maillots par défaut, qui ont tous le même n°0

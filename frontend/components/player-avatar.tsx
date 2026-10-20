@@ -1,4 +1,4 @@
-import { Flame, Target, Sparkles, Shield, Compass, Crown } from "lucide-react";
+import { Flame, Target, Sparkles, Shield, Compass, Crown, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarColorway, AvatarIcon, AvatarPosition } from "@/lib/types";
 
@@ -21,11 +21,13 @@ export const AVATAR_ICONS: Record<AvatarIcon, { icon: React.ElementType; label: 
   defense: { icon: Shield, label: "Défenseur" },
   playmaker: { icon: Compass, label: "Meneur" },
   crown: { icon: Crown, label: "Champion" },
+  streak: { icon: Zap, label: "Inarrêtable" },
 };
 
 /** Icônes à débloquer, avec ce qu'il faut pour les avoir. */
 export const LOCKED_AVATAR_ICONS: Partial<Record<AvatarIcon, string>> = {
   crown: "Deviens champion de la semaine (ou d'une ligue) pour la débloquer.",
+  streak: "Gagne 5 tickets d'affilée pour la débloquer.",
 };
 
 export const AVATAR_POSITIONS: AvatarPosition[] = ["PG", "SG", "SF", "PF", "C"];

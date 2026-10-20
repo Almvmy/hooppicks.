@@ -1,6 +1,10 @@
 package com.hooppicks.backendapplication.avatar;
 
+import com.hooppicks.backendapplication.badge.BadgeService;
+import com.hooppicks.backendapplication.entity.Bet;
+import com.hooppicks.backendapplication.entity.BetStatus;
 import com.hooppicks.backendapplication.entity.User;
+import com.hooppicks.backendapplication.repository.BetRepository;
 import com.hooppicks.backendapplication.palmares.PalmaresService;
 import com.hooppicks.backendapplication.repository.PhaseTitleRepository;
 import com.hooppicks.backendapplication.repository.UserRepository;
@@ -18,7 +22,9 @@ class AvatarServiceTest {
     private final UserRepository userRepository = mock(UserRepository.class);
     private final WeeklyTitleRepository weeklyTitleRepository = mock(WeeklyTitleRepository.class);
     private final PhaseTitleRepository phaseTitleRepository = mock(PhaseTitleRepository.class);
-    private final AvatarService service = new AvatarService(userRepository, weeklyTitleRepository, phaseTitleRepository);
+    private final BetRepository betRepository = mock(BetRepository.class);
+    private final AvatarService service = new AvatarService(userRepository, weeklyTitleRepository, phaseTitleRepository,
+            betRepository, new BadgeService());
 
     private static User user(String username, String team) {
         User u = new User();
@@ -78,6 +84,27 @@ class AvatarServiceTest {
         assertThat(service.canUseIcon("nobody", "crown")).isFalse();
         assertThat(service.canUseIcon("nobody", "three")).isTrue();
         assertThat(service.canUseIcon("nobody", "laser")).isFalse();
+    }
+
+    private static List<Bet> bets(BetStatus... statuses) {
+        return java.util.Arrays.stream(statuses).map(st -> {
+            Bet b = new Bet();
+            b.setStatus(st);
+            return b;
+        }).toList();
+    }
+
+    @Test
+    void inarretable_apres_5_tickets_gagnes_d_affilee() {
+        // Du plus récent au plus ancien : 5 gagnés d'affilée (un remboursé au milieu ne coupe pas la série).
+        when(betRepository.findByUserIdOrderByPlacedAtDesc("hot")).thenReturn(bets(BetStatus.LOST, BetStatus.WON, BetStatus.WON,
+                BetStatus.VOID, BetStatus.WON, BetStatus.WON, BetStatus.WON, BetStatus.LOST));
+        when(betRepository.findByUserIdOrderByPlacedAtDesc("cold")).thenReturn(bets(BetStatus.WON, BetStatus.WON, BetStatus.WON,
+                BetStatus.WON, BetStatus.LOST, BetStatus.WON));
+
+        assertThat(service.canUseIcon("hot", "streak")).isTrue();
+        assertThat(service.unlockedIcons("hot")).containsExactly("streak");
+        assertThat(service.canUseIcon("cold", "streak")).isFalse();
     }
 
     @Test
