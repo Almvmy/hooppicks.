@@ -121,8 +121,9 @@ export interface Match {
   awayScore?: number;
   odds: MatchOdds;
   pickPercentages: PickPercentages | null;
-  /** Résumé vidéo officiel (chaîne YouTube de la NBA), une fois le match terminé. */
+  /** Résumé vidéo officiel une fois le match terminé : chaîne YouTube de la NBA, sinon ESPN. */
   highlightsVideoId?: string | null;
+  highlightsProvider?: "youtube" | "espn" | null;
 }
 
 export interface RosterPlayer {

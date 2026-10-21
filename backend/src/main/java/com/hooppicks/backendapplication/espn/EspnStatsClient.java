@@ -206,6 +206,28 @@ public class EspnStatsClient {
         return Optional.of(games);
     }
 
+    /** Résumé vidéo d'un match chez ESPN (« Game Highlights »), durée en secondes. */
+    public record EspnVideo(String id, String headline, int seconds) {}
+
+    /**
+     * Le résumé du match parmi les vidéos du résumé ESPN (les autres sont des
+     * actions isolées). Vide s'il n'est pas (encore) publié ou si ESPN ne répond pas.
+     */
+    public Optional<EspnVideo> fetchGameHighlights(String eventId) {
+        JsonNode root = fetchWithRetry(String.format(SUMMARY_URL, eventId));
+        return root == null ? Optional.empty() : parseGameHighlights(root);
+    }
+
+    static Optional<EspnVideo> parseGameHighlights(JsonNode root) {
+        for (JsonNode video : root.path("videos")) {
+            String headline = video.path("headline").asText("");
+            String id = video.path("id").asText("");
+            if (id.isEmpty() || !headline.toLowerCase(java.util.Locale.ROOT).contains("game highlights")) continue;
+            return Optional.of(new EspnVideo(id, headline, video.path("duration").asInt(0)));
+        }
+        return Optional.empty();
+    }
+
     /**
      * Résumé d'un match pour le direct : statut, score par quart-temps, stats
      * des équipes, feuille de match du moment. Optional vide = ESPN

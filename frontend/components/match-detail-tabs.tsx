@@ -206,7 +206,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
             ))}
 
           {active === "video" && match.highlightsVideoId && (
-            <HighlightsVideo videoId={match.highlightsVideoId} title={`${match.awayTeam.name} à ${match.homeTeam.name} : le résumé`} />
+            <HighlightsVideo videoId={match.highlightsVideoId} provider={match.highlightsProvider ?? "youtube"} title={`${match.awayTeam.name} à ${match.homeTeam.name} : le résumé`} />
           )}
 
           {active === "resume" && live && (

@@ -331,4 +331,20 @@ class EspnStatsClientTest {
         assertThat(client.fetchSeasonStats("5457832")).isEmpty();
         verify(restTemplate, times(1)).exchange(anyString(), eq(HttpMethod.GET), any(), eq(JsonNode.class));
     }
+
+    @Test
+    void parseGameHighlights_prend_le_resume_du_match_pas_les_actions_isolees() throws Exception {
+        tools.jackson.databind.JsonNode root = new tools.jackson.databind.ObjectMapper().readTree("""
+                {"videos": [
+                  {"id": 50230557, "headline": "Cade Cunningham skies for big dunk", "duration": 16},
+                  {"id": 50232313, "headline": "Boston Celtics vs. Detroit Pistons: Game Highlights", "duration": 74}
+                ]}""");
+
+        EspnStatsClient.EspnVideo video = EspnStatsClient.parseGameHighlights(root).orElseThrow();
+
+        org.assertj.core.api.Assertions.assertThat(video.id()).isEqualTo("50232313");
+        org.assertj.core.api.Assertions.assertThat(video.seconds()).isEqualTo(74);
+        org.assertj.core.api.Assertions.assertThat(EspnStatsClient.parseGameHighlights(
+                new tools.jackson.databind.ObjectMapper().readTree("{\"videos\": []}"))).isEmpty();
+    }
 }

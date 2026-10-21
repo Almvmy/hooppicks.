@@ -53,11 +53,14 @@ public class Match {
     private String stageLabel;
     private String seriesSummary;
 
-    // Résumé vidéo officiel (chaîne YouTube de la NBA), relié après le match
-    // par HighlightsService. Titre gardé pour préférer un « full game
-    // highlights » à un premier extrait trouvé.
+    // Résumé vidéo officiel (chaîne YouTube de la NBA, sinon ESPN), relié
+    // après le match par HighlightsService.
     private String highlightsVideoId;
     private String highlightsTitle;
+    // youtube (null pour les premières reliées) ou espn : choisit le lecteur.
+    private String highlightsProvider;
+    // Durée en secondes : la vidéo lisible la plus longue l'emporte.
+    private Integer highlightsSeconds;
 
     // Notifications « ton équipe favorite » déjà envoyées pour ce match (une
     // seule fois chacune, cf. FavoriteTeamNotifier). Boolean nullable : une

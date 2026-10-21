@@ -3,6 +3,7 @@ package com.hooppicks.backendapplication.live;
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.entity.MatchStatus;
 import com.hooppicks.backendapplication.entity.Team;
+import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import com.hooppicks.backendapplication.nba.NbaSyncService;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import org.junit.jupiter.api.Test;
@@ -105,6 +106,7 @@ class HighlightsServiceTest {
                 entry("good", "PISTONS at CELTICS | FULL GAME HIGHLIGHTS", "2026-10-21T03:10:00+00:00")));
         Match m = match("Celtics", "Pistons");
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
 
         assertThat(new HighlightsService(rest, repo, sync).refresh()).isEqualTo(1);
         assertThat(m.getHighlightsVideoId()).isEqualTo("good");
@@ -139,6 +141,7 @@ class HighlightsServiceTest {
         });
         Match m = match("Celtics", "Pistons");
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
         when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class)))
                 .thenReturn(new tools.jackson.databind.ObjectMapper().readTree(API_JSON));
 
@@ -148,6 +151,7 @@ class HighlightsServiceTest {
 
         Match other = match("Celtics", "Pistons");
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(other));
+        when(repo.findById(other.getId())).thenReturn(java.util.Optional.of(other));
         when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class)))
                 .thenThrow(new RuntimeException("quota"));
         when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed(
@@ -191,18 +195,134 @@ class HighlightsServiceTest {
         m.setHighlightsVideoId("full");
         m.setHighlightsTitle("PISTONS at CELTICS | FULL GAME HIGHLIGHTS");
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
 
         assertThat(new HighlightsService(rest, repo, sync, "cle").refresh()).isEqualTo(1);
         assertThat(m.getHighlightsVideoId()).isEqualTo("court");
     }
 
+    // --- ESPN en secours, la vidéo la plus longue l'emporte ---
+
+    private static NbaSyncService lockRunning() {
+        NbaSyncService sync = mock(NbaSyncService.class);
+        when(sync.tryRunExclusive(any())).thenAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return true;
+        });
+        return sync;
+    }
+
+    private static Match espnMatch() {
+        Match m = match("Celtics", "Pistons");
+        m.setEspnEventId("401909088");
+        return m;
+    }
+
     @Test
-    void chaine_injoignable_rien_ne_change() {
+    void sans_resume_youtube_le_resume_espn() {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed());
+        Match m = espnMatch();
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
+        when(espn.fetchGameHighlights("401909088")).thenReturn(java.util.Optional.of(
+                new EspnStatsClient.EspnVideo("50232313", "Boston Celtics vs. Detroit Pistons: Game Highlights", 74)));
+
+        assertThat(new HighlightsService(rest, repo, lockRunning(), "", espn).refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsVideoId()).isEqualTo("50232313");
+        assertThat(m.getHighlightsProvider()).isEqualTo("espn");
+        assertThat(m.getHighlightsSeconds()).isEqualTo(74);
+    }
+
+    @Test
+    void le_resume_youtube_complet_passe_devant_espn_sans_meme_le_chercher() {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed(
+                entry("full", "PISTONS at CELTICS | FULL GAME HIGHLIGHTS", "2026-10-21T03:10:00+00:00")));
+        Match m = espnMatch();
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
+
+        new HighlightsService(rest, repo, lockRunning(), "", espn).refresh();
+
+        assertThat(m.getHighlightsVideoId()).isEqualTo("full");
+        assertThat(m.getHighlightsProvider()).isEqualTo("youtube");
+        verifyNoInteractions(espn);
+    }
+
+    @Test
+    void un_resume_youtube_plus_long_remplace_celui_d_espn() throws Exception {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+        when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [{"snippet": {"title": "Celtics vs Pistons Highlights", "publishedAt": "2026-10-21T03:10:00Z", "resourceId": {"videoId": "yt"}}}]}"""));
+        when(rest.getForObject(startsWith(HighlightsService.VIDEOS_URL), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [{"id": "yt", "contentDetails": {"duration": "PT9M41S"}}]}"""));
+        Match m = espnMatch();
+        m.setHighlightsVideoId("50232313");
+        m.setHighlightsProvider("espn");
+        m.setHighlightsSeconds(74);
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
+
+        assertThat(new HighlightsService(rest, repo, lockRunning(), "cle", espn).refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsVideoId()).isEqualTo("yt");
+        assertThat(m.getHighlightsSeconds()).isEqualTo(581);
+        verifyNoInteractions(espn);
+    }
+
+    @Test
+    void un_extrait_youtube_plus_court_que_le_resume_espn_ne_le_remplace_pas() throws Exception {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+        when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [{"snippet": {"title": "Celtics vs Pistons Highlights", "publishedAt": "2026-10-21T03:10:00Z", "resourceId": {"videoId": "yt"}}}]}"""));
+        when(rest.getForObject(startsWith(HighlightsService.VIDEOS_URL), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [{"id": "yt", "contentDetails": {"duration": "PT45S"}}]}"""));
+        Match m = espnMatch();
+        m.setHighlightsVideoId("50232313");
+        m.setHighlightsProvider("espn");
+        m.setHighlightsSeconds(74);
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(espn.fetchGameHighlights("401909088")).thenReturn(java.util.Optional.of(
+                new EspnStatsClient.EspnVideo("50232313", "Game Highlights", 74)));
+
+        assertThat(new HighlightsService(rest, repo, lockRunning(), "cle", espn).refresh()).isZero();
+        assertThat(m.getHighlightsVideoId()).isEqualTo("50232313");
+    }
+
+    @Test
+    void chaine_injoignable_rien_ne_change_sans_espn() {
         RestTemplate rest = mock(RestTemplate.class);
         MatchRepository repo = mock(MatchRepository.class);
         when(rest.getForObject(anyString(), eq(String.class))).thenThrow(new RuntimeException("timeout"));
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(match("Celtics", "Pistons")));
 
         assertThat(new HighlightsService(rest, repo, mock(NbaSyncService.class)).refresh()).isZero();
-        verifyNoInteractions(repo);
+        verify(repo, never()).save(any());
+    }
+
+    @Test
+    void chaine_injoignable_espn_quand_meme() {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        when(rest.getForObject(anyString(), eq(String.class))).thenThrow(new RuntimeException("timeout"));
+        Match m = espnMatch();
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
+        when(espn.fetchGameHighlights("401909088")).thenReturn(java.util.Optional.of(
+                new EspnStatsClient.EspnVideo("50232313", "Game Highlights", 74)));
+
+        assertThat(new HighlightsService(rest, repo, lockRunning(), "", espn).refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsProvider()).isEqualTo("espn");
     }
 }

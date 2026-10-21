@@ -2,6 +2,7 @@ package com.hooppicks.backendapplication.live;
 
 import com.hooppicks.backendapplication.entity.Match;
 import com.hooppicks.backendapplication.entity.MatchStatus;
+import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import com.hooppicks.backendapplication.nba.NbaSyncService;
 import com.hooppicks.backendapplication.repository.MatchRepository;
 import org.slf4j.Logger;
@@ -11,44 +12,42 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import tools.jackson.databind.JsonNode;
 import org.springframework.web.client.RestTemplate;
+import tools.jackson.databind.JsonNode;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Résumé vidéo officiel des matchs terminés : vidéos de la chaîne YouTube de
- * la NBA, intégrées avec le lecteur YouTube (autorisé par YouTube, contrairement
- * à une diffusion des matchs, qu'on ne fait jamais : droits NBA / diffuseurs).
+ * Résumé vidéo officiel des matchs terminés, intégré avec le lecteur prévu
+ * pour ça (YouTube, lecteur « syndicated » d'ESPN). Jamais de diffusion des
+ * matchs eux-mêmes : droits NBA / diffuseurs.
  *
- * Lu dans le flux RSS public de la chaîne (sans clé ni quota), qui ne donne
- * que les 15 dernières vidéos : d'où une lecture toutes les 10 minutes, les
- * résumés arrivant une heure environ après le match au milieu de nombreux
- * extraits. Une vidéo est reliée à un match terminé depuis moins de 2 jours
- * si son titre parle de « highlights » et nomme les deux équipes, publiée
- * après le coup d'envoi ; un « full game highlights » remplace un premier
- * résumé plus court.
+ * La vidéo lisible la plus longue l'emporte (choix du propriétaire : les longs
+ * résumés d'abord) : « full game highlights » de la chaîne YouTube de la NBA
+ * (~10 min), sinon le résumé ESPN du match (~1 min), lu seulement quand
+ * YouTube n'a rien de plus long. Un match terminé depuis moins de 2 jours est
+ * revu toutes les 10 minutes : une vidéo plus longue remplace la précédente.
  *
- * Avec une clé YouTube Data API (`youtube.api-key`, `YOUTUBE_API_KEY` en
- * production), les 50 dernières vidéos de la chaîne via playlistItems (1 unité
- * de quota par lecture, sur 10 000 gratuites par jour) : plus de risque qu'un
- * résumé passe entre deux lectures un soir chargé. Clé absente ou appel en
- * échec : retour au flux RSS.
- *
- * La NBA bloque certaines vidéos selon le pays (droits télé locaux), dont des
- * résumés complets en Côte d'Ivoire, pays des joueurs : avec la clé, on lit
- * les pays bloqués de chaque vidéo (videos.list, 1 unité pour 50 vidéos) et
- * on écarte celles bloquées dans `REGION` ; une vidéo déjà reliée qui s'avère
- * bloquée est retirée, pour laisser la place à une autre. Sans clé, aucun
- * moyen de le savoir.
+ * YouTube : une vidéo est reliée si son titre parle de « highlights » et
+ * nomme les deux équipes (mot entier), publiée après le coup d'envoi. Avec
+ * une clé YouTube Data API (`youtube.api-key`, `YOUTUBE_API_KEY` en
+ * production) : les 50 dernières vidéos (playlistItems, 1 unité de quota),
+ * leur durée et les pays où elles sont bloquées (videos.list, 1 unité pour 50
+ * vidéos). La NBA bloque des résumés complets en Côte d'Ivoire, pays des
+ * joueurs (`REGION`) : ils sont écartés, et une vidéo déjà reliée qui s'avère
+ * bloquée est retirée. Sans clé ou si l'API échoue : flux RSS public (15
+ * dernières vidéos), durée estimée d'après le titre, pays bloqués inconnus.
  */
 @Service
 public class HighlightsService {
@@ -56,11 +55,16 @@ public class HighlightsService {
     private static final Logger log = LoggerFactory.getLogger(HighlightsService.class);
     static final String FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=UCWJ2lWNubArHWmf3FIHbfcQ";
     // Vidéos mises en ligne par la chaîne = playlist « UU » + identifiant de chaîne sans « UC ».
+    static final String API_URL = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=UUWJ2lWNubArHWmf3FIHbfcQ&key=";
     static final String VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=";
     /** Pays des joueurs (GMT, Côte d'Ivoire), code ISO 3166-1. */
     static final String REGION = "CI";
-    static final String API_URL = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=UUWJ2lWNubArHWmf3FIHbfcQ&key=";
+    static final String YOUTUBE = "youtube";
+    static final String ESPN = "espn";
     private static final Duration LOOKBACK = Duration.ofDays(2);
+    // Le résumé ESPN dure environ une minute : inutile de le chercher quand
+    // une vidéo plus longue est déjà là.
+    private static final int ESPN_WORTH_CHECKING = 180;
 
     private static final Pattern ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
     private static final Pattern VIDEO_ID = Pattern.compile("<yt:videoId>([^<]+)</yt:videoId>");
@@ -69,24 +73,47 @@ public class HighlightsService {
 
     record Video(String id, String title, Instant published) {}
 
+    /** Ce qu'on sait d'un match terminé, lu en base avant les appels réseau. */
+    record Candidate(String matchId, String home, String away, Instant date, String espnEventId,
+                     String videoId, String provider, int seconds) {
+        static Candidate of(Match m) {
+            String provider = m.getHighlightsProvider() == null ? YOUTUBE : m.getHighlightsProvider();
+            int seconds = m.getHighlightsSeconds() != null ? m.getHighlightsSeconds()
+                    : m.getHighlightsVideoId() == null ? 0 : estimate(m.getHighlightsTitle());
+            return new Candidate(m.getId(), m.getHomeTeam() == null ? null : m.getHomeTeam().getName(),
+                    m.getAwayTeam() == null ? null : m.getAwayTeam().getName(), m.getDate(), m.getEspnEventId(),
+                    m.getHighlightsVideoId(), provider, seconds);
+        }
+    }
+
+    /** Vidéo choisie pour un match ; videoId null = retirer celle en place (bloquée). */
+    record Choice(String videoId, String title, String provider, int seconds) {}
+
     private final RestTemplate restTemplate;
     private final MatchRepository matchRepository;
     private final NbaSyncService nbaSyncService;
     private final String apiKey;
+    private final EspnStatsClient espn;
     // Les équipes d'un match sont chargées à la demande : lues hors
     // transaction, Hibernate échouait (LazyInitializationException).
-    private final java.util.function.Consumer<Runnable> inTransaction;
+    private final Consumer<Runnable> inTransaction;
 
     @Autowired
     public HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
-                             PlatformTransactionManager transactionManager, @Value("${youtube.api-key:}") String apiKey) {
-        this(restTemplate, matchRepository, nbaSyncService, apiKey,
+                             PlatformTransactionManager transactionManager, EspnStatsClient espn,
+                             @Value("${youtube.api-key:}") String apiKey) {
+        this(restTemplate, matchRepository, nbaSyncService, apiKey, espn,
                 work -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run()));
     }
 
     /** Pour les tests : pas de vraie transaction. */
+    HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
+                      String apiKey, EspnStatsClient espn) {
+        this(restTemplate, matchRepository, nbaSyncService, apiKey, espn, Runnable::run);
+    }
+
     HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService, String apiKey) {
-        this(restTemplate, matchRepository, nbaSyncService, apiKey, Runnable::run);
+        this(restTemplate, matchRepository, nbaSyncService, apiKey, null);
     }
 
     HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService) {
@@ -94,53 +121,83 @@ public class HighlightsService {
     }
 
     private HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
-                              String apiKey, java.util.function.Consumer<Runnable> inTransaction) {
+                              String apiKey, EspnStatsClient espn, Consumer<Runnable> inTransaction) {
         this.restTemplate = restTemplate;
         this.matchRepository = matchRepository;
         this.nbaSyncService = nbaSyncService;
         this.apiKey = apiKey == null ? "" : apiKey.trim();
+        this.espn = espn;
         this.inTransaction = inTransaction;
     }
 
-    /** Relie les nouveaux résumés vidéo. Renvoie le nombre de matchs mis à jour. */
+    /** Relie ou remplace les résumés vidéo. Renvoie le nombre de matchs mis à jour. */
     public int refresh() {
-        List<Video> videos = apiKey.isEmpty() ? List.of() : fromApi();
-        if (videos.isEmpty()) {
-            try {
-                videos = parse(restTemplate.getForObject(FEED_URL, String.class));
-            } catch (Exception e) {
-                log.warn("Résumés vidéo : chaîne NBA injoignable ({})", e.getMessage());
-                return 0;
-            }
-        }
-        if (videos.isEmpty()) return 0;
-        Set<String> blocked = apiKey.isEmpty() ? Set.of() : blockedIn(videos);
-        List<Video> found = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
-        int[] updated = {0};
+        List<Video> videos = youtubeVideos();
+        Map<String, Integer> seconds = new HashMap<>();
+        Set<String> blocked = new HashSet<>();
+        if (!apiKey.isEmpty() && !videos.isEmpty()) readDetails(videos, blocked, seconds);
+        List<Video> playable = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
+
         Instant now = Instant.now();
+        List<Candidate> candidates = new ArrayList<>();
+        inTransaction.accept(() -> matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)
+                .forEach(m -> candidates.add(Candidate.of(m))));
+
+        // Appels ESPN hors verrou et hors transaction.
+        Map<String, Choice> choices = new HashMap<>();
+        for (Candidate c : candidates) {
+            Choice choice = choose(c, playable, seconds, blocked);
+            if (choice != null) choices.put(c.matchId(), choice);
+        }
+        if (choices.isEmpty()) return 0;
+
+        int[] updated = {0};
         // Sous le verrou de la synchro : elle enregistre les matchs en entier,
         // une copie chargée avant notre écriture l'effacerait.
-        nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> {
-            for (Match match : matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)) {
-                boolean cleared = false;
-                if (match.getHighlightsVideoId() != null && blocked.contains(match.getHighlightsVideoId())) {
-                    match.setHighlightsVideoId(null);
-                    match.setHighlightsTitle(null);
-                    cleared = true;
-                }
-                Video video = bestFor(match, found);
-                if (video != null && !video.id().equals(match.getHighlightsVideoId())) {
-                    match.setHighlightsVideoId(video.id());
-                    match.setHighlightsTitle(video.title());
-                } else if (!cleared) {
-                    continue;
-                }
-                matchRepository.save(match);
-                updated[0]++;
-            }
-        }));
-        if (updated[0] > 0) log.info("Résumés vidéo : {} match(s) relié(s)", updated[0]);
+        nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> choices.forEach((matchId, choice) ->
+                matchRepository.findById(matchId).ifPresent(match -> {
+                    match.setHighlightsVideoId(choice.videoId());
+                    match.setHighlightsTitle(choice.title());
+                    match.setHighlightsProvider(choice.provider());
+                    match.setHighlightsSeconds(choice.videoId() == null ? null : choice.seconds());
+                    matchRepository.save(match);
+                    updated[0]++;
+                }))));
+        if (updated[0] > 0) log.info("Résumés vidéo : {} match(s) mis à jour", updated[0]);
         return updated[0];
+    }
+
+    /** Ce qui change pour ce match, ou null s'il garde sa vidéo. */
+    Choice choose(Candidate c, List<Video> playable, Map<String, Integer> seconds, Set<String> blocked) {
+        boolean currentBlocked = c.videoId() != null && YOUTUBE.equals(c.provider()) && blocked.contains(c.videoId());
+        int current = currentBlocked ? 0 : c.seconds();
+        Choice best = null;
+        Video yt = longestFor(c, playable, seconds);
+        if (yt != null && !yt.id().equals(c.videoId())) {
+            int ytSeconds = seconds.getOrDefault(yt.id(), estimate(yt.title()));
+            if (ytSeconds > current) best = new Choice(yt.id(), yt.title(), YOUTUBE, ytSeconds);
+        }
+        int bestSeconds = best != null ? best.seconds() : current;
+        if (espn != null && c.espnEventId() != null && bestSeconds < ESPN_WORTH_CHECKING) {
+            EspnStatsClient.EspnVideo e = espn.fetchGameHighlights(c.espnEventId()).orElse(null);
+            int espnSeconds = e == null ? 0 : Math.max(e.seconds(), 1);
+            if (e != null && !e.id().equals(c.videoId()) && espnSeconds > bestSeconds) {
+                best = new Choice(e.id(), e.headline(), ESPN, espnSeconds);
+            }
+        }
+        if (best != null) return best;
+        return currentBlocked ? new Choice(null, null, null, 0) : null;
+    }
+
+    private List<Video> youtubeVideos() {
+        List<Video> videos = apiKey.isEmpty() ? List.of() : fromApi();
+        if (!videos.isEmpty()) return videos;
+        try {
+            return parse(restTemplate.getForObject(FEED_URL, String.class));
+        } catch (Exception e) {
+            log.warn("Résumés vidéo : chaîne NBA injoignable ({})", e.getMessage());
+            return List.of();
+        }
     }
 
     private List<Video> fromApi() {
@@ -153,15 +210,16 @@ public class HighlightsService {
         }
     }
 
-    // Vidéos bloquées dans REGION. En cas d'échec, rien n'est écarté (mieux
-    // vaut une vidéo parfois bloquée que plus de vidéo du tout).
-    private Set<String> blockedIn(List<Video> videos) {
+    // Pays bloqués et durée des vidéos. En cas d'échec, rien n'est écarté
+    // (mieux vaut une vidéo parfois bloquée que plus de vidéo du tout).
+    private void readDetails(List<Video> videos, Set<String> blocked, Map<String, Integer> seconds) {
         String ids = String.join(",", videos.stream().map(Video::id).limit(50).toList());
         try {
-            return parseBlocked(restTemplate.getForObject(VIDEOS_URL + ids + "&key=" + apiKey, JsonNode.class), REGION);
+            JsonNode response = restTemplate.getForObject(VIDEOS_URL + ids + "&key=" + apiKey, JsonNode.class);
+            blocked.addAll(parseBlocked(response, REGION));
+            seconds.putAll(parseDurations(response));
         } catch (Exception e) {
-            log.warn("Résumés vidéo : pays bloqués illisibles ({})", e.getClass().getSimpleName());
-            return Set.of();
+            log.warn("Résumés vidéo : détails des vidéos illisibles ({})", e.getClass().getSimpleName());
         }
     }
 
@@ -176,6 +234,22 @@ public class HighlightsService {
             if (notAllowed || contains(restriction.path("blocked"), region)) blocked.add(id);
         }
         return blocked;
+    }
+
+    static Map<String, Integer> parseDurations(JsonNode response) {
+        Map<String, Integer> seconds = new HashMap<>();
+        if (response == null) return seconds;
+        for (JsonNode item : response.path("items")) {
+            String id = item.path("id").asText("");
+            String iso = item.path("contentDetails").path("duration").asText("");
+            if (id.isEmpty() || iso.isEmpty()) continue;
+            try {
+                seconds.put(id, (int) Duration.parse(iso).getSeconds());
+            } catch (Exception ignored) {
+                // Durée illisible : estimée d'après le titre.
+            }
+        }
+        return seconds;
     }
 
     private static boolean contains(JsonNode countries, String region) {
@@ -220,20 +294,36 @@ public class HighlightsService {
         return videos;
     }
 
-    /** Meilleure vidéo pour ce match, ou null s'il n'y a rien de mieux que l'actuelle. */
-    static Video bestFor(Match match, List<Video> videos) {
-        if (match.getHomeTeam() == null || match.getAwayTeam() == null) return null;
-        boolean hasFullGame = isFullGame(match.getHighlightsTitle());
+    /** Résumé YouTube le plus long pour ce match, quel que soit celui en place. */
+    static Video longestFor(Candidate c, List<Video> videos, Map<String, Integer> seconds) {
+        if (c.home() == null || c.away() == null) return null;
         Video best = null;
+        int bestSeconds = -1;
         for (Video v : videos) {
-            if (match.getDate() != null && v.published().isBefore(match.getDate())) continue;
+            if (c.date() != null && v.published().isBefore(c.date())) continue;
             String title = v.title().toLowerCase(Locale.ROOT);
             if (!title.contains("highlight")) continue;
-            if (!names(title, match.getHomeTeam().getName()) || !names(title, match.getAwayTeam().getName())) continue;
-            if (match.getHighlightsVideoId() != null && (hasFullGame || !isFullGame(v.title()))) continue;
-            if (best == null || (isFullGame(v.title()) && !isFullGame(best.title()))) best = v;
+            if (!names(title, c.home()) || !names(title, c.away())) continue;
+            int s = seconds.getOrDefault(v.id(), estimate(v.title()));
+            if (s > bestSeconds) {
+                best = v;
+                bestSeconds = s;
+            }
         }
         return best;
+    }
+
+    /** Vidéo YouTube plus longue que celle en place, ou null (durées estimées d'après le titre). */
+    static Video bestFor(Match match, List<Video> videos) {
+        Candidate c = Candidate.of(match);
+        Video v = longestFor(c, videos, Map.of());
+        return v != null && !v.id().equals(c.videoId()) && estimate(v.title()) > c.seconds() ? v : null;
+    }
+
+    // Sans l'API (flux RSS seul), pas de durée : un « full game highlights »
+    // dure une dizaine de minutes, les autres résumés bien moins.
+    static int estimate(String title) {
+        return isFullGame(title) ? 600 : 120;
     }
 
     private static boolean isFullGame(String title) {
