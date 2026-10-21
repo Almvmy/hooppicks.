@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Flame, Search, Users } from "lucide-react";
+import { ChevronDown, Flame, Search, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,9 @@ import type { Match, PlayerProp, PlayerPropMarket } from "@/lib/types";
 import { bettingClosedReason, cn, formatMatchTime, formatNightChip, isBettable, nightKey, opensLater } from "@/lib/utils";
 
 const MARKETS = Object.keys(PLAYER_PROP_MARKETS) as PlayerPropMarket[];
+// Paris visibles d'un joueur avant « Voir plus » : des cartes de même
+// hauteur côte à côte, au lieu de colonnes en escalier.
+const VISIBLE_PROPS = 3;
 
 function chipClass(active: boolean) {
   return cn(
@@ -65,11 +68,14 @@ function PlayerCard({ group, slipMatchIds }: { group: PlayerGroup; slipMatchIds:
   const opponent = atHome ? match.awayTeam : match.homeTeam;
   const otherSelection = slipMatchIds.get(match.id);
   const preview = !isBettable(match);
+  const [expanded, setExpanded] = useState(false);
+  const hidden = group.props.length - VISIBLE_PROPS;
+  const shown = expanded ? group.props : group.props.slice(0, VISIBLE_PROPS);
 
   return (
     <OddsPreviewContext.Provider value={preview}>
-      <Card>
-        <CardContent className="flex flex-col gap-3 pt-5">
+      <Card className="h-full">
+        <CardContent className="flex flex-1 flex-col gap-3 pt-5">
           <div className="flex items-center gap-3">
             {group.headshotUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -94,10 +100,21 @@ function PlayerCard({ group, slipMatchIds }: { group: PlayerGroup; slipMatchIds:
             )}
           </div>
           <div className="flex flex-col gap-1.5">
-            {group.props.map((prop) => (
+            {shown.map((prop) => (
               <PropLine key={prop.market} match={match} prop={prop} />
             ))}
           </div>
+          {hidden > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              className="mt-auto flex items-center justify-center gap-1 rounded-xl py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {expanded ? "Moins de paris" : `${hidden} autre${hidden > 1 ? "s" : ""} pari${hidden > 1 ? "s" : ""}`}
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
+            </button>
+          )}
           {preview && <p className="text-[11px] text-muted-foreground first-letter:uppercase">{bettingClosedReason(match)}.</p>}
           {!preview && otherSelection && !otherSelection.includes(group.playerId) && (
             <p className="text-[11px] text-muted-foreground">
@@ -319,7 +336,7 @@ export default function PlayerPropsPage() {
               {props.length === 0 ? "Pas encore de paris joueurs pour cette soirée." : "Aucun joueur ne correspond."}
             </p>
           )}
-          <div className="grid items-start gap-3 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {groups.map((g) => (
               <PlayerCard key={g.playerId} group={g} slipMatchIds={slipMatchIds} />
             ))}

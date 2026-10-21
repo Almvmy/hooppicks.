@@ -378,7 +378,7 @@ function DeleteAccountZone() {
 
 export default function SettingsPage() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <PageHeader badge="Mon compte" title="Paramètres" subtitle="Compte, notifications et affichage." />
 
       <Card>

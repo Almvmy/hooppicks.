@@ -26,12 +26,13 @@ export function MatchCard({ match: synced }: { match: Match }) {
     !!favorite && (match.homeTeam.abbreviation === favorite.abbreviation || match.awayTeam.abbreviation === favorite.abbreviation);
 
   return (
-    <Link href={`/matches/${match.id}`}>
+    // h-full : côte à côte dans la grille, deux cartes ont la même hauteur.
+    <Link href={`/matches/${match.id}`} className="block h-full">
       <Card
         style={faceOffBackground(match)}
         className={cn(
           // Le hover éclaircit le verre au lieu de changer la bordure.
-          "relative overflow-hidden transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,122,26,0.30),var(--lift)]",
+          "relative h-full overflow-hidden transition-shadow hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.30),inset_0_0_0_1px_rgba(255,122,26,0.30),var(--lift)]",
           isRivalry && "shadow-[inset_0_1px_0_rgba(255,255,255,0.22),inset_0_0_0_1px_rgba(255,122,26,0.35),var(--lift)]"
         )}
       >
