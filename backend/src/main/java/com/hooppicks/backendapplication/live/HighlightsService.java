@@ -17,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -40,6 +42,13 @@ import java.util.regex.Pattern;
  * de quota par lecture, sur 10 000 gratuites par jour) : plus de risque qu'un
  * résumé passe entre deux lectures un soir chargé. Clé absente ou appel en
  * échec : retour au flux RSS.
+ *
+ * La NBA bloque certaines vidéos selon le pays (droits télé locaux), dont des
+ * résumés complets en Côte d'Ivoire, pays des joueurs : avec la clé, on lit
+ * les pays bloqués de chaque vidéo (videos.list, 1 unité pour 50 vidéos) et
+ * on écarte celles bloquées dans `REGION` ; une vidéo déjà reliée qui s'avère
+ * bloquée est retirée, pour laisser la place à une autre. Sans clé, aucun
+ * moyen de le savoir.
  */
 @Service
 public class HighlightsService {
@@ -47,6 +56,9 @@ public class HighlightsService {
     private static final Logger log = LoggerFactory.getLogger(HighlightsService.class);
     static final String FEED_URL = "https://www.youtube.com/feeds/videos.xml?channel_id=UCWJ2lWNubArHWmf3FIHbfcQ";
     // Vidéos mises en ligne par la chaîne = playlist « UU » + identifiant de chaîne sans « UC ».
+    static final String VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=";
+    /** Pays des joueurs (GMT, Côte d'Ivoire), code ISO 3166-1. */
+    static final String REGION = "CI";
     static final String API_URL = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=UUWJ2lWNubArHWmf3FIHbfcQ&key=";
     private static final Duration LOOKBACK = Duration.ofDays(2);
 
@@ -102,17 +114,27 @@ public class HighlightsService {
             }
         }
         if (videos.isEmpty()) return 0;
-        List<Video> found = videos;
+        Set<String> blocked = apiKey.isEmpty() ? Set.of() : blockedIn(videos);
+        List<Video> found = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
         int[] updated = {0};
         Instant now = Instant.now();
         // Sous le verrou de la synchro : elle enregistre les matchs en entier,
         // une copie chargée avant notre écriture l'effacerait.
         nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> {
             for (Match match : matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)) {
+                boolean cleared = false;
+                if (match.getHighlightsVideoId() != null && blocked.contains(match.getHighlightsVideoId())) {
+                    match.setHighlightsVideoId(null);
+                    match.setHighlightsTitle(null);
+                    cleared = true;
+                }
                 Video video = bestFor(match, found);
-                if (video == null || video.id().equals(match.getHighlightsVideoId())) continue;
-                match.setHighlightsVideoId(video.id());
-                match.setHighlightsTitle(video.title());
+                if (video != null && !video.id().equals(match.getHighlightsVideoId())) {
+                    match.setHighlightsVideoId(video.id());
+                    match.setHighlightsTitle(video.title());
+                } else if (!cleared) {
+                    continue;
+                }
                 matchRepository.save(match);
                 updated[0]++;
             }
@@ -129,6 +151,36 @@ public class HighlightsService {
             log.warn("Résumés vidéo : API YouTube en échec ({}), retour au flux RSS", e.getClass().getSimpleName());
             return List.of();
         }
+    }
+
+    // Vidéos bloquées dans REGION. En cas d'échec, rien n'est écarté (mieux
+    // vaut une vidéo parfois bloquée que plus de vidéo du tout).
+    private Set<String> blockedIn(List<Video> videos) {
+        String ids = String.join(",", videos.stream().map(Video::id).limit(50).toList());
+        try {
+            return parseBlocked(restTemplate.getForObject(VIDEOS_URL + ids + "&key=" + apiKey, JsonNode.class), REGION);
+        } catch (Exception e) {
+            log.warn("Résumés vidéo : pays bloqués illisibles ({})", e.getClass().getSimpleName());
+            return Set.of();
+        }
+    }
+
+    static Set<String> parseBlocked(JsonNode response, String region) {
+        Set<String> blocked = new HashSet<>();
+        if (response == null) return blocked;
+        for (JsonNode item : response.path("items")) {
+            String id = item.path("id").asText("");
+            JsonNode restriction = item.path("contentDetails").path("regionRestriction");
+            if (id.isEmpty() || restriction.isMissingNode()) continue;
+            boolean notAllowed = restriction.has("allowed") && !contains(restriction.path("allowed"), region);
+            if (notAllowed || contains(restriction.path("blocked"), region)) blocked.add(id);
+        }
+        return blocked;
+    }
+
+    private static boolean contains(JsonNode countries, String region) {
+        for (JsonNode c : countries) if (region.equalsIgnoreCase(c.asText(""))) return true;
+        return false;
     }
 
     static List<Video> parseApi(JsonNode response) {

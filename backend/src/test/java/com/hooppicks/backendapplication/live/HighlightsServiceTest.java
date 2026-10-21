@@ -158,6 +158,45 @@ class HighlightsServiceTest {
     }
 
     @Test
+    void videos_bloquees_en_cote_d_ivoire() throws Exception {
+        tools.jackson.databind.JsonNode json = new tools.jackson.databind.ObjectMapper().readTree("""
+                {"items": [
+                  {"id": "bloquee", "contentDetails": {"regionRestriction": {"blocked": ["FR", "CI"]}}},
+                  {"id": "ailleurs", "contentDetails": {"regionRestriction": {"blocked": ["FR"]}}},
+                  {"id": "liste", "contentDetails": {"regionRestriction": {"allowed": ["US", "CA"]}}},
+                  {"id": "partout", "contentDetails": {}}
+                ]}""");
+
+        assertThat(HighlightsService.parseBlocked(json, "CI")).containsExactlyInAnyOrder("bloquee", "liste");
+    }
+
+    @Test
+    void une_video_reliee_puis_bloquee_est_remplacee_par_une_lisible() throws Exception {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        NbaSyncService sync = mock(NbaSyncService.class);
+        when(sync.tryRunExclusive(any())).thenAnswer(inv -> {
+            ((Runnable) inv.getArgument(0)).run();
+            return true;
+        });
+        tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+        when(rest.getForObject(eq(HighlightsService.API_URL + "cle"), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [
+                  {"snippet": {"title": "PISTONS at CELTICS | FULL GAME HIGHLIGHTS", "publishedAt": "2026-10-21T03:10:00Z", "resourceId": {"videoId": "full"}}},
+                  {"snippet": {"title": "Pistons vs Celtics Highlights", "publishedAt": "2026-10-21T02:00:00Z", "resourceId": {"videoId": "court"}}}
+                ]}"""));
+        when(rest.getForObject(startsWith(HighlightsService.VIDEOS_URL), eq(tools.jackson.databind.JsonNode.class))).thenReturn(mapper.readTree("""
+                {"items": [{"id": "full", "contentDetails": {"regionRestriction": {"blocked": ["CI"]}}}, {"id": "court", "contentDetails": {}}]}"""));
+        Match m = match("Celtics", "Pistons");
+        m.setHighlightsVideoId("full");
+        m.setHighlightsTitle("PISTONS at CELTICS | FULL GAME HIGHLIGHTS");
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+
+        assertThat(new HighlightsService(rest, repo, sync, "cle").refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsVideoId()).isEqualTo("court");
+    }
+
+    @Test
     void chaine_injoignable_rien_ne_change() {
         RestTemplate rest = mock(RestTemplate.class);
         MatchRepository repo = mock(MatchRepository.class);
