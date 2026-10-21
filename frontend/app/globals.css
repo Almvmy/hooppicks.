@@ -960,3 +960,10 @@
     }
   }
 }
+
+/* Une carte a déjà sa marge intérieure (py de Card) : beaucoup de pages
+   ajoutaient encore pt-5 / pt-6 à son contenu, d'où un grand vide en haut
+   des cartes. Hors calque, pour passer devant ces classes utilitaires. */
+[data-slot="card"] > [data-slot="card-content"]:first-child:is(.pt-4, .pt-5, .pt-6) {
+  padding-top: 0;
+}

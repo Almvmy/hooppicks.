@@ -342,7 +342,9 @@ export default function BetsPage() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-3">
+          {/* Deux colonnes sur ordinateur : un ticket en pleine largeur
+              laissait un grand vide entre le pari et sa cote. */}
+          <div className="grid items-start gap-3 lg:grid-cols-2">
             {pageItems.map((bet) => (
               <TicketCard key={bet.id} bet={bet} matchesById={matchesById} highlighted={bet.id === highlighted} />
             ))}
