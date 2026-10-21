@@ -16,7 +16,9 @@ public record MatchDto(
         MatchOddsDto odds,
         PickPercentagesDto pickPercentages,
         String highlightsVideoId,
-        String highlightsProvider
+        String highlightsProvider,
+        String homeHighlightsVideoId,
+        String awayHighlightsVideoId
 ) {
     public static MatchDto from(Match match) {
         return from(match, null);
@@ -38,7 +40,9 @@ public record MatchDto(
                 pickPercentages,
                 match.getHighlightsVideoId(),
                 match.getHighlightsVideoId() == null ? null
-                        : match.getHighlightsProvider() == null ? "youtube" : match.getHighlightsProvider()
+                        : match.getHighlightsProvider() == null ? "youtube" : match.getHighlightsProvider(),
+                match.getHomeHighlightsVideoId(),
+                match.getAwayHighlightsVideoId()
         );
     }
 }

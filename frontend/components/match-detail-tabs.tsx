@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HighlightsVideo } from "@/components/highlights-video";
+import { HighlightsVideo, highlightSources } from "@/components/highlights-video";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,7 +135,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
         ? ["feuille", "actus"]
         : ["effectifs", "actus"];
   // Résumé vidéo officiel en premier : c'est ce qu'on vient voir après le match.
-  const tabs: Tab[] = match.status === "finished" && match.highlightsVideoId ? ["video", ...baseTabs] : baseTabs;
+  const tabs: Tab[] = match.status === "finished" && highlightSources(match).length > 0 ? ["video", ...baseTabs] : baseTabs;
   const active: Tab = tabs.includes(requested as Tab) ? (requested as Tab) : tabs[0];
 
   function select(next: Tab) {
@@ -205,9 +205,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
               </p>
             ))}
 
-          {active === "video" && match.highlightsVideoId && (
-            <HighlightsVideo videoId={match.highlightsVideoId} provider={match.highlightsProvider ?? "youtube"} title={`${match.awayTeam.name} à ${match.homeTeam.name} : le résumé`} />
-          )}
+          {active === "video" && <HighlightsVideo match={match} />}
 
           {active === "resume" && live && (
             <>

@@ -61,6 +61,12 @@ public class Match {
     private String highlightsProvider;
     // Durée en secondes : la vidéo lisible la plus longue l'emporte.
     private Integer highlightsSeconds;
+    // Résumés des chaînes des deux équipes : chacun ne montre que son camp,
+    // proposés en plus du résumé neutre (NBA, ESPN) ci-dessus.
+    private String homeHighlightsVideoId;
+    private Integer homeHighlightsSeconds;
+    private String awayHighlightsVideoId;
+    private Integer awayHighlightsSeconds;
 
     // Notifications « ton équipe favorite » déjà envoyées pour ce match (une
     // seule fois chacune, cf. FavoriteTeamNotifier). Boolean nullable : une

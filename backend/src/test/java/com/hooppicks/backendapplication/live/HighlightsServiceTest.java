@@ -344,32 +344,40 @@ class HighlightsServiceTest {
     }
 
     @Test
-    void lit_les_chaines_des_deux_equipes_tant_qu_il_manque_un_resume_long() {
+    void chaque_equipe_son_resume_sans_toucher_au_resume_neutre() {
         RestTemplate rest = mock(RestTemplate.class);
         MatchRepository repo = mock(MatchRepository.class);
         EspnStatsClient espn = mock(EspnStatsClient.class);
         when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed());
         when(rest.getForObject(eq(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get("BOS").channelId())), eq(String.class))).thenReturn(feed(
                 entry("ext", "The Boston Celtics fall to the Detroit Pistons 121 - 113 | Extended Highlights", "2026-10-21T02:00:00+00:00")));
-        when(rest.getForObject(eq(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get("DET").channelId())), eq(String.class))).thenReturn(feed());
+        when(rest.getForObject(eq(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get("DET").channelId())), eq(String.class))).thenReturn(feed(
+                entry("det", "1st Win of the Season | Detroit Pistons vs. Boston Celtics Highlights | 10.20.26 #NBA", "2026-10-21T02:30:00+00:00")));
         Match m = detBos();
         m.setEspnEventId("401909088");
+        when(espn.fetchGameHighlights("401909088")).thenReturn(java.util.Optional.of(
+                new EspnStatsClient.EspnVideo("50232313", "Boston Celtics vs. Detroit Pistons: Game Highlights", 74)));
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
         when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
 
         assertThat(new HighlightsService(rest, repo, lockRunning(), "", espn).refresh()).isEqualTo(1);
-        assertThat(m.getHighlightsVideoId()).isEqualTo("ext");
-        assertThat(m.getHighlightsProvider()).isEqualTo("youtube");
+        // Un résumé d'équipe ne montre que son camp : jamais en résumé principal.
+        assertThat(m.getHighlightsVideoId()).isEqualTo("50232313");
+        assertThat(m.getHighlightsProvider()).isEqualTo("espn");
+        assertThat(m.getHomeHighlightsVideoId()).isEqualTo("det");
+        assertThat(m.getAwayHighlightsVideoId()).isEqualTo("ext");
     }
 
     @Test
-    void resume_deja_long_on_ne_lit_pas_les_chaines_des_equipes() {
+    void resumes_d_equipe_deja_longs_on_ne_relit_pas_leurs_chaines() {
         RestTemplate rest = mock(RestTemplate.class);
         MatchRepository repo = mock(MatchRepository.class);
         when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed());
         Match m = detBos();
-        m.setHighlightsVideoId("long");
-        m.setHighlightsSeconds(600);
+        m.setHomeHighlightsVideoId("det");
+        m.setHomeHighlightsSeconds(600);
+        m.setAwayHighlightsVideoId("bos");
+        m.setAwayHighlightsSeconds(540);
         when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
 
         new HighlightsService(rest, repo, lockRunning(), "", null).refresh();

@@ -49,12 +49,12 @@ import java.util.regex.Pattern;
  * bloquée est retirée. Sans clé ou si l'API échoue : flux RSS public (15
  * dernières vidéos), durée estimée d'après le titre, pays bloqués inconnus.
  *
- * Chaînes des équipes (`TeamChannels`) : tant qu'un match n'a pas de résumé
- * d'au moins 8 minutes, on lit aussi les chaînes officielles de ses deux
- * équipes (flux RSS, sans quota) : elles publient parfois un résumé long
- * (« Extended Highlights ») lisible là où celui de la NBA est bloqué. Une
- * vidéo d'équipe compte si son titre parle de « highlights » et nomme
- * l'adversaire ; les vidéos d'un seul joueur (« … (19 Points) ») sont écartées.
+ * Chaînes des équipes (`TeamChannels`) : leurs résumés ne montrent que leur
+ * camp, ils ne remplacent donc jamais le résumé neutre (NBA, ESPN) : chaque
+ * match garde en plus le résumé de chaque équipe (« Vu par les Sixers »),
+ * lu sur sa chaîne (flux RSS, sans quota) tant qu'il manque ou dure moins de
+ * 8 minutes. Une vidéo d'équipe compte si son titre parle de « highlights »
+ * et nomme l'adversaire ; vidéos d'un seul joueur et quarts-temps écartés.
  */
 @Service
 public class HighlightsService {
@@ -93,7 +93,8 @@ public class HighlightsService {
 
     /** Ce qu'on sait d'un match terminé, lu en base avant les appels réseau. */
     record Candidate(String matchId, String home, String away, String homeAbbr, String awayAbbr, Instant date,
-                     String espnEventId, String videoId, String provider, int seconds) {
+                     String espnEventId, String videoId, String provider, int seconds,
+                     String homeVideoId, int homeSeconds, String awayVideoId, int awaySeconds) {
         static Candidate of(Match m) {
             String provider = m.getHighlightsProvider() == null ? YOUTUBE : m.getHighlightsProvider();
             int seconds = m.getHighlightsSeconds() != null ? m.getHighlightsSeconds()
@@ -102,12 +103,25 @@ public class HighlightsService {
                     m.getAwayTeam() == null ? null : m.getAwayTeam().getName(),
                     m.getHomeTeam() == null ? null : m.getHomeTeam().getAbbreviation(),
                     m.getAwayTeam() == null ? null : m.getAwayTeam().getAbbreviation(),
-                    m.getDate(), m.getEspnEventId(), m.getHighlightsVideoId(), provider, seconds);
+                    m.getDate(), m.getEspnEventId(), m.getHighlightsVideoId(), provider, seconds,
+                    m.getHomeHighlightsVideoId(), orZero(m.getHomeHighlightsSeconds()),
+                    m.getAwayHighlightsVideoId(), orZero(m.getAwayHighlightsSeconds()));
+        }
+
+        private static int orZero(Integer s) {
+            return s == null ? 0 : s;
         }
     }
 
-    /** Vidéo choisie pour un match ; videoId null = retirer celle en place (bloquée). */
+    /** Vidéo choisie ; videoId null = retirer celle en place (bloquée). */
     record Choice(String videoId, String title, String provider, int seconds) {}
+
+    /** Ce qui change pour un match : résumé neutre, côté domicile, côté extérieur (null = inchangé). */
+    record Update(Choice main, Choice home, Choice away) {
+        boolean isEmpty() {
+            return main == null && home == null && away == null;
+        }
+    }
 
     private final RestTemplate restTemplate;
     private final MatchRepository matchRepository;
@@ -160,9 +174,8 @@ public class HighlightsService {
         List<Video> videos = new ArrayList<>(youtubeVideos());
         Set<String> teams = new java.util.LinkedHashSet<>();
         for (Candidate c : candidates) {
-            if (c.seconds() >= LONG_ENOUGH) continue;
-            if (TeamChannels.has(c.homeAbbr())) teams.add(c.homeAbbr());
-            if (TeamChannels.has(c.awayAbbr())) teams.add(c.awayAbbr());
+            if (c.homeSeconds() < LONG_ENOUGH && TeamChannels.has(c.homeAbbr())) teams.add(c.homeAbbr());
+            if (c.awaySeconds() < LONG_ENOUGH && TeamChannels.has(c.awayAbbr())) teams.add(c.awayAbbr());
         }
         for (String team : teams) videos.addAll(teamVideos(team));
 
@@ -171,23 +184,37 @@ public class HighlightsService {
         if (!apiKey.isEmpty() && !videos.isEmpty()) readDetails(videos, blocked, seconds);
         List<Video> playable = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
 
+        List<Video> neutral = playable.stream().filter(v -> v.team() == null).toList();
+
         // Appels ESPN hors verrou et hors transaction.
-        Map<String, Choice> choices = new HashMap<>();
+        Map<String, Update> updates = new HashMap<>();
         for (Candidate c : candidates) {
-            Choice choice = choose(c, playable, seconds, blocked);
-            if (choice != null) choices.put(c.matchId(), choice);
+            Update u = new Update(choose(c, neutral, seconds, blocked),
+                    chooseSide(c.homeAbbr(), c.homeVideoId(), c.homeSeconds(), c, playable, seconds, blocked),
+                    chooseSide(c.awayAbbr(), c.awayVideoId(), c.awaySeconds(), c, playable, seconds, blocked));
+            if (!u.isEmpty()) updates.put(c.matchId(), u);
         }
-        if (choices.isEmpty()) return 0;
+        if (updates.isEmpty()) return 0;
 
         int[] updated = {0};
         // Sous le verrou de la synchro : elle enregistre les matchs en entier,
         // une copie chargée avant notre écriture l'effacerait.
-        nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> choices.forEach((matchId, choice) ->
+        nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> updates.forEach((matchId, u) ->
                 matchRepository.findById(matchId).ifPresent(match -> {
-                    match.setHighlightsVideoId(choice.videoId());
-                    match.setHighlightsTitle(choice.title());
-                    match.setHighlightsProvider(choice.provider());
-                    match.setHighlightsSeconds(choice.videoId() == null ? null : choice.seconds());
+                    if (u.main() != null) {
+                        match.setHighlightsVideoId(u.main().videoId());
+                        match.setHighlightsTitle(u.main().title());
+                        match.setHighlightsProvider(u.main().provider());
+                        match.setHighlightsSeconds(u.main().videoId() == null ? null : u.main().seconds());
+                    }
+                    if (u.home() != null) {
+                        match.setHomeHighlightsVideoId(u.home().videoId());
+                        match.setHomeHighlightsSeconds(u.home().videoId() == null ? null : u.home().seconds());
+                    }
+                    if (u.away() != null) {
+                        match.setAwayHighlightsVideoId(u.away().videoId());
+                        match.setAwayHighlightsSeconds(u.away().videoId() == null ? null : u.away().seconds());
+                    }
                     matchRepository.save(match);
                     updated[0]++;
                 }))));
@@ -214,6 +241,20 @@ public class HighlightsService {
             }
         }
         if (best != null) return best;
+        return currentBlocked ? new Choice(null, null, null, 0) : null;
+    }
+
+    /** Résumé de la chaîne de cette équipe : plus long que celui en place, ou retrait s'il est bloqué. */
+    Choice chooseSide(String team, String currentId, int currentSeconds, Candidate c,
+                      List<Video> playable, Map<String, Integer> seconds, Set<String> blocked) {
+        if (team == null) return null;
+        boolean currentBlocked = currentId != null && blocked.contains(currentId);
+        int current = currentBlocked ? 0 : currentSeconds;
+        Video best = longestFor(c, playable.stream().filter(v -> team.equals(v.team())).toList(), seconds);
+        if (best != null && !best.id().equals(currentId)) {
+            int s = seconds.getOrDefault(best.id(), estimate(best.title()));
+            if (s > current) return new Choice(best.id(), best.title(), YOUTUBE, s);
+        }
         return currentBlocked ? new Choice(null, null, null, 0) : null;
     }
 

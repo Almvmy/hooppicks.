@@ -124,6 +124,9 @@ export interface Match {
   /** Résumé vidéo officiel une fois le match terminé : chaîne YouTube de la NBA, sinon ESPN. */
   highlightsVideoId?: string | null;
   highlightsProvider?: "youtube" | "espn" | null;
+  /** Résumés des chaînes des deux équipes (chacun ne montre que son camp). */
+  homeHighlightsVideoId?: string | null;
+  awayHighlightsVideoId?: string | null;
 }
 
 export interface RosterPlayer {
