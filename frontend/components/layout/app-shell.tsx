@@ -28,10 +28,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {/* pb-32 (au lieu de pb-20) : la bottom nav est devenue une île
                 flottante, elle a besoin de plus de dégagement. */}
             <main className="flex-1 px-[var(--gutter)] pb-32 pt-5 md:pb-6 md:pt-6">
-              <Suspense fallback={null}>
-                <SectionTabs />
-              </Suspense>
-              {children}
+              {/* Colonne centrée sur grand écran : étiré d'un bord à l'autre,
+                  le contenu se lisait mal (lignes trop longues, cartes géantes). */}
+              <div className="mx-auto w-full max-w-[80rem]">
+                <Suspense fallback={null}>
+                  <SectionTabs />
+                </Suspense>
+                {children}
+              </div>
             </main>
           </div>
         </div>

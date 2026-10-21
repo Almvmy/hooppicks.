@@ -188,12 +188,12 @@
        conteneur de défilement et casserait les barres collées (sticky). */
     overflow-x: clip;
   }
-  /* Ordinateur : tout l'affichage un cran plus serré (15 px au lieu de 16,
-     tout est en rem). Les barres du navigateur et la mise à l'échelle de
-     Windows (125 %) laissaient des blocs trop grands pour leur place. */
+  /* Ordinateur : tout l'affichage plus serré (14 px au lieu de 16, tout est
+     en rem). Les barres du navigateur et la mise à l'échelle de Windows
+     (125 %) laissaient des blocs trop grands pour leur place. */
   @media (min-width: 1024px) {
     html {
-      font-size: 93.75%;
+      font-size: 87.5%;
     }
   }
 }
