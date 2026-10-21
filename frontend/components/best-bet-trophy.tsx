@@ -27,8 +27,9 @@ export function BestBetTrophy({ bets }: { bets: PlacedBet[] | undefined }) {
           <p className="mt-0.5 font-heading text-xl font-bold text-primary">{formatSignedPoints(net(best))}</p>
           <ul className="mt-1 text-sm text-muted-foreground">
             {best.selections.map((s) => (
-              <li key={s.id} className="break-words">
-                {s.label}
+              <li key={s.id} className="mt-1 break-words first:mt-0">
+                <span className="text-foreground">{s.label}</span>
+                <span className="block text-xs">{s.matchLabel}</span>
               </li>
             ))}
           </ul>

@@ -60,9 +60,10 @@ function TicketRow({ bet }: { bet: PlacedBet }) {
       <div className="min-w-0 flex-1">
         {!single && <p className="text-xs text-muted-foreground">Combiné ×{bet.selections.length}</p>}
         {bet.selections.map((s) => (
-          <p key={s.id} className="break-words text-sm font-medium">
-            {s.label}
-          </p>
+          <div key={s.id} className={single ? undefined : "mt-1 first-of-type:mt-0"}>
+            <p className="break-words text-sm font-medium">{s.label}</p>
+            {!single && <p className="break-words text-xs text-muted-foreground">{s.matchLabel}</p>}
+          </div>
         ))}
         <p className="break-words text-xs text-muted-foreground">
           {[single ? bet.selections[0].matchLabel : null, bet.resolvedAt ? formatRelativeTime(bet.resolvedAt) : null]
