@@ -25,9 +25,13 @@ export function BestBetTrophy({ bets }: { bets: PlacedBet[] | undefined }) {
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Meilleur ticket</p>
           <p className="mt-0.5 font-heading text-xl font-bold text-primary">{formatSignedPoints(net(best))}</p>
-          <p className="mt-1 truncate text-sm text-muted-foreground">
-            {best.selections.map((s) => s.label).join(" · ")}
-          </p>
+          <ul className="mt-1 text-sm text-muted-foreground">
+            {best.selections.map((s) => (
+              <li key={s.id} className="break-words">
+                {s.label}
+              </li>
+            ))}
+          </ul>
           <p className="mt-0.5 font-mono text-xs text-muted-foreground">
             mise {best.stake.toLocaleString("fr-FR")} · cote {formatOdds(best.totalOdds)}
           </p>

@@ -51,16 +51,20 @@ function TicketRow({ bet }: { bet: PlacedBet }) {
   const config = TICKET_STATUS[bet.status];
   const single = bet.selections.length === 1;
   return (
-    <div className="flex items-center gap-3 py-2.5">
-      <Badge variant={config.variant} className="shrink-0">
+    // Ticket en entier, une sélection par ligne : on ne peut pas l'ouvrir
+    // depuis un profil, tout doit donc se lire ici, sans « … ».
+    <div className="flex items-start gap-3 py-2.5">
+      <Badge variant={config.variant} className="mt-0.5 shrink-0">
         {config.label}
       </Badge>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {!single && <span className="text-muted-foreground">Combiné ×{bet.selections.length} · </span>}
-          {bet.selections.map((s) => s.label).join(" · ")}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
+        {!single && <p className="text-xs text-muted-foreground">Combiné ×{bet.selections.length}</p>}
+        {bet.selections.map((s) => (
+          <p key={s.id} className="break-words text-sm font-medium">
+            {s.label}
+          </p>
+        ))}
+        <p className="break-words text-xs text-muted-foreground">
           {[single ? bet.selections[0].matchLabel : null, bet.resolvedAt ? formatRelativeTime(bet.resolvedAt) : null]
             .filter(Boolean)
             .join(" · ")}
