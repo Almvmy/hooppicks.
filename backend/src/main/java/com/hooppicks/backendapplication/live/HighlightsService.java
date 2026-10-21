@@ -48,6 +48,13 @@ import java.util.regex.Pattern;
  * joueurs (`REGION`) : ils sont écartés, et une vidéo déjà reliée qui s'avère
  * bloquée est retirée. Sans clé ou si l'API échoue : flux RSS public (15
  * dernières vidéos), durée estimée d'après le titre, pays bloqués inconnus.
+ *
+ * Chaînes des équipes (`TeamChannels`) : tant qu'un match n'a pas de résumé
+ * d'au moins 8 minutes, on lit aussi les chaînes officielles de ses deux
+ * équipes (flux RSS, sans quota) : elles publient parfois un résumé long
+ * (« Extended Highlights ») lisible là où celui de la NBA est bloqué. Une
+ * vidéo d'équipe compte si son titre parle de « highlights » et nomme
+ * l'adversaire ; les vidéos d'un seul joueur (« … (19 Points) ») sont écartées.
  */
 @Service
 public class HighlightsService {
@@ -65,24 +72,37 @@ public class HighlightsService {
     // Le résumé ESPN dure environ une minute : inutile de le chercher quand
     // une vidéo plus longue est déjà là.
     private static final int ESPN_WORTH_CHECKING = 180;
+    // Au-delà, le résumé est assez long : plus besoin de lire les chaînes des équipes.
+    private static final int LONG_ENOUGH = 480;
+    // Une vidéo publiée plus tard parle d'un autre match (même affiche, rare).
+    private static final Duration PUBLISHED_WITHIN = Duration.ofHours(36);
+    private static final Pattern PLAYER_CLIP = Pattern.compile(
+            "\\(\\s*\\d+\\s*(pts|points?)|\\d+\\s+points|#shorts", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
     private static final Pattern VIDEO_ID = Pattern.compile("<yt:videoId>([^<]+)</yt:videoId>");
     private static final Pattern TITLE = Pattern.compile("<title>([^<]*)</title>");
     private static final Pattern PUBLISHED = Pattern.compile("<published>([^<]+)</published>");
 
-    record Video(String id, String title, Instant published) {}
+    /** team : sigle de l'équipe dont c'est la chaîne, null pour la chaîne de la NBA. */
+    record Video(String id, String title, Instant published, String team) {
+        Video(String id, String title, Instant published) {
+            this(id, title, published, null);
+        }
+    }
 
     /** Ce qu'on sait d'un match terminé, lu en base avant les appels réseau. */
-    record Candidate(String matchId, String home, String away, Instant date, String espnEventId,
-                     String videoId, String provider, int seconds) {
+    record Candidate(String matchId, String home, String away, String homeAbbr, String awayAbbr, Instant date,
+                     String espnEventId, String videoId, String provider, int seconds) {
         static Candidate of(Match m) {
             String provider = m.getHighlightsProvider() == null ? YOUTUBE : m.getHighlightsProvider();
             int seconds = m.getHighlightsSeconds() != null ? m.getHighlightsSeconds()
                     : m.getHighlightsVideoId() == null ? 0 : estimate(m.getHighlightsTitle());
             return new Candidate(m.getId(), m.getHomeTeam() == null ? null : m.getHomeTeam().getName(),
-                    m.getAwayTeam() == null ? null : m.getAwayTeam().getName(), m.getDate(), m.getEspnEventId(),
-                    m.getHighlightsVideoId(), provider, seconds);
+                    m.getAwayTeam() == null ? null : m.getAwayTeam().getName(),
+                    m.getHomeTeam() == null ? null : m.getHomeTeam().getAbbreviation(),
+                    m.getAwayTeam() == null ? null : m.getAwayTeam().getAbbreviation(),
+                    m.getDate(), m.getEspnEventId(), m.getHighlightsVideoId(), provider, seconds);
         }
     }
 
@@ -132,16 +152,24 @@ public class HighlightsService {
 
     /** Relie ou remplace les résumés vidéo. Renvoie le nombre de matchs mis à jour. */
     public int refresh() {
-        List<Video> videos = youtubeVideos();
-        Map<String, Integer> seconds = new HashMap<>();
-        Set<String> blocked = new HashSet<>();
-        if (!apiKey.isEmpty() && !videos.isEmpty()) readDetails(videos, blocked, seconds);
-        List<Video> playable = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
-
         Instant now = Instant.now();
         List<Candidate> candidates = new ArrayList<>();
         inTransaction.accept(() -> matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)
                 .forEach(m -> candidates.add(Candidate.of(m))));
+
+        List<Video> videos = new ArrayList<>(youtubeVideos());
+        Set<String> teams = new java.util.LinkedHashSet<>();
+        for (Candidate c : candidates) {
+            if (c.seconds() >= LONG_ENOUGH) continue;
+            if (TeamChannels.has(c.homeAbbr())) teams.add(c.homeAbbr());
+            if (TeamChannels.has(c.awayAbbr())) teams.add(c.awayAbbr());
+        }
+        for (String team : teams) videos.addAll(teamVideos(team));
+
+        Map<String, Integer> seconds = new HashMap<>();
+        Set<String> blocked = new HashSet<>();
+        if (!apiKey.isEmpty() && !videos.isEmpty()) readDetails(videos, blocked, seconds);
+        List<Video> playable = videos.stream().filter(v -> !blocked.contains(v.id())).toList();
 
         // Appels ESPN hors verrou et hors transaction.
         Map<String, Choice> choices = new HashMap<>();
@@ -200,6 +228,16 @@ public class HighlightsService {
         }
     }
 
+    private List<Video> teamVideos(String team) {
+        try {
+            String xml = restTemplate.getForObject(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get(team).channelId()), String.class);
+            return parse(xml).stream().map(v -> new Video(v.id(), v.title(), v.published(), team)).toList();
+        } catch (Exception e) {
+            log.warn("Résumés vidéo : chaîne {} injoignable ({})", team, e.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
     private List<Video> fromApi() {
         try {
             return parseApi(restTemplate.getForObject(API_URL + apiKey, JsonNode.class));
@@ -213,13 +251,17 @@ public class HighlightsService {
     // Pays bloqués et durée des vidéos. En cas d'échec, rien n'est écarté
     // (mieux vaut une vidéo parfois bloquée que plus de vidéo du tout).
     private void readDetails(List<Video> videos, Set<String> blocked, Map<String, Integer> seconds) {
-        String ids = String.join(",", videos.stream().map(Video::id).limit(50).toList());
-        try {
-            JsonNode response = restTemplate.getForObject(VIDEOS_URL + ids + "&key=" + apiKey, JsonNode.class);
-            blocked.addAll(parseBlocked(response, REGION));
-            seconds.putAll(parseDurations(response));
-        } catch (Exception e) {
-            log.warn("Résumés vidéo : détails des vidéos illisibles ({})", e.getClass().getSimpleName());
+        List<String> ids = videos.stream().map(Video::id).distinct().toList();
+        // videos.list : 50 vidéos au plus par appel, 1 unité de quota chacun.
+        for (int i = 0; i < ids.size(); i += 50) {
+            String batch = String.join(",", ids.subList(i, Math.min(ids.size(), i + 50)));
+            try {
+                JsonNode response = restTemplate.getForObject(VIDEOS_URL + batch + "&key=" + apiKey, JsonNode.class);
+                blocked.addAll(parseBlocked(response, REGION));
+                seconds.putAll(parseDurations(response));
+            } catch (Exception e) {
+                log.warn("Résumés vidéo : détails des vidéos illisibles ({})", e.getClass().getSimpleName());
+            }
         }
     }
 
@@ -300,10 +342,7 @@ public class HighlightsService {
         Video best = null;
         int bestSeconds = -1;
         for (Video v : videos) {
-            if (c.date() != null && v.published().isBefore(c.date())) continue;
-            String title = v.title().toLowerCase(Locale.ROOT);
-            if (!title.contains("highlight")) continue;
-            if (!names(title, c.home()) || !names(title, c.away())) continue;
+            if (!isAbout(c, v)) continue;
             int s = seconds.getOrDefault(v.id(), estimate(v.title()));
             if (s > bestSeconds) {
                 best = v;
@@ -311,6 +350,25 @@ public class HighlightsService {
             }
         }
         return best;
+    }
+
+    /** Résumé de ce match : chaîne NBA (les deux équipes nommées) ou chaîne d'une des deux équipes (l'adversaire nommé). */
+    static boolean isAbout(Candidate c, Video v) {
+        if (c.date() != null && (v.published().isBefore(c.date()) || v.published().isAfter(c.date().plus(PUBLISHED_WITHIN)))) {
+            return false;
+        }
+        String title = v.title().toLowerCase(Locale.ROOT);
+        if (!title.contains("highlight") || PLAYER_CLIP.matcher(v.title()).find()) return false;
+        List<String> home = TeamChannels.names(c.homeAbbr(), c.home());
+        List<String> away = TeamChannels.names(c.awayAbbr(), c.away());
+        if (v.team() == null) return mentions(title, home) && mentions(title, away);
+        if (v.team().equals(c.homeAbbr())) return mentions(title, away);
+        if (v.team().equals(c.awayAbbr())) return mentions(title, home);
+        return false;
+    }
+
+    private static boolean mentions(String title, List<String> names) {
+        return names.stream().anyMatch(n -> names(title, n));
     }
 
     /** Vidéo YouTube plus longue que celle en place, ou null (durées estimées d'après le titre). */
@@ -326,8 +384,11 @@ public class HighlightsService {
         return isFullGame(title) ? 600 : 120;
     }
 
+    // « Full game highlights » (NBA) ou « Extended highlights » (équipes).
     private static boolean isFullGame(String title) {
-        return title != null && title.toLowerCase(Locale.ROOT).contains("full game");
+        if (title == null) return false;
+        String t = title.toLowerCase(Locale.ROOT);
+        return t.contains("full game") || t.contains("extended");
     }
 
     // Mot entier : « Nets » ne doit pas trouver « Hornets ».

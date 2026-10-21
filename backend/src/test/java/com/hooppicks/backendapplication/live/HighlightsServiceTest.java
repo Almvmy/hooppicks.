@@ -299,6 +299,83 @@ class HighlightsServiceTest {
         assertThat(m.getHighlightsVideoId()).isEqualTo("50232313");
     }
 
+    // --- Chaînes des équipes ---
+
+    private static Match detBos() {
+        Match m = match("Pistons", "Celtics");
+        m.getHomeTeam().setAbbreviation("DET");
+        m.getAwayTeam().setAbbreviation("BOS");
+        return m;
+    }
+
+    private static HighlightsService.Video video(String title, String published, String team) {
+        return new HighlightsService.Video("v", title, Instant.parse(published), team);
+    }
+
+    @Test
+    void resume_d_une_chaine_d_equipe_qui_nomme_l_adversaire() {
+        HighlightsService.Candidate c = HighlightsService.Candidate.of(detBos());
+
+        assertThat(HighlightsService.isAbout(c, video(
+                "The Boston Celtics fall to the Detroit Pistons 121 - 113 | Extended Highlights", "2026-10-21T02:00:00Z", "BOS"))).isTrue();
+        assertThat(HighlightsService.isAbout(c, video(
+                "1st Win of the Season | Detroit Pistons vs. Boston Celtics Highlights | 10.20.26 #NBA", "2026-10-21T02:30:00Z", "DET"))).isTrue();
+        // Chaîne d'une autre équipe : jamais.
+        assertThat(HighlightsService.isAbout(c, video(
+                "Celtics vs Pistons Highlights", "2026-10-21T02:00:00Z", "NYK"))).isFalse();
+        assertThat(HighlightsService.estimate("The Boston Celtics fall to the Detroit Pistons | Extended Highlights")).isEqualTo(600);
+    }
+
+    @Test
+    void surnoms_et_extraits_d_un_seul_joueur() {
+        Match phiNyk = match("Knicks", "76ers");
+        phiNyk.getHomeTeam().setAbbreviation("NYK");
+        phiNyk.getAwayTeam().setAbbreviation("PHI");
+        HighlightsService.Candidate c = HighlightsService.Candidate.of(phiNyk);
+
+        assertThat(HighlightsService.isAbout(c, video(
+                "Game Highlights: Sixers Take Down the Knicks in Season Opener", "2026-10-21T03:00:00Z", "PHI"))).isTrue();
+        assertThat(HighlightsService.isAbout(c, video(
+                "Joel Embiid Highlights (31 Points, 12 Rebounds) | 76ers vs Knicks", "2026-10-21T03:00:00Z", "PHI"))).isFalse();
+        assertThat(HighlightsService.isAbout(c, video(
+                "Sixers vs Knicks Highlights", "2026-10-23T12:00:00Z", "PHI"))).as("publiée 2 jours après").isFalse();
+    }
+
+    @Test
+    void lit_les_chaines_des_deux_equipes_tant_qu_il_manque_un_resume_long() {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        EspnStatsClient espn = mock(EspnStatsClient.class);
+        when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed());
+        when(rest.getForObject(eq(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get("BOS").channelId())), eq(String.class))).thenReturn(feed(
+                entry("ext", "The Boston Celtics fall to the Detroit Pistons 121 - 113 | Extended Highlights", "2026-10-21T02:00:00+00:00")));
+        when(rest.getForObject(eq(TeamChannels.feedUrl(TeamChannels.BY_ABBREVIATION.get("DET").channelId())), eq(String.class))).thenReturn(feed());
+        Match m = detBos();
+        m.setEspnEventId("401909088");
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+        when(repo.findById(m.getId())).thenReturn(java.util.Optional.of(m));
+
+        assertThat(new HighlightsService(rest, repo, lockRunning(), "", espn).refresh()).isEqualTo(1);
+        assertThat(m.getHighlightsVideoId()).isEqualTo("ext");
+        assertThat(m.getHighlightsProvider()).isEqualTo("youtube");
+        verifyNoInteractions(espn);
+    }
+
+    @Test
+    void resume_deja_long_on_ne_lit_pas_les_chaines_des_equipes() {
+        RestTemplate rest = mock(RestTemplate.class);
+        MatchRepository repo = mock(MatchRepository.class);
+        when(rest.getForObject(eq(HighlightsService.FEED_URL), eq(String.class))).thenReturn(feed());
+        Match m = detBos();
+        m.setHighlightsVideoId("long");
+        m.setHighlightsSeconds(600);
+        when(repo.findByStatusAndDateBetween(eq(MatchStatus.FINISHED), any(), any())).thenReturn(List.of(m));
+
+        new HighlightsService(rest, repo, lockRunning(), "", null).refresh();
+
+        verify(rest, times(1)).getForObject(anyString(), eq(String.class));
+    }
+
     @Test
     void chaine_injoignable_rien_ne_change_sans_espn() {
         RestTemplate rest = mock(RestTemplate.class);
