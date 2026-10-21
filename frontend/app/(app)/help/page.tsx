@@ -131,7 +131,7 @@ export default function HelpPage() {
       {!isSearching && (
         <section id="regles" className="scroll-mt-24">
           <h2 className="mb-4 font-heading text-lg font-bold">Règles</h2>
-          <div className="reveal-children grid gap-4 sm:grid-cols-2">
+          <div className="reveal-children grid grid-cols-1 gap-4 sm:grid-cols-2">
             <RuleCard icon={Lock} title="Points virtuels uniquement">
               <p>
                 Chaque lundi à 12h GMT, tout le monde repart avec <strong className="text-foreground">1 000 points</strong>{" "}
@@ -259,7 +259,7 @@ export default function HelpPage() {
               <CardTitle className="text-base">Badges</CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="grid gap-2 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {BADGE_RULES.map((badge) => {
                   const Icon = badgeIcon(badge.icon);
                   return (

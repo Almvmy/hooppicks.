@@ -23,7 +23,7 @@ export function SuggestedParlays({ matches }: { matches: Match[] | undefined }) 
           <Layers className="h-4 w-4 text-paint" />
           Combinés du jour
         </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {parlays.map((parlay) => {
             const allIn = parlay.selections.every((s) => inSlip.some((x) => x.id === s.id));
             return (

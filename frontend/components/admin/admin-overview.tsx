@@ -77,7 +77,7 @@ export function AdminOverview() {
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="h-24 rounded-2xl" />
         ))}
@@ -98,7 +98,7 @@ export function AdminOverview() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Joueurs" value={fr(data.totalUsers)} hint={`+${data.newUsers7d} cette semaine`} icon={Users} />
         <Kpi label="Actifs (7 j)" value={fr(data.activeBettors7d)} hint="ont posé au moins un pari" icon={UserPlus} />
         <Kpi label="Paris (7 j)" value={fr(data.betsPlaced7d)} hint={`${data.betsPlaced24h} sur 24 h · ${data.pendingBets} en attente`} icon={Ticket} />
@@ -110,7 +110,7 @@ export function AdminOverview() {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Kpi
           label="App installée"
           value={fr(data.usersWithApp)}
@@ -125,9 +125,9 @@ export function AdminOverview() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
+          <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
             <DailyBars series={data.series} field="signups" label="Inscriptions" className="bg-paint" />
             <DailyBars series={data.series} field="bets" label="Paris posés" className="bg-brand" />
           </CardContent>

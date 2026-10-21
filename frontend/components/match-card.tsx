@@ -50,7 +50,7 @@ export function MatchCard({ match: synced }: { match: Match }) {
         <CardContent className="relative pt-5">
           {/* Trois colonnes égales sur les côtés : le logo NBA reste pile au
               centre, aligné sur le « VS » du face-à-face en dessous. */}
-          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_1fr] items-start gap-2">
             <div className="flex items-center">
               <MatchStatusBadge status={match.status} live={live} />
             </div>

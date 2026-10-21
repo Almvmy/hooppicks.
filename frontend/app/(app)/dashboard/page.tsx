@@ -135,7 +135,7 @@ export default function DashboardPage() {
       {/* min-w-0 sur les colonnes : un élément de grille ne rétrécit pas sous
           la largeur de son contenu, une ligne trop longue d'une carte élargissait
           toute la colonne au-delà de l'écran (page qui glissait sur téléphone). */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
           <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
           <FavoriteTeamCard

@@ -74,7 +74,7 @@ export function FeatureCarousel({ slides }: { slides: FeatureSlide[] }) {
   return (
     <div
       ref={rootRef}
-      className="mx-auto grid max-w-5xl items-center gap-10 px-4 lg:grid-cols-[1fr_auto] lg:gap-20"
+      className="mx-auto grid grid-cols-1 max-w-5xl items-center gap-10 px-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-20"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       aria-roledescription="carrousel"

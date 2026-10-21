@@ -231,7 +231,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
 
           {active === "effectifs" && (
             <Card>
-              <CardContent className="grid gap-6 pt-6 sm:grid-cols-2">
+              <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
                 <TeamRoster team={match.awayTeam} matchday />
                 <TeamRoster team={match.homeTeam} matchday />
               </CardContent>

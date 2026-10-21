@@ -97,7 +97,7 @@ export function AdminSyncPanel() {
   return (
     <Card>
       <CardContent className="flex flex-col gap-4 pt-6">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           <SyncAction
             title="Matchs (balldontlie)"
             description="Scores, statuts et cotes sur une période, puis résolution des paris des matchs terminés. Les matchs verrouillés ne sont pas touchés."

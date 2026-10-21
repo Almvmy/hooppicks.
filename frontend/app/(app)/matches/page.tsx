@@ -332,7 +332,7 @@ export default function MatchesPage() {
       {isError && <p className="text-destructive">Impossible de charger les matchs. Réessaie plus tard.</p>}
 
       {isLoading && (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-64 w-full rounded-2xl" />
           ))}
@@ -345,7 +345,7 @@ export default function MatchesPage() {
             <Heart className="h-4 w-4 fill-current" />
             Le prochain match de ton équipe
           </h2>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <MatchCard match={favoriteNext} />
           </div>
         </section>
@@ -398,7 +398,7 @@ export default function MatchesPage() {
               {dayOpen.length > 0 && (
                 <h3 className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Terminés</h3>
               )}
-              <div className="grid gap-2 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
                 {dayFinished.map((m) => (
                   <FinishedMatchRow key={m.id} match={m} />
                 ))}

@@ -261,7 +261,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
       {/* ── Face-à-face de la semaine et ligues en commun ──────────────── */}
       {!profile.isMe && (mine || profile.commonLeagues.length > 0) && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {mine && (
             <Card>
               <CardContent className="flex flex-col gap-2">
@@ -308,7 +308,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
       )}
 
       {/* ── Derniers tickets et meilleur ticket ────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center justify-between gap-2">

@@ -50,7 +50,7 @@ export function PlayoffSeries({ matches }: { matches: Match[] }) {
         <Crown className="h-4 w-4" />
         Séries
       </h2>
-      <div className="stagger-children grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {series.map(({ key, round, summary, games }) => {
           const { homeTeam, awayTeam } = games[0];
           return (

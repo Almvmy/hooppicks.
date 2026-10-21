@@ -262,7 +262,7 @@ function ChangePasswordForm() {
   return (
     <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
       <p className="text-sm font-medium">Mot de passe</p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="current-password">Actuel</Label>
           <Input

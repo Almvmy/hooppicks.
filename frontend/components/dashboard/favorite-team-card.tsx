@@ -330,7 +330,7 @@ export function FavoriteTeamCard({
           </Link>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Block title="Prochain match" icon={CalendarDays} className="sm:col-span-2">
             <NextMatch match={next} team={team} />
             <LastResult match={last} team={team} />

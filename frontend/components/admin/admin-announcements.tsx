@@ -46,7 +46,7 @@ export function AdminAnnouncements() {
   const valid = length > 0 && length <= MAX_LENGTH;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
         <CardContent className="flex flex-col gap-3 pt-6">
           <p className="flex items-center gap-2 font-medium">

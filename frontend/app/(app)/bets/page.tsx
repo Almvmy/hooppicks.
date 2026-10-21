@@ -279,9 +279,7 @@ export default function BetsPage() {
   }, [highlighted]);
 
   return (
-    // Colonne étroite et centrée : un ticket se lit de gauche à droite (pari,
-    // cote), en pleine largeur la cote partait au bout de l'écran.
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader badge="Mes tickets" title="Mes paris" subtitle="Avancement et bilan." />
 
       {isLoading && <BasketballLoader label="Chargement de tes tickets..." />}

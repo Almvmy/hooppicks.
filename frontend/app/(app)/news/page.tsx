@@ -237,7 +237,7 @@ export default function NewsPage({ searchParams }: { searchParams: Promise<{ equ
       {isLoading && (
         <div className="flex flex-col gap-6">
           <Skeleton className="aspect-[21/9] w-full rounded-3xl" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-72 w-full rounded-2xl" />
             ))}
@@ -265,7 +265,7 @@ export default function NewsPage({ searchParams }: { searchParams: Promise<{ equ
           {groups.map(([label, items]) => (
             <section key={label} className="flex flex-col gap-3">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h2>
-              <div className="reveal-children grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="reveal-children grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((item) => (
                   <ArticleCard key={item.link} {...articleProps(item)} />
                 ))}

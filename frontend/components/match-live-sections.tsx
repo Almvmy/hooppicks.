@@ -67,7 +67,7 @@ function best(players: PlayerBoxScore[], value: (p: PlayerBoxScore) => number) {
 function Leaders({ match, players }: { match: Match; players: PlayerBoxScore[] }) {
   const teams = [match.awayTeam, match.homeTeam];
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       {LEADER_STATS.map((stat) => (
         <div key={stat.label} className="glass-inset-quiet rounded-xl px-3 py-2.5">
           <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">{stat.label}</p>

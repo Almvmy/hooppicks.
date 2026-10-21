@@ -191,7 +191,7 @@ export default async function HomePage() {
           {upcoming.length === 0 ? (
             <p className="text-center text-muted-foreground">Aucun match programmé pour le moment.</p>
           ) : (
-            <div className="reveal-children grid gap-3 sm:grid-cols-2">
+            <div className="reveal-children grid grid-cols-1 gap-3 sm:grid-cols-2">
               {upcoming.map((match) => (
                 <div
                   key={match.id}

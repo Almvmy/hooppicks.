@@ -138,7 +138,7 @@ function InjuriesSection({ onSelect }: { onSelect: Select }) {
       {isLoading && <BasketballLoader label="Chargement des blessés..." />}
       {isError && <p className="text-sm text-destructive">Impossible de charger le rapport des blessures.</p>}
       {data && data.length === 0 && <p className="text-sm text-muted-foreground">Aucun joueur blessé signalé.</p>}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {visible.map(([abbr, players]) => (
           <Card key={abbr}>
             <CardContent className="flex flex-col gap-1.5 pt-4">
@@ -183,7 +183,7 @@ function PlayerGrid({
   onCompare: Select;
 }) {
   return (
-    <div className="stagger-children grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="stagger-children grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {players.map((p) => (
         <PlayerTile
           key={p.id}
@@ -513,7 +513,7 @@ function TeamsTab() {
               </button>
             ))}
           </div>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {(["Est", "Ouest"] as const).map((conf) => (
               <div key={conf} className={cn(conf !== conference && "hidden xl:block")}>
                 <StandingsTable conference={conf} teams={data.filter((t) => t.conference === conf)} />

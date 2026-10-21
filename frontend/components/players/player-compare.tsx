@@ -32,7 +32,7 @@ function format(value: number | null, unit?: string) {
 function CompareTable({ a, b }: { a: RosterPlayer; b: RosterPlayer }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_1fr] items-center gap-3">
         {[a, b].map((p, i) => (
           <div key={p.id} className={cn("flex flex-col items-center gap-1.5 text-center", i === 1 && "col-start-3")}>
             <PlayerHeadshot player={p} size={72} />
@@ -57,7 +57,7 @@ function CompareTable({ a, b }: { a: RosterPlayer; b: RosterPlayer }) {
           return (
             <div
               key={row.label}
-              className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 py-1.5 shadow-[inset_0_-1px_0_var(--hairline)] last:shadow-none"
+              className="grid grid-cols-[minmax(0,1fr)_auto_1fr] items-center gap-3 py-1.5 shadow-[inset_0_-1px_0_var(--hairline)] last:shadow-none"
             >
               <span className={cn("text-right font-mono tabular-nums", aBetter ? "font-bold text-success" : "text-muted-foreground")}>
                 {format(va, row.unit)}

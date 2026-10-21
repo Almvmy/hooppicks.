@@ -158,7 +158,7 @@ export default function LeagueDetailPage({
       </Card>
 
       {me && (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="glass-accent rounded-2xl px-4 py-3">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ta position</p>
             <p className="font-heading text-2xl font-bold">
@@ -186,7 +186,7 @@ export default function LeagueDetailPage({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
         <div className="glass relative overflow-hidden rounded-2xl">
           <div className="flex gap-2 overflow-x-auto px-4 pt-4" role="group" aria-label="Période du classement">
             {periods.map((p) => (

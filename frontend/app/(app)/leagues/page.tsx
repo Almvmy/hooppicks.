@@ -200,7 +200,7 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
     <div className="flex flex-col gap-6">
       <PageHeader badge="Compétition" title="Ligues" />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
             <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
@@ -276,7 +276,7 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
       </div>
 
       {leaguesQuery.isLoading && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Skeleton className="h-56 w-full rounded-2xl" />
           <Skeleton className="h-56 w-full rounded-2xl" />
         </div>
@@ -303,7 +303,7 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
       )}
 
       {leagues.length > 0 && (
-        <div className="stagger-children grid gap-4 md:grid-cols-2">
+        <div className="stagger-children grid grid-cols-1 gap-4 md:grid-cols-2">
           {leagues.map((league, i) => (
             <LeagueCard
               key={league.id}
