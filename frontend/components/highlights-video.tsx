@@ -19,13 +19,16 @@ export function HighlightsVideo({
       ? `https://www.espn.com/watch/syndicatedplayer/_/id/${id}/endcard/false`
       : `https://www.youtube-nocookie.com/embed/${id}?rel=0`;
   return (
-    <div className="flex flex-col gap-2">
+    // Largeur bornée par la hauteur de l'écran (barre du haut, onglets et
+    // barres du navigateur déduits) : en pleine largeur sur ordinateur, la
+    // vidéo dépassait en bas et ses contrôles sortaient de l'écran.
+    <div className="mx-auto flex w-full max-w-[calc((100dvh_-_15rem)*16/9)] flex-col gap-2">
       <div className="glass relative aspect-video w-full overflow-hidden rounded-2xl">
         <iframe
           src={src}
           title={title}
           loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
           referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
           className="absolute inset-0 h-full w-full"
