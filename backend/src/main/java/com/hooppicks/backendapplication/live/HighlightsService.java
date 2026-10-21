@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
 import org.springframework.web.client.RestTemplate;
 
@@ -59,18 +61,33 @@ public class HighlightsService {
     private final MatchRepository matchRepository;
     private final NbaSyncService nbaSyncService;
     private final String apiKey;
+    // Les équipes d'un match sont chargées à la demande : lues hors
+    // transaction, Hibernate échouait (LazyInitializationException).
+    private final java.util.function.Consumer<Runnable> inTransaction;
 
     @Autowired
     public HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
-                             @Value("${youtube.api-key:}") String apiKey) {
-        this.restTemplate = restTemplate;
-        this.matchRepository = matchRepository;
-        this.nbaSyncService = nbaSyncService;
-        this.apiKey = apiKey == null ? "" : apiKey.trim();
+                             PlatformTransactionManager transactionManager, @Value("${youtube.api-key:}") String apiKey) {
+        this(restTemplate, matchRepository, nbaSyncService, apiKey,
+                work -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> work.run()));
+    }
+
+    /** Pour les tests : pas de vraie transaction. */
+    HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService, String apiKey) {
+        this(restTemplate, matchRepository, nbaSyncService, apiKey, Runnable::run);
     }
 
     HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService) {
         this(restTemplate, matchRepository, nbaSyncService, "");
+    }
+
+    private HighlightsService(RestTemplate restTemplate, MatchRepository matchRepository, NbaSyncService nbaSyncService,
+                              String apiKey, java.util.function.Consumer<Runnable> inTransaction) {
+        this.restTemplate = restTemplate;
+        this.matchRepository = matchRepository;
+        this.nbaSyncService = nbaSyncService;
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
+        this.inTransaction = inTransaction;
     }
 
     /** Relie les nouveaux résumés vidéo. Renvoie le nombre de matchs mis à jour. */
@@ -90,7 +107,7 @@ public class HighlightsService {
         Instant now = Instant.now();
         // Sous le verrou de la synchro : elle enregistre les matchs en entier,
         // une copie chargée avant notre écriture l'effacerait.
-        nbaSyncService.tryRunExclusive(() -> {
+        nbaSyncService.tryRunExclusive(() -> inTransaction.accept(() -> {
             for (Match match : matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, now.minus(LOOKBACK), now)) {
                 Video video = bestFor(match, found);
                 if (video == null || video.id().equals(match.getHighlightsVideoId())) continue;
@@ -99,7 +116,7 @@ public class HighlightsService {
                 matchRepository.save(match);
                 updated[0]++;
             }
-        });
+        }));
         if (updated[0] > 0) log.info("Résumés vidéo : {} match(s) relié(s)", updated[0]);
         return updated[0];
     }
