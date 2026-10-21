@@ -218,14 +218,36 @@ public class EspnStatsClient {
         return root == null ? Optional.empty() : parseGameHighlights(root);
     }
 
+    // Le résumé est marqué « Final Game Highlight » dans le suivi d'ESPN : son
+    // titre, lui, est souvent une phrase (« 76ers spoil Knicks' ring night… »).
+    // Un résumé réservé à des pays (liste blanche ou noire) qui excluent
+    // celui des joueurs est ignoré.
     static Optional<EspnVideo> parseGameHighlights(JsonNode root) {
+        return parseGameHighlights(root, "CI");
+    }
+
+    static Optional<EspnVideo> parseGameHighlights(JsonNode root, String region) {
         for (JsonNode video : root.path("videos")) {
             String headline = video.path("headline").asText("");
             String id = video.path("id").asText("");
-            if (id.isEmpty() || !headline.toLowerCase(java.util.Locale.ROOT).contains("game highlights")) continue;
+            boolean recap = "Final Game Highlight".equalsIgnoreCase(video.path("tracking").path("coverageType").asText(""))
+                    || headline.toLowerCase(java.util.Locale.ROOT).contains("game highlights");
+            if (id.isEmpty() || !recap || !availableIn(video.path("geoRestrictions"), region)) continue;
             return Optional.of(new EspnVideo(id, headline, video.path("duration").asInt(0)));
         }
         return Optional.empty();
+    }
+
+    private static boolean availableIn(JsonNode geo, String region) {
+        if (geo.isMissingNode() || geo.isNull()) return true;
+        boolean listed = false;
+        for (JsonNode c : geo.path("countries")) {
+            if (region.equalsIgnoreCase(c.asText(""))) listed = true;
+        }
+        String type = geo.path("type").asText("");
+        if ("whitelist".equalsIgnoreCase(type)) return listed;
+        if ("blacklist".equalsIgnoreCase(type)) return !listed;
+        return true;
     }
 
     /**

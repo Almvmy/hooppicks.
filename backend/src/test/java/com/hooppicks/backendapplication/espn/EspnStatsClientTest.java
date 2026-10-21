@@ -347,4 +347,17 @@ class EspnStatsClientTest {
         org.assertj.core.api.Assertions.assertThat(EspnStatsClient.parseGameHighlights(
                 new tools.jackson.databind.ObjectMapper().readTree("{\"videos\": []}"))).isEmpty();
     }
+
+    @Test
+    void parseGameHighlights_repere_le_resume_par_son_suivi_et_respecte_les_pays() throws Exception {
+        tools.jackson.databind.ObjectMapper mapper = new tools.jackson.databind.ObjectMapper();
+        tools.jackson.databind.JsonNode root = mapper.readTree("""
+                {"videos": [
+                  {"id": 1, "headline": "LeBron James finds Jaylen Brown", "duration": 18, "tracking": {"coverageType": "OnePlay"}},
+                  {"id": 2, "headline": "76ers spoil Knicks' ring night with win at the Garden", "duration": 74,
+                   "tracking": {"coverageType": "Final Game Highlight"}, "geoRestrictions": {"type": "whitelist", "countries": ["US", "CI"]}}
+                ]}""");
+        org.assertj.core.api.Assertions.assertThat(EspnStatsClient.parseGameHighlights(root, "CI").orElseThrow().id()).isEqualTo("2");
+        org.assertj.core.api.Assertions.assertThat(EspnStatsClient.parseGameHighlights(root, "FR")).isEmpty();
+    }
 }

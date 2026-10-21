@@ -77,7 +77,7 @@ public class HighlightsService {
     // Une vidéo publiée plus tard parle d'un autre match (même affiche, rare).
     private static final Duration PUBLISHED_WITHIN = Duration.ofHours(36);
     private static final Pattern PLAYER_CLIP = Pattern.compile(
-            "\\(\\s*\\d+\\s*(pts|points?)|\\d+\\s+points|#shorts", Pattern.CASE_INSENSITIVE);
+            "\\(\\s*\\d+\\s*(pts|points?)|\\d+\\s+points|#shorts|quarter|half(time)?\\s+highlights", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
     private static final Pattern VIDEO_ID = Pattern.compile("<yt:videoId>([^<]+)</yt:videoId>");
@@ -384,11 +384,10 @@ public class HighlightsService {
         return isFullGame(title) ? 600 : 120;
     }
 
-    // « Full game highlights » (NBA) ou « Extended highlights » (équipes).
+    // « Full game highlights » de la NBA. Pas « Extended highlights » : celui
+    // des Celtics pour Detroit-Boston ne dure que 2 min (constaté).
     private static boolean isFullGame(String title) {
-        if (title == null) return false;
-        String t = title.toLowerCase(Locale.ROOT);
-        return t.contains("full game") || t.contains("extended");
+        return title != null && title.toLowerCase(Locale.ROOT).contains("full game");
     }
 
     // Mot entier : « Nets » ne doit pas trouver « Hornets ».

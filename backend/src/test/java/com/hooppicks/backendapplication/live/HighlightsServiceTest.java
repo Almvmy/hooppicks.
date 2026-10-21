@@ -323,7 +323,7 @@ class HighlightsServiceTest {
         // Chaîne d'une autre équipe : jamais.
         assertThat(HighlightsService.isAbout(c, video(
                 "Celtics vs Pistons Highlights", "2026-10-21T02:00:00Z", "NYK"))).isFalse();
-        assertThat(HighlightsService.estimate("The Boston Celtics fall to the Detroit Pistons | Extended Highlights")).isEqualTo(600);
+        assertThat(HighlightsService.estimate("The Boston Celtics fall to the Detroit Pistons | Extended Highlights")).isEqualTo(120);
     }
 
     @Test
@@ -339,6 +339,8 @@ class HighlightsServiceTest {
                 "Joel Embiid Highlights (31 Points, 12 Rebounds) | 76ers vs Knicks", "2026-10-21T03:00:00Z", "PHI"))).isFalse();
         assertThat(HighlightsService.isAbout(c, video(
                 "Sixers vs Knicks Highlights", "2026-10-23T12:00:00Z", "PHI"))).as("publiée 2 jours après").isFalse();
+        assertThat(HighlightsService.isAbout(c, video(
+                "3rd Quarter Highlights  l  Sixers vs Knicks  l 10.20.26 #NBA", "2026-10-21T01:00:00Z", "PHI"))).isFalse();
     }
 
     @Test
@@ -358,7 +360,6 @@ class HighlightsServiceTest {
         assertThat(new HighlightsService(rest, repo, lockRunning(), "", espn).refresh()).isEqualTo(1);
         assertThat(m.getHighlightsVideoId()).isEqualTo("ext");
         assertThat(m.getHighlightsProvider()).isEqualTo("youtube");
-        verifyNoInteractions(espn);
     }
 
     @Test
