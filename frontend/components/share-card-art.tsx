@@ -907,7 +907,7 @@ export function SeasonTeaserArt({ season, participants, revealed }: { season: st
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <Label color={ORANGE} size={26} spacing={6}>{`Pronostics de saison ${season}`}</Label>
           <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 108, lineHeight: 0.92, textTransform: "uppercase" }}>
-            {revealed ? "Qui voit qui champion ?" : "Qui sera champion ?"}
+            {revealed ? "Qui voit qui champion ?" : "Qui sera champion NBA 2026-27 ?"}
           </div>
           <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 30, color: MUTED }}>
             {revealed
