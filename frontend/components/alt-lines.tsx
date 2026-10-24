@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
 import { OddsButton } from "@/components/odds-button";
 import type { AltLine, BetSelection, Match } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const decimal = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const signed = (n: number) => `${n > 0 ? "+" : n < 0 ? "-" : ""}${decimal(Math.abs(n))}`;
@@ -29,55 +27,61 @@ function altSelection(match: Match, alt: AltLine, outcome: BetSelection["outcome
   };
 }
 
+interface Rung {
+  line: number;
+  first: BetSelection;
+  second: BetSelection;
+  firstPct?: number | null;
+  secondPct?: number | null;
+}
+
 /**
- * Handicaps et totaux alternatifs (cf. AltLines côté serveur) : chacun sa
- * cote, pour choisir son risque. Repliés par défaut pour ne pas charger la
- * page du match.
+ * Échelle d'un marché (écart ou total) : la ligne principale au milieu, les
+ * lignes alternatives (cf. AltLines côté serveur) de part et d'autre, chacune
+ * sa cote. Trois colonnes visibles sur téléphone, le reste en défilant de côté.
  */
-export function AltLinesSection({ match }: { match: Match }) {
-  const [open, setOpen] = useState(false);
-  const lines = match.altLines ?? [];
-  if (lines.length === 0) return null;
-  const spreads = lines.filter((l) => l.market === "alt_spread");
-  const totals = lines.filter((l) => l.market === "alt_total");
+export function LineLadder({
+  match,
+  market,
+  main,
+}: {
+  match: Match;
+  market: "alt_spread" | "alt_total";
+  main: Rung;
+}) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const rungs: Rung[] = [
+    main,
+    ...(match.altLines ?? [])
+      .filter((l) => l.market === market)
+      .map((l) =>
+        market === "alt_spread"
+          ? { line: l.line, first: altSelection(match, l, "away"), second: altSelection(match, l, "home") }
+          : { line: l.line, first: altSelection(match, l, "over"), second: altSelection(match, l, "under") }
+      ),
+  ].sort((a, b) => a.line - b.line);
+
+  // Ligne principale centrée à l'ouverture, sans faire défiler la page.
+  useLayoutEffect(() => {
+    const box = scroller.current;
+    const col = mainRef.current;
+    if (!box || !col) return;
+    box.scrollLeft = col.offsetLeft - box.offsetLeft - (box.clientWidth - col.clientWidth) / 2;
+  }, [rungs.length]);
 
   return (
-    <div className="mt-3 flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex items-center justify-center gap-1 rounded-xl py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
-      >
-        {open ? "Moins de lignes" : "Plus d'écarts et de totaux"}
-        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
-      </button>
-      {open && (
-        <>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Écart</p>
-          {spreads.map((l) => {
-            const away = altSelection(match, l, "away");
-            const home = altSelection(match, l, "home");
-            return (
-              <div key={`s${l.line}`} className="flex gap-2">
-                <OddsButton selection={away} label={away.label} />
-                <OddsButton selection={home} label={home.label} />
-              </div>
-            );
-          })}
-          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total de points</p>
-          {totals.map((l) => {
-            const over = altSelection(match, l, "over");
-            const under = altSelection(match, l, "under");
-            return (
-              <div key={`t${l.line}`} className="flex gap-2">
-                <OddsButton selection={over} label={over.label} />
-                <OddsButton selection={under} label={under.label} />
-              </div>
-            );
-          })}
-        </>
-      )}
+    <div ref={scroller} className="glass-scroll flex snap-x gap-2 overflow-x-auto pb-1">
+      {rungs.map((r) => (
+        <div
+          key={r.line}
+          ref={r === main ? mainRef : undefined}
+          className="flex shrink-0 basis-[calc((100%-1rem)/3)] snap-center flex-col gap-1.5"
+        >
+          <OddsButton selection={r.first} communityPct={r.firstPct} />
+          <OddsButton selection={r.second} communityPct={r.secondPct} />
+        </div>
+      ))}
     </div>
   );
 }

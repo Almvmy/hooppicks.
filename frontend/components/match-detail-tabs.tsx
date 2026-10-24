@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { HighlightsVideo, highlightSources } from "@/components/highlights-video";
-import { AltLinesSection } from "@/components/alt-lines";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -195,8 +194,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
                     <h2 className="font-heading text-base font-bold">
                       {isBettable(match) ? "Parier sur ce match" : "Les cotes de ce match"}
                     </h2>
-                    <MatchOddsRow match={match} />
-                    <AltLinesSection match={match} />
+                    <MatchOddsRow match={match} ladder />
                   </CardContent>
                 </Card>
                 <PlayerPropsCard match={match} />

@@ -21,9 +21,16 @@ public class EloService {
      * notes en les appliquant plusieurs fois au même résultat.
      */
     // Part du bilan de la saison passée gardée d'une saison à l'autre : le
-    // reste revient vers la moyenne (effectifs qui changent), comme les
-    // modèles Elo NBA publics.
-    static final double CARRY_OVER = 0.75;
+    // reste revient vers la moyenne (effectifs qui changent). 75 % au départ,
+    // comme les modèles Elo NBA publics, mais le Brooklyn de la saison passée
+    // pesait encore tout début de saison : un 3-0 restait coté 6,94. Choix du
+    // propriétaire : 50 %, et les premiers matchs comptent double (K).
+    static final double CARRY_OVER = 0.5;
+    static final double PREVIOUS_CARRY_OVER = 0.75;
+    // Matchs de la saison pendant lesquels un résultat compte plus (K jusqu'à
+    // 2 × K au premier match, puis K normal au 10e) : l'Elo rattrape vite une
+    // équipe qui a changé pendant l'été.
+    static final int EARLY_GAMES = 10;
     // Bilan minimum pour être pris en compte : une saison quasi complète.
     private static final int MIN_GAMES = 60;
 
@@ -42,6 +49,20 @@ public class EloService {
         double offset = 400 * Math.log10(p / (1 - p)) * CARRY_OVER;
         team.setEloRating(team.getEloRating() + offset);
         team.setEloSeeded(true);
+        team.setEloCarryOver(CARRY_OVER);
+        return true;
+    }
+
+    /**
+     * Équipe amorcée avec l'ancien réglage (75 %) : son écart à 1500 est
+     * ramené au nouveau (50 %), une seule fois. Les quelques résultats déjà
+     * comptés sont ramenés avec, c'est sans conséquence en début de saison.
+     * Renvoie true si l'Elo a changé.
+     */
+    public boolean rebaseCarryOver(Team team) {
+        if (!Boolean.TRUE.equals(team.getEloSeeded()) || team.getEloCarryOver() != null) return false;
+        team.setEloRating(1500 + (team.getEloRating() - 1500) * CARRY_OVER / PREVIOUS_CARRY_OVER);
+        team.setEloCarryOver(CARRY_OVER);
         return true;
     }
 
@@ -51,9 +72,22 @@ public class EloService {
 
         double expectedHome = 1.0 / (1.0 + Math.pow(10, (awayElo - homeElo) / 400.0));
         double actualHome = homeScore > awayScore ? 1.0 : 0.0;
-        double delta = K * (actualHome - expectedHome);
+        double delta = k(home, away) * (actualHome - expectedHome);
 
         home.setEloRating(homeElo + delta);
         away.setEloRating(awayElo - delta);
+    }
+
+    // Matchs joués cette saison d'après le classement ESPN (avant le premier
+    // match, il a encore le bilan complet de la saison passée : K normal).
+    static double k(Team home, Team away) {
+        int games = Math.min(gamesPlayed(home), gamesPlayed(away));
+        if (games >= EARLY_GAMES) return K;
+        return K * (1 + (double) (EARLY_GAMES - games) / EARLY_GAMES);
+    }
+
+    private static int gamesPlayed(Team t) {
+        Integer w = t.getWins(), l = t.getLosses();
+        return w == null || l == null ? EARLY_GAMES : w + l;
     }
 }

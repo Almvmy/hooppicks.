@@ -1,10 +1,52 @@
 import { OddsButton } from "@/components/odds-button";
-import { Match } from "@/lib/types";
+import { LineLadder } from "@/components/alt-lines";
+import { BetSelection, Match } from "@/lib/types";
 import { boostedOdds, useBoost } from "@/lib/boost";
 import { winChances, formatLine } from "@/lib/utils";
 
-export function MatchOddsRow({ match }: { match: Match }) {
+/**
+ * Cotes d'un match. `ladder` (page du match) : écart et total en échelle,
+ * la ligne principale entourée des lignes alternatives.
+ */
+export function MatchOddsRow({ match, ladder = false }: { match: Match; ladder?: boolean }) {
   const { odds } = match;
+  const matchLabel = `${match.awayTeam.name} vs ${match.homeTeam.name}`;
+  const spreadAway: BetSelection = {
+    id: `${match.id}-spread-away`,
+    matchId: match.id,
+    matchLabel,
+    market: "spread",
+    outcome: "away",
+    label: `${match.awayTeam.abbreviation} ${odds.spreadValue > 0 ? "-" : "+"}${formatLine(Math.abs(odds.spreadValue))}`,
+    odds: odds.spreadOddsAway,
+  };
+  const spreadHome: BetSelection = {
+    id: `${match.id}-spread-home`,
+    matchId: match.id,
+    matchLabel,
+    market: "spread",
+    outcome: "home",
+    label: `${match.homeTeam.abbreviation} ${odds.spreadValue > 0 ? "+" : "-"}${formatLine(Math.abs(odds.spreadValue))}`,
+    odds: odds.spreadOddsHome,
+  };
+  const totalOver: BetSelection = {
+    id: `${match.id}-total-over`,
+    matchId: match.id,
+    matchLabel,
+    market: "total",
+    outcome: "over",
+    label: `Plus de ${formatLine(odds.totalValue)}`,
+    odds: odds.totalOddsOver,
+  };
+  const totalUnder: BetSelection = {
+    id: `${match.id}-total-under`,
+    matchId: match.id,
+    matchLabel,
+    market: "total",
+    outcome: "under",
+    label: `Moins de ${formatLine(odds.totalValue)}`,
+    odds: odds.totalOddsUnder,
+  };
   // Cote boostée : le pari « vainqueur » de ce match payé +15 %.
   const boosted = boostedOdds(useBoost(), match.id);
   // Chances de victoire tirées des cotes, marge retirée (somme = 100 %).
@@ -45,58 +87,45 @@ export function MatchOddsRow({ match }: { match: Match }) {
           }}
         />
       </div>
-      <div className="flex gap-2">
-        <OddsButton
-          communityPct={pct?.spreadAwayPct}
-          selection={{
-            id: `${match.id}-spread-away`,
-            matchId: match.id,
-            matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
-            market: "spread",
-            outcome: "away",
-            label: `${match.awayTeam.abbreviation} ${odds.spreadValue > 0 ? "-" : "+"}${formatLine(Math.abs(odds.spreadValue))}`,
-            odds: odds.spreadOddsAway,
-          }}
-        />
-        <OddsButton
-          communityPct={pct?.spreadHomePct}
-          selection={{
-            id: `${match.id}-spread-home`,
-            matchId: match.id,
-            matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
-            market: "spread",
-            outcome: "home",
-            label: `${match.homeTeam.abbreviation} ${odds.spreadValue > 0 ? "+" : "-"}${formatLine(Math.abs(odds.spreadValue))}`,
-            odds: odds.spreadOddsHome,
-          }}
-        />
-      </div>
-      <div className="flex gap-2">
-        <OddsButton
-          communityPct={pct?.totalOverPct}
-          selection={{
-            id: `${match.id}-total-over`,
-            matchId: match.id,
-            matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
-            market: "total",
-            outcome: "over",
-            label: `Plus de ${formatLine(odds.totalValue)}`,
-            odds: odds.totalOddsOver,
-          }}
-        />
-        <OddsButton
-          communityPct={pct?.totalUnderPct}
-          selection={{
-            id: `${match.id}-total-under`,
-            matchId: match.id,
-            matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
-            market: "total",
-            outcome: "under",
-            label: `Moins de ${formatLine(odds.totalValue)}`,
-            odds: odds.totalOddsUnder,
-          }}
-        />
-      </div>
+      {ladder && match.altLines?.length ? (
+        <>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Écart</p>
+          <LineLadder
+            match={match}
+            market="alt_spread"
+            main={{
+              line: odds.spreadValue,
+              first: spreadAway,
+              second: spreadHome,
+              firstPct: pct?.spreadAwayPct,
+              secondPct: pct?.spreadHomePct,
+            }}
+          />
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total de points</p>
+          <LineLadder
+            match={match}
+            market="alt_total"
+            main={{
+              line: odds.totalValue,
+              first: totalOver,
+              second: totalUnder,
+              firstPct: pct?.totalOverPct,
+              secondPct: pct?.totalUnderPct,
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <div className="flex gap-2">
+            <OddsButton communityPct={pct?.spreadAwayPct} selection={spreadAway} />
+            <OddsButton communityPct={pct?.spreadHomePct} selection={spreadHome} />
+          </div>
+          <div className="flex gap-2">
+            <OddsButton communityPct={pct?.totalOverPct} selection={totalOver} />
+            <OddsButton communityPct={pct?.totalUnderPct} selection={totalUnder} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -26,9 +26,10 @@ class EloServiceTest {
         assertThat(eloService.seedFromRecord(strong)).isTrue();
         assertThat(eloService.seedFromRecord(weak)).isTrue();
 
-        // 56-26 : ~+100 ; 20-62 : ~-148 (75 % du bilan gardé).
-        assertThat(strong.getEloRating()).isCloseTo(1600, within(5.0));
-        assertThat(weak.getEloRating()).isCloseTo(1352, within(5.0));
+        // 56-26 : ~+67 ; 20-62 : ~-98 (50 % du bilan gardé).
+        assertThat(strong.getEloRating()).isCloseTo(1567, within(5.0));
+        assertThat(weak.getEloRating()).isCloseTo(1401, within(5.0));
+        assertThat(strong.getEloCarryOver()).isEqualTo(0.5);
     }
 
     @Test
@@ -39,6 +40,27 @@ class EloServiceTest {
         t.setWins(60);
         assertThat(eloService.seedFromRecord(t)).isFalse();
         assertThat(t.getEloRating()).isCloseTo(1508, within(0.01));
+    }
+
+    @Test
+    void une_equipe_amorcee_a_75_pourcent_est_ramenee_a_50_une_seule_fois() {
+        Team t = team(20, 62, 1350);
+        t.setEloSeeded(true);
+        assertThat(eloService.rebaseCarryOver(t)).isTrue();
+        assertThat(t.getEloRating()).isCloseTo(1400, within(0.01));
+        assertThat(eloService.rebaseCarryOver(t)).isFalse();
+        assertThat(t.getEloRating()).isCloseTo(1400, within(0.01));
+    }
+
+    @Test
+    void les_premiers_matchs_de_la_saison_comptent_plus() {
+        Team a = team(0, 0, 1500), b = team(0, 0, 1500);
+        eloService.applyResult(a, b, 110, 100);
+        assertThat(a.getEloRating()).isCloseTo(1520, within(0.01)); // 2 × K × 0,5
+
+        Team c = team(30, 20, 1500), d = team(25, 25, 1500);
+        eloService.applyResult(c, d, 110, 100);
+        assertThat(c.getEloRating()).isCloseTo(1510, within(0.01)); // K normal
     }
 
     @Test

@@ -42,6 +42,11 @@ public class Team {
     // Boolean nullable : colonne ajoutée à une table déjà remplie.
     private Boolean eloSeeded;
 
+    // Part de la saison passée appliquée à l'amorçage (EloService.CARRY_OVER).
+    // Null = amorcé à 75 %, avant le passage à 50 % : EloService.rebaseCarryOver
+    // le ramène une fois au nouveau réglage.
+    private Double eloCarryOver;
+
     // Vrai classement (victoires/défaites officielles), importé depuis ESPN
     // (cf. EspnStandingsService) : purement informatif, distinct de l'Elo qui
     // reste la seule donnée utilisée pour le calcul des cotes (cf. OddsService).

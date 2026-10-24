@@ -42,7 +42,7 @@ public class EspnStandingsService {
     public int seedEloFromStoredRecords() {
         int seeded = 0;
         for (Team team : teamRepository.findAll()) {
-            if (eloService.seedFromRecord(team)) {
+            if (eloService.seedFromRecord(team) | eloService.rebaseCarryOver(team)) {
                 teamRepository.save(team);
                 seeded++;
             }

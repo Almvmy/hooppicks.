@@ -58,14 +58,18 @@ public class OddsService {
         double factor = match.getType() == MatchType.PRESEASON ? PRESEASON_STRENGTH_FACTOR : 1.0;
         double eloDiff = ((home.getEloRating() + HOME_ADVANTAGE) - away.getEloRating()) * factor;
 
-        double probHome = clamp(1.0 / (1.0 + Math.pow(10, -eloDiff / 400.0)), 0.05, 0.95);
+        // Vainqueur tiré de l'écart attendu, avec la même loi normale que les
+        // lignes alternatives : les trois marchés racontent le même match.
+        // Avant, la formule Elo directe donnait 86 % à un favori de 11 points
+        // (outsider à 6,94) quand l'écart, lui, en donnait 80 % (~4,9).
+        double expectedMargin = clamp(eloDiff / ELO_POINTS_PER_MARGIN_POINT, -20, 20);
+        double probHome = clamp(AltLines.normalCdf(expectedMargin / AltLines.MARGIN_SD), 0.05, 0.95);
         double probAway = 1.0 - probHome;
 
         match.setMoneylineHome(Math.max(MIN_ODDS, round2(1.0 / (probHome * VIG))));
         match.setMoneylineAway(Math.max(MIN_ODDS, round2(1.0 / (probAway * VIG))));
 
-        double spread = clamp(-eloDiff / ELO_POINTS_PER_MARGIN_POINT, -20, 20);
-        match.setSpreadValue(roundHalf(spread));
+        match.setSpreadValue(roundHalf(-expectedMargin));
         match.setSpreadOddsHome(EVEN_ODDS);
         match.setSpreadOddsAway(EVEN_ODDS);
 
