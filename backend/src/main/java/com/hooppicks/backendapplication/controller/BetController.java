@@ -143,6 +143,10 @@ public class BetController {
                 }
                 propsByMatch.put(s.matchId(), prop);
             }
+            // Ligne alternative : elle doit faire partie de celles proposées pour ce match.
+            if (isAltMarket(s.market()) && com.hooppicks.backendapplication.nba.AltLines.find(match, s.market(), s.outcome(), s.line()).isEmpty()) {
+                return ResponseEntity.badRequest().body("Cette ligne n'est plus proposée : " + matchLabel(match));
+            }
             matchesById.put(s.matchId(), match);
         }
 
@@ -183,6 +187,10 @@ public class BetController {
                 selection.setPlayerName(prop.playerName());
                 selection.setPropLine(prop.line());
                 selection.setLabel(propLabel(prop.playerName(), prop.market(), s.outcome(), prop.line()));
+            } else if (isAltMarket(s.market())) {
+                // Ligne figée sur la sélection (côté domicile pour un handicap) : c'est elle qui sera réglée.
+                selection.setPropLine(s.line());
+                selection.setLabel(altLabel(m, s.market(), s.outcome(), s.line()));
             } else {
                 selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             }
@@ -208,8 +216,8 @@ public class BetController {
 
     private static boolean isKnownSelection(String market, String outcome) {
         return switch (market == null ? "" : market) {
-            case "moneyline", "spread" -> "home".equals(outcome) || "away".equals(outcome);
-            case "total" -> "over".equals(outcome) || "under".equals(outcome);
+            case "moneyline", "spread", com.hooppicks.backendapplication.nba.AltLines.ALT_SPREAD -> "home".equals(outcome) || "away".equals(outcome);
+            case "total", com.hooppicks.backendapplication.nba.AltLines.ALT_TOTAL -> "over".equals(outcome) || "under".equals(outcome);
             default -> PlayerPropsService.isPropMarket(market) && ("over".equals(outcome) || "under".equals(outcome));
         };
     }
@@ -234,6 +242,21 @@ public class BetController {
         };
     }
 
+    private static boolean isAltMarket(String market) {
+        return com.hooppicks.backendapplication.nba.AltLines.ALT_SPREAD.equals(market) || com.hooppicks.backendapplication.nba.AltLines.ALT_TOTAL.equals(market);
+    }
+
+    /** « DET -10,5 », « BOS +10,5 », « Plus de 236,5 » : ligne côté domicile pour un handicap. */
+    static String altLabel(Match match, String market, String outcome, double line) {
+        if (com.hooppicks.backendapplication.nba.AltLines.ALT_TOTAL.equals(market)) {
+            return ("over".equals(outcome) ? "Plus de " : "Moins de ") + formatLine(line);
+        }
+        boolean home = "home".equals(outcome);
+        String abbr = home ? match.getHomeTeam().getAbbreviation() : match.getAwayTeam().getAbbreviation();
+        double side = home ? line : -line;
+        return abbr + " " + (side > 0 ? "+" : side < 0 ? "-" : "") + formatLine(Math.abs(side));
+    }
+
     /** « J. Brunson · Plus de 26,5 pts », « N. Jokić · Moins de 12,5 rbd ». */
     static String propLabel(String playerName, String market, String outcome, double line) {
         String[] parts = playerName.split(" ", 2);
@@ -246,6 +269,9 @@ public class BetController {
                            Map<String, PlayerPropsService.PlayerProp> props, Set<String> boostedMatchIds) {
         PlayerPropsService.PlayerProp prop = props.get(s.matchId());
         if (prop != null) return "over".equals(s.outcome()) ? prop.overOdds() : prop.underOdds();
+        if (isAltMarket(s.market())) {
+            return com.hooppicks.backendapplication.nba.AltLines.find(matches.get(s.matchId()), s.market(), s.outcome(), s.line()).orElseThrow();
+        }
         double odds = resolveOdds(matches.get(s.matchId()), s.market(), s.outcome());
         return "moneyline".equals(s.market()) && boostedMatchIds.contains(s.matchId()) ? BoostService.boosted(odds) : odds;
     }

@@ -127,6 +127,8 @@ export interface Match {
   /** Résumés des chaînes des deux équipes (chacun ne montre que son camp). */
   homeHighlightsVideoId?: string | null;
   awayHighlightsVideoId?: string | null;
+  /** Handicaps et totaux alternatifs, tant que le match est à venir. */
+  altLines?: AltLine[];
 }
 
 export interface RosterPlayer {
@@ -247,7 +249,15 @@ export type PlayerPropMarket =
   | "player_ra"
   | "player_stocks"
   | "player_blocks";
-export type BetMarket = "moneyline" | "spread" | "total" | PlayerPropMarket;
+export type BetMarket = "moneyline" | "spread" | "total" | "alt_spread" | "alt_total" | PlayerPropMarket;
+
+/** Ligne alternative (cf. AltLines) : firstOdds = domicile / plus de, secondOdds = extérieur / moins de ; handicap côté domicile. */
+export interface AltLine {
+  market: "alt_spread" | "alt_total";
+  line: number;
+  firstOdds: number;
+  secondOdds: number;
+}
 export type BetOutcome = "home" | "away" | "over" | "under";
 export type BetStatus = "pending" | "won" | "lost" | "void";
 

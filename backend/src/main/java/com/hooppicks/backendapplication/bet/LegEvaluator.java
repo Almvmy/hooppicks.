@@ -40,6 +40,17 @@ public final class LegEvaluator {
                 boolean selectionIsOver = "over".equals(selection.getOutcome());
                 yield (overWins == selectionIsOver) ? LegResult.WIN : LegResult.LOSE;
             }
+            // Lignes alternatives : la ligne figée sur la sélection (côté domicile pour un handicap).
+            case "alt_spread" -> {
+                double homeAdjusted = home + selection.getPropLine();
+                if (homeAdjusted == away) yield LegResult.PUSH;
+                yield ((homeAdjusted > away) == selectionIsHome) ? LegResult.WIN : LegResult.LOSE;
+            }
+            case "alt_total" -> {
+                int total = home + away;
+                if (total == selection.getPropLine()) yield LegResult.PUSH;
+                yield ((total > selection.getPropLine()) == "over".equals(selection.getOutcome())) ? LegResult.WIN : LegResult.LOSE;
+            }
             default -> throw new IllegalStateException("Marché inconnu : " + selection.getMarket());
         };
     }

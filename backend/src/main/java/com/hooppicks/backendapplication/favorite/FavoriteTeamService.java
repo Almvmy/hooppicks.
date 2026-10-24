@@ -71,7 +71,8 @@ public class FavoriteTeamService {
      */
     public static Side side(BetSelection selection, Match match, String favoriteAbbreviation) {
         // Total et pari joueur : ni pour ni contre une équipe.
-        boolean teamMarket = "moneyline".equals(selection.getMarket()) || "spread".equals(selection.getMarket());
+        boolean teamMarket = "moneyline".equals(selection.getMarket()) || "spread".equals(selection.getMarket())
+                || "alt_spread".equals(selection.getMarket());
         if (match == null || favoriteAbbreviation == null || !teamMarket) return Side.NEUTRAL;
         boolean favoriteIsHome = favoriteAbbreviation.equals(match.getHomeTeam().getAbbreviation());
         boolean favoriteIsAway = favoriteAbbreviation.equals(match.getAwayTeam().getAbbreviation());

@@ -348,4 +348,47 @@ class BetControllerTest {
         assertThat(String.valueOf(response.getBody())).contains("27,5");
         verify(betRepository, never()).save(any());
     }
+
+    // --- Lignes alternatives ---
+
+    private Match matchWithLines() {
+        Match m = scheduledMatch("m1");
+        m.setSpreadValue(-4.5);
+        m.setTotalValue(226.5);
+        return m;
+    }
+
+    @Test
+    void ligne_alternative_posee_avec_la_cote_du_serveur_et_figee_sur_le_ticket() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        Match match = matchWithLines();
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        double serverOdds = com.hooppicks.backendapplication.nba.AltLines.find(match, "alt_spread", "away", -10.5).orElseThrow();
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "", "alt_spread", "away", "", 9.9, null, -10.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<Bet> saved = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(saved.capture());
+        com.hooppicks.backendapplication.entity.BetSelection s = saved.getValue().getSelections().get(0);
+        assertThat(s.getOdds()).isEqualTo(serverOdds).isNotEqualTo(9.9);
+        assertThat(s.getPropLine()).isEqualTo(-10.5);
+        // Côté extérieur : la ligne domicile −10,5 devient +10,5 pour les Celtics.
+        assertThat(s.getLabel()).isEqualTo("CEL +10,5");
+    }
+
+    @Test
+    void ligne_alternative_non_proposee_refusee() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(matchWithLines()));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "", "alt_total", "over", "", 9.9, null, 300.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        verify(betRepository, never()).save(any());
+    }
 }

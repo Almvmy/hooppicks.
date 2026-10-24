@@ -18,7 +18,8 @@ public record MatchDto(
         String highlightsVideoId,
         String highlightsProvider,
         String homeHighlightsVideoId,
-        String awayHighlightsVideoId
+        String awayHighlightsVideoId,
+        java.util.List<com.hooppicks.backendapplication.nba.AltLines.Line> altLines
 ) {
     public static MatchDto from(Match match) {
         return from(match, null);
@@ -42,7 +43,10 @@ public record MatchDto(
                 match.getHighlightsVideoId() == null ? null
                         : match.getHighlightsProvider() == null ? "youtube" : match.getHighlightsProvider(),
                 match.getHomeHighlightsVideoId(),
-                match.getAwayHighlightsVideoId()
+                match.getAwayHighlightsVideoId(),
+                // Seulement tant qu'on peut parier : inutile sur un match commencé.
+                match.getStatus() == com.hooppicks.backendapplication.entity.MatchStatus.SCHEDULED
+                        ? com.hooppicks.backendapplication.nba.AltLines.of(match) : java.util.List.of()
         );
     }
 }

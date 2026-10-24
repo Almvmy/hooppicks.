@@ -19,7 +19,7 @@ public class BetSelection {
 
     private String matchId;
     private String matchLabel;
-    private String market;  // "moneyline" | "spread" | "total"
+    private String market;  // "moneyline" | "spread" | "total" | "alt_spread" | "alt_total" | "player_…"
     private String outcome; // "home" | "away" | "over" | "under"
     private String label;
     private double odds;

@@ -11,7 +11,7 @@ export type LegState = "won" | "lost" | "push" | "winning" | "losing" | "level" 
 
 type LegResult = "win" | "lose" | "push";
 
-function evaluate(selection: Pick<BetSelection, "market" | "outcome">, match: Match): LegResult {
+function evaluate(selection: Pick<BetSelection, "market" | "outcome" | "propLine">, match: Match): LegResult {
   const home = match.homeScore ?? 0;
   const away = match.awayScore ?? 0;
   const pickedHome = selection.outcome === "home";
@@ -30,6 +30,19 @@ function evaluate(selection: Pick<BetSelection, "market" | "outcome">, match: Ma
       const total = home + away;
       if (total === match.odds.totalValue) return "push";
       return total > match.odds.totalValue === (selection.outcome === "over") ? "win" : "lose";
+    }
+    // Lignes alternatives : la ligne figée sur le ticket (côté domicile pour un handicap).
+    case "alt_spread": {
+      if (selection.propLine == null) return "push";
+      const adjustedHome = home + selection.propLine;
+      if (adjustedHome === away) return "push";
+      return adjustedHome > away === pickedHome ? "win" : "lose";
+    }
+    case "alt_total": {
+      if (selection.propLine == null) return "push";
+      const total = home + away;
+      if (total === selection.propLine) return "push";
+      return total > selection.propLine === (selection.outcome === "over") ? "win" : "lose";
     }
     default:
       return "push"; // paris joueurs : jamais atteint, legState répond avant
