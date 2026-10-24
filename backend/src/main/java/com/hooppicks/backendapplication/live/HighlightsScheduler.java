@@ -14,16 +14,19 @@ public class HighlightsScheduler {
     private static final Logger log = LoggerFactory.getLogger(HighlightsScheduler.class);
 
     private final HighlightsService highlightsService;
+    private final com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
 
-    public HighlightsScheduler(HighlightsService highlightsService) {
+    public HighlightsScheduler(HighlightsService highlightsService, com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor) {
         this.highlightsService = highlightsService;
+        this.jobMonitor = jobMonitor;
     }
 
     @Scheduled(fixedDelay = 10 * 60 * 1000, initialDelay = 2 * 60 * 1000)
     public void refresh() {
         try {
-            highlightsService.refresh();
+            jobMonitor.ok("resumes-video", highlightsService.refresh() + " match(s) mis à jour");
         } catch (Exception e) {
+            jobMonitor.failed("resumes-video", e);
             log.error("Résumés vidéo en échec", e);
         }
     }

@@ -69,6 +69,22 @@ export async function syncPlayerStatsBatch(): Promise<{ synced: boolean }> {
   return apiFetch("/console/sync-player-stats-batch", { method: "POST" });
 }
 
+/** Santé d'une tâche de fond (GET /console/health). */
+export interface JobHealth {
+  key: string;
+  label: string;
+  status: "OK" | "LATE" | "FAILING" | "NEVER";
+  lastSuccessAt: string | null;
+  lastFailureAt: string | null;
+  lastError: string | null;
+  lastDetail: string | null;
+  everyMinutes: number;
+}
+
+export async function fetchAdminHealth(): Promise<JobHealth[]> {
+  return apiFetch<JobHealth[]>("/console/health");
+}
+
 export async function fetchAdminOverview(): Promise<AdminOverview> {
   return apiFetch<AdminOverview>("/console/overview");
 }

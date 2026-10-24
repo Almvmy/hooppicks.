@@ -42,7 +42,9 @@ public interface MatchRepository extends JpaRepository<Match, String> {
         SELECT m FROM Match m
         WHERE m.status = :status AND m.espnEventId IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM PlayerMatchStat s WHERE s.match = m)
+        ORDER BY m.date DESC
     """)
+    // Les plus récents d'abord : ce sont eux qu'on regarde (moyennes, paris joueurs).
     List<Match> findFinishedWithoutBoxScore(MatchStatus status, Pageable pageable);
 
     // Liste des matchs de la console admin : filtres appliqués en base, sur

@@ -57,6 +57,10 @@ public class EspnRosterService {
         this.rosterPlayerRepository = rosterPlayerRepository;
     }
 
+    // Facultatif : les tests construisent ce service sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
+
     @Scheduled(cron = "0 0 6 * * *")
     public void syncRosters() {
         List<Team> teams = teamRepository.findAll();
@@ -64,6 +68,7 @@ public class EspnRosterService {
             syncTeamRoster(team);
         }
         log.info("Rosters ESPN synchronisés ({} équipes)", teams.size());
+        if (jobMonitor != null) jobMonitor.ok("effectifs", teams.size() + " équipes");
     }
 
     @Transactional

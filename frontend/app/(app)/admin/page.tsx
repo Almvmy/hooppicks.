@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, LayoutDashboard, Medal, Megaphone, MessageSquare, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
+import { Activity, CalendarDays, LayoutDashboard, Medal, Megaphone, MessageSquare, RefreshCw, ScrollText, ShieldCheck, Ticket, Users } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { AdminSyncPanel } from "@/components/admin/admin-sync-panel";
@@ -14,6 +14,7 @@ import { AdminAnnouncements } from "@/components/admin/admin-announcements";
 import { AdminFeedbackPanel } from "@/components/admin/admin-feedback-panel";
 import { AdminAuditLog } from "@/components/admin/admin-audit-log";
 import { AdminSeasonResults } from "@/components/admin/admin-season-results";
+import { AdminHealthPanel } from "@/components/admin/admin-health-panel";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchAdminFeedback } from "@/lib/api/admin";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { value: "apercu", label: "Vue d'ensemble", icon: LayoutDashboard },
   { value: "synchros", label: "Synchros", icon: RefreshCw },
+  { value: "sante", label: "Santé", icon: Activity },
   { value: "matchs", label: "Matchs", icon: CalendarDays },
   { value: "paris", label: "Paris", icon: Ticket },
   { value: "utilisateurs", label: "Utilisateurs", icon: Users },
@@ -100,6 +102,7 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
 
       {tab === "apercu" && <AdminOverview />}
       {tab === "synchros" && <AdminSyncPanel />}
+      {tab === "sante" && <AdminHealthPanel />}
       {tab === "matchs" && <AdminMatchesPanel />}
       {tab === "paris" && <AdminPendingBetsPanel />}
       {tab === "utilisateurs" && <AdminUsersPanel />}

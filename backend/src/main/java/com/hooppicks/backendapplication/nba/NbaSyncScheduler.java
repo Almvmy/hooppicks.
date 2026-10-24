@@ -31,6 +31,7 @@ public class NbaSyncScheduler {
     private final EspnStatsService espnStatsService;
     private final EspnPlayerStatsService espnPlayerStatsService;
     private final com.hooppicks.backendapplication.espn.SeasonAveragesService seasonAveragesService;
+    private final com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
     private final EspnScheduleService espnScheduleService;
 
     @Value("${nba.sync.use-fixed-window:false}")
@@ -45,7 +46,9 @@ public class NbaSyncScheduler {
     public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus,
                              EspnStatsService espnStatsService, EspnPlayerStatsService espnPlayerStatsService,
                              EspnScheduleService espnScheduleService,
-                             com.hooppicks.backendapplication.espn.SeasonAveragesService seasonAveragesService) {
+                             com.hooppicks.backendapplication.espn.SeasonAveragesService seasonAveragesService,
+                             com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor) {
+        this.jobMonitor = jobMonitor;
         this.seasonAveragesService = seasonAveragesService;
         this.nbaSyncService = nbaSyncService;
         this.adminSyncStatus = adminSyncStatus;
@@ -85,7 +88,9 @@ public class NbaSyncScheduler {
             adminSyncStatus.recordSync(result.gamesSynced(), result.betsResolved(), mode);
             log.info("{} match(s) synchronisé(s), {} pari(s) résolu(s) (fenêtre {})",
                     result.gamesSynced(), result.betsResolved(), mode);
+            jobMonitor.ok("sync-matchs", result.gamesSynced() + " match(s), " + result.betsResolved() + " pari(s) réglé(s)");
         } catch (Exception e) {
+            jobMonitor.failed("sync-matchs", e);
             log.warn("Synchro balldontlie (matchs) échouée, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
@@ -102,31 +107,40 @@ public class NbaSyncScheduler {
         try {
             int espnGames = espnScheduleService.syncWindow(dates);
             if (espnGames > 0) log.info("{} match(s) mis à jour depuis ESPN", espnGames);
+            jobMonitor.ok("espn-phases", espnGames + " match(s) mis à jour");
         } catch (Exception e) {
+            jobMonitor.failed("espn-phases", e);
             log.warn("Synchro ESPN (matchs de la fenêtre) échouée, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
         try {
             espnStatsService.linkEventIds();
+            jobMonitor.ok("espn-liaison", null);
         } catch (Exception e) {
+            jobMonitor.failed("espn-liaison", e);
             log.warn("Synchro ESPN (liaison des ids d'event) échouée, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
         try {
             espnStatsService.importBoxScores();
+            jobMonitor.ok("feuilles-de-match", null);
         } catch (Exception e) {
+            jobMonitor.failed("feuilles-de-match", e);
             log.warn("Synchro ESPN (import des feuilles de match) échouée, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
         try {
-            seasonAveragesService.refresh();
+            int players = seasonAveragesService.refresh();
+            jobMonitor.ok("moyennes-saison", players + " joueur(s) mis à jour");
         } catch (Exception e) {
+            jobMonitor.failed("moyennes-saison", e);
             log.warn("Moyennes de la saison (feuilles de match) échouées, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
         try {
-            espnPlayerStatsService.syncBatch();
+            jobMonitor.ok("stats-joueurs-espn", espnPlayerStatsService.syncBatch());
         } catch (Exception e) {
+            jobMonitor.failed("stats-joueurs-espn", e);
             log.warn("Synchro ESPN (stats joueurs par lot) échouée, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }

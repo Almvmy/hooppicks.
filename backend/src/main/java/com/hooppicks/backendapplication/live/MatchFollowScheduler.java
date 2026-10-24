@@ -21,9 +21,11 @@ public class MatchFollowScheduler {
     private static final Logger log = LoggerFactory.getLogger(MatchFollowScheduler.class);
 
     private final MatchFollowService followService;
+    private final com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
 
-    public MatchFollowScheduler(MatchFollowService followService) {
+    public MatchFollowScheduler(MatchFollowService followService, com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor) {
         this.followService = followService;
+        this.jobMonitor = jobMonitor;
     }
 
     @Scheduled(fixedRate = 60 * 1000, initialDelay = 45 * 1000)
@@ -31,7 +33,9 @@ public class MatchFollowScheduler {
         try {
             int sent = followService.notifyFollowers(Instant.now());
             if (sent > 0) log.info("{} notification(s) de match suivi envoyée(s)", sent);
+            jobMonitor.ok("matchs-suivis", sent + " notification(s)");
         } catch (Exception e) {
+            jobMonitor.failed("matchs-suivis", e);
             log.warn("Notifications des matchs suivis échouées", e);
             Sentry.captureException(e);
         }

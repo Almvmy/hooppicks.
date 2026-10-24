@@ -22,8 +22,11 @@ public class RankSnapshotScheduler {
     private final LeaderboardService leaderboardService;
     private final com.hooppicks.backendapplication.power.PowerRankingService powerRankingService;
 
+    private final com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
+
     public RankSnapshotScheduler(LeaderboardService leaderboardService,
-                                 com.hooppicks.backendapplication.power.PowerRankingService powerRankingService) {
+                                 com.hooppicks.backendapplication.power.PowerRankingService powerRankingService, com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor) {
+        this.jobMonitor = jobMonitor;
         this.leaderboardService = leaderboardService;
         this.powerRankingService = powerRankingService;
     }
@@ -49,7 +52,9 @@ public class RankSnapshotScheduler {
         try {
             leaderboardService.takeSnapshot(date);
             log.info("Photo du classement prise pour le {}", date);
+            jobMonitor.ok("photo-classement", date.toString());
         } catch (Exception e) {
+            jobMonitor.failed("photo-classement", e);
             log.warn("Photo du classement échouée pour le {}", date, e);
             Sentry.captureException(e);
         }

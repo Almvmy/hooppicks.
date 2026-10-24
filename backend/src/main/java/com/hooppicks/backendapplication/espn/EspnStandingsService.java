@@ -51,12 +51,17 @@ public class EspnStandingsService {
         return seeded;
     }
 
+    // Facultatif : les tests construisent ce service sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
+
     @Scheduled(cron = "0 5 6 * * *")
     @Transactional
     public void syncStandings() {
         List<EspnStandingRow> rows = espnStatsClient.fetchStandings();
         if (rows.isEmpty()) {
             log.warn("Synchro classement ESPN : réponse vide, on garde l'ancien classement.");
+            if (jobMonitor != null) jobMonitor.failed("classement-officiel", new IllegalStateException("réponse vide d'ESPN"));
             return;
         }
 
@@ -81,5 +86,6 @@ public class EspnStandingsService {
             updated++;
         }
         log.info("Classement ESPN synchronisé ({} équipes)", updated);
+        if (jobMonitor != null) jobMonitor.ok("classement-officiel", updated + " équipes");
     }
 }

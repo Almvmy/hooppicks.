@@ -38,8 +38,9 @@ public class EspnPlayerStatsService {
         this.rosterPlayerRepository = rosterPlayerRepository;
     }
 
+    /** Renvoie « N mis à jour sur M » pour la console admin (0 sur 8 tick après tick = ESPN muet). */
     @Transactional
-    public void syncBatch() {
+    public String syncBatch() {
         List<RosterPlayer> batch = rosterPlayerRepository.findAllOrderByStatsUpdatedAtAscNullsFirst(
                 PageRequest.of(0, BATCH_SIZE));
 
@@ -62,6 +63,7 @@ public class EspnPlayerStatsService {
         if (updated > 0) {
             log.info("Stats saison ESPN synchronisées pour {} joueur(s)", updated);
         }
+        return updated + " mis à jour sur " + batch.size();
     }
 
     /**

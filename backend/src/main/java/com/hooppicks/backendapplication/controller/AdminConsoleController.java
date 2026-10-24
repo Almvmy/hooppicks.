@@ -117,6 +117,17 @@ public class AdminConsoleController {
         return ResponseEntity.ok(status);
     }
 
+    // Santé des tâches de fond (onglet « Santé ») ; facultatif pour les tests qui construisent ce contrôleur.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
+
+    @GetMapping("/health")
+    public ResponseEntity<?> getHealth(HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        return ResponseEntity.ok(jobMonitor == null ? java.util.List.of() : jobMonitor.health());
+    }
+
     @GetMapping("/overview")
     public ResponseEntity<?> getOverview(HttpServletRequest request) {
         Access access = access(request);

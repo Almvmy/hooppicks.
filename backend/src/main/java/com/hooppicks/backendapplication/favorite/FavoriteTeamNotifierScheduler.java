@@ -20,7 +20,10 @@ public class FavoriteTeamNotifierScheduler {
 
     private final FavoriteTeamNotifier notifier;
 
-    public FavoriteTeamNotifierScheduler(FavoriteTeamNotifier notifier) {
+    private final com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
+
+    public FavoriteTeamNotifierScheduler(FavoriteTeamNotifier notifier, com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor) {
+        this.jobMonitor = jobMonitor;
         this.notifier = notifier;
     }
 
@@ -39,7 +42,9 @@ public class FavoriteTeamNotifierScheduler {
         try {
             int sent = notifier.notifyResults(now);
             if (sent > 0) log.info("{} notification(s) de résultat (équipe favorite) envoyée(s)", sent);
+            jobMonitor.ok("equipe-favorite", null);
         } catch (Exception e) {
+            jobMonitor.failed("equipe-favorite", e);
             log.warn("Notifications de résultat (équipe favorite) échouées", e);
             Sentry.captureException(e);
         }
