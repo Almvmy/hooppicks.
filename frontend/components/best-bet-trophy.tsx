@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlacedBet } from "@/lib/types";
@@ -28,8 +29,10 @@ export function BestBetTrophy({ bets }: { bets: PlacedBet[] | undefined }) {
           <ul className="mt-1 text-sm text-muted-foreground">
             {best.selections.map((s) => (
               <li key={s.id} className="mt-1 break-words first:mt-0">
-                <span className="text-foreground">{s.label}</span>
-                <span className="block text-xs">{s.matchLabel}</span>
+                <Link href={`/matches/${s.matchId}`} className="block hover:underline">
+                  <span className="text-foreground">{s.label}</span>
+                  <span className="block text-xs">{s.matchLabel}</span>
+                </Link>
               </li>
             ))}
           </ul>

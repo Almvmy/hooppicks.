@@ -114,7 +114,11 @@ function SelectionRow({
   const display = cancelled ? CANCELLED_DISPLAY : LEG_DISPLAY[state];
   const Icon = display.icon;
   return (
-    <div className="flex items-center justify-between gap-3">
+    // Toute la ligne mène au match du pari (score, direct, vidéo).
+    <Link
+      href={`/matches/${selection.matchId}`}
+      className="-mx-2 flex items-center justify-between gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-tint/5"
+    >
       <div className="flex min-w-0 items-center gap-3">
         <SelectionTeamLogo selection={selection} matchesById={matchesById} size={32} />
         <div className="min-w-0">
@@ -142,7 +146,7 @@ function SelectionRow({
           </span>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
