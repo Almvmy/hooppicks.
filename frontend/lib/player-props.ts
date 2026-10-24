@@ -1,4 +1,4 @@
-import type { BetMarket, BetSelection, Match, PlayerBoxScore, PlayerProp, PlayerPropMarket } from "@/lib/types";
+import type { BetMarket, BetSelection, Match, PlayerBoxScore, PlayerProp, PlayerPropMarket, PropMilestone } from "@/lib/types";
 
 /**
  * Statistiques des paris joueurs : mêmes marchés et mêmes unités que
@@ -64,6 +64,22 @@ export function propSelection(match: Match, prop: PlayerProp, outcome: "over" | 
     odds: outcome === "over" ? prop.overOdds : prop.underOdds,
     playerId: prop.playerId,
     line: prop.line,
+  };
+}
+
+/** Palier « 30+ pts », libellé identique à BetController.milestoneLabel. */
+export function milestoneSelection(match: Match, prop: PlayerProp, m: PropMilestone): BetSelection {
+  const { unit } = PLAYER_PROP_MARKETS[prop.market];
+  return {
+    id: `${match.id}-${prop.market}-${prop.playerId}-${m.threshold}plus`,
+    matchId: match.id,
+    matchLabel: `${match.awayTeam.name} vs ${match.homeTeam.name}`,
+    market: prop.market,
+    outcome: "over",
+    label: `${shortPlayerName(prop.playerName)} · ${m.threshold}+ ${unit}`,
+    odds: m.odds,
+    playerId: prop.playerId,
+    line: m.line,
   };
 }
 

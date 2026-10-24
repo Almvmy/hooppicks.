@@ -37,7 +37,8 @@ public class PlayerPropsController {
      */
     public record PropWithPicks(String matchId, String market, String playerId, String playerName,
                                 String teamAbbreviation, String headshotUrl, double line, double overOdds,
-                                double underOdds, double average, String injuryStatus, Integer overPct, long picks) {}
+                                double underOdds, double average, String injuryStatus, Integer overPct, long picks,
+                                List<PlayerPropsService.Milestone> milestones) {}
 
     @GetMapping("/matches/{id}/props")
     public List<PropWithPicks> props(@PathVariable String id) {
@@ -66,7 +67,8 @@ public class PlayerPropsController {
                 long total = c[0] + c[1];
                 out.add(new PropWithPicks(match.getId(), p.market(), p.playerId(), p.playerName(), p.teamAbbreviation(),
                         p.headshotUrl(), p.line(), p.overOdds(), p.underOdds(), p.average(), p.injuryStatus(),
-                        total == 0 ? null : (int) Math.round(c[0] * 100.0 / total), total));
+                        total == 0 ? null : (int) Math.round(c[0] * 100.0 / total), total,
+                        PlayerPropsService.milestones(p.market(), p.line())));
             }
         }
         return out;

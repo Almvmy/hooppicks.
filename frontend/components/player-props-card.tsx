@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { OddsButton } from "@/components/odds-button";
+import { PropMilestones } from "@/components/prop-milestones";
 import { fetchPlayerProps } from "@/lib/api/matches";
 import { PLAYER_PROP_MARKETS, decimal, propSelection as selection, shortPlayerName as shortName } from "@/lib/player-props";
 import { cn } from "@/lib/utils";
@@ -70,31 +71,34 @@ export function PlayerPropsCard({ match }: { match: Match }) {
           {data
             .filter((prop) => prop.market === market)
             .map((prop) => (
-              <div key={`${prop.market}-${prop.playerId}`} className="flex items-center gap-3 py-2.5">
-                {prop.headshotUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={prop.headshotUrl} alt="" className="h-10 w-10 shrink-0 rounded-full bg-tint/10 object-cover" />
-                ) : (
-                  <span className="h-10 w-10 shrink-0 rounded-full bg-tint/10" aria-hidden />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{shortName(prop.playerName)}</p>
-                  <p className="truncate text-[11px] tabular-nums text-muted-foreground">
-                    {prop.teamAbbreviation} · moy. {decimal(prop.average, 1)}
-                  </p>
+              <div key={`${prop.market}-${prop.playerId}`} className="flex flex-col gap-1.5 py-2.5">
+                <div className="flex items-center gap-3">
+                  {prop.headshotUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={prop.headshotUrl} alt="" className="h-10 w-10 shrink-0 rounded-full bg-tint/10 object-cover" />
+                  ) : (
+                    <span className="h-10 w-10 shrink-0 rounded-full bg-tint/10" aria-hidden />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{shortName(prop.playerName)}</p>
+                    <p className="truncate text-[11px] tabular-nums text-muted-foreground">
+                      {prop.teamAbbreviation} · moy. {decimal(prop.average, 1)}
+                    </p>
+                  </div>
+                  <div className="flex w-[8.5rem] shrink-0 gap-1">
+                    <OddsButton
+                      selection={selection(match, prop, "over")}
+                      label={`+ de ${decimal(prop.line)}`}
+                      communityPct={prop.overPct}
+                    />
+                    <OddsButton
+                      selection={selection(match, prop, "under")}
+                      label={`− de ${decimal(prop.line)}`}
+                      communityPct={prop.overPct === null ? null : 100 - prop.overPct}
+                    />
+                  </div>
                 </div>
-                <div className="flex w-[8.5rem] shrink-0 gap-1">
-                  <OddsButton
-                    selection={selection(match, prop, "over")}
-                    label={`+ de ${decimal(prop.line)}`}
-                    communityPct={prop.overPct}
-                  />
-                  <OddsButton
-                    selection={selection(match, prop, "under")}
-                    label={`− de ${decimal(prop.line)}`}
-                    communityPct={prop.overPct === null ? null : 100 - prop.overPct}
-                  />
-                </div>
+                <PropMilestones match={match} prop={prop} className="ml-[3.25rem] flex gap-1" />
               </div>
             ))}
         </div>

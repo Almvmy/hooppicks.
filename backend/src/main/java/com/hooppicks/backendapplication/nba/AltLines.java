@@ -93,7 +93,7 @@ public final class AltLines {
     }
 
     /** Fonction de répartition de la loi normale centrée réduite (approximation d'Abramowitz et Stegun, erreur < 1e-7). */
-    static double normalCdf(double x) {
+    public static double normalCdf(double x) {
         double t = 1 / (1 + 0.2316419 * Math.abs(x));
         double d = 0.3989422804014327 * Math.exp(-x * x / 2);
         double tail = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));

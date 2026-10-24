@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OddsButton, OddsPreviewContext } from "@/components/odds-button";
+import { PropMilestones } from "@/components/prop-milestones";
 import { TeamLogo } from "@/components/team-logo";
 import { useBetSlip } from "@/components/bet-slip-provider";
 import { DEFAULT_PAST_DAYS, fetchMatches, fetchPlayerPropsOf } from "@/lib/api/matches";
@@ -40,23 +41,26 @@ interface PlayerGroup {
 
 function PropLine({ match, prop }: { match: Match; prop: PlayerProp }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-24 shrink-0 text-xs font-semibold text-muted-foreground">
-        {PLAYER_PROP_MARKETS[prop.market].tab}
-        <span className="block font-mono text-[10px] font-normal">moy. {decimal(prop.average, 1)}</span>
-      </span>
-      <div className="flex flex-1 gap-1">
-        <OddsButton
-          selection={propSelection(match, prop, "over")}
-          label={`+ de ${decimal(prop.line)}`}
-          communityPct={prop.overPct}
-        />
-        <OddsButton
-          selection={propSelection(match, prop, "under")}
-          label={`− de ${decimal(prop.line)}`}
-          communityPct={prop.overPct === null ? null : 100 - prop.overPct}
-        />
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="w-24 shrink-0 text-xs font-semibold text-muted-foreground">
+          {PLAYER_PROP_MARKETS[prop.market].tab}
+          <span className="block font-mono text-[10px] font-normal">moy. {decimal(prop.average, 1)}</span>
+        </span>
+        <div className="flex flex-1 gap-1">
+          <OddsButton
+            selection={propSelection(match, prop, "over")}
+            label={`+ de ${decimal(prop.line)}`}
+            communityPct={prop.overPct}
+          />
+          <OddsButton
+            selection={propSelection(match, prop, "under")}
+            label={`− de ${decimal(prop.line)}`}
+            communityPct={prop.overPct === null ? null : 100 - prop.overPct}
+          />
+        </div>
       </div>
+      <PropMilestones match={match} prop={prop} className="ml-[6.5rem] flex gap-1" />
     </div>
   );
 }

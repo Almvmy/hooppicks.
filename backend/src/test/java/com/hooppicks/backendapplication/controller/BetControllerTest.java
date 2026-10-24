@@ -391,4 +391,43 @@ class BetControllerTest {
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         verify(betRepository, never()).save(any());
     }
+
+    // --- Paliers des paris joueurs ---
+
+    @Test
+    void palier_pose_avec_sa_cote_et_regle_comme_plus_de() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        Match match = scheduledMatch("m1");
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 26.5, 1.96, 1.96, 26.8, null)));
+        double serverOdds = com.hooppicks.backendapplication.bet.PlayerPropsService.milestones("player_points", 26.5).get(0).odds();
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(brunsonOver(29.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<Bet> captor = org.mockito.ArgumentCaptor.forClass(Bet.class);
+        verify(betRepository).save(captor.capture());
+        com.hooppicks.backendapplication.entity.BetSelection sel = captor.getValue().getSelections().get(0);
+        assertThat(sel.getOdds()).isEqualTo(serverOdds).isGreaterThan(1.96);
+        assertThat(sel.getPropLine()).isEqualTo(29.5);
+        assertThat(sel.getLabel()).isEqualTo("J. Brunson · 30+ pts");
+    }
+
+    @Test
+    void palier_en_moins_de_refuse() {
+        HttpServletRequest request = authenticatedRequest("u1");
+        when(userRepository.findByIdForUpdate("u1")).thenReturn(Optional.of(user("u1", 1000)));
+        Match match = scheduledMatch("m1");
+        when(matchRepository.findById("m1")).thenReturn(Optional.of(match));
+        when(playerPropsService.find(match, "player_points", "p1")).thenReturn(Optional.of(new com.hooppicks.backendapplication.bet.PlayerPropsService.PlayerProp(
+                "player_points", "p1", "Jalen Brunson", "LAK", null, 26.5, 1.96, 1.96, 26.8, null)));
+
+        ResponseEntity<?> response = controller.placeBet(new PlaceBetRequest(List.of(
+                new PlaceBetRequest.SelectionInput("m1", "", "player_points", "under", "", 9.9, "p1", 29.5)), 100), request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        verify(betRepository, never()).save(any());
+    }
 }

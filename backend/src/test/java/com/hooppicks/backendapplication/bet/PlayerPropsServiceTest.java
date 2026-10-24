@@ -254,4 +254,30 @@ class PlayerPropsServiceTest {
         pa.setMarket("player_pa");
         assertThat(service.evaluate(pa, match(), after)).contains(LegResult.LOSE);
     }
+
+    // --- Paliers ---
+
+    @Test
+    void paliers_au_dessus_de_la_ligne_de_plus_en_plus_chers() {
+        List<PlayerPropsService.Milestone> ms = PlayerPropsService.milestones("player_points", 31.5);
+        assertThat(ms).extracting(PlayerPropsService.Milestone::threshold).containsExactly(35, 40);
+        assertThat(ms.get(0).line()).isEqualTo(34.5);
+        // Plus dur que la ligne principale (1,96), et chaque palier plus dur que le précédent.
+        assertThat(ms.get(0).odds()).isGreaterThan(1.96).isLessThan(ms.get(1).odds());
+        assertThat(ms).allMatch(m -> m.odds() <= 15);
+    }
+
+    @Test
+    void premier_palier_jamais_collé_a_la_ligne() {
+        // Ligne 29,5 : « 30+ » serait la ligne principale elle-même.
+        assertThat(PlayerPropsService.milestones("player_points", 29.5).get(0).threshold()).isEqualTo(35);
+        assertThat(PlayerPropsService.milestones("player_threes", 3.5)).extracting(PlayerPropsService.Milestone::threshold)
+                .containsExactly(5, 6, 7);
+    }
+
+    @Test
+    void pas_de_paliers_sur_les_cumuls_secondaires() {
+        assertThat(PlayerPropsService.milestones("player_stocks", 2.5)).isEmpty();
+        assertThat(PlayerPropsService.milestones("player_pa", 30.5)).isEmpty();
+    }
 }

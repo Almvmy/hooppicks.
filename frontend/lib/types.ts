@@ -295,6 +295,14 @@ export interface PlayerProp {
   /** Part des joueurs HoopPicks sur « plus de », null si personne n'a encore choisi cette ligne. */
   overPct: number | null;
   picks: number;
+  /** Paliers « 30+ pts » (PlayerPropsService.milestones) : réglés comme « plus de » threshold − 0,5. */
+  milestones?: PropMilestone[];
+}
+
+export interface PropMilestone {
+  threshold: number;
+  line: number;
+  odds: number;
 }
 
 export interface PlacedBet {

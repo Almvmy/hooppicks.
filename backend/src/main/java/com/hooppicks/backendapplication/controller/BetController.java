@@ -100,6 +100,7 @@ public class BetController {
         Map<String, Match> matchesById = new HashMap<>();
         // Pari joueur : la ligne recalculée maintenant fait foi (comme les cotes).
         Map<String, PlayerPropsService.PlayerProp> propsByMatch = new HashMap<>();
+        Map<String, PlayerPropsService.Milestone> milestonesByMatch = new HashMap<>();
         for (PlaceBetRequest.SelectionInput s : request.selections()) {
             Match match = matchRepository.findById(s.matchId()).orElse(null);
             if (match == null) {
@@ -134,9 +135,13 @@ public class BetController {
                 if (prop == null) {
                     return ResponseEntity.badRequest().body("Ce pari joueur n'est plus proposé : " + matchLabel(match));
                 }
+                // Palier (« 30+ pts ») : « plus de » seulement, sur un palier proposé pour cette ligne.
+                PlayerPropsService.Milestone milestone = s.line() == null || !"over".equals(s.outcome()) ? null
+                        : PlayerPropsService.findMilestone(prop, s.line()).orElse(null);
+                if (milestone != null) milestonesByMatch.put(s.matchId(), milestone);
                 // Moyenne du joueur mise à jour entre l'affichage et la validation :
                 // on ne pose pas en silence sur une autre ligne que celle qu'il a vue.
-                if (s.line() == null || Math.abs(s.line() - prop.line()) > 0.01) {
+                else if (s.line() == null || Math.abs(s.line() - prop.line()) > 0.01) {
                     return ResponseEntity.badRequest().body("La ligne de " + prop.playerName() + " est passée à "
                             + formatLine(prop.line()) + " " + PlayerPropsService.Stat.of(prop.market()).orElseThrow().unit
                             + " : vérifie ton ticket.");
@@ -160,7 +165,7 @@ public class BetController {
         }
 
         double totalOdds = request.selections().stream()
-                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch, boostedMatchIds))
+                .mapToDouble(s -> oddsFor(s, matchesById, propsByMatch, milestonesByMatch, boostedMatchIds))
                 .reduce(1, (a, b) -> a * b);
         int potentialPayout = (int) Math.min(Integer.MAX_VALUE, Math.round(request.stake() * totalOdds));
 
@@ -185,8 +190,15 @@ public class BetController {
             if (prop != null) {
                 selection.setPlayerId(prop.playerId());
                 selection.setPlayerName(prop.playerName());
-                selection.setPropLine(prop.line());
-                selection.setLabel(propLabel(prop.playerName(), prop.market(), s.outcome(), prop.line()));
+                PlayerPropsService.Milestone milestone = milestonesByMatch.get(s.matchId());
+                if (milestone != null) {
+                    // Réglé comme « plus de 29,5 » : la résolution des paris joueurs n'a rien à savoir des paliers.
+                    selection.setPropLine(milestone.line());
+                    selection.setLabel(milestoneLabel(prop.playerName(), prop.market(), milestone.threshold()));
+                } else {
+                    selection.setPropLine(prop.line());
+                    selection.setLabel(propLabel(prop.playerName(), prop.market(), s.outcome(), prop.line()));
+                }
             } else if (isAltMarket(s.market())) {
                 // Ligne figée sur la sélection (côté domicile pour un handicap) : c'est elle qui sera réglée.
                 selection.setPropLine(s.line());
@@ -194,7 +206,7 @@ public class BetController {
             } else {
                 selection.setLabel(selectionLabel(m, s.market(), s.outcome()));
             }
-            selection.setOdds(oddsFor(s, matchesById, propsByMatch, boostedMatchIds));
+            selection.setOdds(oddsFor(s, matchesById, propsByMatch, milestonesByMatch, boostedMatchIds));
             bet.getSelections().add(selection);
         });
 
@@ -265,8 +277,18 @@ public class BetController {
                 + PlayerPropsService.Stat.of(market).map(st -> st.unit).orElse("pts");
     }
 
+    /** « S. Gilgeous-Alexander · 30+ pts ». */
+    static String milestoneLabel(String playerName, String market, int threshold) {
+        String[] parts = playerName.split(" ", 2);
+        String shortName = parts.length == 2 ? parts[0].charAt(0) + ". " + parts[1] : playerName;
+        return shortName + " · " + threshold + "+ " + PlayerPropsService.Stat.of(market).map(st -> st.unit).orElse("pts");
+    }
+
     private double oddsFor(PlaceBetRequest.SelectionInput s, Map<String, Match> matches,
-                           Map<String, PlayerPropsService.PlayerProp> props, Set<String> boostedMatchIds) {
+                           Map<String, PlayerPropsService.PlayerProp> props,
+                           Map<String, PlayerPropsService.Milestone> milestones, Set<String> boostedMatchIds) {
+        PlayerPropsService.Milestone milestone = milestones.get(s.matchId());
+        if (milestone != null) return milestone.odds();
         PlayerPropsService.PlayerProp prop = props.get(s.matchId());
         if (prop != null) return "over".equals(s.outcome()) ? prop.overOdds() : prop.underOdds();
         if (isAltMarket(s.market())) {

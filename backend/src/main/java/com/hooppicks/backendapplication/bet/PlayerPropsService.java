@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.bet;
 
 import com.hooppicks.backendapplication.entity.*;
+import com.hooppicks.backendapplication.nba.AltLines;
 import com.hooppicks.backendapplication.nba.OddsService;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
 import com.hooppicks.backendapplication.repository.RosterPlayerRepository;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -214,6 +216,52 @@ public class PlayerPropsService {
         return propsFor(match).stream()
                 .filter(p -> p.market().equals(market) && p.playerId().equals(playerId))
                 .findFirst();
+    }
+
+    /** Palier « 30+ pts » : réglé comme « plus de 29,5 » (line), avec sa propre cote. */
+    public record Milestone(int threshold, double line, double odds) {}
+
+    // Paliers : pas entre deux seuils et dispersion de la statistique d'un
+    // match à l'autre (variance ≈ dispersion × moyenne, ordres de grandeur NBA :
+    // ~8 pts d'écart-type pour un joueur à 30 pts, ~1,8 tir à 3 pts pour 3).
+    private static final Map<Stat, double[]> MILESTONE_STEPS = Map.of(
+            Stat.POINTS, new double[]{5, 2.2},
+            Stat.POINTS_REBOUNDS_ASSISTS, new double[]{5, 2.0},
+            Stat.REBOUNDS, new double[]{2, 1.2},
+            Stat.ASSISTS, new double[]{2, 1.2},
+            Stat.THREES, new double[]{1, 1.3});
+    static final int MAX_MILESTONES = 3;
+    private static final double MILESTONE_VIG = 1.02;
+    private static final double MAX_MILESTONE_ODDS = 15.0;
+
+    /**
+     * Paliers au-dessus de la ligne (« 30+ », « 35+ », « 40+ pts »), seulement
+     * « plus de » : la ligne principale reste à 1,96, les paliers paient selon
+     * leur difficulté. Loi normale centrée sur la ligne (qui vaut une chance sur
+     * deux à 1,96), même marge de 2 % que les autres cotes ; un palier qui
+     * paierait plus de 15 n'est pas proposé (trop improbable pour être lisible).
+     */
+    public static List<Milestone> milestones(String market, double line) {
+        Stat stat = Stat.of(market).orElse(null);
+        double[] cfg = stat == null ? null : MILESTONE_STEPS.get(stat);
+        if (cfg == null) return List.of();
+        double step = cfg[0];
+        double sd = Math.sqrt(cfg[1] * Math.max(line, 1));
+        List<Milestone> out = new ArrayList<>();
+        // Premier seuil rond au-delà de « ligne + 1 » : jamais un doublon de la ligne principale.
+        int threshold = (int) (Math.floor((line + 1) / step) * step + step);
+        while (out.size() < MAX_MILESTONES) {
+            double p = 1 - AltLines.normalCdf((threshold - 0.5 - line) / sd);
+            double odds = Math.max(1.03, Math.round(100.0 / (Math.max(p, 0.001) * MILESTONE_VIG)) / 100.0);
+            if (odds > MAX_MILESTONE_ODDS) break;
+            out.add(new Milestone(threshold, threshold - 0.5, odds));
+            threshold += (int) step;
+        }
+        return out;
+    }
+
+    public static Optional<Milestone> findMilestone(PlayerProp prop, double line) {
+        return milestones(prop.market(), prop.line()).stream().filter(m -> Math.abs(m.line() - line) < 0.01).findFirst();
     }
 
     /** 26,2 → 26,5 ; 26,8 → 26,5 ; 27,0 → 27,5 : partie entière + 0,5, jamais d'égalité possible. */
