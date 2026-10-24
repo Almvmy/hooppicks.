@@ -30,6 +30,7 @@ public class NbaSyncScheduler {
     private final AdminSyncStatus adminSyncStatus;
     private final EspnStatsService espnStatsService;
     private final EspnPlayerStatsService espnPlayerStatsService;
+    private final com.hooppicks.backendapplication.espn.SeasonAveragesService seasonAveragesService;
     private final EspnScheduleService espnScheduleService;
 
     @Value("${nba.sync.use-fixed-window:false}")
@@ -43,7 +44,9 @@ public class NbaSyncScheduler {
 
     public NbaSyncScheduler(NbaSyncService nbaSyncService, AdminSyncStatus adminSyncStatus,
                              EspnStatsService espnStatsService, EspnPlayerStatsService espnPlayerStatsService,
-                             EspnScheduleService espnScheduleService) {
+                             EspnScheduleService espnScheduleService,
+                             com.hooppicks.backendapplication.espn.SeasonAveragesService seasonAveragesService) {
+        this.seasonAveragesService = seasonAveragesService;
         this.nbaSyncService = nbaSyncService;
         this.adminSyncStatus = adminSyncStatus;
         this.espnStatsService = espnStatsService;
@@ -113,6 +116,12 @@ public class NbaSyncScheduler {
             espnStatsService.importBoxScores();
         } catch (Exception e) {
             log.warn("Synchro ESPN (import des feuilles de match) échouée, tick ignoré pour cette phase", e);
+            Sentry.captureException(e);
+        }
+        try {
+            seasonAveragesService.refresh();
+        } catch (Exception e) {
+            log.warn("Moyennes de la saison (feuilles de match) échouées, tick ignoré pour cette phase", e);
             Sentry.captureException(e);
         }
         try {

@@ -248,7 +248,7 @@ public class PlayerPropsService {
     }
 
     /** « Luka Dončić » et « Luka Doncic », « Jr. » et « Jr » : même joueur. */
-    static String normalize(String name) {
+    public static String normalize(String name) {
         if (name == null) return "";
         String ascii = Normalizer.normalize(name, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return ascii.toLowerCase(Locale.ROOT).replaceAll("[^a-z ]", "").replaceAll("\\s+", " ").trim();

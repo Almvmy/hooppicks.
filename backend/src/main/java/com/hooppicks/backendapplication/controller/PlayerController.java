@@ -45,9 +45,12 @@ public class PlayerController {
     private final RosterPlayerRepository rosterPlayerRepository;
     private final NbaSyncService nbaSyncService;
     private final EspnStatsClient espnStatsClient;
+    private final com.hooppicks.backendapplication.espn.StatLeadersService statLeadersService;
 
     public PlayerController(RosterPlayerRepository rosterPlayerRepository, NbaSyncService nbaSyncService,
-                             EspnStatsClient espnStatsClient) {
+                             EspnStatsClient espnStatsClient,
+                             com.hooppicks.backendapplication.espn.StatLeadersService statLeadersService) {
+        this.statLeadersService = statLeadersService;
         this.rosterPlayerRepository = rosterPlayerRepository;
         this.nbaSyncService = nbaSyncService;
         this.espnStatsClient = espnStatsClient;
@@ -88,18 +91,22 @@ public class PlayerController {
     // qu'il y ait autre chose à voir qu'un champ de saisie vide.
     @GetMapping("/leaders")
     public PlayerLeadersDto leaders() {
-        return new PlayerLeadersDto(
-                rosterPlayerRepository.findTop5ByPointsPerGameIsNotNullOrderByPointsPerGameDesc()
-                        .stream().map(RosterPlayerDto::from).toList(),
-                rosterPlayerRepository.findTop5ByReboundsPerGameIsNotNullOrderByReboundsPerGameDesc()
-                        .stream().map(RosterPlayerDto::from).toList(),
-                rosterPlayerRepository.findTop5ByAssistsPerGameIsNotNullOrderByAssistsPerGameDesc()
-                        .stream().map(RosterPlayerDto::from).toList(),
-                rosterPlayerRepository.findTop5ByStealsPerGameIsNotNullOrderByStealsPerGameDesc()
-                        .stream().map(RosterPlayerDto::from).toList(),
-                rosterPlayerRepository.findTop5ByBlocksPerGameIsNotNullOrderByBlocksPerGameDesc()
-                        .stream().map(RosterPlayerDto::from).toList()
-        );
+        return statLeadersService.leaders();
+    }
+
+    /** Top 25 d'une catégorie (points, rebounds, assists, steals, blocks, threes, fieldGoalPct). */
+    @GetMapping("/leaders/{category}")
+    public org.springframework.http.ResponseEntity<com.hooppicks.backendapplication.dto.LeaderListDto> leaderList(
+            @PathVariable String category, @RequestParam(defaultValue = "25") int limit) {
+        return statLeadersService.leaders(category, limit)
+                .map(org.springframework.http.ResponseEntity::ok)
+                .orElse(org.springframework.http.ResponseEntity.notFound().build());
+    }
+
+    /** Les meilleures lignes de stats de la dernière soirée NBA jouée. */
+    @GetMapping("/top-performances")
+    public List<com.hooppicks.backendapplication.dto.TopPerformanceDto> topPerformances() {
+        return statLeadersService.lastNight();
     }
 
     /**

@@ -47,7 +47,7 @@ public class EspnPlayerStatsService {
         for (RosterPlayer player : batch) {
             try {
                 Optional<PlayerSeasonStatsRow> statsRow = espnStatsClient.fetchSeasonStats(player.getId());
-                if (statsRow.isPresent()) {
+                if (statsRow.isPresent() && isNewer(statsRow.get().seasonLabel(), player.getStatsSeasonLabel())) {
                     apply(player, statsRow.get());
                     updated++;
                 }
@@ -62,6 +62,17 @@ public class EspnPlayerStatsService {
         if (updated > 0) {
             log.info("Stats saison ESPN synchronisées pour {} joueur(s)", updated);
         }
+    }
+
+    /**
+     * La saison en cours vient de nos feuilles de match (SeasonAveragesService) :
+     * ESPN ne fait qu'amener une saison plus récente que celle en base (joueur
+     * encore jamais vu cette saison), jamais réécrire la même ni revenir en
+     * arrière (« 2025-26 » renvoyé pour un joueur blessé qui n'a pas rejoué).
+     */
+    static boolean isNewer(String espnSeason, String storedSeason) {
+        if (espnSeason == null) return false;
+        return storedSeason == null || espnSeason.compareTo(storedSeason) > 0;
     }
 
     private void apply(RosterPlayer player, PlayerSeasonStatsRow row) {

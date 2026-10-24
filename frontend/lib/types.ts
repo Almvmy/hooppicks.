@@ -155,6 +155,7 @@ export interface RosterPlayer {
   fieldGoalPct: number | null;
   threePointPct: number | null;
   freeThrowPct: number | null;
+  threePointersMadePerGame: number | null;
 }
 
 export interface PlayerLeaders {
@@ -163,6 +164,36 @@ export interface PlayerLeaders {
   assists: RosterPlayer[];
   steals: RosterPlayer[];
   blocks: RosterPlayer[];
+  threes: RosterPlayer[];
+  fieldGoalPct: RosterPlayer[];
+  /** Saison des moyennes (« 2026-27 ») et matchs joués exigés pour figurer. */
+  season: string;
+  minGames: number;
+}
+
+/** Classement plus long d'une catégorie (GET /players/leaders/{categorie}). */
+export interface LeaderList {
+  players: RosterPlayer[];
+  season: string;
+  minGames: number;
+}
+
+/** Une des meilleures lignes de la dernière soirée (GET /players/top-performances). */
+export interface TopPerformance {
+  playerName: string;
+  teamAbbreviation: string | null;
+  opponentAbbreviation: string | null;
+  matchId: string;
+  player: RosterPlayer | null;
+  minutes: number;
+  points: number;
+  rebounds: number;
+  assists: number;
+  steals: number;
+  blocks: number;
+  threePointsMade: number;
+  fieldGoalsMade: number;
+  fieldGoalsAttempted: number;
 }
 
 export interface PlayerRecentGame {

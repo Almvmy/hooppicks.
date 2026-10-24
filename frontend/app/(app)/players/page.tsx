@@ -3,7 +3,7 @@
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowDown, ArrowUp, Crown, Search, Trophy, X } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, Crown, Flame, Search, Trophy, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
@@ -11,12 +11,13 @@ import { PlayerCardDialog } from "@/components/player-card-dialog";
 import { TeamLogo } from "@/components/team-logo";
 import { InjuryPill, PlayerHeadshot, PlayerTile, playerName } from "@/components/players/player-tile";
 import { PlayerCompareTray } from "@/components/players/player-compare";
-import { fetchPlayerInjuries, fetchPlayerLeaders, fetchPlayers } from "@/lib/api/players";
+import { fetchLeaderList, fetchPlayerInjuries, fetchPlayerLeaders, fetchPlayers, fetchTopPerformances } from "@/lib/api/players";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { fetchPowerRankings, fetchTeamRankings, fetchTeamRoster } from "@/lib/api/teams";
 import { formatChance, seasonChances } from "@/lib/season-odds";
 import { cn } from "@/lib/utils";
 import { useFavoriteTeam } from "@/lib/use-teams";
-import { PlayerLeaders, RosterPlayer, TeamRank } from "@/lib/types";
+import { RosterPlayer, TeamRank, TopPerformance } from "@/lib/types";
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_COMPARED = 2;
@@ -28,17 +29,86 @@ function chipClass(active: boolean) {
   );
 }
 
-const LEADER_CATEGORIES: { key: keyof PlayerLeaders; label: string; stat: (p: RosterPlayer) => number | null; suffix: string }[] = [
+type LeaderList = "points" | "rebounds" | "assists" | "steals" | "blocks" | "threes" | "fieldGoalPct";
+
+const LEADER_CATEGORIES: { key: LeaderList; label: string; stat: (p: RosterPlayer) => number | null; suffix: string }[] = [
   { key: "points", label: "Points", stat: (p) => p.pointsPerGame, suffix: "pts" },
   { key: "rebounds", label: "Rebonds", stat: (p) => p.reboundsPerGame, suffix: "reb" },
   { key: "assists", label: "Passes", stat: (p) => p.assistsPerGame, suffix: "pd" },
+  { key: "threes", label: "Tirs à 3 points", stat: (p) => p.threePointersMadePerGame, suffix: "réussis" },
+  { key: "fieldGoalPct", label: "Adresse aux tirs", stat: (p) => p.fieldGoalPct, suffix: "%" },
   { key: "steals", label: "Interceptions", stat: (p) => p.stealsPerGame, suffix: "int" },
   { key: "blocks", label: "Contres", stat: (p) => p.blocksPerGame, suffix: "ctr" },
 ];
 
+/** « 34 pts · 8 reb · 6 pd » : les catégories marquantes de la ligne, dans l'ordre. */
+function statLine(t: TopPerformance) {
+  const parts = [`${t.points} pts`];
+  if (t.rebounds >= 5) parts.push(`${t.rebounds} reb`);
+  if (t.assists >= 5) parts.push(`${t.assists} pd`);
+  if (t.threePointsMade >= 4) parts.push(`${t.threePointsMade} à 3 pts`);
+  if (t.blocks >= 3) parts.push(`${t.blocks} ctr`);
+  if (t.steals >= 3) parts.push(`${t.steals} int`);
+  return parts.join(" · ");
+}
+
+/** Les meilleures lignes de la dernière soirée : ce dont on parle le lendemain matin. */
+function TopPerformancesSection({ onSelect }: { onSelect: Select }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["players", "top-performances"],
+    queryFn: fetchTopPerformances,
+    staleTime: 10 * 60 * 1000,
+  });
+  if (isLoading) return null;
+  if (isError) return <p className="text-sm text-destructive">Impossible de charger les perfs de la nuit.</p>;
+  if (!data || data.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
+        <Flame className="h-5 w-5 text-primary" />
+        Les perfs de la nuit
+      </h2>
+      {/* Téléphone : on fait défiler de côté, pour garder les meneurs en vue. */}
+      <div className="glass-scroll edge-scroll flex snap-x gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-3">
+        {data.map((t) => (
+          <Card key={`${t.matchId}-${t.playerName}`} className="w-72 shrink-0 snap-start sm:w-auto">
+            <CardContent className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={!t.player}
+                onClick={() => t.player && onSelect(t.player)}
+                className="shrink-0"
+                aria-label={`Fiche de ${t.playerName}`}
+              >
+                {t.player ? <PlayerHeadshot player={t.player} size={48} /> : <span className="block h-12 w-12 rounded-full bg-tint/10" />}
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{t.playerName}</p>
+                <p className="font-mono text-sm font-bold text-primary">{statLine(t)}</p>
+                <Link href={`/matches/${t.matchId}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+                  {t.teamAbbreviation && <TeamLogo abbreviation={t.teamAbbreviation} logoUrl={t.player?.team?.logoUrl ?? null} size={14} />}
+                  {t.teamAbbreviation} contre {t.opponentAbbreviation} · {t.minutes} min
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 type Select = (p: RosterPlayer) => void;
 
-/** Meneurs statistiques : le n°1 en grand (photo), les 4 suivants en liste. */
+const oneDecimal = (n: number | null | undefined) =>
+  n == null ? "–" : n.toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/**
+ * Meneurs statistiques, toutes les catégories visibles d'un coup (grille, plus
+ * de défilement de côté où la moitié sortait de l'écran) : le n°1 en grand,
+ * les suivants avec une barre rapportée au n°1 pour voir les écarts.
+ */
 function LeadersSection({ onSelect }: { onSelect: Select }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["players", "leaders"],
@@ -46,59 +116,176 @@ function LeadersSection({ onSelect }: { onSelect: Select }) {
     staleTime: 15 * 60 * 1000,
   });
 
+  const [open, setOpen] = useState<LeaderCategory | null>(null);
+
   if (isLoading) return <BasketballLoader label="Chargement des meneurs..." />;
   if (isError || !data) return <p className="text-sm text-destructive">Impossible de charger les meneurs statistiques.</p>;
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
-        <Crown className="h-5 w-5 text-primary" />
-        Meneurs de la saison
+      <h2 className="flex flex-wrap items-baseline gap-x-2 font-heading text-lg font-bold">
+        <span className="flex items-center gap-2">
+          <Crown className="h-5 w-5 text-primary" />
+          Meneurs de la saison {data.season}
+        </span>
+        {data.minGames > 1 && <span className="font-sans text-xs font-normal text-muted-foreground">{data.minGames} matchs joués au moins</span>}
       </h2>
-      <div className="glass-scroll edge-scroll flex snap-x gap-3 overflow-x-auto pb-1">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {LEADER_CATEGORIES.map(({ key, label, stat, suffix }) => {
-          const [first, ...others] = data[key] ?? [];
+          const list = data[key] ?? [];
+          const [first, ...others] = list;
+          const top = first ? (stat(first) ?? 0) : 0;
           return (
-            <Card key={key} className="w-64 shrink-0 snap-start">
-              <CardContent className="flex flex-col gap-2 pt-5">
+            <Card key={key} className="h-full">
+              <CardContent className="flex flex-col gap-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
                 {!first && <p className="text-sm text-muted-foreground">Pas encore de stats.</p>}
                 {first && (
-                  <button type="button" onClick={() => onSelect(first)} className="flex items-center gap-3 text-left">
-                    <PlayerHeadshot player={first} size={64} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-heading font-bold">{playerName(first)}</span>
+                  <button type="button" onClick={() => onSelect(first)} className="group flex items-center gap-3 text-left">
+                    <span className="relative shrink-0">
+                      <PlayerHeadshot player={first} size={56} />
+                      <Crown className="absolute -right-1 -top-1 h-4 w-4 text-[#F5B700]" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-heading font-bold group-hover:underline">{playerName(first)}</span>
                       <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         {first.team && <TeamLogo abbreviation={first.team.abbreviation} logoUrl={first.team.logoUrl} size={14} />}
                         {first.team?.abbreviation}
                       </span>
-                      <span className="font-mono text-lg font-bold text-primary">
-                        {stat(first)?.toFixed(1)} <span className="text-xs">{suffix}</span>
-                      </span>
+                    </span>
+                    <span className="shrink-0 text-right font-heading text-2xl font-bold leading-none text-primary">
+                      {oneDecimal(stat(first))}
+                      <span className="block font-sans text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{suffix}</span>
                     </span>
                   </button>
                 )}
-                <div className="flex flex-col">
-                  {others.map((p, i) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => onSelect(p)}
-                      className="flex items-center gap-2 rounded-lg px-1 py-1 text-left text-sm transition-colors hover:bg-tint/5"
-                    >
-                      <span className="w-3 shrink-0 font-mono text-xs text-muted-foreground">{i + 2}</span>
-                      <PlayerHeadshot player={p} size={24} />
-                      <span className="min-w-0 flex-1 truncate">{playerName(p)}</span>
-                      <span className="shrink-0 font-mono text-xs font-bold">{stat(p)?.toFixed(1)}</span>
-                    </button>
-                  ))}
-                </div>
+                {others.length > 0 && (
+                  <ol className="flex flex-col gap-1.5">
+                    {others.map((p, i) => {
+                      const value = stat(p) ?? 0;
+                      return (
+                        <li key={p.id}>
+                          <button
+                            type="button"
+                            onClick={() => onSelect(p)}
+                            className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left text-sm transition-colors hover:bg-tint/5"
+                          >
+                            <span className="w-3 shrink-0 font-mono text-xs text-muted-foreground">{i + 2}</span>
+                            <PlayerHeadshot player={p} size={32} />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-1.5">
+                                <span className="truncate">{playerName(p)}</span>
+                                {p.team && <TeamLogo abbreviation={p.team.abbreviation} logoUrl={p.team.logoUrl} size={14} />}
+                              </span>
+                              <span className="mt-0.5 block h-1 overflow-hidden rounded-full bg-tint/10">
+                                <span
+                                  className="block h-full rounded-full bg-primary/60"
+                                  style={{ width: `${top > 0 ? Math.max(4, (value / top) * 100) : 0}%` }}
+                                />
+                              </span>
+                            </span>
+                            <span className="w-10 shrink-0 text-right font-mono text-xs font-bold">{oneDecimal(stat(p))}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+                {first && (
+                  <button
+                    type="button"
+                    onClick={() => setOpen({ key, label, stat, suffix })}
+                    className="mt-auto self-start text-xs font-semibold text-primary hover:underline"
+                  >
+                    Voir le top 25
+                  </button>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
+      <LeaderListDialog
+        category={open}
+        onClose={() => setOpen(null)}
+        onSelect={(p) => {
+          setOpen(null);
+          onSelect(p);
+        }}
+      />
     </section>
+  );
+}
+
+type LeaderCategory = (typeof LEADER_CATEGORIES)[number];
+
+/** Classement d'une catégorie en entier (25 joueurs), ouvert depuis « Voir le top 25 ». */
+function LeaderListDialog({
+  category,
+  onClose,
+  onSelect,
+}: {
+  category: LeaderCategory | null;
+  onClose: () => void;
+  onSelect: Select;
+}) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["players", "leaders", category?.key],
+    queryFn: () => fetchLeaderList(category!.key),
+    enabled: !!category,
+    staleTime: 15 * 60 * 1000,
+  });
+  const top = data?.players[0] && category ? (category.stat(data.players[0]) ?? 0) : 0;
+
+  return (
+    <Dialog open={category !== null} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[85dvh] max-w-md overflow-y-auto">
+        <DialogTitle>{category?.label}</DialogTitle>
+        {data && (
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Saison {data.season}
+            {data.minGames > 1 && ` · ${data.minGames} matchs joués au moins`}
+          </p>
+        )}
+        {isLoading && <BasketballLoader label="Chargement du classement..." />}
+        {isError && <p className="text-sm text-destructive">Impossible de charger ce classement.</p>}
+        {data && category && (
+          <ol className="flex flex-col gap-1">
+            {data.players.map((p, i) => {
+              const value = category.stat(p) ?? 0;
+              return (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(p)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1 text-left text-sm transition-colors hover:bg-tint/5"
+                  >
+                    <span className="w-5 shrink-0 text-right font-mono text-xs text-muted-foreground">{i + 1}</span>
+                    <PlayerHeadshot player={p} size={36} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <span className="truncate font-medium">{playerName(p)}</span>
+                        {p.team && <TeamLogo abbreviation={p.team.abbreviation} logoUrl={p.team.logoUrl} size={14} />}
+                      </span>
+                      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-tint/10">
+                        <span
+                          className="block h-full rounded-full bg-primary/60"
+                          style={{ width: `${top > 0 ? Math.max(4, (value / top) * 100) : 0}%` }}
+                        />
+                      </span>
+                    </span>
+                    <span className="w-12 shrink-0 text-right font-mono text-sm font-bold">
+                      {oneDecimal(category.stat(p))}
+                      <span className="block text-[10px] font-normal text-muted-foreground">{p.gamesPlayed} m.</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -361,7 +548,12 @@ function PlayersTab() {
         </section>
       )}
 
-      {!isSearching && view === "meneurs" && <LeadersSection onSelect={setSelected} />}
+      {!isSearching && view === "meneurs" && (
+        <>
+          <TopPerformancesSection onSelect={setSelected} />
+          <LeadersSection onSelect={setSelected} />
+        </>
+      )}
       {!isSearching && view === "blesses" && <InjuriesSection onSelect={setSelected} />}
       {!isSearching && view === "effectifs" && !teamId && (
         <p className="text-sm text-muted-foreground">

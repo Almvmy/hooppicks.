@@ -115,6 +115,7 @@ class EspnPlayerStatsServiceTest {
         ));
         service.syncBatch();
         assertThat(p.getPrevPointsPerGame()).isEqualTo(27.0);
-        assertThat(p.getPointsPerGame()).isEqualTo(20.0);
+        // La saison en cours vient ensuite de nos feuilles de match (SeasonAveragesService), plus d'ESPN.
+        assertThat(p.getPointsPerGame()).isEqualTo(12.0);
     }
 }

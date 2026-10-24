@@ -26,7 +26,8 @@ public record RosterPlayerDto(
         Double turnoversPerGame,
         Double fieldGoalPct,
         Double threePointPct,
-        Double freeThrowPct
+        Double freeThrowPct,
+        Double threePointersMadePerGame
 ) {
     public static RosterPlayerDto from(RosterPlayer p) {
         return new RosterPlayerDto(
@@ -52,7 +53,8 @@ public record RosterPlayerDto(
                 p.getTurnoversPerGame(),
                 p.getFieldGoalPct(),
                 p.getThreePointPct(),
-                p.getFreeThrowPct()
+                p.getFreeThrowPct(),
+                p.getThreePointersMadePerGame()
         );
     }
 
@@ -74,7 +76,7 @@ public record RosterPlayerDto(
                 null,
                 p.getTeam() != null ? TeamDto.from(p.getTeam()) : null,
                 null,
-                null, null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null, null, null, null, null
         );
     }
 }

@@ -32,7 +32,8 @@ class PlayerControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new PlayerController(rosterPlayerRepository, nbaSyncService, espnStatsClient);
+        controller = new PlayerController(rosterPlayerRepository, nbaSyncService, espnStatsClient,
+                org.mockito.Mockito.mock(com.hooppicks.backendapplication.espn.StatLeadersService.class));
     }
 
     private static Team team(String name) {
@@ -69,17 +70,4 @@ class PlayerControllerTest {
                 .containsExactly("Holiday", "Lillard", "Tatum", "Brown");
     }
 
-    @Test
-    void leaders_inclut_interceptions_et_contres() {
-        Team bucks = team("Bucks");
-        when(rosterPlayerRepository.findTop5ByStealsPerGameIsNotNullOrderByStealsPerGameDesc())
-                .thenReturn(List.of(player("Steals", bucks, null)));
-        when(rosterPlayerRepository.findTop5ByBlocksPerGameIsNotNullOrderByBlocksPerGameDesc())
-                .thenReturn(List.of(player("Blocks", bucks, null)));
-
-        PlayerLeadersDto leaders = controller.leaders();
-
-        assertThat(leaders.steals()).extracting(RosterPlayerDto::lastName).containsExactly("Steals");
-        assertThat(leaders.blocks()).extracting(RosterPlayerDto::lastName).containsExactly("Blocks");
-    }
 }
