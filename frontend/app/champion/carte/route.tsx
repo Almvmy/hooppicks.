@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { ChampionArt } from "@/components/share-card-art";
+import { ChampionArt, MonthChampionArt, SeasonChampionArt } from "@/components/share-card-art";
 import { fetchSharedChampions, fetchSharedPhaseChampions } from "@/lib/share";
 import { shareFonts } from "@/lib/share-fonts";
 import { monthLabel, weekLabel } from "@/lib/utils";
@@ -18,8 +18,16 @@ export async function GET(request: Request) {
   if (phase) {
     const data = await fetchSharedPhaseChampions(phase);
     if (!data || data.champions.length === 0) return new Response("Pas encore de champion", { status: 404 });
-    const label = phase === "month" ? monthLabel(data.season) : `Saison ${data.season}`;
-    return new ImageResponse(<ChampionArt champions={data.champions} weekLabel={label} of={OF[phase]} />, {
+    // Chaque titre long a sa propre carte : le mois en orange, la saison en or avec le trophée.
+    const art =
+      phase === "month" ? (
+        <MonthChampionArt champions={data.champions} month={monthLabel(data.season)} />
+      ) : phase === "general" ? (
+        <SeasonChampionArt champions={data.champions} season={data.season} />
+      ) : (
+        <ChampionArt champions={data.champions} weekLabel={`Saison ${data.season}`} of={OF[phase]} />
+      );
+    return new ImageResponse(art, {
       width: 1080,
       height: 1080,
       fonts: await fonts,

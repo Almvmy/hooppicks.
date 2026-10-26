@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 // Teinte stable dérivée du nom : chaque ligue garde sa couleur partout, sans
 // rien stocker en base.
-function hueFromName(name: string): number {
+export function hueFromName(name: string): number {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return hash % 360;

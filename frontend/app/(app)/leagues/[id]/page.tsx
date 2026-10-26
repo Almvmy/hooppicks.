@@ -1,18 +1,20 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import type { LeaderboardPeriod } from "@/lib/types";
+import type { LeaderboardPeriod, PhaseChampions, WeekChampions } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, LogOut, Share2, Ticket, TrendingUp, Trophy, UserPlus } from "lucide-react";
+import { Activity, ArrowLeft, Copy, LogOut, Share2, Ticket, TrendingUp, Trophy, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PlayerAvatar } from "@/components/player-avatar";
-import { LeagueCrest } from "@/components/league-crest";
+import { LeagueCrest, hueFromName } from "@/components/league-crest";
+import { ChampionBanner } from "@/components/leaderboard/champion-banner";
+import { Podium } from "@/components/leaderboard/podium";
 import { copyLeagueCode, shareLeagueInvite } from "@/lib/league-invite";
 import {
   fetchLeagueActivity,
@@ -31,6 +33,8 @@ import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 // libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
 const REACTION_EMOJIS = ["👍", "🔥", "👎"];
 
+type Tab = "classement" | "membres" | "activite";
+
 export default function LeagueDetailPage({
   params,
 }: {
@@ -40,6 +44,7 @@ export default function LeagueDetailPage({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [tab, setTab] = useState<Tab>("classement");
 
   const leaguesQuery = useQuery({ queryKey: ["leagues"], queryFn: fetchMyLeagues });
   const league = leaguesQuery.data?.find((l) => l.id === id);
@@ -48,14 +53,15 @@ export default function LeagueDetailPage({
   // de la saison est devenu trop grand pour être comblé.
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const periods = useLeaderboardPeriods();
-  // Champion(s) de la ligue la semaine passée (ou de la phase sur la Coupe
-  // NBA et les playoffs) : couronne à côté du pseudo.
+  // Champion(s) de la ligue : la semaine passée, le mois passé sur « Ce
+  // mois-ci », la phase sur la Coupe NBA, les playoffs et le général.
   const phase = championPhase(period);
-  const championsQuery = useQuery<{ champions: { username: string }[] }>({
+  const championsQuery = useQuery<WeekChampions | PhaseChampions>({
     queryKey: phase ? ["phase-champions", phase, id] : ["week-champions", id],
     queryFn: () => (phase ? fetchPhaseChampions(phase, id) : fetchWeekChampions(id)),
     staleTime: 10 * 60 * 1000,
   });
+  const champions = new Set(championsQuery.data?.champions.map((c) => c.username));
   const leaderboardQuery = useQuery({
     queryKey: ["league-leaderboard", id, period],
     queryFn: () => fetchLeagueLeaderboard(id, period),
@@ -76,6 +82,8 @@ export default function LeagueDetailPage({
   const myIndex = leaderboard.findIndex((e) => e.username === profile?.username);
   const me = myIndex >= 0 ? leaderboard[myIndex] : undefined;
   const above = me ? leaderboard.slice(0, myIndex).reverse().find((e) => e.points > me.points) : undefined;
+  const ranks = new Map(leaderboard.map((e) => [e.username, e]));
+  const hue = hueFromName(league?.name ?? "Ligue");
 
   const reactMutation = useMutation({
     mutationFn: ({ targetType, targetId, emoji }: { targetType: string; targetId: string; emoji: string }) =>
@@ -102,8 +110,14 @@ export default function LeagueDetailPage({
     return () => clearTimeout(timeout);
   }, [confirmingLeave]);
 
+  const tabs: { value: Tab; label: string; icon: React.ElementType }[] = [
+    { value: "classement", label: "Classement", icon: Trophy },
+    { value: "membres", label: `Membres${membersQuery.data ? ` · ${membersQuery.data.length}` : ""}`, icon: Users },
+    { value: "activite", label: "Activité", icon: Activity },
+  ];
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <Link
         href="/leagues"
         className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -112,83 +126,69 @@ export default function LeagueDetailPage({
         Mes ligues
       </Link>
 
-      <Card className="relative overflow-hidden">
-        <CardContent className="flex flex-wrap items-center justify-between gap-4 pt-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <LeagueCrest name={league?.name ?? "Ligue"} size={64} />
-            <div className="min-w-0">
-              <h1 className="truncate font-heading text-2xl font-bold">{league?.name ?? "Ligue"}</h1>
-              {league && (
-                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                  {league.memberCount} membre{league.memberCount > 1 ? "s" : ""}
-                  <span aria-hidden>·</span>
-                  <button
-                    type="button"
-                    onClick={() => copyLeagueCode(league.inviteCode)}
-                    className="glass-inset flex items-center gap-1.5 rounded-lg px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground"
-                    aria-label={`Copier le code ${league.inviteCode}`}
-                  >
-                    {league.inviteCode}
-                    <Copy className="h-3 w-3" />
-                  </button>
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex shrink-0 gap-2">
+      {/* En-tête aux couleurs du blason : chaque ligue a sa teinte. */}
+      <div
+        className="glass relative overflow-hidden rounded-3xl p-5 sm:p-6"
+        style={{ background: `linear-gradient(135deg, hsl(${hue} 55% 30% / 0.35), transparent 70%)` }}
+      >
+        <div className="flex items-center gap-4">
+          <LeagueCrest name={league?.name ?? "Ligue"} size={72} />
+          <div className="min-w-0 flex-1">
+            <h1 className="line-clamp-2 break-words font-heading text-2xl font-bold leading-tight sm:text-3xl">{league?.name ?? "Ligue"}</h1>
             {league && (
-              <Button size="sm" onClick={() => shareLeagueInvite(league)}>
-                <Share2 className="h-3.5 w-3.5" />
-                Inviter
-              </Button>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {league.memberCount} membre{league.memberCount > 1 ? "s" : ""}
+                {leaderboard[0] && (
+                  <>
+                    {" · "}
+                    <span className="text-foreground">{leaderboard[0].username}</span> en tête
+                  </>
+                )}
+              </p>
             )}
-            <Button
-              variant={confirmingLeave ? "destructive" : "outline"}
-              size="sm"
-              className="gap-1.5"
-              onClick={() => (confirmingLeave ? leaveMutation.mutate() : setConfirmingLeave(true))}
-              disabled={leaveMutation.isPending}
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              {confirmingLeave ? "Confirmer ?" : "Quitter"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {me && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="glass-accent rounded-2xl px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ta position</p>
-            <p className="font-heading text-2xl font-bold">
-              #{me.rank}
-              <span className="text-sm font-normal text-muted-foreground"> / {leaderboard.length}</span>
-            </p>
-          </div>
-          <div className="glass rounded-2xl px-4 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tes points</p>
-            <p className="font-mono text-2xl font-bold">{formatSignedPoints(me.points, false)}</p>
-          </div>
-          <div className="glass rounded-2xl px-4 py-3">
-            <p className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <TrendingUp className="h-3 w-3" />
-              Objectif
-            </p>
-            <p className="text-sm font-medium">
-              {me.rank === 1
-                ? "Tu mènes la ligue."
-                : above
-                  ? `${(above.points - me.points).toLocaleString("fr-FR")} pts pour doubler ${above.username}`
-                  : "À égalité avec le joueur devant toi."}
-            </p>
           </div>
         </div>
-      )}
+        {league && (
+          <div className="mt-4 flex items-center gap-2">
+            <Button size="sm" onClick={() => shareLeagueInvite(league)}>
+              <Share2 className="h-3.5 w-3.5" />
+              Inviter
+            </Button>
+            <button
+              type="button"
+              onClick={() => copyLeagueCode(league.inviteCode)}
+              className="glass-inset flex h-8 items-center gap-1.5 rounded-xl px-2.5 font-mono text-xs font-bold tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={`Copier le code ${league.inviteCode}`}
+            >
+              {league.inviteCode}
+              <Copy className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="glass relative overflow-hidden rounded-2xl">
-          <div className="flex gap-2 overflow-x-auto px-4 pt-4" role="group" aria-label="Période du classement">
+      <div className="glass-inset-quiet flex gap-1 rounded-2xl p-1" role="tablist" aria-label="Rubrique de la ligue">
+        {tabs.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.value}
+            onClick={() => setTab(t.value)}
+            className={cn(
+              "flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold transition-colors",
+              tab === t.value ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <t.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === "classement" && (
+        <div className="flex flex-col gap-4" role="tabpanel">
+          <div className="glass-scroll flex gap-2 overflow-x-auto" role="group" aria-label="Période du classement">
             {periods.map((p) => (
               <button
                 key={p.value}
@@ -204,73 +204,126 @@ export default function LeagueDetailPage({
               </button>
             ))}
           </div>
-          <LeaderboardTable
-            entries={leaderboardQuery.data}
-            isLoading={leaderboardQuery.isLoading}
-            isError={leaderboardQuery.isError}
-            emptyMessage={
-              period === "week"
-                ? "Aucun ticket réglé dans la ligue cette semaine."
-                : period === "month"
-                  ? "Aucun ticket réglé dans la ligue ce mois-ci."
-                  : phase
-                    ? `Aucun ticket ${periodOption(period).scope} réglé dans la ligue.`
-                    : "Aucun ticket réglé dans cette ligue pour l'instant."
-            }
-            currentUsername={profile?.username}
-            champions={new Set(championsQuery.data?.champions.map((c) => c.username))}
-          />
+
+          {championsQuery.data && <ChampionBanner data={championsQuery.data} shareable={false} />}
+
+          {me && (
+            <div className="grid grid-cols-3 gap-2">
+              <div className="glass-accent rounded-2xl px-3 py-2.5">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Ta place</p>
+                <p className="font-heading text-2xl font-bold">
+                  #{me.rank}
+                  <span className="text-sm font-normal text-muted-foreground"> / {leaderboard.length}</span>
+                </p>
+              </div>
+              <div className="glass rounded-2xl px-3 py-2.5">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Tes points</p>
+                <p className="font-mono text-xl font-bold">{formatSignedPoints(me.points, false)}</p>
+              </div>
+              <div className="glass rounded-2xl px-3 py-2.5">
+                <p className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <TrendingUp className="h-3 w-3" />
+                  Objectif
+                </p>
+                <p className="text-xs font-medium leading-snug">
+                  {me.rank === 1
+                    ? "Tu mènes la ligue."
+                    : above
+                      ? `${(above.points - me.points).toLocaleString("fr-FR")} pts pour doubler ${above.username}`
+                      : "À égalité devant."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {leaderboard.length > 0 && (
+            <Podium entries={leaderboard} username={profile?.username} champions={champions} />
+          )}
+
+          {(leaderboardQuery.isLoading || leaderboardQuery.isError || leaderboard.length !== 3) && (
+            <div className="glass relative overflow-hidden rounded-2xl">
+              <LeaderboardTable
+                entries={leaderboardQuery.data?.slice(3)}
+                isLoading={leaderboardQuery.isLoading}
+                isError={leaderboardQuery.isError}
+                emptyMessage={
+                  leaderboard.length > 0
+                    ? "Tout le monde est sur le podium."
+                    : period === "week"
+                      ? "Aucun ticket réglé dans la ligue cette semaine."
+                      : period === "month"
+                        ? "Aucun ticket réglé dans la ligue ce mois-ci."
+                        : phase
+                          ? `Aucun ticket ${periodOption(period).scope} réglé dans la ligue.`
+                          : "Aucun ticket réglé dans cette ligue pour l'instant."
+                }
+                currentUsername={profile?.username}
+                champions={champions}
+              />
+            </div>
+          )}
         </div>
+      )}
 
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Membres ({membersQuery.data?.length ?? "…"})
-            </p>
-
+      {tab === "membres" && (
+        <Card role="tabpanel">
+          <CardContent className="flex flex-col divide-y divide-tint/10 pt-2">
             {membersQuery.isLoading && (
-              <div className="flex flex-col gap-2">
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-full" />
+              <div className="flex flex-col gap-2 py-3">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
               </div>
             )}
 
             {membersQuery.isError && (
-              <p className="text-sm text-destructive">Impossible de charger les membres.</p>
+              <p className="py-4 text-sm text-destructive">Impossible de charger les membres.</p>
             )}
 
-            {membersQuery.data?.map((member) => (
-              <div key={member.username} className="flex items-center justify-between text-sm">
+            {[...(membersQuery.data ?? [])]
+              .sort((a, b) => (ranks.get(a.username)?.rank ?? Infinity) - (ranks.get(b.username)?.rank ?? Infinity))
+              .map((member) => {
+              const entry = ranks.get(member.username);
+              return (
                 <Link
+                  key={member.username}
                   href={`/u/${encodeURIComponent(member.username)}`}
-                  className="flex min-w-0 items-center gap-2 truncate font-medium hover:underline"
+                  className="group flex items-center gap-3 py-3"
                 >
                   <PlayerAvatar
                     number={member.avatarNumber}
                     position={member.avatarPosition}
                     colorway={member.avatarColorway}
                     icon={member.avatarIcon}
-                    size="xs"
+                    size="sm"
                   />
-                  {member.username}
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2 truncate font-medium group-hover:underline">
+                      {member.username}
+                      {member.username === profile?.username && (
+                        <span className="text-[11px] font-semibold text-primary">toi</span>
+                      )}
+                    </p>
+                    {member.isOwner && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-paint">Créateur</span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-sm font-bold">{entry ? formatSignedPoints(entry.points) : "-"}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {entry ? `#${entry.rank} · ${periodOption(period).label.toLowerCase()}` : "pas classé"}
+                    </p>
+                  </div>
                 </Link>
-                {member.isOwner && (
-                  <span className="shrink-0 rounded-full bg-paint/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-paint">
-                    Créateur
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
+      )}
 
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Activité récente
-            </p>
-
+      {tab === "activite" && (
+        <Card role="tabpanel">
+          <CardContent className="flex flex-col gap-4 pt-6">
             {activityQuery.isLoading && (
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-8 w-full" />
@@ -298,7 +351,7 @@ export default function LeagueDetailPage({
                       position={event.avatarPosition}
                       colorway={event.avatarColorway}
                       icon={event.avatarIcon}
-                      size="xs"
+                      size="sm"
                     />
                     <span
                       className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-background ${isWin ? "text-success" : "text-muted-foreground"}`}
@@ -345,7 +398,19 @@ export default function LeagueDetailPage({
             })}
           </CardContent>
         </Card>
-      </div>
+      )}
+
+      {/* En bas de page, loin du bouton « Inviter » : une action qu'on ne veut pas faire par erreur. */}
+      <Button
+        variant={confirmingLeave ? "destructive" : "ghost"}
+        size="sm"
+        className="mt-2 w-fit gap-1.5 self-center text-muted-foreground"
+        onClick={() => (confirmingLeave ? leaveMutation.mutate() : setConfirmingLeave(true))}
+        disabled={leaveMutation.isPending}
+      >
+        <LogOut className="h-3.5 w-3.5" />
+        {confirmingLeave ? "Confirmer : quitter la ligue" : "Quitter la ligue"}
+      </Button>
     </div>
   );
 }

@@ -27,7 +27,8 @@ export function championPeriodLabel(data: PhaseChampions): string {
  * Avec une phase (Coupe NBA, playoffs) : son champion, en tête de son
  * classement une fois la phase finie.
  */
-export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions }) {
+/** `shareable` : faux pour une ligue, la carte à partager étant celle de tout HoopPicks. */
+export function ChampionBanner({ data, shareable = true }: { data: WeekChampions | PhaseChampions; shareable?: boolean }) {
   const { champions } = data;
   if (champions.length === 0) return null;
   const solo = champions.length === 1;
@@ -56,12 +57,14 @@ export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions 
           <Emblem className="h-3.5 w-3.5" aria-hidden />
           {heading}
         </p>
+        {shareable && (
         <ShareImageButton
           src={"phase" in data ? `/champion/carte?phase=${data.phase}` : "/champion/carte"}
           fileName={"phase" in data ? `hooppicks-champion-${data.phase}.png` : "hooppicks-champion.png"}
           text={shareText}
           discreet
         />
+        )}
       </div>
 
       <div className="relative mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">

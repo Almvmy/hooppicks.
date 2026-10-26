@@ -704,6 +704,159 @@ export function ChampionArt({ champions, weekLabel, of = "de la semaine" }: { ch
   );
 }
 
+/* --------------------------------------------------------- titres longs */
+
+/** Ex æquo : jusqu'à 3 maillots côte à côte, sous le titre. */
+function ChampionRow({ champions, accent }: { champions: WeekChampion[]; accent: string }) {
+  return (
+    <div style={{ display: "flex", gap: 56, marginTop: 40 }}>
+      {champions.slice(0, 3).map((p) => (
+        <div key={p.username} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 260 }}>
+          <Jersey number={p.avatarNumber} size={170} colorway={p.avatarColorway} ring={accent} />
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: p.username.length <= 9 ? 54 : 42, lineHeight: 1, marginTop: 30, maxWidth: 260, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${p.username}`}</div>
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 56, lineHeight: 1, color: accent, marginTop: 10 }}>{signedPlain(p.points)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChampionFooter({ left, color }: { left: string; color: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 44, lineHeight: 1, textTransform: "uppercase", color }}>{left}</div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
+        <Label color={TEXT} size={26} spacing={1.5} upper={false}>{HOST}</Label>
+        <Label color={MUTED} size={20} spacing={2}>Pronostics NBA · sans argent</Label>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Champion du mois : le mois en très grand derrière le maillot, en orange
+ * (l'or reste au champion de la semaine et au titre de la saison).
+ */
+export function MonthChampionArt({ champions, month }: { champions: WeekChampion[]; month: string }) {
+  const solo = champions.length === 1;
+  const c = champions[0];
+  // « Octobre 2026 » → « OCTOBRE » derrière, l'année en petit en haut.
+  const monthWord = month.split(" ")[0] ?? month;
+  const nameSize = !c ? 100 : c.username.length <= 8 ? 124 : c.username.length <= 12 ? 100 : 80;
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} slab={{ color: "#2B1708", left: 560, width: 720 }} />
+      <div style={{ position: "absolute", left: 0, top: 190, width: 1080, display: "flex", justifyContent: "center", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: monthWord.length <= 6 ? 300 : 230, lineHeight: 1, letterSpacing: -4, textTransform: "uppercase", color: "rgba(255,122,26,0.13)" }}>
+        {monthWord}
+      </div>
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "56px 70px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={ORANGE} size={24} spacing={5}>Palmarès</Label>
+            <Label color={MUTED} size={24} spacing={3}>{month}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 30px", borderRadius: 999, background: ORANGE, color: NAVY }}>
+            <Crown size={40} color={NAVY} />
+            <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontSize: 40, letterSpacing: 5, textTransform: "uppercase" }}>
+              {solo ? "Champion du mois" : "Champions du mois"}
+            </div>
+          </div>
+
+          {solo && c ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 40 }}>
+              <Jersey number={c.avatarNumber} size={250} colorway={c.avatarColorway} ring={ORANGE} />
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: nameSize, lineHeight: 1, marginTop: 40, maxWidth: 940, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${c.username}`}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 14 }}>
+                <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 96, lineHeight: 1, color: ORANGE }}>{signedPlain(c.points)}</div>
+                <Label color={MUTED} size={34} spacing={3}>pts sur le mois</Label>
+              </div>
+              {c.favoriteTeam && (
+                <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 28, color: MUTED, marginTop: 12 }}>{supporterOf(c.favoriteTeam)}</div>
+              )}
+            </div>
+          ) : (
+            <ChampionRow champions={champions} accent={ORANGE} />
+          )}
+        </div>
+
+        <ChampionFooter left="Le mois prochain, à qui le tour ?" color={ORANGE} />
+      </div>
+    </div>
+  );
+}
+
+/** Trophée (coupe à anses sur un socle), pour le titre de la saison. */
+function TrophyCup({ size, color }: { size: number; color: string }) {
+  return (
+    <svg width={size} height={Math.round(size * 1.1)} viewBox="0 0 100 110">
+      <path d="M22 6 H78 V34 C78 54 66 66 50 68 C34 66 22 54 22 34 Z" fill={color} />
+      <path d="M22 14 H8 V26 C8 38 16 46 26 48 L27 41 C20 39 15 34 15 26 V21 H22 Z" fill={color} />
+      <path d="M78 14 H92 V26 C92 38 84 46 74 48 L73 41 C80 39 85 34 85 26 V21 H78 Z" fill={color} />
+      <rect x="44" y="66" width="12" height="18" fill={color} />
+      <rect x="30" y="84" width="40" height="10" rx="2" fill={color} />
+      <rect x="22" y="96" width="56" height="12" rx="3" fill={color} />
+    </svg>
+  );
+}
+
+/**
+ * Champion HoopPicks de la saison (toutes compétitions) : le titre suprême,
+ * donc la carte la plus chargée en or, trophée au lieu de la couronne.
+ */
+export function SeasonChampionArt({ champions, season }: { champions: WeekChampion[]; season: string }) {
+  const gold = MEDAL[1].color;
+  const solo = champions.length === 1;
+  const c = champions[0];
+  const nameSize = !c ? 100 : c.username.length <= 8 ? 104 : c.username.length <= 12 ? 88 : 72;
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} />
+      <div style={{ position: "absolute", left: 0, top: 0, width: 1080, height: 1080, display: "flex", background: "radial-gradient(circle at 50% 46%, rgba(245,183,0,0.34) 0%, rgba(245,183,0,0.10) 32%, rgba(245,183,0,0) 58%)" }} />
+      <div style={{ position: "absolute", left: 0, top: 0, width: 1080, height: 14, display: "flex", background: gold }} />
+      <div style={{ position: "absolute", left: 0, top: 1066, width: 1080, height: 14, display: "flex", background: gold }} />
+
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", width: 1080, height: 1080, padding: "62px 70px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={gold} size={24} spacing={5}>{`Saison ${season}`}</Label>
+            <Label color={MUTED} size={22} spacing={3}>Toutes compétitions</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center" }}>
+          <TrophyCup size={solo ? 96 : 90} color={gold} />
+          <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 84, lineHeight: 1, letterSpacing: 1, textTransform: "uppercase", color: gold, marginTop: 14 }}>
+            {solo ? "Champion HoopPicks" : "Champions HoopPicks"}
+          </div>
+
+          {solo && c ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 24 }}>
+              <div style={{ display: "flex", padding: 8, borderRadius: 999, boxShadow: `0 0 0 4px ${gold}` }}>
+                <Jersey number={c.avatarNumber} size={190} colorway={c.avatarColorway} ring={NAVY} />
+              </div>
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: nameSize, lineHeight: 1, marginTop: 26, maxWidth: 940, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{`@${c.username}`}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 12 }}>
+                <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 76, lineHeight: 1, color: gold }}>{signedPlain(c.points)}</div>
+                <Label color={MUTED} size={32} spacing={3}>pts sur la saison</Label>
+              </div>
+            </div>
+          ) : (
+            <ChampionRow champions={champions} accent={gold} />
+          )}
+        </div>
+
+        <ChampionFooter left="Le titre suprême" color={gold} />
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------ introuvable */
 
 /** Aperçu quand le ticket ou le joueur n'existe plus (lien périmé ou mal copié). */

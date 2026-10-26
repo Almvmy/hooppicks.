@@ -23,6 +23,7 @@ import { fetchProfile } from "@/lib/api/auth";
 import { copyLeagueCode, shareLeagueInvite } from "@/lib/league-invite";
 import { League, LeaderboardEntry, LeagueMember, LeaguePreview } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
+import { cn } from "@/lib/utils";
 
 function MemberStack({ members }: { members: LeagueMember[] | undefined }) {
   if (!members?.length) return null;
@@ -130,6 +131,8 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
   const [name, setName] = useState("");
   const [code, setCode] = useState((codeFromLink ?? "").toUpperCase().slice(0, 6));
   const [preview, setPreview] = useState<LeaguePreview | null>(null);
+  // Lien d'invitation : directement sur « Rejoindre ».
+  const [mode, setMode] = useState<"create" | "join">(codeFromLink ? "join" : "create");
 
   const leaguesQuery = useQuery({ queryKey: ["leagues"], queryFn: fetchMyLeagues });
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -166,7 +169,10 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
 
   const previewMutation = useMutation({
     mutationFn: (inviteCode: string) => previewLeague(inviteCode),
-    onSuccess: (result) => setPreview(result),
+    onSuccess: (result) => {
+      setPreview(result);
+      setMode("join");
+    },
     onError: () => toast.error("Code d'invitation invalide."),
   });
   const { mutate: showPreview } = previewMutation;
@@ -196,84 +202,101 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
     showPreview(codeFromLink.toUpperCase().slice(0, 6));
   }, [codeFromLink, leaguesQuery.isLoading, leagues, showPreview]);
 
+  // Créer ou rejoindre : un seul bloc à deux onglets. En haut tant qu'on n'a
+  // pas de ligue (ou qu'une invitation attend), sous ses ligues ensuite.
+  const actions = (
+    <Card className={preview ? "glass-accent" : undefined}>
+      <CardContent className="flex flex-col gap-3 pt-5">
+        <div className="glass-inset-quiet flex gap-1 rounded-xl p-1" role="tablist" aria-label="Créer ou rejoindre">
+          {(
+            [
+              { value: "create", label: "Créer une ligue", icon: Plus },
+              { value: "join", label: "Rejoindre", icon: KeyRound },
+            ] as const
+          ).map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={mode === t.value}
+              onClick={() => setMode(t.value)}
+              className={cn(
+                "flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition-colors",
+                mode === t.value ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <t.icon className="h-3.5 w-3.5" />
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {mode === "create" ? (
+          <div className="flex gap-2">
+            {name.trim() && <LeagueCrest name={name} size={40} />}
+            <Input
+              placeholder="Nom de la ligue"
+              value={name}
+              maxLength={40}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && name.trim() && createMutation.mutate()}
+              aria-label="Nom de la ligue"
+            />
+            <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !name.trim()}>
+              Créer
+            </Button>
+          </div>
+        ) : preview ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <LeagueCrest name={preview.name} size={44} />
+              <div>
+                <p className="font-heading font-bold text-foreground">{preview.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {preview.memberCount} membre{preview.memberCount > 1 ? "s" : ""} · code{" "}
+                  <span className="font-mono font-bold">{code}</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => joinMutation.mutate()} disabled={joinMutation.isPending}>
+                Rejoindre la ligue
+              </Button>
+              <Button variant="outline" onClick={() => setPreview(null)} disabled={joinMutation.isPending}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Code, ex. K7P2QX"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === "Enter" && code.trim() && previewMutation.mutate(code.trim())}
+              className="font-mono uppercase tracking-widest"
+              maxLength={6}
+              aria-label="Code d'invitation"
+            />
+            <Button
+              variant="outline"
+              onClick={() => previewMutation.mutate(code.trim())}
+              disabled={previewMutation.isPending || !code.trim()}
+            >
+              Rechercher
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+  const actionsFirst = leagues.length === 0 || !!preview;
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader badge="Compétition" title="Ligues" />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
-              <Plus className="h-3.5 w-3.5" />
-              Créer une ligue
-            </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nom de la ligue"
-                value={name}
-                maxLength={40}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && name.trim() && createMutation.mutate()}
-              />
-              {name.trim() && <LeagueCrest name={name} size={40} />}
-              <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !name.trim()}>
-                Créer
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={preview ? "glass-accent" : undefined}>
-          <CardContent className="flex flex-col gap-3 pt-6">
-            <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
-              <KeyRound className="h-3.5 w-3.5" />
-              Rejoindre avec un code
-            </p>
-
-            {preview ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <LeagueCrest name={preview.name} size={44} />
-                  <div>
-                    <p className="font-heading font-bold text-foreground">{preview.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {preview.memberCount} membre{preview.memberCount > 1 ? "s" : ""} · code{" "}
-                      <span className="font-mono font-bold">{code}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => joinMutation.mutate()} disabled={joinMutation.isPending}>
-                    Rejoindre la ligue
-                  </Button>
-                  <Button variant="outline" onClick={() => setPreview(null)} disabled={joinMutation.isPending}>
-                    Annuler
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ex. K7P2QX"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  onKeyDown={(e) => e.key === "Enter" && code.trim() && previewMutation.mutate(code.trim())}
-                  className="font-mono uppercase tracking-widest"
-                  maxLength={6}
-                  aria-label="Code d'invitation"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => previewMutation.mutate(code.trim())}
-                  disabled={previewMutation.isPending || !code.trim()}
-                >
-                  Rechercher
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {actionsFirst && actions}
 
       {leaguesQuery.isLoading && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -296,7 +319,7 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
             <Shield className="h-8 w-8 text-paint" />
             <p className="font-medium text-foreground">Pas encore de ligue</p>
             <p className="max-w-sm text-sm">
-              Crées-en une et envoie le lien d&apos;invitation à tes potes, ou rejoins la leur avec leur code.
+              Crée la tienne et envoie le lien à tes potes, ou rejoins la leur avec leur code.
             </p>
           </CardContent>
         </Card>
@@ -315,6 +338,8 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
           ))}
         </div>
       )}
+
+      {!actionsFirst && actions}
     </div>
   );
 }
