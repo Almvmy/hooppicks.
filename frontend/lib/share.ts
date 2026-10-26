@@ -75,7 +75,7 @@ export const fetchSharedLeaderboard = (period: import("@/lib/types").Leaderboard
 export const fetchSharedChampions = () => get<import("@/lib/types").WeekChampions>("/palmares/champions", true);
 
 /** Champion(s) de la Coupe NBA ou des playoffs de la saison, pour leur carte de partage. */
-export const fetchSharedPhaseChampions = (phase: import("@/lib/types").LeaderboardPhase) =>
+export const fetchSharedPhaseChampions = (phase: import("@/lib/types").ChampionPhase) =>
   get<import("@/lib/types").PhaseChampions>(`/palmares/champions?phase=${phase}`, true);
 
 /** Les 30 équipes (sigle, nom, logo), pour dessiner les cartes des pronostics de saison. */

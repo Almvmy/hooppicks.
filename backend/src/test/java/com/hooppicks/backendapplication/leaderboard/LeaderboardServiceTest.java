@@ -71,11 +71,17 @@ class LeaderboardServiceTest {
 
     @Test
     void mois_commence_le_premier_a_minuit_gmt() {
+        assertThat(LeaderboardPeriod.monthStart(java.time.LocalDate.of(2026, 11, 1))).isEqualTo(Instant.parse("2026-11-01T00:00:00Z"));
+    }
+
+    @Test
+    void octobre_2026_commence_a_la_premiere_semaine_officielle() {
         when(betRepository.getLeaderboardRawSince(any(), any())).thenReturn(List.of());
 
         service.leaderboard(LeaderboardPeriod.MONTH);
 
-        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-01T00:00:00Z"), "ALL");
+        // Lundi 12 octobre 12h GMT : les semaines d'essai d'avant ne comptent pas.
+        verify(betRepository).getLeaderboardRawSince(Instant.parse("2026-10-12T12:00:00Z"), "ALL");
     }
 
     @Test

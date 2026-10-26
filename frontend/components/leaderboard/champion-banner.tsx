@@ -1,18 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Crown } from "lucide-react";
+import { Crown, Trophy } from "lucide-react";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { ShareImageButton } from "@/components/share-image-button";
-import { LeaderboardPhase, PhaseChampions, WeekChampions } from "@/lib/types";
-import { formatSignedPoints, weekLabel } from "@/lib/utils";
+import { ChampionPhase, PhaseChampions, WeekChampions } from "@/lib/types";
+import { formatSignedPoints, monthLabel, weekLabel } from "@/lib/utils";
 
 const GOLD = "#F5B700";
 
-const PHASE_TITLES: Record<LeaderboardPhase, { one: string; many: string; of: string }> = {
+const PHASE_TITLES: Record<ChampionPhase, { one: string; many: string; of: string }> = {
   cup: { one: "Champion de la Coupe NBA", many: "Champions de la Coupe NBA", of: "de la Coupe NBA" },
   playoffs: { one: "Champion des playoffs", many: "Champions des playoffs", of: "des playoffs" },
+  general: { one: "Champion HoopPicks", many: "Champions HoopPicks", of: "HoopPicks de la saison" },
+  month: { one: "Champion du mois", many: "Champions du mois", of: "du mois" },
 };
+
+/** Période gagnée, sous les champions : « Octobre 2026 », « Saison 2026-27 ». */
+export function championPeriodLabel(data: PhaseChampions): string {
+  return data.phase === "month" ? monthLabel(data.season) : `Saison ${data.season}`;
+}
 
 /**
  * Champion(s) de la semaine passée, en tête du classement toute la semaine
@@ -25,11 +32,13 @@ export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions 
   if (champions.length === 0) return null;
   const solo = champions.length === 1;
   const phase = "phase" in data ? PHASE_TITLES[data.phase] : null;
+  // Le trophée pour le titre de la saison, la couronne pour les autres.
+  const Emblem = "phase" in data && data.phase === "general" ? Trophy : Crown;
   const heading = phase
     ? solo ? phase.one : phase.many
     : solo ? "Champion de la semaine dernière" : "Champions de la semaine dernière";
   const shareText = phase
-    ? `${solo ? `@${champions[0].username} est champion` : "Les champions"} ${phase.of} ${"season" in data ? data.season : ""} sur HoopPicks 👑`
+    ? `${solo ? `@${champions[0].username} est champion` : "Les champions"} ${phase.of} ${"season" in data ? championPeriodLabel(data).toLowerCase() : ""} sur HoopPicks 👑`
     : `${solo ? `@${champions[0].username} est champion` : "Les champions"} de la semaine sur HoopPicks 👑 Qui va le détrôner ?`;
 
   return (
@@ -40,11 +49,11 @@ export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions 
         boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${GOLD} 40%, transparent)`,
       }}
     >
-      <Crown aria-hidden className="pointer-events-none absolute -right-4 -top-5 h-28 w-28 rotate-12 opacity-[0.08]" style={{ color: GOLD }} />
+      <Emblem aria-hidden className="pointer-events-none absolute -right-4 -top-5 h-28 w-28 rotate-12 opacity-[0.08]" style={{ color: GOLD }} />
 
       <div className="relative flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: GOLD }}>
-          <Crown className="h-3.5 w-3.5" aria-hidden />
+          <Emblem className="h-3.5 w-3.5" aria-hidden />
           {heading}
         </p>
         <ShareImageButton
@@ -69,7 +78,7 @@ export function ChampionBanner({ data }: { data: WeekChampions | PhaseChampions 
         ))}
       </div>
 
-      <p className="relative mt-2 text-xs text-muted-foreground">{"week" in data ? weekLabel(data.week) : `Saison ${data.season}`}</p>
+      <p className="relative mt-2 text-xs text-muted-foreground">{"week" in data ? weekLabel(data.week) : championPeriodLabel(data)}</p>
     </div>
   );
 }

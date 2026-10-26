@@ -19,7 +19,7 @@ import { RankChange, RecentForm, StreakBadge } from "@/components/leaderboard/tr
 import { FanTeams } from "@/components/leaderboard/fan-teams";
 import { ChampionBanner, ChampionCrown } from "@/components/leaderboard/champion-banner";
 import { fetchPhaseChampions, fetchWeekChampions } from "@/lib/api/palmares";
-import { isPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
+import { championPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
 import { ShareImageButton } from "@/components/share-image-button";
 import { fetchLeaderboard, leaderboardQueryKey } from "@/lib/api/leaderboard";
 import { fetchProfile } from "@/lib/api/auth";
@@ -196,8 +196,8 @@ function PlayersRanking({ username }: { username: string | undefined }) {
   const teams = useTeamsByAbbreviation();
   const [query, setQuery] = useState("");
   // Champion(s) de la semaine passée : bandeau en tête et couronne à côté du pseudo.
-  // Sur la Coupe NBA et les playoffs : le champion de la phase, une fois finie.
-  const phase = isPhase(period) ? period : null;
+  // Sur le mois : celui du mois passé ; sur une phase : son champion, une fois finie.
+  const phase = championPhase(period);
   const championsQuery = useQuery({ queryKey: ["week-champions"], queryFn: () => fetchWeekChampions(), staleTime: 10 * 60 * 1000, enabled: !phase });
   const phaseChampionsQuery = useQuery({
     queryKey: ["phase-champions", phase],

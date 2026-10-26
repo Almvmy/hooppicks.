@@ -38,9 +38,11 @@ public class AvatarService {
 
     public static final Set<String> POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
     public static final Set<String> COLORWAYS = Set.of("orange", "purple", "blue", "green", "red", "teal", "gold", "navy", "black");
-    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak");
+    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak", "trophy");
     public static final String CROWN = "crown";
     public static final String STREAK = "streak";
+    // Le titre suprême : champion HoopPicks de la saison, sur tout HoopPicks.
+    public static final String TROPHY = "trophy";
     private static final int STREAK_TO_UNLOCK = 5;
 
     private static final List<String> FREE_ICONS = List.of("dunk", "three", "handles", "defense", "playmaker");
@@ -116,12 +118,15 @@ public class AvatarService {
         if (badgeService.computeBestWinStreak(betRepository.findByUserIdOrderByPlacedAtDesc(userId)) >= STREAK_TO_UNLOCK) {
             unlocked.add(STREAK);
         }
+        if (phaseTitleRepository.existsByUserIdAndPhaseAndLeagueIdIsNull(userId, "GENERAL")) {
+            unlocked.add(TROPHY);
+        }
         return unlocked;
     }
 
     public boolean canUseIcon(String userId, String icon) {
         if (!ICONS.contains(icon)) return false;
-        return !(CROWN.equals(icon) || STREAK.equals(icon)) || unlockedIcons(userId).contains(icon);
+        return !(CROWN.equals(icon) || STREAK.equals(icon) || TROPHY.equals(icon)) || unlockedIcons(userId).contains(icon);
     }
 
     // Comptes créés avant les maillots par défaut, qui ont tous le même n°0

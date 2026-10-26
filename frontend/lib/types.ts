@@ -14,8 +14,8 @@ export interface WalletData {
 
 export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
 export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal" | "gold" | "navy" | "black";
-/** À débloquer : crown (joueur titré : champion de la semaine, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée). */
-export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak";
+/** À débloquer : crown (joueur titré : champion de la semaine, du mois, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée), trophy (champion HoopPicks de la saison). */
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak" | "trophy";
 
 export interface UserProfile {
   username: string;
@@ -350,9 +350,12 @@ export interface LeaderboardEntry {
 }
 
 /** cup / playoffs : tickets dont tous les matchs sont de la phase (Coupe NBA ; play-in et playoffs). */
-export type LeaderboardPeriod = "season" | "month" | "week" | "cup" | "playoffs";
+export type LeaderboardPeriod = "season" | "month" | "week" | "cup" | "playoffs" | "general";
 
 export type LeaderboardPhase = "cup" | "playoffs";
+
+/** Titres attribués en fin de période (GET /palmares/champions?phase=) : month = le mois qui vient de finir. */
+export type ChampionPhase = LeaderboardPhase | "general" | "month";
 
 export interface League {
   id: string;
@@ -576,10 +579,14 @@ export interface WeekChampions {
   champions: WeekChampion[];
 }
 
-/** Champion(s) de la Coupe NBA ou des playoffs de la saison (GET /palmares/champions?phase=), vide tant que la phase n'est pas finie. */
+/**
+ * Champion(s) de la Coupe NBA, des playoffs, de la saison toutes compétitions
+ * ou du mois qui vient de finir (GET /palmares/champions?phase=), vide tant
+ * que la période n'est pas finie. `season` : « 2026-27 », ou le mois (« 2026-10 »).
+ */
 export interface PhaseChampions {
   season: string;
-  phase: LeaderboardPhase;
+  phase: ChampionPhase;
   champions: WeekChampion[];
 }
 
@@ -589,5 +596,5 @@ export interface Palmares {
   duelWins: number;
   bestWeek: number | null;
   /** leagueName null : sur tout HoopPicks. */
-  phaseTitles: { phase: LeaderboardPhase; season: string; leagueName: string | null; points: number }[];
+  phaseTitles: { phase: ChampionPhase; season: string; leagueName: string | null; points: number }[];
 }

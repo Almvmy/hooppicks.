@@ -29,7 +29,8 @@ public class PalmaresController {
     /**
      * Champion(s) de la semaine passée : public, comme le classement (bandeau
      * du classement, couronne, carte de partage). Avec leagueId : ceux de la ligue.
-     * Avec phase=cup|playoffs : champion(s) de la Coupe NBA ou des playoffs de la saison.
+     * Avec phase=cup|playoffs|general : champion(s) de la Coupe NBA, des playoffs
+     * ou de la saison toutes compétitions ; phase=month : du mois qui vient de finir.
      */
     @GetMapping("/champions")
     public ResponseEntity<?> champions(@RequestParam(required = false) String leagueId,
@@ -41,7 +42,7 @@ public class PalmaresController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
-        if (parsed != LeaderboardPeriod.CUP && parsed != LeaderboardPeriod.PLAYOFFS) {
+        if (parsed == LeaderboardPeriod.SEASON || parsed == LeaderboardPeriod.WEEK) {
             return ResponseEntity.badRequest().body("Phase inconnue : " + phase);
         }
         return ResponseEntity.ok(phaseChampionService.champions(parsed, leagueId));

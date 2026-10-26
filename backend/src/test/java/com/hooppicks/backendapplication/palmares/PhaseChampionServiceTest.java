@@ -162,7 +162,8 @@ class PhaseChampionServiceTest {
         when(matchRepository.findByTypeAndStatusAndDateAfter(MatchType.PLAYOFFS, MatchStatus.FINISHED, SEASON_START))
                 .thenReturn(List.of(match(MatchType.PLAYOFFS, "Finales NBA · Match 6", "OKC remporte la série 4-2", june)));
 
-        assertThat(later.recordEndedPhases()).isEqualTo(1);
+        // Playoffs et classement général, clos ensemble.
+        assertThat(later.recordEndedPhases()).isEqualTo(2);
         ArgumentCaptor<PhaseTitle> saved = ArgumentCaptor.forClass(PhaseTitle.class);
         verify(titleRepository).save(saved.capture());
         assertThat(saved.getValue().getPhase()).isEqualTo("PLAYOFFS");
@@ -185,6 +186,63 @@ class PhaseChampionServiceTest {
         assertThat(champions.phase()).isEqualTo("cup");
         assertThat(champions.champions()).extracting(PalmaresService.Champion::username).containsExactly("alpha");
         assertThat(champions.champions().get(0).points()).isEqualTo(400);
+    }
+
+    @Test
+    void champion_hooppicks_de_la_saison_avec_les_playoffs() {
+        Instant june = Instant.parse("2027-06-18T01:00:00Z");
+        when(matchRepository.findByTypeAndStatusAndDateAfter(MatchType.PLAYOFFS, MatchStatus.FINISHED, SEASON_START))
+                .thenReturn(List.of(match(MatchType.PLAYOFFS, "Finales NBA · Match 6", "OKC remporte la série 4-2", june)));
+        when(betRepository.getLeaderboardRawSince(SEASON_START, "GENERAL")).thenReturn(List.of(row("a", 5200), row("b", 4100)));
+
+        service(june.plus(Duration.ofDays(2))).recordEndedPhases();
+
+        ArgumentCaptor<PhaseTitle> saved = ArgumentCaptor.forClass(PhaseTitle.class);
+        verify(titleRepository).save(saved.capture());
+        assertThat(saved.getValue().getPhase()).isEqualTo("GENERAL");
+        assertThat(saved.getValue().getUserId()).isEqualTo("a");
+        assertThat(PhaseChampionService.title("GENERAL", "2026-27")).isEqualTo("Champion HoopPicks 2026-27");
+    }
+
+    @Test
+    void champion_du_mois_une_fois_ses_semaines_finies() {
+        // Lundi 2 novembre 2026 à 14h GMT : les semaines d'octobre (lundis 12, 19, 26) sont finies.
+        Instant monday = Instant.parse("2026-11-02T14:00:00Z");
+        LocalDateTime from = LocalDateTime.parse("2026-10-12T00:00"); // semaines d'essai exclues
+        LocalDateTime to = LocalDateTime.parse("2026-11-02T00:00");
+        when(betRepository.getWeeklyScoreLeaderboardBetween(from, to, "ALL")).thenReturn(List.of(row("a", 900), row("b", 300)));
+
+        assertThat(service(monday).recordEndedMonths()).isEqualTo(1);
+
+        ArgumentCaptor<PhaseTitle> saved = ArgumentCaptor.forClass(PhaseTitle.class);
+        verify(titleRepository).save(saved.capture());
+        assertThat(saved.getValue().getSeason()).isEqualTo("2026-10");
+        assertThat(saved.getValue().getPhase()).isEqualTo("MONTH");
+        assertThat(saved.getValue().getUserId()).isEqualTo("a");
+        verify(notificationRepository).save(any());
+        ArgumentCaptor<PalmaresPhase> marker = ArgumentCaptor.forClass(PalmaresPhase.class);
+        verify(phaseRepository).save(marker.capture());
+        assertThat(marker.getValue().getId()).isEqualTo("2026-10:MONTH");
+    }
+
+    @Test
+    void mois_pas_fini_tant_que_sa_derniere_semaine_court() {
+        // Samedi 31 octobre : la semaine du lundi 26 octobre n'est pas finie.
+        assertThat(service(Instant.parse("2026-10-31T20:00:00Z")).recordEndedMonths()).isZero();
+        // Dimanche 1er novembre : toujours la semaine du 26 octobre.
+        assertThat(service(Instant.parse("2026-11-01T20:00:00Z")).recordEndedMonths()).isZero();
+        verify(phaseRepository, never()).save(any());
+    }
+
+    @Test
+    void champions_du_mois_qui_vient_de_finir() {
+        when(titleRepository.findBySeasonAndPhaseAndLeagueIdIsNull("2026-11", "MONTH")).thenReturn(List.of());
+
+        PhaseChampionService.PhaseChampions champions =
+                service(Instant.parse("2026-12-16T20:00:00Z")).champions(LeaderboardPeriod.MONTH, null);
+
+        assertThat(champions.season()).isEqualTo("2026-11");
+        assertThat(champions.phase()).isEqualTo("month");
     }
 
     private static LeagueMembership member(String userId) {

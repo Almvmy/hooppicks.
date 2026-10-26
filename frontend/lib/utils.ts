@@ -49,6 +49,12 @@ export function weekLabel(monday: string): string {
   return `Semaine du ${day}`;
 }
 
+/** « 2026-10 » → « Octobre 2026 ». */
+export function monthLabel(month: string): string {
+  const label = new Date(`${month}-15T12:00:00Z`).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function formatLongDate(date: Date, timeZone = resolveTimeZone()): string {
   return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", timeZone });
 }

@@ -20,6 +20,8 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     //   ticket Coupe + saison régulière ne compte qu'en saison.
     // - PLAYOFFS : seulement les tickets dont tous les matchs sont de play-in
     //   ou de playoffs.
+    // - GENERAL : toute la saison, toutes compétitions (saison régulière,
+    //   Coupe, play-in, playoffs), sans la présaison (même exception que SEASON).
     String PHASE_FILTER = """
           AND (:phase = 'ALL'
                OR (:phase = 'SEASON'
@@ -28,6 +30,10 @@ public interface BetRepository extends JpaRepository<Bet, String> {
                                        WHERE bs.bet_id = b.id AND m.type = 'PRESEASON'))
                    AND EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
                                WHERE bs.bet_id = b.id AND COALESCE(m.type, 'REGULAR') NOT IN ('PLAY_IN', 'PLAYOFFS')))
+               OR (:phase = 'GENERAL'
+                   AND (date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') < TIMESTAMP '2026-10-19'
+                        OR NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
+                                       WHERE bs.bet_id = b.id AND m.type = 'PRESEASON')))
                OR (:phase = 'CUP'
                    AND NOT EXISTS (SELECT 1 FROM bet_selection bs JOIN match m ON m.id = bs.match_id
                                    WHERE bs.bet_id = b.id AND COALESCE(m.type, 'REGULAR') <> 'NBA_CUP'))
@@ -78,6 +84,13 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     @org.springframework.data.jpa.repository.Query(nativeQuery = true,
             value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_ALL + ") s" + LEADERBOARD_OUTER_END)
     List<Object[]> getWeeklyScoreLeaderboard(java.time.LocalDateTime fromWeek, String phase);
+
+    /** Classement des semaines de jeu dont le lundi est dans [fromWeek, toWeek) (palmarès du mois). */
+    @org.springframework.data.jpa.repository.Query(nativeQuery = true,
+            value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_ALL
+                    + "   AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') < :toWeek\n"
+                    + ") s" + LEADERBOARD_OUTER_END)
+    List<Object[]> getWeeklyScoreLeaderboardBetween(java.time.LocalDateTime fromWeek, java.time.LocalDateTime toWeek, String phase);
 
     @org.springframework.data.jpa.repository.Query(nativeQuery = true,
             value = LEADERBOARD_OUTER_START + "SELECT * FROM (" + WEEKLY_SCORES_MEMBERS + ") s" + LEADERBOARD_OUTER_END)

@@ -13,6 +13,8 @@ public interface PhaseTitleRepository extends JpaRepository<PhaseTitle, String> 
 
     boolean existsByUserId(String userId);
 
+    boolean existsByUserIdAndPhaseAndLeagueIdIsNull(String userId, String phase);
+
     List<PhaseTitle> findBySeasonAndPhaseAndLeagueIdIsNull(String season, String phase);
 
     List<PhaseTitle> findBySeasonAndPhaseAndLeagueId(String season, String phase, String leagueId);

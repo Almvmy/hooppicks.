@@ -67,6 +67,11 @@ public class BankrollScheduler {
             log.error("Attribution des titres Coupe NBA / playoffs en échec", e);
         }
         try {
+            phaseChampionService.recordEndedMonths();
+        } catch (Exception e) {
+            log.error("Attribution des titres du mois en échec", e);
+        }
+        try {
             seasonPickService.runMilestones();
         } catch (Exception e) {
             log.error("Rappel ou révélation des pronostics de saison en échec", e);

@@ -24,7 +24,7 @@ import {
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchPhaseChampions, fetchWeekChampions } from "@/lib/api/palmares";
-import { isPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
+import { championPhase, periodOption, useLeaderboardPeriods } from "@/lib/leaderboard-periods";
 import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 
 // Doit matcher ALLOWED_EMOJIS côté backend (LeagueService) : pas de sélecteur
@@ -50,7 +50,7 @@ export default function LeagueDetailPage({
   const periods = useLeaderboardPeriods();
   // Champion(s) de la ligue la semaine passée (ou de la phase sur la Coupe
   // NBA et les playoffs) : couronne à côté du pseudo.
-  const phase = isPhase(period) ? period : null;
+  const phase = championPhase(period);
   const championsQuery = useQuery<{ champions: { username: string }[] }>({
     queryKey: phase ? ["phase-champions", phase, id] : ["week-champions", id],
     queryFn: () => (phase ? fetchPhaseChampions(phase, id) : fetchWeekChampions(id)),
