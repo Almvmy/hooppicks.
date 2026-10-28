@@ -14,6 +14,7 @@ import { ShareButton } from "@/components/share-button";
 import { ShareImageButton } from "@/components/share-image-button";
 import { SeasonStory } from "@/components/season-story";
 import { fetchProfile } from "@/lib/api/auth";
+import { fetchMyStanding } from "@/lib/api/leaderboard";
 import { fetchSeasonPicks, saveSeasonPick, SeasonPicksOverview, SeasonQuestion } from "@/lib/api/season-picks";
 import { countdownParts, useNow, useSeasonLaunch } from "@/lib/season-launch";
 import { CONFERENCE_OF, formatChance, seasonChances } from "@/lib/season-odds";
@@ -281,6 +282,35 @@ function TeamPicker({
   );
 }
 
+/**
+ * Le titre de la saison, à côté des pronostics : le champion HoopPicks est le
+ * n° 1 du classement toutes compétitions à la fin des playoffs.
+ */
+function SeasonTitleRace({ season }: { season: string }) {
+  const { data } = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding, staleTime: 60_000 });
+  return (
+    <Link
+      href="/leaderboard"
+      className="glass group flex items-center gap-4 rounded-2xl p-4 transition-transform hover:-translate-y-0.5"
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: "color-mix(in srgb, #F5B700 18%, transparent)" }}>
+        <Trophy className="h-5 w-5" style={{ color: "#F5B700" }} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-heading font-bold group-hover:underline">Champion HoopPicks {season}</span>
+        <span className="block text-xs text-muted-foreground">Le n° 1 du classement à la fin des playoffs, toutes compétitions.</span>
+      </span>
+      {data?.seasonRank != null && (
+        <span className="shrink-0 text-right">
+          <span className="block font-heading text-xl font-bold">#{data.seasonRank}</span>
+          <span className="block text-[11px] text-muted-foreground">sur {data.seasonPlayers}</span>
+        </span>
+      )}
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </Link>
+  );
+}
+
 function QuestionCard({
   question,
   data,
@@ -340,6 +370,18 @@ function QuestionCard({
             <TeamLogo abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={64} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-heading text-xl font-black italic uppercase">{team.name}</p>
+              {/* Suivi de son équipe au fil de la saison : bilan et place dans la conférence. */}
+              {team.wins != null && team.losses != null && (team.wins > 0 || team.losses > 0) && (
+                <p className="text-sm font-semibold tabular-nums">
+                  {team.wins}-{team.losses}
+                  {team.conferenceSeed != null && (
+                    <span className="font-normal text-muted-foreground">
+                      {" · "}
+                      {team.conferenceSeed === 1 ? "1re" : `${team.conferenceSeed}e`} {team.conference === "Est" ? "à l'Est" : "à l'Ouest"}
+                    </span>
+                  )}
+                </p>
+              )}
               {chance && <p className="text-xs text-muted-foreground">Estimation HoopPicks : {formatChance(chance.pct)}</p>}
             </div>
           </>
@@ -461,6 +503,8 @@ export default function SeasonPicksPage() {
             onReplayIntro={introAvailable ? () => setStoryOpen(true) : null}
           />
           <SeasonStory open={storyOpen} onClose={() => setStoryOpen(false)} />
+
+          {data.locked && !anonymous && <SeasonTitleRace season={data.season} />}
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {data.questions.map((q) => (
