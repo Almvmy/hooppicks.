@@ -7,7 +7,7 @@ import { LegState, legState } from "@/lib/bet-legs";
 import type { Match } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const STATE: Partial<Record<LegState, { label: string; className: string }>> = {
+export const LEG_STATE_LABELS: Partial<Record<LegState, { label: string; className: string }>> = {
   winning: { label: "bien parti", className: "text-success" },
   losing: { label: "mal parti", className: "text-destructive" },
   level: { label: "à égalité", className: "text-muted-foreground" },
@@ -30,7 +30,7 @@ export function MyBetChip({ match, className }: { match: Match; className?: stri
   if (mine.length === 0) return null;
 
   const first = mine[0];
-  const state = STATE[legState(first, match)];
+  const state = LEG_STATE_LABELS[legState(first, match)];
   return (
     <p
       className={cn(

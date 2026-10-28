@@ -1,8 +1,7 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Wallet, Target, Trophy, Ticket } from "lucide-react";
-import { WEEKLY_BANKROLL, formatBankrollReset, formatSignedPoints } from "@/lib/utils";
 
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchWallet } from "@/lib/api/wallet";
@@ -10,21 +9,17 @@ import { fetchBets } from "@/lib/api/bets";
 import { DEFAULT_PAST_DAYS, fetchMatches } from "@/lib/api/matches";
 import { fetchLeaderboard, fetchMyStanding } from "@/lib/api/leaderboard";
 import { fetchNews } from "@/lib/api/news";
-import { fetchMyLeagues } from "@/lib/api/leagues";
 
 import { buildDashboardSlate, computeWinStreak, pendingBetsSummary, weekSummary } from "@/lib/dashboard";
 
-import { DashboardHero } from "@/components/dashboard/dashboard-hero";
-import { DashboardStats } from "@/components/dashboard/dashboard-stats";
+import { WeekCard } from "@/components/dashboard/week-card";
+import { LiveTickets } from "@/components/dashboard/live-tickets";
+import { CompetitionCard } from "@/components/dashboard/competition-card";
 import { PickOfDay } from "@/components/dashboard/pick-of-day";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { WalletTrend } from "@/components/dashboard/wallet-trend";
-import { LeaderboardPreview } from "@/components/dashboard/leaderboard-preview";
-import { LeaguesPreview } from "@/components/dashboard/leagues-preview";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
-import { FunFactCard } from "@/components/dashboard/fun-fact-card";
 import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
 import { AppNudges } from "@/components/app-nudges";
 import { BoostCard } from "@/components/dashboard/boost-card";
@@ -32,7 +27,6 @@ import { SeasonCountdownCard } from "@/components/dashboard/season-countdown-car
 import { SeasonStoryAutoOpen } from "@/components/season-story";
 import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
 import { useBoost } from "@/lib/boost";
-import { CountUp } from "@/components/motion/count-up";
 
 export default function DashboardPage() {
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -54,80 +48,46 @@ export default function DashboardPage() {
     queryFn: fetchNews,
     staleTime: 10 * 60 * 1000,
   });
-  const leaguesQuery = useQuery({
-    queryKey: ["leagues"],
-    queryFn: fetchMyLeagues,
-    staleTime: 5 * 60 * 1000,
-  });
 
   const streak = computeWinStreak(betsQuery.data);
   const pending = pendingBetsSummary(betsQuery.data);
   const boost = useBoost();
   // Le match boosté a sa propre carte : pas une seconde fois « à la une »
-  // (sauf en direct, où la une sert à suivre le score).
+  // (sauf en direct, où la une sert à suivre le score). Un direct sur lequel
+  // on a un ticket est déjà dans « Tes matchs en direct ».
+  const myLiveIds = new Set(
+    (betsQuery.data ?? []).filter((b) => b.status === "pending").flatMap((b) => b.selections.map((s) => s.matchId))
+  );
   const slate = buildDashboardSlate(
-    matchesQuery.data?.filter((m) => m.id !== boost?.matchId || m.status === "live")
+    matchesQuery.data?.filter(
+      (m) => (m.id !== boost?.matchId || m.status === "live") && !(m.status === "live" && myLiveIds.has(m.id))
+    )
   );
   const week = weekSummary(betsQuery.data);
   const standing = standingQuery.data;
 
-  const statsLoading = profileQuery.isLoading || walletQuery.isLoading || standingQuery.isLoading || betsQuery.isLoading;
+  // Tickets réglés depuis la veille au soir : au réveil, les résultats de la
+  // nuit passent avant les paris du jour.
+  const [now] = useState(() => Date.now());
+  const freshResults = (betsQuery.data ?? []).some(
+    (b) => b.status !== "pending" && b.resolvedAt && now - new Date(b.resolvedAt).getTime() < 14 * 3600 * 1000
+  );
+  const recent = <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />;
 
   return (
     <div className="flex flex-col gap-6">
-      <DashboardHero
+      <WeekCard
         username={profileQuery.data?.username}
-        isLoading={profileQuery.isLoading}
-        streak={streak}
+        standing={standing}
+        balance={walletQuery.data?.balance}
+        series={week.series}
         pendingCount={pending.count}
+        pendingStake={pending.stake}
+        streak={streak}
+        isLoading={profileQuery.isLoading || standingQuery.isLoading}
       />
 
-      <DashboardStats
-        items={[
-          {
-            label: "Solde de la semaine",
-            value: walletQuery.data ? (
-              <CountUp value={walletQuery.data.balance} format={(n) => `${n.toLocaleString("fr-FR")} pts`} />
-            ) : undefined,
-            hint: `Repart à ${WEEKLY_BANKROLL.toLocaleString("fr-FR")} pts ${formatBankrollReset()}`,
-            icon: Wallet,
-            isLoading: statsLoading,
-          },
-          {
-            label: "Taux de réussite",
-            value: profileQuery.data ? (
-              profileQuery.data.totalBets === 0 ? "—" : <CountUp value={profileQuery.data.winRate} format={(n) => `${n}%`} />
-            ) : undefined,
-            hint: profileQuery.data
-              ? profileQuery.data.totalBets === 0
-                ? "aucun ticket réglé"
-                : `sur ${profileQuery.data.totalBets} ticket${profileQuery.data.totalBets > 1 ? "s" : ""} réglé${profileQuery.data.totalBets > 1 ? "s" : ""}`
-              : undefined,
-            icon: Target,
-            isLoading: statsLoading,
-          },
-          {
-            // Le rang saison est déjà en haut de l'écran : ici, la course de la semaine.
-            label: "Points de la semaine",
-            value: standing ? formatSignedPoints(standing.weekPoints) : "-",
-            hint: standing
-              ? standing.weekRank !== null
-                ? `#${standing.weekRank} sur ${standing.weekPlayers} cette semaine`
-                : "aucun ticket réglé cette semaine"
-              : undefined,
-            icon: Trophy,
-            tone: "paint",
-            isLoading: statsLoading,
-          },
-          {
-            label: "Paris en cours",
-            value: `${pending.count}`,
-            hint: pending.count > 0 ? `${pending.stake.toLocaleString("fr-FR")} pts engagés` : "aucun ticket ouvert",
-            icon: Ticket,
-            isLoading: statsLoading,
-          },
-        ]}
-      />
+      <LiveTickets matches={matchesQuery.data} bets={betsQuery.data} />
 
       <SeasonCountdownCard matches={matchesQuery.data} />
       <SeasonStoryAutoOpen />
@@ -138,36 +98,24 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
           <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
+          {freshResults && recent}
+          <SeasonPicksNudge />
+          <BoostCard matches={matchesQuery.data} />
+          <PickOfDay match={slate.spotlight} />
+          <SuggestedParlays matches={matchesQuery.data} />
+          <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
+        </div>
+
+        <div className="reveal-children flex min-w-0 flex-col gap-6">
+          <CompetitionCard standing={standing} username={profileQuery.data?.username} />
+          {!freshResults && recent}
           <FavoriteTeamCard
             matches={matchesQuery.data}
             leaderboard={leaderboardQuery.data ?? []}
             username={profileQuery.data?.username}
             favoriteTeamName={profileQuery.data?.favoriteTeam}
           />
-          <SeasonPicksNudge />
-          <BoostCard matches={matchesQuery.data} />
-          <PickOfDay match={slate.spotlight} />
-          <SuggestedParlays matches={matchesQuery.data} />
-          <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
-          <RecentActivity bets={(betsQuery.data ?? []).slice(0, 3)} isLoading={betsQuery.isLoading} />
-        </div>
-
-        <div className="reveal-children flex min-w-0 flex-col gap-6">
-          <WalletTrend
-            series={week.series}
-            weeklyDelta={week.net}
-            balance={walletQuery.data?.balance}
-            pending={week.pending}
-            isLoading={betsQuery.isLoading}
-          />
-          <LeaderboardPreview
-            entries={leaderboardQuery.data ?? []}
-            currentUsername={profileQuery.data?.username}
-            isLoading={leaderboardQuery.isLoading}
-          />
-          <LeaguesPreview leagues={leaguesQuery.data ?? []} isLoading={leaguesQuery.isLoading} />
           <NewsPreview items={newsQuery.data ?? []} isLoading={newsQuery.isLoading} />
-          <FunFactCard />
         </div>
       </div>
     </div>
