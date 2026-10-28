@@ -115,6 +115,46 @@ public class BoostService {
         return BigDecimal.valueOf(odds).multiply(BigDecimal.valueOf(FACTOR)).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
+    /** Match de ce soir proposable en cote boostée (console admin). */
+    public record Candidate(String matchId, String label, Instant date, boolean chosen) {}
+
+    /** Matchs de la soirée en cours pas encore commencés, le choix actuel marqué. */
+    public List<Candidate> candidates() {
+        LocalDate night = currentNight();
+        String chosen = boostRepository.findById(night).map(DailyBoost::getMatchId).orElse(null);
+        return tonight(night).stream()
+                .map(m -> new Candidate(m.getId(), m.getAwayTeam().getAbbreviation() + " @ " + m.getHomeTeam().getAbbreviation(),
+                        m.getDate(), m.getId().equals(chosen)))
+                .toList();
+    }
+
+    /**
+     * Choix du match boosté par un admin, à la place du « choc » calculé. Les
+     * tickets déjà posés gardent leur cote (figée sur la sélection) : seuls les
+     * prochains tickets voient le changement. Refusé pour un match pas de ce
+     * soir ou déjà commencé.
+     */
+    public void override(String matchId) {
+        LocalDate night = currentNight();
+        if (tonight(night).stream().noneMatch(m -> m.getId().equals(matchId))) {
+            throw new IllegalArgumentException("Ce match n'est pas un match à venir de la soirée.");
+        }
+        DailyBoost boost = boostRepository.findById(night).orElseGet(DailyBoost::new);
+        boost.setNight(night);
+        boost.setMatchId(matchId);
+        boostRepository.save(boost);
+    }
+
+    private List<Match> tonight(LocalDate night) {
+        Instant from = night.atTime(NIGHT_START).atZone(BankrollService.ZONE).toInstant();
+        Instant now = clock.instant();
+        return matchRepository.findByStatusAndDateBetween(MatchStatus.SCHEDULED,
+                        from.isAfter(now) ? from : now, from.plus(Duration.ofDays(1))).stream()
+                .filter(m -> m.getMoneylineHome() > 1 && m.getMoneylineAway() > 1)
+                .sorted(Comparator.comparing(Match::getDate))
+                .toList();
+    }
+
     LocalDate currentNight() {
         ZonedDateTime now = ZonedDateTime.now(clock.withZone(BankrollService.ZONE));
         return now.toLocalTime().isBefore(NIGHT_START) ? now.toLocalDate().minusDays(1) : now.toLocalDate();

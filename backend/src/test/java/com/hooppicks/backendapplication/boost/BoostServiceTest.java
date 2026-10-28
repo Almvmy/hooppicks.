@@ -123,4 +123,32 @@ class BoostServiceTest {
 
         assertThat(service.current()).isEmpty(); // le 22, rien à booster ce soir-là
     }
+
+    @Test
+    void un_admin_remplace_le_match_booste_par_un_match_de_ce_soir() {
+        Match a = match("a", team("OKC", 60, 22), team("BOS", 58, 24), 1.7, 2.2, MatchType.REGULAR);
+        Match b = match("b", team("WAS", 20, 62), team("UTA", 22, 60), 1.9, 1.95, MatchType.REGULAR);
+        a.setDate(Instant.parse("2026-10-22T23:00:00Z"));
+        b.setDate(Instant.parse("2026-10-23T00:30:00Z"));
+        DailyBoost chosen = new DailyBoost();
+        chosen.setNight(LocalDate.of(2026, 10, 22));
+        chosen.setMatchId("a");
+        when(boostRepository.findById(LocalDate.of(2026, 10, 22))).thenReturn(Optional.of(chosen));
+        when(matchRepository.findByStatusAndDateBetween(eq(MatchStatus.SCHEDULED), any(), any())).thenReturn(List.of(b, a));
+
+        assertThat(service.candidates()).extracting(BoostService.Candidate::matchId).containsExactly("a", "b");
+        service.override("b");
+
+        verify(boostRepository).save(argThat(d -> d.getMatchId().equals("b") && d.getNight().equals(LocalDate.of(2026, 10, 22))));
+    }
+
+    @Test
+    void un_match_qui_n_est_pas_de_ce_soir_est_refuse() {
+        when(boostRepository.findById(any())).thenReturn(Optional.empty());
+        when(matchRepository.findByStatusAndDateBetween(eq(MatchStatus.SCHEDULED), any(), any())).thenReturn(List.of());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.override("ailleurs"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(boostRepository, never()).save(any());
+    }
 }

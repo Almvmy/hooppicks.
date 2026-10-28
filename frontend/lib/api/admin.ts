@@ -127,3 +127,32 @@ export async function replyFeedback(id: string, reply: string): Promise<Feedback
 export async function closeFeedback(id: string, closed: boolean): Promise<Feedback> {
   return apiFetch<Feedback>(`/console/feedback/${id}/close?closed=${closed}`, { method: "POST" });
 }
+
+export interface AdminInsights {
+  balanceDays: number;
+  /** Réussite réelle et annoncée par les cotes (marge retirée), en %. playersNet : bénéfice cumulé des joueurs. */
+  balance: { type: string; tickets: number; won: number; actualPct: number; expectedPct: number; playersNet: number }[];
+  /** week = lundi de la semaine de jeu, « 2026-10-12 ». */
+  activity: { week: string; activePlayers: number; returningPlayers: number; tickets: number }[];
+  bigWins: { betId: string; username: string; labels: string; stake: number; odds: number; profit: number; resolvedAt: string }[];
+  popular: { label: string; matchLabel: string; tickets: number }[];
+}
+
+export async function fetchAdminInsights(): Promise<AdminInsights> {
+  return apiFetch<AdminInsights>("/console/insights");
+}
+
+export interface BoostCandidate {
+  matchId: string;
+  label: string;
+  date: string;
+  chosen: boolean;
+}
+
+export async function fetchBoostCandidates(): Promise<BoostCandidate[]> {
+  return apiFetch<BoostCandidate[]>("/console/boost");
+}
+
+export async function chooseBoost(matchId: string): Promise<BoostCandidate[]> {
+  return apiFetch<BoostCandidate[]>("/console/boost", { method: "POST", body: JSON.stringify({ matchId }) });
+}

@@ -73,6 +73,12 @@ public class AdminConsoleController {
     private final AdminOverviewService overviewService;
     private final FeedbackService feedbackService;
 
+    // Facultatifs : les tests construisent ce contrôleur sans eux.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.admin.AdminInsightsService insightsService;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.boost.BoostService boostService;
+
     public AdminConsoleController(SessionStore sessionStore, UserRepository userRepository,
                                    MatchRepository matchRepository, BetRepository betRepository,
                                    NbaSyncService nbaSyncService, BetResolutionService betResolutionService,
@@ -411,6 +417,42 @@ public class AdminConsoleController {
             actionsService.voidBet(id, body.reason(), access.admin());
             return Map.of("voided", true);
         });
+    }
+
+    // --- Pilotage : équilibre des cotes, activité, réseaux ---------------------
+
+    @GetMapping("/insights")
+    public ResponseEntity<?> getInsights(HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        if (insightsService == null) return ResponseEntity.status(503).build();
+        return ResponseEntity.ok(insightsService.insights());
+    }
+
+    // --- Cote boostée du jour -------------------------------------------------
+
+    public record BoostRequest(String matchId) {}
+
+    @GetMapping("/boost")
+    public ResponseEntity<?> getBoostCandidates(HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        if (boostService == null) return ResponseEntity.status(503).build();
+        return ResponseEntity.ok(boostService.candidates());
+    }
+
+    @PostMapping("/boost")
+    public ResponseEntity<?> chooseBoost(@RequestBody BoostRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        if (boostService == null) return ResponseEntity.status(503).build();
+        try {
+            boostService.override(body.matchId());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        auditService.log(access.admin(), "Cote boostée choisie", body.matchId(), null);
+        return ResponseEntity.ok(boostService.candidates());
     }
 
     // --- Annonces ------------------------------------------------------------
