@@ -3,7 +3,7 @@
 import { createElement, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, EyeOff, Flame, History, Medal, Settings, UserRound } from "lucide-react";
+import { BarChart3, Flame, History, Medal, Settings, UserRound } from "lucide-react";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchBets } from "@/lib/api/bets";
 import { fetchBadges } from "@/lib/api/badges";
@@ -34,6 +34,8 @@ import { InviteFriendsCard } from "@/components/invite-friends-card";
 import { ShareImageButton } from "@/components/share-image-button";
 import { PalmaresCard } from "@/components/palmares-card";
 import { fetchMyPalmares } from "@/lib/api/palmares";
+import { SeasonWeeks } from "@/components/profile/season-weeks";
+import { SuccessByType } from "@/components/profile/success-by-type";
 
 function StatTile({
   label,
@@ -64,7 +66,7 @@ function StatTile({
 }
 
 export default function ProfilePage() {
-  const [showRecap, setShowRecap] = useState(true);
+  const [tab, setTab] = useState<"apercu" | "badges" | "compte">("apercu");
   const profileQuery = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
   const betsQuery = useQuery({ queryKey: ["bets"], queryFn: fetchBets });
   const standingQuery = useQuery({ queryKey: ["leaderboard", "me"], queryFn: fetchMyStanding });
@@ -94,6 +96,10 @@ export default function ProfilePage() {
   const badges = badgesQuery.data ?? [];
   const unlocked = badges.filter((b) => b.unlocked).length;
   const nextBadge = badges.find((b) => !b.unlocked);
+  // Le palmarès en vitrine sous l'en-tête, seulement s'il y a quelque chose à montrer.
+  const pal = palmaresQuery.data;
+  const hasTrophies =
+    !!pal && (pal.weeklyTitles > 0 || pal.leagueTitles.length > 0 || pal.duelWins > 0 || (pal.phaseTitles ?? []).length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -182,114 +188,123 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Chiffres ────────────────────────────────────────────────── */}
-      <div className="stagger-children grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile
-          label="Points de classement"
-          loading={standingQuery.isLoading}
-          hint={
-            standingQuery.data?.seasonRank != null
-              ? `#${standingQuery.data.seasonRank} sur ${standingQuery.data.seasonPlayers} cette saison`
-              : "somme de tes semaines"
-          }
-        >
-          {standingQuery.isError ? (
-            <span className="text-sm text-destructive">Indisponible</span>
-          ) : (
-            <CountUp value={standingQuery.data?.seasonPoints ?? 0} format={(n) => formatSignedPoints(n)} />
-          )}
-        </StatTile>
-        <StatTile
-          label="Réussite"
-          loading={profileQuery.isLoading}
-          hint={profile?.totalBets ? `sur ${profile.totalBets} ticket${profile.totalBets > 1 ? "s" : ""} réglé${profile.totalBets > 1 ? "s" : ""}` : "aucun ticket réglé"}
-        >
-          {profile?.totalBets ? <CountUp value={profile.winRate} format={(n) => `${n}%`} /> : "—"}
-        </StatTile>
-        <StatTile label="Série en cours" loading={betsQuery.isLoading} hint={streak > 0 ? "tickets gagnés d'affilée" : "aucune série"}>
-          <span className="flex items-center gap-1.5">
-            {streak > 0 && <Flame className="h-5 w-5 text-primary" />}
-            <CountUp value={streak} />
-          </span>
-        </StatTile>
-        <StatTile label="Bilan" loading={betsQuery.isLoading} hint="gains moins mises, sans plancher">
-          <span className={cn(net > 0 ? "text-success" : net < 0 ? "text-destructive" : undefined)}>
-            <CountUp value={net} format={(n) => `${n > 0 ? "+" : ""}${n.toLocaleString("fr-FR")}`} />
-          </span>
-        </StatTile>
+      {hasTrophies && <PalmaresCard palmares={palmaresQuery.data} />}
+
+      <div className="glass-inset-quiet flex gap-1 rounded-2xl p-1" role="tablist" aria-label="Rubrique du profil">
+        {(
+          [
+            { value: "apercu", label: "Aperçu", icon: BarChart3 },
+            { value: "badges", label: badges.length ? `Badges · ${unlocked}/${badges.length}` : "Badges", icon: Medal },
+            { value: "compte", label: "Mon compte", icon: UserRound },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.value}
+            onClick={() => setTab(t.value)}
+            className={cn(
+              "flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold transition-colors",
+              tab === t.value ? "glass-accent" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <t.icon className="h-4 w-4 shrink-0" />
+            <span className="truncate">{t.label}</span>
+          </button>
+        ))}
       </div>
 
-      <PalmaresCard palmares={palmaresQuery.data} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
-        {/* ── Colonne principale : jeu ──────────────────────────────── */}
-        <div className="flex min-w-0 flex-col gap-6">
-          <Card>
-            <CardContent className="flex flex-col gap-2 pt-6">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Forme du moment</p>
-              <FormStreak bets={betsQuery.data} />
-            </CardContent>
-          </Card>
-
-          <BestBetTrophy bets={betsQuery.data} />
-
-          <div className="relative">
-            <div aria-hidden className="decor-clip">
-              <SeamPattern className="absolute -right-6 -top-6 h-[160px] w-[220px] opacity-[0.05]" />
-            </div>
-            <div className="relative mb-3 flex flex-wrap items-end justify-between gap-3">
-              <h2 className="flex items-center gap-2 font-heading text-lg font-bold">
-                <Medal className="h-5 w-5 text-paint" />
-                Badges
-              </h2>
-              {badges.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <div className="h-1.5 w-28 overflow-hidden rounded-full bg-tint/10">
-                    <div
-                      className="h-full rounded-full bg-paint transition-[width] duration-700"
-                      style={{ width: `${(unlocked / badges.length) * 100}%` }}
-                    />
-                  </div>
-                  {unlocked}/{badges.length}
-                </div>
+      {tab === "apercu" && (
+        <div className="flex flex-col gap-6" role="tabpanel">
+          <div className="stagger-children grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile
+              label="Points de classement"
+              loading={standingQuery.isLoading}
+              hint={
+                standingQuery.data?.seasonRank != null
+                  ? `#${standingQuery.data.seasonRank} sur ${standingQuery.data.seasonPlayers} cette saison`
+                  : "somme de tes semaines"
+              }
+            >
+              {standingQuery.isError ? (
+                <span className="text-sm text-destructive">Indisponible</span>
+              ) : (
+                <CountUp value={standingQuery.data?.seasonPoints ?? 0} format={(n) => formatSignedPoints(n)} />
               )}
-            </div>
-            {nextBadge && (
-              <div className="glass-inset-quiet relative mb-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm">
-                {createElement(badgeIcon(nextBadge.icon), { className: "h-5 w-5 shrink-0 text-paint" })}
-                <span>
-                  <span className="font-medium">Prochain objectif : {nextBadge.label}.</span>{" "}
-                  <span className="text-muted-foreground">{nextBadge.description}</span>
-                </span>
-              </div>
-            )}
-            <div className="relative">
-              <BadgeGrid />
-            </div>
+            </StatTile>
+            <StatTile
+              label="Réussite"
+              loading={profileQuery.isLoading}
+              hint={profile?.totalBets ? `sur ${profile.totalBets} ticket${profile.totalBets > 1 ? "s" : ""} réglé${profile.totalBets > 1 ? "s" : ""}` : "aucun ticket réglé"}
+            >
+              {profile?.totalBets ? <CountUp value={profile.winRate} format={(n) => `${n}%`} /> : "—"}
+            </StatTile>
+            <StatTile label="Série en cours" loading={betsQuery.isLoading} hint={streak > 0 ? "tickets gagnés d'affilée" : "aucune série"}>
+              <span className="flex items-center gap-1.5">
+                {streak > 0 && <Flame className="h-5 w-5 text-primary" />}
+                <CountUp value={streak} />
+              </span>
+            </StatTile>
+            <StatTile label="Bilan" loading={betsQuery.isLoading} hint="gains moins mises, sans plancher">
+              <span className={cn(net > 0 ? "text-success" : net < 0 ? "text-destructive" : undefined)}>
+                <CountUp value={net} format={(n) => `${n > 0 ? "+" : ""}${n.toLocaleString("fr-FR")}`} />
+              </span>
+            </StatTile>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <SeasonWeeks bets={betsQuery.data} />
+            <SuccessByType bets={betsQuery.data} />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardContent className="flex flex-col gap-2 pt-6">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Forme du moment</p>
+                <FormStreak bets={betsQuery.data} />
+              </CardContent>
+            </Card>
+            <BestBetTrophy bets={betsQuery.data} />
           </div>
         </div>
+      )}
 
-        {/* ── Colonne latérale : identité ───────────────────────────── */}
-        <div className="flex min-w-0 flex-col gap-6">
-          <div className="flex flex-col items-start gap-3">
-            <div className="flex w-full items-center justify-between">
-              <h2 className="font-heading text-lg font-bold">Ta carte de partage</h2>
-              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setShowRecap((v) => !v)}>
-                {showRecap ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {showRecap ? "Masquer" : "Afficher"}
-              </Button>
+      {tab === "badges" && (
+        <div className="relative" role="tabpanel">
+          <div aria-hidden className="decor-clip">
+            <SeamPattern className="absolute -right-6 -top-6 h-[160px] w-[220px] opacity-[0.05]" />
+          </div>
+          {nextBadge && (
+            <div className="glass-inset-quiet relative mb-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm">
+              {createElement(badgeIcon(nextBadge.icon), { className: "h-5 w-5 shrink-0 text-paint" })}
+              <span>
+                <span className="font-medium">Prochain objectif : {nextBadge.label}.</span>{" "}
+                <span className="text-muted-foreground">{nextBadge.description}</span>
+              </span>
             </div>
-            {showRecap && profile && (
+          )}
+          <div className="relative">
+            <BadgeGrid />
+          </div>
+        </div>
+      )}
+
+      {tab === "compte" && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2" role="tabpanel">
+          <div className="flex min-w-0 flex-col gap-6">
+            {profile && (
               <div className="flex flex-col gap-3">
-              <WeeklyRecapCard
-                username={profile.username}
-                weeklyDelta={weeklyDelta}
-                rank={ownEntry?.rank}
-                totalPlayers={leaderboardQuery.data?.length}
-                winRate={profile.winRate}
-                streak={streak}
-                seasonLabel={`Saison ${seasonLabel()}`}
-              />
+                <h2 className="font-heading text-lg font-bold">Ta carte de partage</h2>
+                <WeeklyRecapCard
+                  username={profile.username}
+                  weeklyDelta={weeklyDelta}
+                  rank={ownEntry?.rank}
+                  totalPlayers={leaderboardQuery.data?.length}
+                  winRate={profile.winRate}
+                  streak={streak}
+                  seasonLabel={`Saison ${seasonLabel()}`}
+                />
                 <div className="flex flex-wrap gap-2">
                   <ShareImageButton
                     src={`/p/${encodeURIComponent(profile.username)}/carte`}
@@ -306,34 +321,34 @@ export default function ProfilePage() {
                 </div>
               </div>
             )}
+            {profile && <InviteFriendsCard username={profile.username} />}
           </div>
 
-          {profile && <InviteFriendsCard username={profile.username} />}
-
-          {profile && <AvatarEditor profile={profile} />}
-
-          <Card>
-            <CardContent className="flex flex-col gap-4 pt-6">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Équipe favorite</p>
-                <div className="mt-2 flex items-center gap-3">
-                  {favoriteTeam && (
-                    <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={32} />
-                  )}
-                  {profile && <FavoriteTeamPicker currentTeam={profile.favoriteTeam} />}
+          <div className="flex min-w-0 flex-col gap-6">
+            {profile && <AvatarEditor profile={profile} />}
+            <Card>
+              <CardContent className="flex flex-col gap-4 pt-6">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Équipe favorite</p>
+                  <div className="mt-2 flex items-center gap-3">
+                    {favoriteTeam && (
+                      <TeamLogo abbreviation={favoriteTeam.abbreviation} logoUrl={favoriteTeam.logoUrl} size={32} />
+                    )}
+                    {profile && <FavoriteTeamPicker currentTeam={profile.favoriteTeam} />}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">E-mail</p>
-                <p className="mt-1 text-sm text-muted-foreground">{profile?.email}</p>
-                <Link href="/settings" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
-                  Modifier dans les paramètres
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">E-mail</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{profile?.email}</p>
+                  <Link href="/settings" className="mt-1 inline-block text-xs font-medium text-primary hover:underline">
+                    Modifier dans les paramètres
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
