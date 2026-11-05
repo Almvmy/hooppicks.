@@ -52,6 +52,9 @@ public class BankrollScheduler {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.quiz.QuizService quizService;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.bracket.BracketService bracketService;
+
     @Scheduled(fixedRate = 60 * 1000, initialDelay = 20 * 1000)
     public void rollOver() {
         // Duels des semaines finies : ne touche à aucun solde, pas besoin du
@@ -77,6 +80,13 @@ public class BankrollScheduler {
             phaseChampionService.recordEndedMonths();
         } catch (Exception e) {
             log.error("Attribution des titres du mois en échec", e);
+        }
+        if (bracketService != null) {
+            try {
+                bracketService.tick();
+            } catch (Exception e) {
+                log.error("Suivi du tableau en échec", e);
+            }
         }
         if (quizService != null) {
             try {

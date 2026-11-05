@@ -38,7 +38,7 @@ public class AvatarService {
 
     public static final Set<String> POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
     public static final Set<String> COLORWAYS = Set.of("orange", "purple", "blue", "green", "red", "teal", "gold", "navy", "black");
-    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak", "trophy", "rocket", "star");
+    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak", "trophy", "rocket", "star", "medal");
     public static final String CROWN = "crown";
     public static final String STREAK = "streak";
     // Le titre suprême : champion HoopPicks de la saison, sur tout HoopPicks.
@@ -46,7 +46,8 @@ public class AvatarService {
     // Récompenses des missions de la semaine (MissionService).
     public static final String ROCKET = "rocket";
     public static final String STAR = "star";
-    private static final Set<String> RESERVED_ICONS = Set.of(CROWN, STREAK, TROPHY, ROCKET, STAR);
+    public static final String MEDAL = "medal";
+    private static final Set<String> RESERVED_ICONS = Set.of(CROWN, STREAK, TROPHY, ROCKET, STAR, MEDAL);
     private static final int STREAK_TO_UNLOCK = 5;
 
     private static final List<String> FREE_ICONS = List.of("dunk", "three", "handles", "defense", "playmaker");
@@ -128,6 +129,10 @@ public class AvatarService {
         }
         if (phaseTitleRepository.existsByUserIdAndPhaseAndLeagueIdIsNull(userId, "GENERAL")) {
             unlocked.add(TROPHY);
+        }
+        // Meilleur tableau de la Coupe ou des playoffs.
+        if (phaseTitleRepository.existsByUserIdAndPhaseAndLeagueIdIsNull(userId, "BRACKET")) {
+            unlocked.add(MEDAL);
         }
         long missions = missionRepository == null ? 0 : missionRepository.countByUserId(userId);
         if (missions >= com.hooppicks.backendapplication.engagement.MissionService.ROCKET_AT) unlocked.add(ROCKET);

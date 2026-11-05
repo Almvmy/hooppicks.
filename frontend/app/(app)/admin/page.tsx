@@ -20,6 +20,7 @@ import { AdminSocialPanel } from "@/components/admin/admin-social-panel";
 import { AdminBoostCard } from "@/components/admin/admin-boost-card";
 import { AdminReportsPanel } from "@/components/admin/admin-reports-panel";
 import { AdminDebatesCard } from "@/components/admin/admin-debates-card";
+import { AdminBracketCard } from "@/components/admin/admin-bracket-card";
 import { fetchChatModeration } from "@/lib/api/night-thread";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchAdminFeedback } from "@/lib/api/admin";
@@ -146,7 +147,12 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
       {tab === "messages" && <AdminFeedbackPanel />}
       {tab === "signalements" && <AdminReportsPanel />}
       {tab === "annonces" && <AdminAnnouncements />}
-      {tab === "saison" && <AdminSeasonResults />}
+      {tab === "saison" && (
+        <div className="flex flex-col gap-6">
+          <AdminBracketCard />
+          <AdminSeasonResults />
+        </div>
+      )}
       {tab === "journal" && <AdminAuditLog />}
     </div>
   );

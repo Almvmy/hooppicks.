@@ -1,4 +1,4 @@
-import { Flame, Target, Sparkles, Shield, Compass, Crown, Zap, Trophy, Rocket, Star } from "lucide-react";
+import { Flame, Target, Sparkles, Shield, Compass, Crown, Zap, Trophy, Rocket, Star, Medal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AvatarColorway, AvatarIcon, AvatarPosition } from "@/lib/types";
 
@@ -25,6 +25,7 @@ export const AVATAR_ICONS: Record<AvatarIcon, { icon: React.ElementType; label: 
   trophy: { icon: Trophy, label: "Champion HoopPicks" },
   rocket: { icon: Rocket, label: "Fusée" },
   star: { icon: Star, label: "Étoile" },
+  medal: { icon: Medal, label: "Meilleur tableau" },
 };
 
 /** Icônes à débloquer, avec ce qu'il faut pour les avoir. */
@@ -34,6 +35,7 @@ export const LOCKED_AVATAR_ICONS: Partial<Record<AvatarIcon, string>> = {
   trophy: "Deviens champion HoopPicks de la saison pour la débloquer.",
   rocket: "Réussis 5 missions de la semaine pour la débloquer.",
   star: "Réussis 15 missions de la semaine pour la débloquer.",
+  medal: "Remplis le meilleur tableau de la Coupe NBA ou des playoffs pour la débloquer.",
 };
 
 export const AVATAR_POSITIONS: AvatarPosition[] = ["PG", "SG", "SF", "PF", "C"];

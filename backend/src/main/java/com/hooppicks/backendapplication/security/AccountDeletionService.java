@@ -90,6 +90,8 @@ public class AccountDeletionService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.repository.QuizAttemptRepository quizAttemptRepository;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.BracketPickRepository bracketPickRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.repository.QuizChampionRepository quizChampionRepository;
 
     @Transactional
@@ -115,6 +117,7 @@ public class AccountDeletionService {
         if (blockRepository != null) blockRepository.deleteAllForUser(userId);
         if (debateVoteRepository != null) debateVoteRepository.deleteAllForUser(userId);
         if (quizAttemptRepository != null) quizAttemptRepository.deleteAllForUser(userId);
+        if (bracketPickRepository != null) bracketPickRepository.deleteAllForUser(userId);
         if (quizChampionRepository != null) quizChampionRepository.deleteAllForUser(userId);
         duelRepository.deleteAllForUser(userId);
         titleRepository.deleteAllForUser(userId);

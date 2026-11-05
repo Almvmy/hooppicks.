@@ -1,10 +1,10 @@
-import { Crown, Shield, Swords, Trophy } from "lucide-react";
+import { Crown, Medal, Shield, Swords, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChampionPhase, Palmares } from "@/lib/types";
 import { monthLabel } from "@/lib/utils";
 
 // Du plus prestigieux au moins prestigieux : la saison, les playoffs, la Coupe, le mois.
-const PHASE_ORDER: Record<ChampionPhase, number> = { general: 0, playoffs: 1, cup: 2, month: 3 };
+const PHASE_ORDER: Record<ChampionPhase | "bracket", number> = { general: 0, playoffs: 1, cup: 2, bracket: 3, month: 4 };
 
 function phaseTitleLabel(t: Palmares["phaseTitles"][number]): string {
   switch (t.phase) {
@@ -14,6 +14,8 @@ function phaseTitleLabel(t: Palmares["phaseTitles"][number]): string {
       return `Champion des playoffs ${t.season}`;
     case "cup":
       return `Champion de la Coupe NBA ${t.season}`;
+    case "bracket":
+      return `Meilleur tableau · ${t.season}`;
     case "month":
       return `Champion du mois · ${monthLabel(t.season)}`;
   }
@@ -48,7 +50,7 @@ export function PalmaresCard({ palmares }: { palmares: Palmares | undefined }) {
             {phaseTitles.map((t) => (
               <Trophy3
                 key={`${t.phase}-${t.season}-${t.leagueName ?? ""}`}
-                icon={t.leagueName ? Shield : t.phase === "general" ? Trophy : Crown}
+                icon={t.leagueName ? Shield : t.phase === "general" ? Trophy : t.phase === "bracket" ? Medal : Crown}
                 label={`${phaseTitleLabel(t)}${t.leagueName ? ` · ${t.leagueName}` : ""}`}
                 accent={!t.leagueName}
               />

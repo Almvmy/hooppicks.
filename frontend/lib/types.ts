@@ -15,7 +15,7 @@ export interface WalletData {
 export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
 export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal" | "gold" | "navy" | "black";
 /** À débloquer : crown (joueur titré : champion de la semaine, du mois, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée), trophy (champion HoopPicks de la saison), rocket et star (missions de la semaine). */
-export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak" | "trophy" | "rocket" | "star";
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak" | "trophy" | "rocket" | "star" | "medal";
 
 export interface UserProfile {
   username: string;
@@ -615,5 +615,5 @@ export interface Palmares {
   duelWins: number;
   bestWeek: number | null;
   /** leagueName null : sur tout HoopPicks. */
-  phaseTitles: { phase: ChampionPhase; season: string; leagueName: string | null; points: number }[];
+  phaseTitles: { phase: ChampionPhase | "bracket"; season: string; leagueName: string | null; points: number }[];
 }

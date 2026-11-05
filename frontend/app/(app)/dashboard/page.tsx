@@ -19,6 +19,7 @@ import { WeeklyStoryEntry } from "@/components/weekly-story";
 import { MissionsCard } from "@/components/dashboard/missions-card";
 import { DebateCard } from "@/components/dashboard/debate-card";
 import { QuizCard } from "@/components/dashboard/quiz-card";
+import { BracketNudge } from "@/components/dashboard/bracket-nudge";
 import { PickOfDay } from "@/components/dashboard/pick-of-day";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -105,6 +106,7 @@ export default function DashboardPage() {
           <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
           {freshResults && recent}
           <SeasonPicksNudge />
+          <BracketNudge />
           <QuizCard />
           <DebateCard />
           <MissionsCard />
