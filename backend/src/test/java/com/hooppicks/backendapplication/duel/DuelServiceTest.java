@@ -134,4 +134,46 @@ class DuelServiceTest {
 
         assertThat(d.getStatus()).isEqualTo(DuelStatus.EXPIRED);
     }
+
+    private void liveScores(Duel d, long alicePoints, long bobPoints) {
+        when(duelRepository.findByStatusAndWeek(DuelStatus.ACCEPTED, WEEK)).thenReturn(List.of(d));
+        when(betRepository.getWeekScores(any(), any())).thenReturn(List.of(new Object[]{"a", alicePoints}, new Object[]{"b", bobPoints}));
+    }
+
+    @Test
+    void le_premier_meneur_est_note_en_silence() {
+        Duel d = duel(DuelStatus.ACCEPTED, WEEK);
+        liveScores(d, 120, 80);
+
+        assertThat(service.notifyLeadChanges()).isZero();
+
+        assertThat(d.getLastLeaderId()).isEqualTo("a");
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void celui_qui_perd_la_tete_est_prevenu_une_seule_fois() {
+        Duel d = duel(DuelStatus.ACCEPTED, WEEK);
+        d.setLastLeaderId("a");
+        liveScores(d, 120, 200);
+
+        assertThat(service.notifyLeadChanges()).isEqualTo(1);
+        assertThat(service.notifyLeadChanges()).isZero();
+
+        org.mockito.ArgumentCaptor<AppNotification> saved = org.mockito.ArgumentCaptor.forClass(AppNotification.class);
+        verify(notificationRepository).save(saved.capture());
+        assertThat(saved.getValue().getUser()).isEqualTo(alice);
+        assertThat(saved.getValue().getMessage()).contains("Bob vient de te dépasser").contains("200 pts à 120");
+    }
+
+    @Test
+    void une_egalite_ne_change_pas_le_meneur() {
+        Duel d = duel(DuelStatus.ACCEPTED, WEEK);
+        d.setLastLeaderId("a");
+        liveScores(d, 100, 100);
+
+        assertThat(service.notifyLeadChanges()).isZero();
+
+        assertThat(d.getLastLeaderId()).isEqualTo("a");
+    }
 }

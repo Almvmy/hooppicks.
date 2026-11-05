@@ -33,6 +33,7 @@ export interface UserProfile {
   notifyBetResults: boolean;
   notifyLeagueActivity: boolean;
   notifyFavoriteTeam: boolean;
+  notifyWeeklyReminders: boolean;
   emailVerified: boolean;
   /** false : maillot par défaut, jamais personnalisé. */
   avatarCustomized: boolean;
@@ -44,6 +45,7 @@ export interface NotificationPreferences {
   notifyBetResults: boolean;
   notifyLeagueActivity: boolean;
   notifyFavoriteTeam: boolean;
+  notifyWeeklyReminders: boolean;
 }
 
 /** Tes paris vus depuis ton équipe favorite, sélection par sélection (GET /favorite-team/stats). */
@@ -480,7 +482,8 @@ export type NotificationType =
   | "match_follow"
   | "feedback_reply"
   | "season_picks"
-  | "referral";
+  | "referral"
+  | "weekly_reminder";
 
 export type FeedbackCategory = "BUG" | "QUESTION" | "IDEA" | "OTHER";
 export type FeedbackStatus = "OPEN" | "ANSWERED" | "CLOSED";

@@ -193,6 +193,41 @@ public class DuelService {
         return settled;
     }
 
+    /**
+     * Duels en cours : prévient celui qui vient de perdre la tête. Le premier
+     * meneur est noté en silence (pas de notification dès le premier ticket
+     * gagné), et les points ne bougent qu'au règlement des tickets : au plus
+     * quelques messages par semaine.
+     */
+    @Transactional
+    public int notifyLeadChanges() {
+        int notified = 0;
+        for (Duel d : duelRepository.findByStatusAndWeek(DuelStatus.ACCEPTED, currentWeek())) {
+            String c = d.getChallenger().getId();
+            String o = d.getOpponent().getId();
+            Map<String, Long> scores = weekScores(d.getWeek(), List.of(c, o));
+            long cPoints = scores.getOrDefault(c, 0L);
+            long oPoints = scores.getOrDefault(o, 0L);
+            if (cPoints == oPoints) continue;
+
+            String leader = cPoints > oPoints ? c : o;
+            String previous = d.getLastLeaderId();
+            if (leader.equals(previous)) continue;
+            d.setLastLeaderId(leader);
+            if (previous == null) continue;
+
+            boolean challengerLeads = leader.equals(c);
+            User behind = challengerLeads ? d.getOpponent() : d.getChallenger();
+            User ahead = challengerLeads ? d.getChallenger() : d.getOpponent();
+            long aheadPoints = Math.max(cPoints, oPoints);
+            long behindPoints = Math.min(cPoints, oPoints);
+            notify(behind, ahead.getUsername() + " vient de te dépasser dans votre duel : " + aheadPoints + " pts à " + behindPoints + ".",
+                    "Duel : tu es dépassé", true);
+            notified++;
+        }
+        return notified;
+    }
+
     private void notifyResult(Duel d, User me, User other, long mine, long theirs) {
         String outcome = mine == theirs ? "Égalité" : mine > theirs ? "Victoire" : "Défaite";
         notify(me, outcome + " dans ton duel contre " + other.getUsername() + " : " + mine + " pts à " + theirs + ".",

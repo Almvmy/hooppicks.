@@ -45,6 +45,11 @@ const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; de
     label: "Ton équipe favorite",
     description: "Elle joue dans moins d'une heure, puis son résultat final.",
   },
+  {
+    key: "notifyWeeklyReminders",
+    label: "Rappels de la semaine",
+    description: "Ton budget restant le dimanche soir, la nouvelle semaine le lundi.",
+  },
 ];
 
 function NotificationsCard() {
@@ -67,6 +72,7 @@ function NotificationsCard() {
       notifyBetResults: profile.notifyBetResults,
       notifyLeagueActivity: profile.notifyLeagueActivity,
       notifyFavoriteTeam: profile.notifyFavoriteTeam,
+      notifyWeeklyReminders: profile.notifyWeeklyReminders,
       [key]: value,
     });
   }

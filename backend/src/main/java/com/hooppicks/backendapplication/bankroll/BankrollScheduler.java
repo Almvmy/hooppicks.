@@ -45,6 +45,10 @@ public class BankrollScheduler {
         this.nbaSyncService = nbaSyncService;
     }
 
+    // Facultatif : les tests construisent ce planificateur sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.engagement.WeeklyReminderService weeklyReminderService;
+
     @Scheduled(fixedRate = 60 * 1000, initialDelay = 20 * 1000)
     public void rollOver() {
         // Duels des semaines finies : ne touche à aucun solde, pas besoin du
@@ -70,6 +74,18 @@ public class BankrollScheduler {
             phaseChampionService.recordEndedMonths();
         } catch (Exception e) {
             log.error("Attribution des titres du mois en échec", e);
+        }
+        try {
+            duelService.notifyLeadChanges();
+        } catch (Exception e) {
+            log.error("Suivi des duels en cours en échec", e);
+        }
+        if (weeklyReminderService != null) {
+            try {
+                weeklyReminderService.run();
+            } catch (Exception e) {
+                log.error("Rappels de la semaine en échec", e);
+            }
         }
         try {
             seasonPickService.runMilestones();

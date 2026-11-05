@@ -46,6 +46,12 @@ public class Duel {
     /** Null en cas d'égalité. */
     private String winnerId;
 
+    /**
+     * Dernier joueur à avoir mené (une égalité ne l'efface pas) : pour prévenir
+     * celui qui vient de se faire dépasser, une fois par changement de meneur.
+     */
+    private String lastLeaderId;
+
     private Instant createdAt = Instant.now();
     private Instant respondedAt;
 }

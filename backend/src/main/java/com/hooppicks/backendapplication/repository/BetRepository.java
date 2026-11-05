@@ -133,6 +133,10 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     """)
     List<Object[]> getAllWeekScores(java.time.LocalDateTime week);
 
+    /** Joueurs ayant posé un ticket depuis cette date (rappels de la semaine). */
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT b.user.id FROM Bet b WHERE b.placedAt >= :since")
+    List<String> findUserIdsWithBetSince(java.time.Instant since);
+
     /** Semaines de jeu (lundi à minuit) ayant au moins un ticket réglé. */
     @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
         SELECT DISTINCT date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')

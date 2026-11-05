@@ -211,6 +211,7 @@ public class AuthController {
         user.setNotifyBetResults(request.notifyBetResults());
         user.setNotifyLeagueActivity(request.notifyLeagueActivity());
         if (request.notifyFavoriteTeam() != null) user.setNotifyFavoriteTeam(request.notifyFavoriteTeam());
+        if (request.notifyWeeklyReminders() != null) user.setNotifyWeeklyReminders(request.notifyWeeklyReminders());
         userRepository.save(user);
 
         return ResponseEntity.ok(buildProfileDto(user));

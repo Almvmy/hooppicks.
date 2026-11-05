@@ -31,6 +31,8 @@ public interface DuelRepository extends JpaRepository<Duel, String> {
 
     List<Duel> findByStatusAndWeekBefore(DuelStatus status, LocalDate week);
 
+    List<Duel> findByStatusAndWeek(DuelStatus status, LocalDate week);
+
     @Query("SELECT COUNT(d) FROM Duel d WHERE d.winnerId = :userId AND d.status = com.hooppicks.backendapplication.entity.DuelStatus.FINISHED")
     long countWins(String userId);
 

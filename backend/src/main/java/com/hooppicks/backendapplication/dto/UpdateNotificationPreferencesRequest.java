@@ -6,5 +6,6 @@ public record UpdateNotificationPreferencesRequest(
         boolean notifyLeagueActivity,
         // Nullable : un client qui ne connaît pas encore ce réglage ne
         // l'écrase pas en l'omettant.
-        Boolean notifyFavoriteTeam
+        Boolean notifyFavoriteTeam,
+        Boolean notifyWeeklyReminders
 ) {}

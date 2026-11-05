@@ -18,6 +18,7 @@ public record UserProfileDto(
         boolean notifyBetResults,
         boolean notifyLeagueActivity,
         boolean notifyFavoriteTeam,
+        boolean notifyWeeklyReminders,
         boolean emailVerified,
         boolean avatarCustomized,
         java.util.List<String> unlockedAvatarIcons
@@ -40,6 +41,7 @@ public record UserProfileDto(
                 user.isNotifyBetResults(),
                 user.isNotifyLeagueActivity(),
                 user.isNotifyFavoriteTeam(),
+                user.isNotifyWeeklyReminders(),
                 user.isEmailVerified(),
                 Boolean.TRUE.equals(user.getAvatarCustomized()),
                 unlockedAvatarIcons
