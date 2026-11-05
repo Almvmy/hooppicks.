@@ -49,6 +49,8 @@ public class JobMonitor {
         job("effectifs", "Effectifs (ESPN)", Duration.ofDays(1));
         job("classement-officiel", "Classement officiel (ESPN)", Duration.ofDays(1));
         job("photo-classement", "Photo du classement", Duration.ofDays(1));
+        // Seulement quand de nouvelles actus sont demandées : d'où le long délai.
+        job("traduction-actus", "Traduction des actus (DeepL)", Duration.ofDays(1));
     }
 
     public enum Status { OK, LATE, FAILING, NEVER }

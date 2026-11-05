@@ -1,5 +1,6 @@
 package com.hooppicks.backendapplication.news;
 
+import com.hooppicks.backendapplication.entity.NewsTranslation;
 import com.hooppicks.backendapplication.espn.EspnNewsRow;
 import com.hooppicks.backendapplication.espn.EspnStatsClient;
 import org.slf4j.Logger;
@@ -67,6 +68,12 @@ public class NewsService {
             return size() > 400;
         }
     });
+
+    // Facultatifs : les tests construisent ce service sans eux.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.NewsTranslationRepository translationRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.monitor.JobMonitor jobMonitor;
 
     public NewsService(RestTemplate restTemplate, DeepLService deepLService, EspnStatsClient espnStatsClient) {
         this.restTemplate = restTemplate;
@@ -188,7 +195,9 @@ public class NewsService {
      * textes jamais vus : le flux change peu d'un rafraîchissement à l'autre
      * (15 min). Tout retraduire à chaque fois dépassait le quota gratuit
      * (500 000 caractères par mois) en une journée de trafic, et les actus
-     * repassaient en anglais.
+     * repassaient en anglais. Gardés en base : un redéploiement ne retraduit
+     * rien. Un texte que DeepL n'a pas traduit n'est pas mémorisé : il sera
+     * retenté au prochain rafraîchissement.
      */
     List<NewsItemDto> translate(List<NewsItemDto> items) {
         if (items.isEmpty()) return items;
@@ -201,10 +210,14 @@ public class NewsService {
                 }
             }
         }
+        loadStored(missing);
         if (!missing.isEmpty()) {
-            List<String> translated = deepLService.translateToFrench(missing);
-            if (translated.size() == missing.size()) {
-                for (int i = 0; i < missing.size(); i++) translations.put(missing.get(i), translated.get(i));
+            DeepLService.Result result = deepLService.translateToFrench(missing);
+            translations.putAll(result.translations());
+            store(result.translations());
+            if (jobMonitor != null) {
+                if (result.error() != null) jobMonitor.failed("traduction-actus", new IllegalStateException(result.error()));
+                else jobMonitor.ok("traduction-actus", result.translations().size() + " textes traduits");
             }
         }
 
@@ -217,6 +230,51 @@ public class NewsService {
             ));
         }
         return result;
+    }
+
+    // Retire de `missing` ce qui est déjà traduit en base.
+    private void loadStored(List<String> missing) {
+        if (translationRepository == null || missing.isEmpty()) return;
+        try {
+            Map<String, String> byHash = new LinkedHashMap<>();
+            for (String text : missing) byHash.put(hash(text), text);
+            for (NewsTranslation t : translationRepository.findAllById(byHash.keySet())) {
+                String source = byHash.get(t.getSourceHash());
+                translations.put(source, t.getTranslated());
+                missing.remove(source);
+            }
+        } catch (Exception e) {
+            log.warn("Lecture des traductions en base impossible", e);
+        }
+    }
+
+    private void store(Map<String, String> done) {
+        if (translationRepository == null || done.isEmpty()) return;
+        try {
+            List<NewsTranslation> rows = new ArrayList<>();
+            Instant now = Instant.now();
+            done.forEach((source, translated) -> {
+                NewsTranslation t = new NewsTranslation();
+                t.setSourceHash(hash(source));
+                t.setTranslated(translated);
+                t.setCreatedAt(now);
+                rows.add(t);
+            });
+            translationRepository.saveAll(rows);
+            // Les articles sortent vite du fil : pas besoin de garder plus d'un mois.
+            translationRepository.deleteOlderThan(now.minus(Duration.ofDays(30)));
+        } catch (Exception e) {
+            log.warn("Enregistrement des traductions impossible", e);
+        }
+    }
+
+    static String hash(String text) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(text.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private String text(Element parent, String tag) {

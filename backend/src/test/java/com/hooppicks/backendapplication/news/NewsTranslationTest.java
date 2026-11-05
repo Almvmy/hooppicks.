@@ -6,6 +6,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -24,10 +25,12 @@ class NewsTranslationTest {
 
     @Test
     void ne_renvoie_a_deepl_que_les_textes_jamais_traduits() {
-        when(deepL.translateToFrench(List.of("Lakers win", "Big night"))).thenReturn(List.of("Victoire des Lakers", "Grosse soirée"));
+        when(deepL.translateToFrench(List.of("Lakers win", "Big night")))
+                .thenReturn(new DeepLService.Result(Map.of("Lakers win", "Victoire des Lakers", "Big night", "Grosse soirée"), null));
         service.translate(List.of(article("Lakers win", "Big night")));
 
-        when(deepL.translateToFrench(List.of("Celtics lose"))).thenReturn(List.of("Défaite des Celtics"));
+        when(deepL.translateToFrench(List.of("Celtics lose")))
+                .thenReturn(new DeepLService.Result(Map.of("Celtics lose", "Défaite des Celtics"), null));
         List<NewsItemDto> result = service.translate(List.of(article("Lakers win", "Big night"), article("Celtics lose", null)));
 
         verify(deepL).translateToFrench(List.of("Celtics lose"));
@@ -38,8 +41,20 @@ class NewsTranslationTest {
 
     @Test
     void garde_l_anglais_si_deepl_ne_repond_pas() {
-        when(deepL.translateToFrench(anyList())).thenReturn(List.of());
+        when(deepL.translateToFrench(anyList())).thenReturn(new DeepLService.Result(Map.of(), "Quota DeepL dépassé (456)"));
         List<NewsItemDto> result = service.translate(List.of(article("Lakers win", "Big night")));
         assertThat(result.get(0).title()).isEqualTo("Lakers win");
+    }
+
+    // Les textes vus pendant une panne restaient en anglais jusqu'au
+    // redémarrage suivant, même une fois le quota revenu.
+    @Test
+    void retente_apres_une_panne_de_deepl() {
+        when(deepL.translateToFrench(anyList())).thenReturn(new DeepLService.Result(Map.of(), "Quota DeepL dépassé (456)"));
+        service.translate(List.of(article("Lakers win", null)));
+
+        when(deepL.translateToFrench(List.of("Lakers win")))
+                .thenReturn(new DeepLService.Result(Map.of("Lakers win", "Victoire des Lakers"), null));
+        assertThat(service.translate(List.of(article("Lakers win", null))).get(0).title()).isEqualTo("Victoire des Lakers");
     }
 }
