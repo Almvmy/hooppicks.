@@ -10,6 +10,10 @@ import java.util.List;
 public interface RosterPlayerRepository extends JpaRepository<RosterPlayer, String> {
     List<RosterPlayer> findByTeamIdOrderByLastNameAsc(String teamId);
 
+    /** Tout l'effectif et son équipe en une requête : le quiz du jour, une fois par jour. */
+    @Query("SELECT r FROM RosterPlayer r JOIN FETCH r.team")
+    List<RosterPlayer> findAllWithTeam();
+
     List<RosterPlayer> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrderByLastNameAsc(
             String firstName, String lastName);
 

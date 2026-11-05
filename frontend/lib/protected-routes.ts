@@ -4,6 +4,7 @@ export const PROTECTED_PREFIXES = [
   "/paris-joueurs",
   "/soiree",
   "/debat",
+  "/quiz",
   "/bets",
   "/leaderboard",
   "/profile",
