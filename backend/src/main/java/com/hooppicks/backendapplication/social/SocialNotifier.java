@@ -65,7 +65,7 @@ public class SocialNotifier {
             case "NIGHT" -> nightRepository == null ? Optional.empty() : nightRepository.findById(id)
                     .filter(m -> m.getUser() != null)
                     .map(m -> new Target(m.getUser(), "à ton message : « " + m.getText() + " »",
-                            m.getMatchId() == null ? "/soiree" : "/matches/" + m.getMatchId() + "?onglet=fil"));
+                            m.getDebateDay() != null ? "/debat" : m.getMatchId() == null ? "/soiree" : "/matches/" + m.getMatchId() + "?onglet=fil"));
             // « X a rejoint la ligue » : pas de quoi notifier.
             default -> Optional.empty();
         };

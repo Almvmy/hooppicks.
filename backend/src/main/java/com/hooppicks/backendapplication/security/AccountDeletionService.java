@@ -85,6 +85,8 @@ public class AccountDeletionService {
     private com.hooppicks.backendapplication.repository.NightMessageRepository nightRepository;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.repository.UserBlockRepository blockRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.DebateVoteRepository debateVoteRepository;
 
     @Transactional
     public void deleteAccount(String userId) {
@@ -107,6 +109,7 @@ public class AccountDeletionService {
         if (reactionRepository != null) reactionRepository.deleteAllForUser(userId);
         if (nightRepository != null) nightRepository.deleteAllForUser(userId);
         if (blockRepository != null) blockRepository.deleteAllForUser(userId);
+        if (debateVoteRepository != null) debateVoteRepository.deleteAllForUser(userId);
         duelRepository.deleteAllForUser(userId);
         titleRepository.deleteAllForUser(userId);
         phaseTitleRepository.deleteAllForUser(userId);

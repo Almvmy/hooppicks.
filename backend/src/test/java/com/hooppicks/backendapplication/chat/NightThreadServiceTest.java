@@ -280,7 +280,7 @@ class NightThreadServiceTest {
         User bloque = user("b", "Bloque");
         NightMessage masque = posted(user("h", "Masque"), null);
         masque.setHidden(true);
-        when(messages.findTop100ByNightOrderByCreatedAtDesc(any())).thenReturn(List.of(posted(visible, null), posted(bloque, null), masque));
+        when(messages.findTop100ByNightAndDebateDayIsNullOrderByCreatedAtDesc(any())).thenReturn(List.of(posted(visible, null), posted(bloque, null), masque));
         UserBlock block = new UserBlock();
         block.setBlockedId("b");
         when(blocks.findByBlockerId("me")).thenReturn(List.of(block));
@@ -296,6 +296,31 @@ class NightThreadServiceTest {
         when(matches.findById("x")).thenReturn(Optional.of(match(MatchStatus.SCHEDULED, NOW.plusSeconds(3600))));
         service.post("me", "Salut", "x");
         verify(messages).save(any());
+    }
+
+    @Test
+    void un_argument_de_debat_suit_les_memes_regles_et_garde_son_jour() {
+        LocalDate day = LocalDate.of(2026, 11, 6);
+        assertThatThrownBy(() -> service.postDebate("me", "va sur monsite.com", day)).isInstanceOf(IllegalArgumentException.class);
+
+        service.postDebate("me", "Jordan @Kader", day);
+
+        ArgumentCaptor<NightMessage> saved = ArgumentCaptor.forClass(NightMessage.class);
+        verify(messages).save(saved.capture());
+        assertThat(saved.getValue().getDebateDay()).isEqualTo(day);
+        verify(notifier).mentions(me, "Jordan @Kader", "/debat", null);
+    }
+
+    @Test
+    void dans_un_debat_le_camp_remplace_ce_que_le_joueur_a_joue() {
+        User kader = user("k", "Kader");
+        LocalDate day = LocalDate.of(2026, 11, 6);
+        when(messages.findTop100ByDebateDayOrderByCreatedAtDesc(day)).thenReturn(List.of(posted(kader, null)));
+
+        NightThreadService.Feed feed = service.debateFeed("me", day, java.util.Map.of("k", "Jordan"), null);
+
+        assertThat(feed.messages().get(0).camp()).isEqualTo("Jordan");
+        assertThat(feed.cannotWrite()).isNull();
     }
 
     @Test

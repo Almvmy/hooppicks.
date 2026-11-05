@@ -97,10 +97,25 @@ public class NightThreadService {
     public Feed feed(String userId, String matchId) {
         Instant now = clock.instant();
         LocalDate night = nightOf(now);
-        Set<String> blocked = blockRepository.findByBlockerId(userId).stream().map(UserBlock::getBlockedId).collect(Collectors.toSet());
-        List<NightMessage> raw = (matchId != null
+        List<NightMessage> source = matchId != null
                 ? messageRepository.findTop100ByMatchIdOrderByCreatedAtDesc(matchId)
-                : messageRepository.findTop100ByNightOrderByCreatedAtDesc(night)).stream()
+                : messageRepository.findTop100ByNightAndDebateDayIsNullOrderByCreatedAtDesc(night);
+        String cannotWrite = cannotWrite(userId, now);
+        if (cannotWrite == null && matchId != null && !isTonight(matchId, night)) cannotWrite = "Le fil de ce match n'est pas ouvert.";
+        return new Feed(night, messages(userId, source, null, now), cannotWrite);
+    }
+
+    /** Les arguments d'un débat. `sides` : le camp de chaque joueur, affiché à la place de ce qu'il a joué. */
+    @Transactional(readOnly = true)
+    public Feed debateFeed(String userId, LocalDate day, Map<String, String> sides, String closedReason) {
+        Instant now = clock.instant();
+        String cannotWrite = closedReason != null ? closedReason : cannotWrite(userId, now);
+        return new Feed(day, messages(userId, messageRepository.findTop100ByDebateDayOrderByCreatedAtDesc(day), sides, now), cannotWrite);
+    }
+
+    private List<Message> messages(String userId, List<NightMessage> source, Map<String, String> sides, Instant now) {
+        Set<String> blocked = blockRepository.findByBlockerId(userId).stream().map(UserBlock::getBlockedId).collect(Collectors.toSet());
+        List<NightMessage> raw = source.stream()
                 .filter(m -> !Boolean.TRUE.equals(m.getHidden()))
                 .filter(m -> m.getUser() == null || !blocked.contains(m.getUser().getId()))
                 .toList();
@@ -121,21 +136,17 @@ public class NightThreadService {
         Set<String> reported = ids.isEmpty() ? Set.of() : reportRepository.findByMessageIdIn(ids).stream()
                 .filter(r -> userId.equals(r.getReporterId())).map(MessageReport::getMessageId).collect(Collectors.toSet());
 
-        List<Message> messages = raw.stream().map(m -> {
+        return raw.stream().map(m -> {
             User u = m.getUser();
             Match match = m.getMatchId() == null ? null : matches.get(m.getMatchId());
             return new Message(m.getId(), u == null, u == null ? null : u.getUsername(),
                     u == null ? null : u.getAvatarNumber(), u == null ? null : u.getAvatarPosition(),
                     u == null ? null : u.getAvatarColorway(), u == null ? null : u.getAvatarIcon(),
                     m.getText(), m.getMatchId(), match == null ? null : label(match),
-                    u == null ? null : camps.get(campKey(u.getId(), m.getMatchId())), m.getCreatedAt(),
+                    u == null ? null : sides != null ? sides.get(u.getId()) : camps.get(campKey(u.getId(), m.getMatchId())), m.getCreatedAt(),
                     counts.getOrDefault(m.getId(), Map.of()), mine.getOrDefault(m.getId(), List.of()),
                     u != null && u.getId().equals(userId), reported.contains(m.getId()));
         }).toList();
-
-        String cannotWrite = cannotWrite(userId, now);
-        if (cannotWrite == null && matchId != null && !isTonight(matchId, night)) cannotWrite = "Le fil de ce match n'est pas ouvert.";
-        return new Feed(night, messages, cannotWrite);
     }
 
     // On écrit dans le fil de la soirée en cours : pas sur le match d'une autre soirée.
@@ -182,6 +193,18 @@ public class NightThreadService {
     @Transactional
     public void post(String userId, String rawText, String matchId) {
         Instant now = clock.instant();
+        String text = validated(userId, rawText, now);
+        if (matchId != null && !isTonight(matchId, nightOf(now))) throw new IllegalArgumentException("Le fil de ce match n'est pas ouvert.");
+        save(userId, text, matchId, null, now, matchId == null ? "/soiree" : "/matches/" + matchId + "?onglet=fil");
+    }
+
+    @Transactional
+    public void postDebate(String userId, String rawText, LocalDate day) {
+        Instant now = clock.instant();
+        save(userId, validated(userId, rawText, now), null, day, now, "/debat");
+    }
+
+    private String validated(String userId, String rawText, Instant now) {
         String refused = cannotWrite(userId, now);
         if (refused != null) throw new IllegalArgumentException(refused);
 
@@ -202,17 +225,20 @@ public class NightThreadService {
         if (messageRepository.countByUser_IdAndCreatedAtAfter(userId, now.minus(Duration.ofHours(1))) >= MAX_PER_HOUR) {
             throw new IllegalArgumentException("Beaucoup de messages en peu de temps : réessaie dans un moment.");
         }
-        if (matchId != null && !isTonight(matchId, nightOf(now))) throw new IllegalArgumentException("Le fil de ce match n'est pas ouvert.");
+        return text;
+    }
 
+    private void save(String userId, String text, String matchId, LocalDate debateDay, Instant now, String link) {
         NightMessage message = new NightMessage();
         message.setId(UUID.randomUUID().toString());
         message.setNight(nightOf(now));
         message.setMatchId(matchId);
+        message.setDebateDay(debateDay);
         message.setUser(userRepository.findById(userId).orElseThrow());
         message.setText(text);
         message.setCreatedAt(now);
         messageRepository.save(message);
-        socialNotifier.mentions(message.getUser(), text, matchId == null ? "/soiree" : "/matches/" + matchId + "?onglet=fil", null);
+        socialNotifier.mentions(message.getUser(), text, link, null);
     }
 
     /**

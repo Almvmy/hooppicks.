@@ -68,6 +68,17 @@ export interface SharedWeek {
   bestLabels: string | null;
 }
 
+export interface SharedDebate {
+  day: string;
+  question: string;
+  optionA: string;
+  optionB: string;
+  votesA: number;
+  votesB: number;
+}
+
+export const fetchSharedDebate = (day: string) => get<SharedDebate>(`/share/debates/${day}`, true);
+
 export const fetchSharedWeek = (username: string) => get<SharedWeek>(`/share/players/${encodeURIComponent(username)}/week`, true);
 
 export const fetchSharedPlayer = (username: string, fresh = false) =>

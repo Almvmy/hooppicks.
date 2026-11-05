@@ -13,7 +13,12 @@ import java.util.Optional;
 
 public interface NightMessageRepository extends JpaRepository<NightMessage, String> {
 
-    List<NightMessage> findTop100ByNightOrderByCreatedAtDesc(LocalDate night);
+    List<NightMessage> findTop100ByNightAndDebateDayIsNullOrderByCreatedAtDesc(LocalDate night);
+
+    List<NightMessage> findTop100ByDebateDayOrderByCreatedAtDesc(LocalDate debateDay);
+
+    @Query("SELECT COUNT(m) FROM NightMessage m WHERE m.debateDay = :day AND (m.hidden IS NULL OR m.hidden = false)")
+    long countVisibleForDebate(LocalDate day);
 
     List<NightMessage> findTop100ByMatchIdOrderByCreatedAtDesc(String matchId);
 

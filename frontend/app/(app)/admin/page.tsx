@@ -19,6 +19,7 @@ import { AdminGamePanel } from "@/components/admin/admin-game-panel";
 import { AdminSocialPanel } from "@/components/admin/admin-social-panel";
 import { AdminBoostCard } from "@/components/admin/admin-boost-card";
 import { AdminReportsPanel } from "@/components/admin/admin-reports-panel";
+import { AdminDebatesCard } from "@/components/admin/admin-debates-card";
 import { fetchChatModeration } from "@/lib/api/night-thread";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchAdminFeedback } from "@/lib/api/admin";
@@ -127,7 +128,12 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
       {tab === "apercu" && <AdminOverview />}
       {tab === "synchros" && <AdminSyncPanel />}
       {tab === "sante" && <AdminHealthPanel />}
-      {tab === "jeu" && <AdminGamePanel />}
+      {tab === "jeu" && (
+        <div className="flex flex-col gap-6">
+          <AdminDebatesCard />
+          <AdminGamePanel />
+        </div>
+      )}
       {tab === "matchs" && (
         <div className="flex flex-col gap-6">
           <AdminBoostCard />

@@ -54,11 +54,12 @@ export const NAV_SECTIONS: NavSection[] = [
     href: "/leaderboard",
     label: "Compétition",
     icon: Trophy,
-    routes: ["/leaderboard", "/leagues", "/duels", "/saison"],
+    routes: ["/leaderboard", "/leagues", "/duels", "/debat", "/saison"],
     tabs: [
       { href: "/leaderboard", label: "Classement" },
       { href: "/leagues", label: "Ligues" },
       { href: "/duels", label: "Duels" },
+      { href: "/debat", label: "Débat", title: "Le débat du jour" },
       // Pas une rubrique à part : on ne s'en sert qu'en début de saison
       // (pronostics) puis pour suivre son classement, d'où un simple onglet.
       { href: "/saison", label: "Saison", title: "Pronostics de saison" },

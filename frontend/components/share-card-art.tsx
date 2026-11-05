@@ -13,7 +13,7 @@
 // (variante « full », à garder ≥ ~110 px pour que les pointillés se voient).
 
 import { LogoMark } from "@/app/logo-mark";
-import { SITE_URL, SharedPlayer, SharedTicket, SharedWeek, plainNumber, signedPlain } from "@/lib/share";
+import { SITE_URL, SharedDebate, SharedPlayer, SharedTicket, SharedWeek, plainNumber, signedPlain } from "@/lib/share";
 import type { LeaderboardEntry, WeekChampion } from "@/lib/types";
 import { headlineFor } from "@/components/weekly-recap-card";
 import { getTeamColor } from "@/lib/team-colors";
@@ -915,6 +915,50 @@ export function WeekRecapArt({ week, label }: { week: SharedWeek; label: string 
               <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 38, lineHeight: 1, color: ORANGE, textTransform: "uppercase" }}>Viens me défier</div>
               <Label color={MUTED} size={22} spacing={1.5} upper={false}>{HOST}</Label>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- débat */
+
+/** Le résultat d'un débat : la question en grand, les deux camps, et de quoi faire réagir. */
+export function DebateArt({ debate }: { debate: SharedDebate }) {
+  const total = Math.max(1, debate.votesA + debate.votesB);
+  const shareA = Math.round((debate.votesA * 100) / total);
+  const sides = [
+    { label: debate.optionA, share: shareA, lead: debate.votesA >= debate.votesB },
+    { label: debate.optionB, share: 100 - shareA, lead: debate.votesB >= debate.votesA },
+  ];
+  const size = debate.question.length <= 45 ? 92 : debate.question.length <= 90 ? 70 : 54;
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} slab={{ color: "#3A1D0C", left: 560, width: 700 }} />
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", width: 1080, height: 1080, padding: "60px 72px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <Label color={ORANGE} size={24} spacing={5}>Le débat</Label>
+        </div>
+
+        <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: size, lineHeight: 1.05, textTransform: "uppercase", maxWidth: 936 }}>{debate.question}</div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          {sides.map((side) => (
+            <div key={side.label} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", height: 116, padding: "0 32px", borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.07)" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${side.share}%`, background: side.lead ? ORANGE : "rgba(255,255,255,0.14)" }} />
+              <div style={{ position: "relative", display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 52, color: side.lead ? INK : TEXT, maxWidth: 680, whiteSpace: "nowrap", overflow: "hidden" }}>{side.label}</div>
+              <div style={{ position: "relative", display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 70, color: side.share >= 85 && side.lead ? INK : TEXT }}>{`${side.share} %`}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Label color={MUTED} size={26} spacing={2} upper={false}>{`${plainNumber(debate.votesA + debate.votesB)} vote${debate.votesA + debate.votesB > 1 ? "s" : ""}`}</Label>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 44, lineHeight: 1, color: ORANGE, textTransform: "uppercase" }}>Et toi ?</div>
+            <Label color={MUTED} size={22} spacing={1.5} upper={false}>{HOST}</Label>
           </div>
         </div>
       </div>

@@ -38,6 +38,10 @@ public class NightMessage {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    /** Argument du débat de ce jour : hors du fil de la soirée, mêmes règles et même modération. */
+    @Column(name = "debate_day")
+    private LocalDate debateDay;
+
     /** Masqué : 3 signalements, en attente de la décision d'un admin. */
     private Boolean hidden;
 

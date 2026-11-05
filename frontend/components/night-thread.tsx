@@ -18,6 +18,7 @@ import {
   reportNightMessage,
   type NightMessage,
 } from "@/lib/api/night-thread";
+import { fetchDebateComments, postDebateComment } from "@/lib/api/debate";
 import { cn, formatRelativeTime } from "@/lib/utils";
 
 const MAX_LENGTH = 280;
@@ -50,15 +51,16 @@ function MessageText({ text }: { text: string }) {
 
 /**
  * Le fil de la soirée NBA. `matchId` : page d'un match, seulement ses messages,
- * et ce qu'on écrit porte son étiquette. Sans : toute la soirée, filtrable par match.
+ * et ce qu'on écrit porte son étiquette. `debateDay` : les arguments d'un débat,
+ * avec le camp de chacun. Sans : toute la soirée, filtrable par match.
  */
-export function NightThread({ matchId }: { matchId?: string }) {
+export function NightThread({ matchId, debateDay }: { matchId?: string; debateDay?: string }) {
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile, retry: false });
-  const queryKey = ["night-thread", matchId ?? "soiree"];
+  const queryKey = debateDay ? ["night-thread", "debat", debateDay] : ["night-thread", matchId ?? "soiree"];
   const feed = useQuery({
     queryKey,
-    queryFn: () => fetchNightFeed(matchId),
+    queryFn: () => (debateDay ? fetchDebateComments(debateDay) : fetchNightFeed(matchId)),
     enabled: !!profile,
     refetchInterval: 15_000,
   });
@@ -77,10 +79,11 @@ export function NightThread({ matchId }: { matchId?: string }) {
   const onError = (e: Error) => toast.error(e.message || "Action impossible. Réessaie.");
 
   const send = useMutation({
-    mutationFn: () => postNightMessage(draft.trim(), matchId ?? activeFilter ?? undefined),
+    mutationFn: () => (debateDay ? postDebateComment(debateDay, draft.trim()) : postNightMessage(draft.trim(), matchId ?? activeFilter ?? undefined)),
     onSuccess: () => {
       setDraft("");
       refresh();
+      if (debateDay) queryClient.invalidateQueries({ queryKey: ["debate"] });
     },
     onError,
   });
@@ -131,7 +134,7 @@ export function NightThread({ matchId }: { matchId?: string }) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               maxLength={MAX_LENGTH}
-              placeholder="Écris dans le fil…"
+              placeholder={debateDay ? "Ton argument…" : "Écris dans le fil…"}
               aria-label="Message"
               className="min-w-0 flex-1"
             />
@@ -147,7 +150,7 @@ export function NightThread({ matchId }: { matchId?: string }) {
         )
       )}
 
-      {!matchId && tagged.length > 0 && (
+      {!matchId && !debateDay && tagged.length > 0 && (
         <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-0.5">
           <button type="button" onClick={() => setFilter(null)} className={chipClass(!activeFilter)}>
             Tout
@@ -184,7 +187,7 @@ export function NightThread({ matchId }: { matchId?: string }) {
                   <Link href={`/u/${encodeURIComponent(m.username ?? "")}`} className="text-sm font-semibold hover:underline">
                     {m.username}
                   </Link>
-                  {m.camp && <span className="rounded-full bg-primary/10 px-1.5 font-mono text-[10px] font-semibold text-primary">joue {m.camp}</span>}
+                  {m.camp && <span className="rounded-full bg-primary/10 px-1.5 font-mono text-[10px] font-semibold text-primary">{debateDay ? m.camp : `joue ${m.camp}`}</span>}
                   {!matchId && m.matchLabel && (
                     <Link href={`/matches/${m.matchId}?onglet=fil`} className="font-mono text-[10px] text-muted-foreground hover:underline">
                       {m.matchLabel}
