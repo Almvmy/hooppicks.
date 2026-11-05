@@ -389,4 +389,122 @@ class LeagueServiceTest {
                 .isInstanceOf(IllegalStateException.class);
         verifyNoInteractions(activityReactionRepository);
     }
+
+    // --- Fil de la ligue ---
+
+    private final com.hooppicks.backendapplication.repository.LeagueMessageRepository messageRepository =
+            mock(com.hooppicks.backendapplication.repository.LeagueMessageRepository.class);
+    private final com.hooppicks.backendapplication.repository.MatchRepository matchRepository =
+            mock(com.hooppicks.backendapplication.repository.MatchRepository.class);
+
+    private void wireThread() {
+        org.springframework.test.util.ReflectionTestUtils.setField(leagueService, "messageRepository", messageRepository);
+        org.springframework.test.util.ReflectionTestUtils.setField(leagueService, "matchRepository", matchRepository);
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "user-1")).thenReturn(Optional.of(new LeagueMembership()));
+    }
+
+    @Test
+    void un_message_est_nettoye_et_enregistre() {
+        wireThread();
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(userWithId("user-1")));
+
+        leagueService.postMessage("league-1", "user-1", "  On y croit  ");
+
+        ArgumentCaptor<com.hooppicks.backendapplication.entity.LeagueMessage> saved =
+                ArgumentCaptor.forClass(com.hooppicks.backendapplication.entity.LeagueMessage.class);
+        verify(messageRepository).save(saved.capture());
+        assertThat(saved.getValue().getText()).isEqualTo("On y croit");
+        assertThat(saved.getValue().getLeagueId()).isEqualTo("league-1");
+    }
+
+    @Test
+    void message_vide_trop_long_ou_trop_de_messages_refuse() {
+        wireThread();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.postMessage("league-1", "user-1", "   "))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.postMessage("league-1", "user-1", "x".repeat(281)))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        when(messageRepository.countByUser_IdAndCreatedAtAfter(eq("user-1"), any())).thenReturn(30L);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.postMessage("league-1", "user-1", "encore"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(messageRepository, never()).save(any());
+    }
+
+    @Test
+    void un_non_membre_ne_peut_pas_ecrire() {
+        org.springframework.test.util.ReflectionTestUtils.setField(leagueService, "messageRepository", messageRepository);
+        when(membershipRepository.findByLeagueIdAndUserId("league-1", "intrus")).thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.postMessage("league-1", "intrus", "salut"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void supprimer_le_message_d_un_autre_est_refuse_sauf_au_createur_de_la_ligue() {
+        org.springframework.test.util.ReflectionTestUtils.setField(leagueService, "messageRepository", messageRepository);
+        com.hooppicks.backendapplication.entity.LeagueMessage message = new com.hooppicks.backendapplication.entity.LeagueMessage();
+        message.setId("m1");
+        message.setLeagueId("league-1");
+        message.setUser(userWithId("auteur"));
+        when(messageRepository.findById("m1")).thenReturn(Optional.of(message));
+        League league = new League();
+        league.setOwnerId("chef");
+        when(leagueRepository.findById("league-1")).thenReturn(Optional.of(league));
+        when(activityReactionRepository.findByTargetTypeInAndTargetIdIn(any(), any())).thenReturn(List.of());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.deleteMessage("league-1", "voisin", "m1"))
+                .isInstanceOf(IllegalStateException.class);
+        verify(messageRepository, never()).delete(any());
+
+        leagueService.deleteMessage("league-1", "chef", "m1");
+        verify(messageRepository).delete(message);
+    }
+
+    private Bet pendingBet(String ownerId, String matchId) {
+        Bet bet = new Bet();
+        bet.setId("bet-1");
+        bet.setUser(userWithId(ownerId));
+        bet.setStake(50);
+        bet.setStatus(BetStatus.PENDING);
+        bet.setPlacedAt(Instant.now());
+        BetSelection s = new BetSelection();
+        s.setMatchId(matchId);
+        s.setMarket("moneyline");
+        s.setOutcome("home");
+        s.setLabel("Knicks (V)");
+        s.setOdds(1.8);
+        bet.setSelections(List.of(s));
+        return bet;
+    }
+
+    private com.hooppicks.backendapplication.entity.Match match(com.hooppicks.backendapplication.entity.MatchStatus status, Instant date) {
+        com.hooppicks.backendapplication.entity.Match m = new com.hooppicks.backendapplication.entity.Match();
+        m.setStatus(status);
+        m.setDate(date);
+        return m;
+    }
+
+    private List<LeagueActivityDto> feedWith(Bet bet) {
+        wireThread();
+        when(membershipRepository.findByLeagueId("league-1")).thenReturn(List.of());
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(any(), eq(BetStatus.PENDING))).thenReturn(List.of(bet));
+        when(betRepository.findTop10ByUser_IdInAndStatusOrderByResolvedAtDesc(any(), eq(BetStatus.WON))).thenReturn(List.of());
+        when(activityReactionRepository.findByTargetTypeInAndTargetIdIn(any(), any())).thenReturn(List.of());
+        when(leagueRepository.findById("league-1")).thenReturn(Optional.empty());
+        when(messageRepository.findTop30ByLeagueIdOrderByCreatedAtDesc("league-1")).thenReturn(List.of());
+        return leagueService.getRecentActivity("league-1", "user-1");
+    }
+
+    @Test
+    void je_joue_pareil_seulement_sur_le_ticket_d_un_autre_avant_le_coup_d_envoi() {
+        when(matchRepository.findAllById(any())).thenReturn(List.of(match(com.hooppicks.backendapplication.entity.MatchStatus.SCHEDULED, Instant.now().plusSeconds(3600))));
+        assertThat(feedWith(pendingBet("user-2", "m1")).get(0).selections()).hasSize(1);
+        // Son propre ticket : rien à reprendre.
+        assertThat(feedWith(pendingBet("user-1", "m1")).get(0).selections()).isEmpty();
+
+        when(matchRepository.findAllById(any())).thenReturn(List.of(match(com.hooppicks.backendapplication.entity.MatchStatus.SCHEDULED, Instant.now().minusSeconds(60))));
+        assertThat(feedWith(pendingBet("user-2", "m1")).get(0).selections()).isEmpty();
+    }
 }

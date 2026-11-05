@@ -455,6 +455,20 @@ public class AdminConsoleController {
         return ResponseEntity.ok(boostService.candidates());
     }
 
+    @PostMapping("/boost/extra")
+    public ResponseEntity<?> toggleExtraBoost(@RequestBody BoostRequest body, HttpServletRequest request) {
+        Access access = access(request);
+        if (access.denied() != null) return access.denied();
+        if (boostService == null) return ResponseEntity.status(503).build();
+        try {
+            boostService.toggleExtra(body.matchId());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        auditService.log(access.admin(), "Cote boostée en plus", body.matchId(), null);
+        return ResponseEntity.ok(boostService.candidates());
+    }
+
     // --- Annonces ------------------------------------------------------------
 
     @PostMapping("/announcements")

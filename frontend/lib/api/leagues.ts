@@ -17,6 +17,27 @@ export async function fetchLeagueActivity(id: string): Promise<LeagueActivity[]>
   return apiFetch<LeagueActivity[]>(`/leagues/${id}/activity`);
 }
 
+export interface LeagueRankingRow {
+  rank: number;
+  id: string;
+  name: string;
+  members: number;
+  score: number;
+  mine: boolean;
+}
+
+export async function fetchLeagueRanking(period: LeaderboardPeriod): Promise<LeagueRankingRow[]> {
+  return apiFetch<LeagueRankingRow[]>(`/leagues/ranking?period=${period}`);
+}
+
+export async function postLeagueMessage(leagueId: string, text: string): Promise<LeagueActivity[]> {
+  return apiFetch<LeagueActivity[]>(`/leagues/${leagueId}/messages`, { method: "POST", body: JSON.stringify({ text }) });
+}
+
+export async function deleteLeagueMessage(leagueId: string, messageId: string): Promise<LeagueActivity[]> {
+  return apiFetch<LeagueActivity[]>(`/leagues/${leagueId}/messages/${messageId}/delete`, { method: "POST" });
+}
+
 export async function reactToActivity(
   leagueId: string,
   targetType: string,

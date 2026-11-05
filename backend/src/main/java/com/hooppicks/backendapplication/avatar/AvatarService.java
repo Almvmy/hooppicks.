@@ -38,11 +38,15 @@ public class AvatarService {
 
     public static final Set<String> POSITIONS = Set.of("PG", "SG", "SF", "PF", "C");
     public static final Set<String> COLORWAYS = Set.of("orange", "purple", "blue", "green", "red", "teal", "gold", "navy", "black");
-    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak", "trophy");
+    public static final Set<String> ICONS = Set.of("dunk", "three", "handles", "defense", "playmaker", "crown", "streak", "trophy", "rocket", "star");
     public static final String CROWN = "crown";
     public static final String STREAK = "streak";
     // Le titre suprême : champion HoopPicks de la saison, sur tout HoopPicks.
     public static final String TROPHY = "trophy";
+    // Récompenses des missions de la semaine (MissionService).
+    public static final String ROCKET = "rocket";
+    public static final String STAR = "star";
+    private static final Set<String> RESERVED_ICONS = Set.of(CROWN, STREAK, TROPHY, ROCKET, STAR);
     private static final int STREAK_TO_UNLOCK = 5;
 
     private static final List<String> FREE_ICONS = List.of("dunk", "three", "handles", "defense", "playmaker");
@@ -74,6 +78,10 @@ public class AvatarService {
     private final PhaseTitleRepository phaseTitleRepository;
     private final BetRepository betRepository;
     private final BadgeService badgeService;
+
+    // Facultatif : les tests construisent ce service sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.MissionCompletionRepository missionRepository;
 
     public AvatarService(UserRepository userRepository, WeeklyTitleRepository weeklyTitleRepository,
                          PhaseTitleRepository phaseTitleRepository, BetRepository betRepository,
@@ -121,12 +129,15 @@ public class AvatarService {
         if (phaseTitleRepository.existsByUserIdAndPhaseAndLeagueIdIsNull(userId, "GENERAL")) {
             unlocked.add(TROPHY);
         }
+        long missions = missionRepository == null ? 0 : missionRepository.countByUserId(userId);
+        if (missions >= com.hooppicks.backendapplication.engagement.MissionService.ROCKET_AT) unlocked.add(ROCKET);
+        if (missions >= com.hooppicks.backendapplication.engagement.MissionService.STAR_AT) unlocked.add(STAR);
         return unlocked;
     }
 
     public boolean canUseIcon(String userId, String icon) {
         if (!ICONS.contains(icon)) return false;
-        return !(CROWN.equals(icon) || STREAK.equals(icon) || TROPHY.equals(icon)) || unlockedIcons(userId).contains(icon);
+        return !RESERVED_ICONS.contains(icon) || unlockedIcons(userId).contains(icon);
     }
 
     // Comptes créés avant les maillots par défaut, qui ont tous le même n°0

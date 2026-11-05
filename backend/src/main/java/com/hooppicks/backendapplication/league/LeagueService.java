@@ -139,8 +139,27 @@ public class LeagueService {
 
     private record RawActivity(
             String targetType, String targetId, String username, String message, java.time.Instant occurredAt,
-            int avatarNumber, String avatarPosition, String avatarColorway, String avatarIcon
-    ) {}
+            int avatarNumber, String avatarPosition, String avatarColorway, String avatarIcon,
+            boolean deletable, List<LeagueActivityDto.CopySelection> selections
+    ) {
+        RawActivity(String targetType, String targetId, User user, String message, java.time.Instant occurredAt) {
+            this(targetType, targetId, user.getUsername(), message, occurredAt, user.getAvatarNumber(),
+                    user.getAvatarPosition(), user.getAvatarColorway(), user.getAvatarIcon(), false, List.of());
+        }
+    }
+
+    // Facultatifs : les tests construisent ce service sans eux.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.LeagueMessageRepository messageRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.WeeklyTitleRepository titleRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.MatchRepository matchRepository;
+
+    static final int MAX_MESSAGE_LENGTH = 280;
+    // Garde-fou anti-spam : largement au-dessus d'une discussion normale.
+    static final int MAX_MESSAGES_PER_HOUR = 30;
+    private static final int FEED_SIZE = 30;
 
     /**
      * Fil d'activité : adhésions + paris en cours + gros paris gagnés
@@ -161,19 +180,16 @@ public class LeagueService {
         List<RawActivity> activity = new ArrayList<>();
 
         for (LeagueMembership m : memberships) {
-            activity.add(new RawActivity(
-                    "MEMBERSHIP", m.getId(), m.getUser().getUsername(), "a rejoint la ligue", m.getJoinedAt(),
-                    m.getUser().getAvatarNumber(), m.getUser().getAvatarPosition(),
-                    m.getUser().getAvatarColorway(), m.getUser().getAvatarIcon()
-            ));
+            activity.add(new RawActivity("MEMBERSHIP", m.getId(), m.getUser(), "a rejoint la ligue", m.getJoinedAt()));
         }
 
         for (Bet bet : betRepository.findTop10ByUser_IdInAndStatusOrderByPlacedAtDesc(memberIds, BetStatus.PENDING)) {
+            User u = bet.getUser();
             activity.add(new RawActivity(
-                    "BET", bet.getId(), bet.getUser().getUsername(),
+                    "BET", bet.getId(), u.getUsername(),
                     "a misé " + bet.getStake() + " pts sur " + selectionsSummary(bet), bet.getPlacedAt(),
-                    bet.getUser().getAvatarNumber(), bet.getUser().getAvatarPosition(),
-                    bet.getUser().getAvatarColorway(), bet.getUser().getAvatarIcon()
+                    u.getAvatarNumber(), u.getAvatarPosition(), u.getAvatarColorway(), u.getAvatarIcon(),
+                    false, u.getId().equals(requestingUserId) ? List.of() : copyable(bet)
             ));
         }
 
@@ -183,13 +199,31 @@ public class LeagueService {
             // match côté admin, avant que ce champ soit systématique) : repli
             // sur placedAt plutôt que planter le tri juste en dessous.
             java.time.Instant occurredAt = bet.getResolvedAt() != null ? bet.getResolvedAt() : bet.getPlacedAt();
-            activity.add(new RawActivity(
-                    "BET", bet.getId(), bet.getUser().getUsername(),
+            activity.add(new RawActivity("BET", bet.getId(), bet.getUser(),
                     // Bénéfice net, comme au classement (pas le gain brut, mise comprise).
-                    "a gagné un ticket : +" + (bet.getPotentialPayout() - bet.getStake()) + " pts", occurredAt,
-                    bet.getUser().getAvatarNumber(), bet.getUser().getAvatarPosition(),
-                    bet.getUser().getAvatarColorway(), bet.getUser().getAvatarIcon()
-            ));
+                    "a gagné un ticket : +" + (bet.getPotentialPayout() - bet.getStake()) + " pts", occurredAt));
+        }
+
+        if (titleRepository != null) {
+            Map<String, User> members = new HashMap<>();
+            memberships.forEach(m -> members.put(m.getUser().getId(), m.getUser()));
+            for (com.hooppicks.backendapplication.entity.WeeklyTitle t : titleRepository.findTop5ByLeagueIdOrderByWeekDesc(leagueId)) {
+                User champion = members.get(t.getUserId());
+                if (champion == null) continue; // parti depuis : le titre reste sur son profil
+                activity.add(new RawActivity("TITLE", t.getId(), champion,
+                        "est champion de la semaine avec " + t.getPoints() + " pts",
+                        com.hooppicks.backendapplication.bankroll.BankrollService.startOf(t.getWeek().plusWeeks(1))));
+            }
+        }
+
+        if (messageRepository != null) {
+            boolean owner = leagueRepository.findById(leagueId).map(l -> requestingUserId.equals(l.getOwnerId())).orElse(false);
+            for (com.hooppicks.backendapplication.entity.LeagueMessage m : messageRepository.findTop30ByLeagueIdOrderByCreatedAtDesc(leagueId)) {
+                User u = m.getUser();
+                activity.add(new RawActivity("MESSAGE", m.getId(), u.getUsername(), m.getText(), m.getCreatedAt(),
+                        u.getAvatarNumber(), u.getAvatarPosition(), u.getAvatarColorway(), u.getAvatarIcon(),
+                        owner || u.getId().equals(requestingUserId), List.of()));
+            }
         }
 
         // nullsLast en filet de sécurité supplémentaire : mieux vaut pousser
@@ -197,13 +231,66 @@ public class LeagueService {
         // Le naturalOrder() est inversé AVANT nullsLast (pas de .reversed()
         // après) : sinon nullsLast se retrouverait inversé lui aussi et les
         // nulls remonteraient en tête du tri au lieu de rester en dernier.
-        List<RawActivity> top10 = activity.stream()
+        List<RawActivity> feed = activity.stream()
                 .sorted(Comparator.comparing(RawActivity::occurredAt,
                         Comparator.nullsLast(Comparator.<java.time.Instant>naturalOrder().reversed())))
-                .limit(10)
+                .limit(FEED_SIZE)
                 .toList();
 
-        return attachReactions(top10, requestingUserId);
+        return attachReactions(feed, requestingUserId);
+    }
+
+    /**
+     * Sélections d'un ticket en attente que les autres membres peuvent
+     * reprendre (« Je joue pareil ») : vide dès qu'un de ses matchs a commencé.
+     * placeBet revérifie tout et reprend ses propres cotes.
+     */
+    private List<LeagueActivityDto.CopySelection> copyable(Bet bet) {
+        if (matchRepository == null) return List.of();
+        java.time.Instant now = java.time.Instant.now();
+        List<String> ids = bet.getSelections().stream().map(BetSelection::getMatchId).toList();
+        List<com.hooppicks.backendapplication.entity.Match> matches = matchRepository.findAllById(ids);
+        boolean open = matches.size() == ids.size() && matches.stream().allMatch(m ->
+                m.getStatus() == com.hooppicks.backendapplication.entity.MatchStatus.SCHEDULED
+                        && m.getDate() != null && m.getDate().isAfter(now));
+        if (!open) return List.of();
+        return bet.getSelections().stream().map(s -> new LeagueActivityDto.CopySelection(s.getMatchId(), s.getMatchLabel(),
+                s.getMarket(), s.getOutcome(), s.getLabel(), s.getOdds(), s.getPlayerId(), s.getPropLine())).toList();
+    }
+
+    /** Pas de notification : un message par personne à chaque phrase serait vite coupé par tout le monde. */
+    @Transactional
+    public void postMessage(String leagueId, String userId, String rawText) {
+        if (membershipRepository.findByLeagueIdAndUserId(leagueId, userId).isEmpty()) {
+            throw new IllegalStateException("Tu n'es pas membre de cette ligue.");
+        }
+        String text = rawText == null ? "" : rawText.strip();
+        if (text.isEmpty()) throw new IllegalArgumentException("Message vide.");
+        if (text.length() > MAX_MESSAGE_LENGTH) throw new IllegalArgumentException("Message trop long (" + MAX_MESSAGE_LENGTH + " caractères au plus).");
+        java.time.Instant now = java.time.Instant.now();
+        if (messageRepository.countByUser_IdAndCreatedAtAfter(userId, now.minus(java.time.Duration.ofHours(1))) >= MAX_MESSAGES_PER_HOUR) {
+            throw new IllegalArgumentException("Beaucoup de messages en peu de temps : réessaie dans un moment.");
+        }
+        com.hooppicks.backendapplication.entity.LeagueMessage message = new com.hooppicks.backendapplication.entity.LeagueMessage();
+        message.setLeagueId(leagueId);
+        message.setUser(userRepository.findById(userId).orElseThrow());
+        message.setText(text);
+        message.setCreatedAt(now);
+        messageRepository.save(message);
+    }
+
+    /** Par son auteur ou par le créateur de la ligue, seule modération d'un fil privé entre amis. */
+    @Transactional
+    public void deleteMessage(String leagueId, String userId, String messageId) {
+        com.hooppicks.backendapplication.entity.LeagueMessage message = messageRepository.findById(messageId)
+                .filter(m -> leagueId.equals(m.getLeagueId()))
+                .orElseThrow(() -> new IllegalArgumentException("Message introuvable."));
+        boolean owner = leagueRepository.findById(leagueId).map(l -> userId.equals(l.getOwnerId())).orElse(false);
+        if (!owner && !message.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("Ce message n'est pas le tien.");
+        }
+        activityReactionRepository.deleteAll(activityReactionRepository.findByTargetTypeInAndTargetIdIn(List.of("MESSAGE"), List.of(messageId)));
+        messageRepository.delete(message);
     }
 
     private String selectionsSummary(Bet bet) {
@@ -237,7 +324,7 @@ public class LeagueService {
             return new LeagueActivityDto(
                     item.targetType(), item.targetId(), item.username(), item.message(), item.occurredAt(),
                     item.avatarNumber(), item.avatarPosition(), item.avatarColorway(), item.avatarIcon(),
-                    counts, mine
+                    counts, mine, item.deletable(), item.selections()
             );
         }).toList();
     }
@@ -260,7 +347,7 @@ public class LeagueService {
         if (!ALLOWED_EMOJIS.contains(emoji)) {
             throw new IllegalArgumentException("Emoji non supporté.");
         }
-        if (!"BET".equals(targetType) && !"MEMBERSHIP".equals(targetType)) {
+        if (!Set.of("BET", "MEMBERSHIP", "MESSAGE", "TITLE").contains(targetType)) {
             throw new IllegalArgumentException("Type de cible invalide.");
         }
 
@@ -323,6 +410,7 @@ public class LeagueService {
             // Plus personne dans la ligue : autant la nettoyer plutôt que de
             // laisser un code d'invitation orphelin traîner indéfiniment.
             if (remaining.isEmpty()) {
+                if (messageRepository != null) messageRepository.deleteAllForLeague(leagueId);
                 leagueRepository.deleteById(leagueId);
             } else if (wasOwner) {
                 // Pas de transfert manuel dans ce produit : si le proprio part,

@@ -23,6 +23,7 @@ import { fetchProfile } from "@/lib/api/auth";
 import { copyLeagueCode, shareLeagueInvite } from "@/lib/league-invite";
 import { League, LeaderboardEntry, LeagueMember, LeaguePreview } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
+import { LeagueRanking } from "@/components/league-ranking";
 import { cn } from "@/lib/utils";
 
 function MemberStack({ members }: { members: LeagueMember[] | undefined }) {
@@ -340,6 +341,8 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
       )}
 
       {!actionsFirst && actions}
+
+      <LeagueRanking />
     </div>
   );
 }

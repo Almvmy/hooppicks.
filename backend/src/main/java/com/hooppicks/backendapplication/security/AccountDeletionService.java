@@ -74,12 +74,19 @@ public class AccountDeletionService {
         this.sessionStore = sessionStore;
     }
 
+    // Facultatif : les tests construisent ce service sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.MissionCompletionRepository missionRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.LeagueMessageRepository messageRepository;
+
     @Transactional
     public void deleteAccount(String userId) {
         // Ligues possédées : pas de transfert de propriété possible (fonctionnalité
         // inexistante), donc la ligue ne peut pas survivre sans son créateur :
         // on la supprime entièrement plutôt que de laisser ownerId orphelin.
         for (League league : leagueRepository.findByOwnerId(userId)) {
+            if (messageRepository != null) messageRepository.deleteAllForLeague(league.getId());
             membershipRepository.deleteByLeagueId(league.getId());
             leagueRepository.delete(league);
         }
@@ -90,10 +97,12 @@ public class AccountDeletionService {
             leagueService.leaveLeague(membership.getLeague().getId(), userId);
         }
 
+        if (messageRepository != null) messageRepository.deleteAllForUser(userId);
         duelRepository.deleteAllForUser(userId);
         titleRepository.deleteAllForUser(userId);
         phaseTitleRepository.deleteAllForUser(userId);
         seasonPickRepository.deleteAllForUser(userId);
+        if (missionRepository != null) missionRepository.deleteAllForUser(userId);
         followRepository.deleteByUserId(userId);
         feedbackRepository.deleteByUserId(userId);
         betRepository.deleteByUserId(userId);

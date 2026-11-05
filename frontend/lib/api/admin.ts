@@ -147,10 +147,15 @@ export interface BoostCandidate {
   label: string;
   date: string;
   chosen: boolean;
+  extra: boolean;
 }
 
 export async function fetchBoostCandidates(): Promise<BoostCandidate[]> {
   return apiFetch<BoostCandidate[]>("/console/boost");
+}
+
+export async function toggleExtraBoost(matchId: string): Promise<BoostCandidate[]> {
+  return apiFetch<BoostCandidate[]>("/console/boost/extra", { method: "POST", body: JSON.stringify({ matchId }) });
 }
 
 export async function chooseBoost(matchId: string): Promise<BoostCandidate[]> {

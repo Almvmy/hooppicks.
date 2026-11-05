@@ -84,6 +84,52 @@ public class LeagueController {
         }
     }
 
+    // Facultatif : les tests construisent ce contrôleur sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.league.LeagueRankingService rankingService;
+
+    /** Ligue contre ligue : toutes les ligues classées, connecté seulement. */
+    @GetMapping("/ranking")
+    public ResponseEntity<?> ranking(@RequestParam(required = false) String period, HttpServletRequest request) {
+        String userId = sessionStore.getUserIdFromRequest(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+        try {
+            return ResponseEntity.ok(rankingService.ranking(com.hooppicks.backendapplication.leaderboard.LeaderboardPeriod.parse(period), userId));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    public record MessageRequest(String text) {}
+
+    @PostMapping("/{id}/messages")
+    public ResponseEntity<?> postMessage(@PathVariable String id, @RequestBody MessageRequest body, HttpServletRequest request) {
+        String userId = sessionStore.getUserIdFromRequest(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+        try {
+            leagueService.postMessage(id, userId, body.text());
+            return ResponseEntity.ok(leagueService.getRecentActivity(id, userId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/messages/{messageId}/delete")
+    public ResponseEntity<?> deleteMessage(@PathVariable String id, @PathVariable String messageId, HttpServletRequest request) {
+        String userId = sessionStore.getUserIdFromRequest(request);
+        if (userId == null) return ResponseEntity.status(401).build();
+        try {
+            leagueService.deleteMessage(id, userId, messageId);
+            return ResponseEntity.ok(leagueService.getRecentActivity(id, userId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/{id}/activity/react")
     public ResponseEntity<?> reactToActivity(@PathVariable String id, @Valid @RequestBody ReactRequest body,
                                               HttpServletRequest request) {

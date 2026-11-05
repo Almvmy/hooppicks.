@@ -18,6 +18,8 @@ public interface WeeklyTitleRepository extends JpaRepository<WeeklyTitle, String
 
     List<WeeklyTitle> findByWeekAndLeagueId(LocalDate week, String leagueId);
 
+    List<WeeklyTitle> findTop5ByLeagueIdOrderByWeekDesc(String leagueId);
+
     @Modifying
     @Query("DELETE FROM WeeklyTitle t WHERE t.userId = :userId")
     void deleteAllForUser(String userId);

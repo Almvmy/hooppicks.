@@ -1,12 +1,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import type { LeaderboardPeriod, PhaseChampions, WeekChampions } from "@/lib/types";
+import type { BetSelection, LeaderboardPeriod, LeagueActivity, PhaseChampions, WeekChampions } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Activity, ArrowLeft, Copy, LogOut, Share2, Ticket, TrendingUp, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Copy, Crown, LogOut, MessageCircle, Send, Share2, Ticket, Trash2, TrendingUp, Trophy, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,13 +15,17 @@ import { PlayerAvatar } from "@/components/player-avatar";
 import { LeagueCrest, hueFromName } from "@/components/league-crest";
 import { ChampionBanner } from "@/components/leaderboard/champion-banner";
 import { Podium } from "@/components/leaderboard/podium";
+import { useBetSlip } from "@/components/bet-slip-provider";
+import { Input } from "@/components/ui/input";
 import { copyLeagueCode, shareLeagueInvite } from "@/lib/league-invite";
 import {
   fetchLeagueActivity,
   fetchLeagueLeaderboard,
   fetchLeagueMembers,
   fetchMyLeagues,
+  deleteLeagueMessage,
   leaveLeague,
+  postLeagueMessage,
   reactToActivity,
 } from "@/lib/api/leagues";
 import { fetchProfile } from "@/lib/api/auth";
@@ -33,7 +37,32 @@ import { formatRelativeTime, formatSignedPoints, cn } from "@/lib/utils";
 // libre, un petit vocabulaire partagé suffit pour ce genre de réaction.
 const REACTION_EMOJIS = ["👍", "🔥", "👎"];
 
-type Tab = "classement" | "membres" | "activite";
+type Tab = "classement" | "membres" | "fil";
+
+const MAX_MESSAGE = 280;
+
+/** Même identifiant que les boutons de cote : le bouton du match s'allume dans le ticket. */
+function copiedSelection(s: LeagueActivity["selections"][number]): BetSelection {
+  const milestone = /\d\+ /.test(s.label) && s.line != null;
+  const id = s.playerId
+    ? milestone
+      ? `${s.matchId}-${s.market}-${s.playerId}-${s.line! + 0.5}plus`
+      : `${s.matchId}-${s.market}-${s.playerId}-${s.outcome}`
+    : s.market.startsWith("alt_")
+      ? `${s.matchId}-${s.market}-${s.line}-${s.outcome}`
+      : `${s.matchId}-${s.market}-${s.outcome}`;
+  return {
+    id,
+    matchId: s.matchId,
+    matchLabel: s.matchLabel,
+    market: s.market,
+    outcome: s.outcome,
+    label: s.label,
+    odds: s.odds,
+    playerId: s.playerId ?? undefined,
+    line: s.line ?? undefined,
+  };
+}
 
 export default function LeagueDetailPage({
   params,
@@ -45,6 +74,8 @@ export default function LeagueDetailPage({
   const queryClient = useQueryClient();
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [tab, setTab] = useState<Tab>("classement");
+  const [draft, setDraft] = useState("");
+  const { selections: slip, toggleSelection } = useBetSlip();
 
   const leaguesQuery = useQuery({ queryKey: ["leagues"], queryFn: fetchMyLeagues });
   const league = leaguesQuery.data?.find((l) => l.id === id);
@@ -75,6 +106,8 @@ export default function LeagueDetailPage({
   const activityQuery = useQuery({
     queryKey: ["league-activity", id],
     queryFn: () => fetchLeagueActivity(id),
+    // La discussion arrive sans recharger la page, seulement quand on la regarde.
+    refetchInterval: tab === "fil" ? 20_000 : false,
   });
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -93,6 +126,29 @@ export default function LeagueDetailPage({
     },
     onError: () => toast.error("Impossible d'envoyer la réaction. Réessaie."),
   });
+
+  const sendMutation = useMutation({
+    mutationFn: () => postLeagueMessage(id, draft.trim()),
+    onSuccess: (fresh) => {
+      queryClient.setQueryData(["league-activity", id], fresh);
+      setDraft("");
+    },
+    onError: (e) => toast.error(e instanceof Error && e.message ? e.message : "Message non envoyé. Réessaie."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (messageId: string) => deleteLeagueMessage(id, messageId),
+    onSuccess: (fresh) => queryClient.setQueryData(["league-activity", id], fresh),
+    onError: () => toast.error("Impossible de supprimer ce message."),
+  });
+
+  function playSame(event: LeagueActivity) {
+    const copies = event.selections.map(copiedSelection);
+    // toggleSelection retirerait une sélection déjà dans le ticket : on ne la touche pas.
+    const fresh = copies.filter((c) => !slip.some((s) => s.id === c.id));
+    fresh.forEach(toggleSelection);
+    toast.success(fresh.length > 0 ? "Ajouté à ton ticket." : "Déjà dans ton ticket.");
+  }
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveLeague(id),
@@ -113,7 +169,7 @@ export default function LeagueDetailPage({
   const tabs: { value: Tab; label: string; icon: React.ElementType }[] = [
     { value: "classement", label: "Classement", icon: Trophy },
     { value: "membres", label: `Membres${membersQuery.data ? ` · ${membersQuery.data.length}` : ""}`, icon: Users },
-    { value: "activite", label: "Activité", icon: Activity },
+    { value: "fil", label: "Fil", icon: MessageCircle },
   ];
 
   return (
@@ -321,9 +377,28 @@ export default function LeagueDetailPage({
         </Card>
       )}
 
-      {tab === "activite" && (
+      {tab === "fil" && (
         <Card role="tabpanel">
           <CardContent className="flex flex-col gap-4 pt-6">
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (draft.trim()) sendMutation.mutate();
+              }}
+            >
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                maxLength={MAX_MESSAGE}
+                placeholder="Écris à ta ligue"
+                aria-label="Écris à ta ligue"
+              />
+              <Button type="submit" aria-label="Envoyer" disabled={!draft.trim() || sendMutation.isPending}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+
             {activityQuery.isLoading && (
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-8 w-full" />
@@ -340,9 +415,11 @@ export default function LeagueDetailPage({
             )}
 
             {activityQuery.data?.map((event) => {
+              const isChat = event.targetType === "MESSAGE";
+              const isTitle = event.targetType === "TITLE";
               const isWin = event.message.startsWith("a gagné");
               const isPick = event.message.startsWith("a misé");
-              const Icon = isWin ? Trophy : isPick ? Ticket : UserPlus;
+              const Icon = isChat ? MessageCircle : isTitle ? Crown : isWin ? Trophy : isPick ? Ticket : UserPlus;
               return (
                 <div key={`${event.targetType}-${event.targetId}-${event.occurredAt}`} className="flex items-start gap-2.5 text-sm">
                   <span className="relative mt-0.5 shrink-0">
@@ -354,7 +431,7 @@ export default function LeagueDetailPage({
                       size="sm"
                     />
                     <span
-                      className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-background ${isWin ? "text-success" : "text-muted-foreground"}`}
+                      className={`absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-background ${isWin || isTitle ? "text-success" : "text-muted-foreground"}`}
                     >
                       <Icon className="h-2.5 w-2.5" />
                     </span>
@@ -366,11 +443,25 @@ export default function LeagueDetailPage({
                     >
                       {event.username}
                     </Link>{" "}
-                    <span className="text-muted-foreground">{event.message}</span>
+                    {isChat ? (
+                      <p className="mt-0.5 whitespace-pre-wrap break-words">{event.message}</p>
+                    ) : (
+                      <span className="text-muted-foreground">{event.message}</span>
+                    )}
                     <p className="font-mono text-[11px] text-muted-foreground">
                       {formatRelativeTime(event.occurredAt)}
                     </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      {event.selections.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => playSame(event)}
+                          className="glass-accent flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        >
+                          <Ticket className="h-3 w-3" />
+                          Je joue pareil
+                        </button>
+                      )}
                       {REACTION_EMOJIS.map((emoji) => {
                         const count = event.reactionCounts[emoji] ?? 0;
                         const mine = event.myReactions.includes(emoji);
@@ -391,6 +482,17 @@ export default function LeagueDetailPage({
                           </button>
                         );
                       })}
+                      {event.deletable && (
+                        <button
+                          type="button"
+                          disabled={deleteMutation.isPending}
+                          onClick={() => deleteMutation.mutate(event.targetId)}
+                          aria-label="Supprimer ce message"
+                          className="rounded-full p-1 text-muted-foreground transition-colors hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

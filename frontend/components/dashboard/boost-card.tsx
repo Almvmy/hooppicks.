@@ -16,6 +16,8 @@ export function BoostCard({ matches }: { matches: Match[] | undefined }) {
   if (!boost || !match || !isBettable(match) || boost.homeOdds === null || boost.awayOdds === null) return null;
 
   const date = new Date(match.date);
+  // Soirée spéciale : d'autres matchs boostés, signalés par la flamme sur leur carte.
+  const others = Math.max(0, (boost.matches?.length ?? 1) - 1);
   const sides = [
     { team: match.awayTeam, outcome: "away" as const, odds: boost.awayOdds, original: match.odds.moneylineAway },
     { team: match.homeTeam, outcome: "home" as const, odds: boost.homeOdds, original: match.odds.moneylineHome },
@@ -61,6 +63,11 @@ export function BoostCard({ matches }: { matches: Match[] | undefined }) {
           Vainqueur du match payé +{Math.round((boost.factor - 1) * 100)} % · mise limitée à {boost.maxStake} pts par
           ticket
         </p>
+        {others > 0 && (
+          <Link href="/matches" className="text-center text-xs font-semibold text-primary hover:underline">
+            Soirée spéciale : {others} autre{others > 1 ? "s" : ""} match{others > 1 ? "s" : ""} boosté{others > 1 ? "s" : ""}
+          </Link>
+        )}
       </CardContent>
     </Card>
   );

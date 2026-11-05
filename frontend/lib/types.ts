@@ -14,8 +14,8 @@ export interface WalletData {
 
 export type AvatarPosition = "PG" | "SG" | "SF" | "PF" | "C";
 export type AvatarColorway = "orange" | "purple" | "blue" | "green" | "red" | "teal" | "gold" | "navy" | "black";
-/** À débloquer : crown (joueur titré : champion de la semaine, du mois, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée), trophy (champion HoopPicks de la saison). */
-export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak" | "trophy";
+/** À débloquer : crown (joueur titré : champion de la semaine, du mois, d'une ligue, de la Coupe NBA ou des playoffs), streak (5 tickets gagnés d'affilée), trophy (champion HoopPicks de la saison), rocket et star (missions de la semaine). */
+export type AvatarIcon = "dunk" | "three" | "handles" | "defense" | "playmaker" | "crown" | "streak" | "trophy" | "rocket" | "star";
 
 export interface UserProfile {
   username: string;
@@ -385,7 +385,7 @@ export interface LeagueMember {
 }
 
 export interface LeagueActivity {
-  targetType: "BET" | "MEMBERSHIP";
+  targetType: "BET" | "MEMBERSHIP" | "MESSAGE" | "TITLE";
   targetId: string;
   username: string;
   message: string;
@@ -396,6 +396,19 @@ export interface LeagueActivity {
   avatarIcon: AvatarIcon;
   reactionCounts: Record<string, number>;
   myReactions: string[];
+  /** Message que l'on peut supprimer : le sien, ou si l'on dirige la ligue. */
+  deletable: boolean;
+  /** Ticket d'un autre membre encore jouable (« Je joue pareil »), sinon vide. */
+  selections: {
+    matchId: string;
+    matchLabel: string;
+    market: BetMarket;
+    outcome: BetOutcome;
+    label: string;
+    odds: number;
+    playerId: string | null;
+    line: number | null;
+  }[];
 }
 
 export interface AdminStatus {

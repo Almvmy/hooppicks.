@@ -143,6 +143,45 @@ class BoostServiceTest {
     }
 
     @Test
+    void soiree_speciale_les_matchs_ajoutes_sont_boostes_avec_le_choc() {
+        com.hooppicks.backendapplication.repository.ExtraBoostRepository extras = mock(com.hooppicks.backendapplication.repository.ExtraBoostRepository.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "extraRepository", extras);
+        ExtraBoost extra = new ExtraBoost();
+        extra.setMatchId("noel");
+        extra.setNight(LocalDate.of(2026, 10, 22));
+        when(extras.findByNight(LocalDate.of(2026, 10, 22))).thenReturn(List.of(extra));
+        DailyBoost chosen = new DailyBoost();
+        chosen.setNight(LocalDate.of(2026, 10, 22));
+        chosen.setMatchId("choc");
+        when(boostRepository.findById(LocalDate.of(2026, 10, 22))).thenReturn(Optional.of(chosen));
+        when(matchRepository.findById("choc")).thenReturn(Optional.of(match("choc", team("OKC", 60, 22), team("BOS", 58, 24), 1.7, 2.2, MatchType.REGULAR)));
+        when(matchRepository.findAllById(List.of("noel"))).thenReturn(List.of(match("noel", team("LAL", 40, 42), team("GSW", 41, 41), 1.9, 1.95, MatchType.REGULAR)));
+
+        BoostService.Boost boost = service.current().orElseThrow();
+
+        assertThat(boost.matchId()).isEqualTo("choc");
+        assertThat(boost.matches()).extracting(BoostService.BoostedOdds::matchId).containsExactly("choc", "noel");
+        assertThat(service.boostedMatchIds()).contains("choc", "noel");
+    }
+
+    @Test
+    void un_match_ajoute_se_retire_d_un_second_clic() {
+        com.hooppicks.backendapplication.repository.ExtraBoostRepository extras = mock(com.hooppicks.backendapplication.repository.ExtraBoostRepository.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "extraRepository", extras);
+        Match a = match("a", team("OKC", 60, 22), team("BOS", 58, 24), 1.7, 2.2, MatchType.REGULAR);
+        a.setDate(Instant.parse("2026-10-22T23:00:00Z"));
+        when(matchRepository.findByStatusAndDateBetween(eq(MatchStatus.SCHEDULED), any(), any())).thenReturn(List.of(a));
+
+        when(extras.existsById("a")).thenReturn(false);
+        service.toggleExtra("a");
+        verify(extras).save(argThat(e -> e.getMatchId().equals("a")));
+
+        when(extras.existsById("a")).thenReturn(true);
+        service.toggleExtra("a");
+        verify(extras).deleteById("a");
+    }
+
+    @Test
     void un_match_qui_n_est_pas_de_ce_soir_est_refuse() {
         when(boostRepository.findById(any())).thenReturn(Optional.empty());
         when(matchRepository.findByStatusAndDateBetween(eq(MatchStatus.SCHEDULED), any(), any())).thenReturn(List.of());

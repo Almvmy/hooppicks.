@@ -57,6 +57,10 @@ public class BoostService {
         this.clock = clock;
     }
 
+    // Facultatif : les tests construisent ce service sans lui.
+    @Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.ExtraBoostRepository extraRepository;
+
     public record BoostedOdds(String matchId, double homeOdds, double awayOdds) {}
 
     /**
@@ -76,6 +80,10 @@ public class BoostService {
 
         Map<String, BoostedOdds> all = new LinkedHashMap<>();
         choc.ifPresent(m -> all.put(m.getId(), odds(m)));
+        // Soirée spéciale : les matchs ajoutés par un admin.
+        matchRepository.findAllById(extraIds(night)).stream()
+                .filter(m -> m.getMoneylineHome() > 1 && m.getMoneylineAway() > 1)
+                .forEach(m -> all.putIfAbsent(m.getId(), odds(m)));
         List<Match> opening = upcomingOpeningNight();
         opening.stream().filter(m -> m.getMoneylineHome() > 1 && m.getMoneylineAway() > 1)
                 .forEach(m -> all.putIfAbsent(m.getId(), odds(m)));
@@ -96,7 +104,13 @@ public class BoostService {
     public Set<String> boostedMatchIds() {
         Set<String> ids = new HashSet<>(calendar.openingNightMatchIds());
         boostRepository.findById(currentNight()).map(DailyBoost::getMatchId).ifPresent(ids::add);
+        ids.addAll(extraIds(currentNight()));
         return ids;
+    }
+
+    private List<String> extraIds(LocalDate night) {
+        if (extraRepository == null) return List.of();
+        return extraRepository.findByNight(night).stream().map(ExtraBoost::getMatchId).toList();
     }
 
     // Soirée d'ouverture pas encore terminée : ses matchs restent affichés boostés.
@@ -116,15 +130,16 @@ public class BoostService {
     }
 
     /** Match de ce soir proposable en cote boostée (console admin). */
-    public record Candidate(String matchId, String label, Instant date, boolean chosen) {}
+    public record Candidate(String matchId, String label, Instant date, boolean chosen, boolean extra) {}
 
     /** Matchs de la soirée en cours pas encore commencés, le choix actuel marqué. */
     public List<Candidate> candidates() {
         LocalDate night = currentNight();
         String chosen = boostRepository.findById(night).map(DailyBoost::getMatchId).orElse(null);
+        Set<String> extras = new HashSet<>(extraIds(night));
         return tonight(night).stream()
                 .map(m -> new Candidate(m.getId(), m.getAwayTeam().getAbbreviation() + " @ " + m.getHomeTeam().getAbbreviation(),
-                        m.getDate(), m.getId().equals(chosen)))
+                        m.getDate(), m.getId().equals(chosen), extras.contains(m.getId())))
                 .toList();
     }
 
@@ -143,6 +158,22 @@ public class BoostService {
         boost.setNight(night);
         boost.setMatchId(matchId);
         boostRepository.save(boost);
+    }
+
+    /** Ajoute ou retire un match boosté en plus du choc (soirée spéciale). Mêmes règles que `override`. */
+    public void toggleExtra(String matchId) {
+        LocalDate night = currentNight();
+        if (tonight(night).stream().noneMatch(m -> m.getId().equals(matchId))) {
+            throw new IllegalArgumentException("Ce match n'est pas un match à venir de la soirée.");
+        }
+        if (extraRepository.existsById(matchId)) {
+            extraRepository.deleteById(matchId);
+            return;
+        }
+        ExtraBoost extra = new ExtraBoost();
+        extra.setMatchId(matchId);
+        extra.setNight(night);
+        extraRepository.save(extra);
     }
 
     private List<Match> tonight(LocalDate night) {
