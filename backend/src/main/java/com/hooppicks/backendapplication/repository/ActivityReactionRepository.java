@@ -16,4 +16,9 @@ public interface ActivityReactionRepository extends JpaRepository<ActivityReacti
     // (cf. LeagueService.toggleReaction), plusieurs pour les données
     // antérieures à cette règle, nettoyées au prochain clic.
     List<ActivityReaction> findByTargetTypeAndTargetIdAndUser_Id(String targetType, String targetId, String userId);
+
+    // Clé étrangère vers le joueur sans cascade : sans ça, son compte ne peut pas être supprimé.
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("DELETE FROM ActivityReaction r WHERE r.user.id = :userId")
+    void deleteAllForUser(String userId);
 }

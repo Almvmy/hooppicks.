@@ -61,7 +61,7 @@ export function NotificationsDropdown() {
   }
 
   function handleClick(notif: AppNotification) {
-    const destination = DESTINATION[notif.type];
+    const destination = notif.link ?? DESTINATION[notif.type];
     if (destination) router.push(destination);
   }
 
@@ -92,7 +92,7 @@ export function NotificationsDropdown() {
               onClick={() => handleClick(notif)}
               className={cn(
                 "flex items-start gap-2 whitespace-normal py-2",
-                DESTINATION[notif.type] ? "cursor-pointer" : "cursor-default",
+                notif.link || DESTINATION[notif.type] ? "cursor-pointer" : "cursor-default",
                 fresh && "bg-primary/5"
               )}
             >

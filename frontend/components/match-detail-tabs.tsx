@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { PlayerPropsCard } from "@/components/player-props-card";
+import { FriendsOnMatch } from "@/components/friends-on-match";
 import { TeamRoster } from "@/components/team-roster";
 import { useQuery } from "@tanstack/react-query";
 import { BoxScoreTable } from "@/components/box-score-table";
@@ -179,6 +180,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
         <Skeleton className="h-48 w-full rounded-2xl" />
       ) : (
         <div role="tabpanel" className="flex flex-col gap-4">
+          <FriendsOnMatch matchId={match.id} />
           {active === "paris" &&
             (isBettable(match) || opensLater(match) ? (
               // Semaine de jeu suivante : les cotes sont déjà fixées, on les

@@ -7,9 +7,10 @@ public record NotificationDto(
         String type,
         String message,
         String date,
-        boolean read
+        boolean read,
+        String link
 ) {
     public static NotificationDto from(AppNotification n) {
-        return new NotificationDto(n.getId(), n.getType().name().toLowerCase(), n.getMessage(), n.getDate().toString(), n.isRead());
+        return new NotificationDto(n.getId(), n.getType().name().toLowerCase(), n.getMessage(), n.getDate().toString(), n.isRead(), n.getLink());
     }
 }

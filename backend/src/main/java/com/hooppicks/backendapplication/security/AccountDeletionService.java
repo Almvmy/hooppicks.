@@ -79,6 +79,8 @@ public class AccountDeletionService {
     private com.hooppicks.backendapplication.repository.MissionCompletionRepository missionRepository;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.repository.LeagueMessageRepository messageRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.ActivityReactionRepository reactionRepository;
 
     @Transactional
     public void deleteAccount(String userId) {
@@ -98,6 +100,7 @@ public class AccountDeletionService {
         }
 
         if (messageRepository != null) messageRepository.deleteAllForUser(userId);
+        if (reactionRepository != null) reactionRepository.deleteAllForUser(userId);
         duelRepository.deleteAllForUser(userId);
         titleRepository.deleteAllForUser(userId);
         phaseTitleRepository.deleteAllForUser(userId);

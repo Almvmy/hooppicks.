@@ -17,6 +17,7 @@ import { BestBetTrophy } from "@/components/best-bet-trophy";
 import { fetchPublicProfile } from "@/lib/api/users";
 import { fetchMyStanding } from "@/lib/api/leaderboard";
 import { challengeToDuel, fetchDuels } from "@/lib/api/duels";
+import { fetchTicketReactions, reactToTicket, type TicketReactions } from "@/lib/api/social";
 import { badgeIcon } from "@/lib/badges";
 import { netResult } from "@/lib/bet-legs";
 import { rankTitle } from "@/lib/rank-title";
@@ -45,6 +46,43 @@ const TICKET_STATUS: Record<PlacedBet["status"], { label: string; variant: "succ
   void: { label: "Remboursé", variant: "secondary" },
   pending: { label: "En attente", variant: "secondary" },
 };
+
+const REACTION_EMOJIS = ["👍", "🔥", "👎"];
+
+/** Sur son propre profil : on voit les réactions reçues, sans pouvoir s'en ajouter. */
+function TicketReactionsBar({ betId, reactions, readOnly }: { betId: string; reactions: TicketReactions | undefined; readOnly: boolean }) {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (emoji: string) => reactToTicket(betId, emoji),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ticket-reactions"] }),
+    onError: () => toast.error("Impossible d'envoyer la réaction. Réessaie."),
+  });
+  const shown = readOnly ? REACTION_EMOJIS.filter((e) => (reactions?.counts[e] ?? 0) > 0) : REACTION_EMOJIS;
+  if (shown.length === 0) return null;
+  return (
+    <div className="-mt-1 mb-2 flex flex-wrap gap-1 pl-[4.5rem]">
+      {shown.map((emoji) => {
+        const count = reactions?.counts[emoji] ?? 0;
+        const mine = reactions?.mine.includes(emoji);
+        return (
+          <button
+            key={emoji}
+            type="button"
+            disabled={readOnly || mutation.isPending}
+            onClick={() => mutation.mutate(emoji)}
+            className={cn(
+              "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs transition-colors",
+              mine ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <span>{emoji}</span>
+            {count > 0 && <span className="font-mono text-[10px]">{count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function TicketRow({ bet }: { bet: PlacedBet }) {
   const net = netResult(bet);
@@ -101,6 +139,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   });
   const teams = useTeamsByAbbreviation();
   const queryClient = useQueryClient();
+  const ticketIds = profile?.recentTickets.map((b) => b.id) ?? [];
+  const ticketReactions = useQuery({
+    queryKey: ["ticket-reactions", ticketIds.join(",")],
+    queryFn: () => fetchTicketReactions(ticketIds),
+    enabled: ticketIds.length > 0,
+    staleTime: 60_000,
+  });
   const duelsQuery = useQuery({ queryKey: ["duels"], queryFn: fetchDuels, enabled: !!profile && !profile.isMe });
   const challenge = useMutation({
     mutationFn: () => challengeToDuel(username),
@@ -327,7 +372,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
             {profile.recentTickets.length > 0 && (
               <div className="divide-y divide-tint/10">
                 {profile.recentTickets.map((bet) => (
-                  <TicketRow key={bet.id} bet={bet} />
+                  <div key={bet.id}>
+                    <TicketRow bet={bet} />
+                    <TicketReactionsBar betId={bet.id} reactions={ticketReactions.data?.[bet.id]} readOnly={profile.isMe} />
+                  </div>
                 ))}
               </div>
             )}

@@ -191,6 +191,15 @@ export default function DuelsPage() {
     onError: (error) => toast.error(error instanceof Error && error.message ? error.message : "Action impossible."),
   });
 
+  const rematch = useMutation({
+    mutationFn: (opponent: string) => challengeToDuel(opponent),
+    onSuccess: (_, opponent) => {
+      toast.success(`Revanche demandée à @${opponent}.`);
+      queryClient.invalidateQueries({ queryKey: ["duels"] });
+    },
+    onError: (error) => toast.error(error instanceof Error && error.message ? error.message : "Défi impossible."),
+  });
+
   const duels = data ?? [];
   const incoming = duels.filter((d) => d.status === "pending" && !d.iChallenged);
   const outgoing = duels.filter((d) => d.status === "pending" && d.iChallenged);
@@ -297,6 +306,12 @@ export default function DuelsPage() {
                         {d.result === "won" && <Trophy className="h-3.5 w-3.5" />}
                         {r.label}
                       </span>
+                      {/* Le dernier duel contre ce joueur seulement, s'il n'y en a pas déjà un en cours. */}
+                      {!busy.has(d.opponentUsername) && finished.find((f) => f.opponentUsername === d.opponentUsername) === d && (
+                        <Button size="sm" variant="outline" disabled={rematch.isPending} onClick={() => rematch.mutate(d.opponentUsername)}>
+                          Revanche
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );

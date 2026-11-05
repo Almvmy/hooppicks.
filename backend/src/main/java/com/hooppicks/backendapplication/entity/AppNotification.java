@@ -23,6 +23,10 @@ public class AppNotification {
     private NotificationType type;
 
     private String message;
+
+    /** Page où mène la notification, quand son type ne suffit pas à le dire (une ligue précise…). */
+    private String link;
+
     private Instant date = Instant.now();
     private boolean read = false;
 }

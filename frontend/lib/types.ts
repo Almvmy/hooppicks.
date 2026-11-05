@@ -496,7 +496,8 @@ export type NotificationType =
   | "feedback_reply"
   | "season_picks"
   | "referral"
-  | "weekly_reminder";
+  | "weekly_reminder"
+  | "social";
 
 export type FeedbackCategory = "BUG" | "QUESTION" | "IDEA" | "OTHER";
 export type FeedbackStatus = "OPEN" | "ANSWERED" | "CLOSED";
@@ -522,6 +523,8 @@ export interface AppNotification {
   message: string;
   date: string;
   read: boolean;
+  /** Page où mène la notification, quand son type ne suffit pas à le dire. */
+  link?: string | null;
 }
 
 export interface UserBadge {

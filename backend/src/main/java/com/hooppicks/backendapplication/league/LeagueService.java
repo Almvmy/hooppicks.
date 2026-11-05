@@ -155,6 +155,8 @@ public class LeagueService {
     private com.hooppicks.backendapplication.repository.WeeklyTitleRepository titleRepository;
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.hooppicks.backendapplication.repository.MatchRepository matchRepository;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.social.SocialNotifier socialNotifier;
 
     static final int MAX_MESSAGE_LENGTH = 280;
     // Garde-fou anti-spam : largement au-dessus d'une discussion normale.
@@ -277,6 +279,11 @@ public class LeagueService {
         message.setText(text);
         message.setCreatedAt(now);
         messageRepository.save(message);
+        if (socialNotifier != null) {
+            Set<String> members = membershipRepository.findByLeagueId(leagueId).stream()
+                    .map(m -> m.getUser().getId()).collect(Collectors.toSet());
+            socialNotifier.mentions(message.getUser(), text, "/leagues/" + leagueId, members);
+        }
     }
 
     /** Par son auteur ou par le créateur de la ligue, seule modération d'un fil privé entre amis. */
@@ -344,6 +351,12 @@ public class LeagueService {
         if (membershipRepository.findByLeagueIdAndUserId(leagueId, requestingUserId).isEmpty()) {
             throw new IllegalStateException("Tu n'es pas membre de cette ligue.");
         }
+        applyReaction(targetType, targetId, requestingUserId, emoji);
+    }
+
+    /** Sans contrôle d'appartenance : à l'appelant de vérifier que ce joueur peut réagir à cette cible. */
+    @Transactional
+    public void applyReaction(String targetType, String targetId, String requestingUserId, String emoji) {
         if (!ALLOWED_EMOJIS.contains(emoji)) {
             throw new IllegalArgumentException("Emoji non supporté.");
         }
@@ -367,6 +380,7 @@ public class LeagueService {
             reaction.setUser(userRepository.findById(requestingUserId).orElseThrow());
             reaction.setEmoji(emoji);
             activityReactionRepository.save(reaction);
+            if (socialNotifier != null) socialNotifier.reacted(reaction.getUser(), targetType, targetId, emoji);
         }
     }
 

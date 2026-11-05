@@ -13,6 +13,14 @@ public interface BetSelectionRepository extends JpaRepository<BetSelection, Stri
     // (pas besoin de joindre Bet ni Match) : cf. le comparatif communautaire
     // affiché sur les cartes de match (PickPercentagesService).
     @Query("""
+        SELECT s FROM BetSelection s JOIN FETCH s.bet b JOIN FETCH b.user
+        WHERE s.matchId = :matchId AND b.user.id IN :userIds
+          AND b.status <> com.hooppicks.backendapplication.entity.BetStatus.VOID
+        ORDER BY b.placedAt DESC
+    """)
+    List<com.hooppicks.backendapplication.entity.BetSelection> findFriendsOnMatch(@Param("matchId") String matchId, @Param("userIds") java.util.Collection<String> userIds);
+
+    @Query("""
         SELECT s.matchId, s.market, s.outcome, COUNT(s)
         FROM BetSelection s
         WHERE s.matchId IN :matchIds
