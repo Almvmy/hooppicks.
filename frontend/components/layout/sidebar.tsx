@@ -7,12 +7,14 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { fetchProfile } from "@/lib/api/auth";
 import { ACCOUNT_ITEMS, NAV_SECTIONS, activeSection, isTabActive, type NavTab } from "@/lib/nav";
+import { useSectionTabs } from "@/lib/use-section-tabs";
 
 // À part, sous Suspense : useSearchParams (onglet « Équipes » = ?tab=equipes)
 // ne doit pas faire basculer toute la barre en rendu client.
-function SubTabs({ tabs }: { tabs: NavTab[] }) {
+function SubTabs({ tabs: allTabs }: { tabs: NavTab[] }) {
   const pathname = usePathname();
   const search = useSearchParams().toString();
+  const tabs = useSectionTabs(allTabs, pathname);
   return (
     <div className="ml-5 mt-1 flex flex-col gap-0.5 border-l border-tint/10 pl-3">
       {tabs.map((tab) => (

@@ -10,9 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class SeasonLaunchController {
 
     private final SeasonCalendar calendar;
+    private final com.hooppicks.backendapplication.season.SeasonalTabsService seasonalTabs;
 
-    public SeasonLaunchController(SeasonCalendar calendar) {
+    public SeasonLaunchController(SeasonCalendar calendar, com.hooppicks.backendapplication.season.SeasonalTabsService seasonalTabs) {
         this.calendar = calendar;
+        this.seasonalTabs = seasonalTabs;
+    }
+
+    /** Onglets Coupe et Saison : affichés ou non. */
+    @GetMapping("/nav/seasonal")
+    public com.hooppicks.backendapplication.season.SeasonalTabsService.SeasonalTabs seasonalTabs() {
+        return seasonalTabs.tabs();
     }
 
     public record Launch(String season, String openerMatchId, String openerDate, String openingNightStart,

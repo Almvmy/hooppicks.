@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { activeSection, isTabActive } from "@/lib/nav";
+import { useSectionTabs } from "@/lib/use-section-tabs";
 import { cn } from "@/lib/utils";
 
 /**
- * Onglets d'une rubrique (Compétition : Classement, Ligues, Duels, Saison ;
- * NBA : Actus, Joueurs, Équipes), en haut de chacune de ses pages sur
+ * Onglets d'une rubrique (Compétition : Classement, Ligues, Duels ;
+ * Vestiaire : Le fil, Quiz, Débat, Actus), en haut de chacune de ses pages sur
  * téléphone. Absents des pages de détail (une ligue, une équipe) : elles ont
  * leur propre retour.
  */
@@ -15,8 +16,8 @@ export function SectionTabs() {
   const pathname = usePathname();
   const search = useSearchParams().toString();
   const section = activeSection(pathname);
-  const tabs = section?.tabs;
-  if (!tabs || !tabs.some((t) => t.href.split("?")[0] === pathname)) return null;
+  const tabs = useSectionTabs(section?.tabs, pathname);
+  if (!section || !tabs.some((t) => t.href.split("?")[0] === pathname)) return null;
 
   return (
     // md:hidden : sur ordinateur, la barre latérale déplie déjà ces onglets

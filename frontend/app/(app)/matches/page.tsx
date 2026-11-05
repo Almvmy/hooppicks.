@@ -13,6 +13,10 @@ import { NbaLogo } from "@/components/nba-logo";
 import { TeamLogo } from "@/components/team-logo";
 import { MATCH_TYPE_META } from "@/components/match-stage-badge";
 import { PlayoffSeries } from "@/components/playoff-series";
+import { PickOfDay } from "@/components/dashboard/pick-of-day";
+import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
+import { buildDashboardSlate } from "@/lib/dashboard";
+import { useBoost } from "@/lib/boost";
 import { DEFAULT_PAST_DAYS, fetchMatches } from "@/lib/api/matches";
 import { fetchProfile } from "@/lib/api/auth";
 import { useTimeZone } from "@/lib/use-time-zone";
@@ -44,6 +48,7 @@ function chipClass(active: boolean) {
 }
 
 export default function MatchesPage() {
+  const boost = useBoost();
   const [compact, setCompact] = useLocalFlag("hp:matches:compact");
   const timeZone = useTimeZone();
   const [conference, setConference] = useState<Conference | "Toutes">("Toutes");
@@ -162,6 +167,8 @@ export default function MatchesPage() {
     setStatus("all");
     setTeam(null);
   }
+
+  const spotlight = buildDashboardSlate(data?.filter((m) => m.id !== boost?.matchId)).spotlight;
 
   return (
     <div className="flex flex-col gap-5">
@@ -407,6 +414,10 @@ export default function MatchesPage() {
           )}
         </section>
       )}
+
+      {/* Venus de l'accueil : c'est ici qu'on parie. */}
+      {spotlight && <PickOfDay match={spotlight} />}
+      <SuggestedParlays matches={data} />
     </div>
   );
 }

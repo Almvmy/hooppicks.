@@ -4,7 +4,7 @@ import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, CalendarRange, Heart, Search, TrendingUp, Trophy, Users } from "lucide-react";
+import { ArrowDown, CalendarRange, Heart, Search, TrendingUp, Trophy, Users, ChevronRight } from "lucide-react";
 import { PaginationControls, usePagination } from "@/components/ui/pagination-controls";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -336,6 +336,12 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
 
       {view === "joueurs" && <PlayersRanking username={profile?.username} initialPeriod={periode === "cup" ? "cup" : "season"} />}
       {view === "fans" && <FansRanking favoriteTeam={profile?.favoriteTeam} />}
+
+      {/* L'onglet Saison n'est là qu'à certaines périodes : la page, elle, reste à portée. */}
+      <Link href="/saison" className="glass flex items-center justify-between gap-2 rounded-xl px-4 py-3 text-sm font-semibold hover:text-primary">
+        Pronostics de saison
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Link>
     </div>
   );
 }

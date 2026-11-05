@@ -3,7 +3,7 @@ import {
   CircleHelp,
   House,
   MessageSquare,
-  Newspaper,
+  MessagesSquare,
   Settings,
   Shirt,
   ShieldCheck,
@@ -18,6 +18,8 @@ export interface NavTab {
   label: string;
   /** Titre de la barre du haut quand le libellé court ne suffit pas. */
   title?: string;
+  /** Affiché seulement quand il sert (/nav/seasonal, useSectionTabs). */
+  seasonal?: "cup" | "season";
 }
 
 /**
@@ -42,11 +44,12 @@ export const NAV_SECTIONS: NavSection[] = [
     href: "/matches",
     label: "Matchs",
     icon: CalendarDays,
-    routes: ["/matches", "/paris-joueurs", "/soiree"],
+    routes: ["/matches", "/paris-joueurs", "/players", "/teams"],
     tabs: [
       { href: "/matches", label: "Matchs" },
       { href: "/paris-joueurs", label: "Paris joueurs" },
-      { href: "/soiree", label: "Le fil" },
+      { href: "/players", label: "Joueurs" },
+      { href: "/players?tab=equipes", label: "Équipes" },
     ],
   },
   { href: "/bets", label: "Mes paris", icon: Ticket, routes: ["/bets"] },
@@ -54,28 +57,27 @@ export const NAV_SECTIONS: NavSection[] = [
     href: "/leaderboard",
     label: "Compétition",
     icon: Trophy,
-    routes: ["/leaderboard", "/leagues", "/duels", "/quiz", "/debat", "/coupe", "/saison"],
+    routes: ["/leaderboard", "/leagues", "/duels", "/coupe", "/saison"],
     tabs: [
       { href: "/leaderboard", label: "Classement" },
       { href: "/leagues", label: "Ligues" },
       { href: "/duels", label: "Duels" },
-      { href: "/quiz", label: "Quiz", title: "Le quiz du jour" },
-      { href: "/debat", label: "Débat", title: "Le débat du jour" },
-      { href: "/coupe", label: "Coupe", title: "Coupe NBA" },
-      // Pas une rubrique à part : on ne s'en sert qu'en début de saison
-      // (pronostics) puis pour suivre son classement, d'où un simple onglet.
-      { href: "/saison", label: "Saison", title: "Pronostics de saison" },
+      { href: "/coupe", label: "Coupe", title: "Coupe NBA", seasonal: "cup" },
+      // On ne s'en sert qu'en début de saison (pronostics) puis à la fin (résultats).
+      { href: "/saison", label: "Saison", title: "Pronostics de saison", seasonal: "season" },
     ],
   },
   {
-    href: "/news",
-    label: "NBA",
-    icon: Newspaper,
-    routes: ["/news", "/players", "/teams"],
+    // Ce qu'on vit ensemble, là où Compétition dit qui gagne.
+    href: "/soiree",
+    label: "Vestiaire",
+    icon: MessagesSquare,
+    routes: ["/soiree", "/quiz", "/debat", "/news"],
     tabs: [
+      { href: "/soiree", label: "Le fil", title: "Le fil de la soirée" },
+      { href: "/quiz", label: "Quiz", title: "Le quiz du jour" },
+      { href: "/debat", label: "Débat", title: "Le débat du jour" },
       { href: "/news", label: "Actus" },
-      { href: "/players", label: "Joueurs" },
-      { href: "/players?tab=equipes", label: "Équipes" },
     ],
   },
 ];

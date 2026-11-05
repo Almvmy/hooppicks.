@@ -16,21 +16,15 @@ import { WeekCard } from "@/components/dashboard/week-card";
 import { LiveTickets } from "@/components/dashboard/live-tickets";
 import { CompetitionCard } from "@/components/dashboard/competition-card";
 import { WeeklyStoryEntry } from "@/components/weekly-story";
-import { MissionsCard } from "@/components/dashboard/missions-card";
-import { DebateCard } from "@/components/dashboard/debate-card";
-import { QuizCard } from "@/components/dashboard/quiz-card";
-import { BracketNudge } from "@/components/dashboard/bracket-nudge";
-import { PickOfDay } from "@/components/dashboard/pick-of-day";
+import { TodayCard } from "@/components/dashboard/today-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
-import { SeasonPicksNudge } from "@/components/dashboard/season-picks-nudge";
 import { AppNudges } from "@/components/app-nudges";
 import { BoostCard } from "@/components/dashboard/boost-card";
 import { SeasonCountdownCard } from "@/components/dashboard/season-countdown-card";
 import { SeasonStoryAutoOpen } from "@/components/season-story";
-import { SuggestedParlays } from "@/components/dashboard/suggested-parlays";
 import { useBoost } from "@/lib/boost";
 
 export default function DashboardPage() {
@@ -93,7 +87,7 @@ export default function DashboardPage() {
       />
 
       <LiveTickets matches={matchesQuery.data} bets={betsQuery.data} />
-      <QuizCard />
+      <TodayCard bets={betsQuery.data} matches={matchesQuery.data} />
       <WeeklyStoryEntry />
 
       <SeasonCountdownCard matches={matchesQuery.data} />
@@ -106,14 +100,8 @@ export default function DashboardPage() {
         <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
           <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
           {freshResults && recent}
-          <SeasonPicksNudge />
-          <BracketNudge />
-          <DebateCard />
-          <MissionsCard />
           <BoostCard matches={matchesQuery.data} />
-          <PickOfDay match={slate.spotlight} />
-          <SuggestedParlays matches={matchesQuery.data} />
-          <UpcomingMatches matches={slate.upcoming} isLoading={matchesQuery.isLoading} />
+          <UpcomingMatches matches={slate.spotlight ? [slate.spotlight, ...slate.upcoming] : slate.upcoming} isLoading={matchesQuery.isLoading} />
         </div>
 
         <div className="reveal-children flex min-w-0 flex-col gap-6">

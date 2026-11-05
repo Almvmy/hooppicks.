@@ -126,7 +126,7 @@ export const FAQ: FaqGroup[] = [
         id: "pronostics-saison",
         question: "Où sont les pronostics de saison ?",
         answer:
-          "Dans Compétition › Saison, et sur l'accueil tant qu'il t'en reste à faire. Quatre questions (champion, finalistes de chaque conférence, meilleur bilan), modifiables jusqu'à une semaine après le début de la saison régulière. Les choix des autres joueurs ne s'affichent qu'une fois les pronostics clos.",
+          "Dans Compétition › Classement (lien en bas de la page), et sur l'accueil tant qu'il t'en reste à faire. Quatre questions (champion, finalistes de chaque conférence, meilleur bilan), modifiables jusqu'à une semaine après le début de la saison régulière. Les choix des autres joueurs ne s'affichent qu'une fois les pronostics clos.",
         link: { href: "/saison", label: "Faire mes pronostics" },
       },
       {
