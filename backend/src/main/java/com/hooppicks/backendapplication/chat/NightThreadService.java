@@ -18,7 +18,8 @@ import java.util.stream.Collectors;
 /**
  * Le fil de la soirée NBA. Ouvert à tous les joueurs, donc gardé dès le départ :
  * 280 caractères, pas de liens (la première source de spam), un message toutes
- * les 10 secondes, un ticket déjà posé pour écrire (écarte les comptes jetables),
+ * les 3 secondes (10, c'était trop long pour réagir à un match), jamais deux fois
+ * le même d'affilée, un ticket déjà posé pour écrire (écarte les comptes jetables),
  * mots refusés (liste tenue dans la console), signalement (3 joueurs différents
  * masquent le message en attendant un admin), blocage personnel, parole coupée.
  *
@@ -30,8 +31,8 @@ import java.util.stream.Collectors;
 public class NightThreadService {
 
     static final int MAX_LENGTH = 280;
-    static final Duration MIN_INTERVAL = Duration.ofSeconds(10);
-    static final int MAX_PER_HOUR = 60;
+    static final Duration MIN_INTERVAL = Duration.ofSeconds(3);
+    static final int MAX_PER_HOUR = 120;
     static final int REPORTS_TO_HIDE = 3;
     private static final LocalTime NIGHT_START = LocalTime.NOON;
     // Lien écrit en clair ou nom de domaine (« monsite.com », « bit.ly/x »).
@@ -193,7 +194,10 @@ public class NightThreadService {
         }
         Optional<NightMessage> last = messageRepository.findTopByUser_IdOrderByCreatedAtDesc(userId);
         if (last.isPresent() && Duration.between(last.get().getCreatedAt(), now).compareTo(MIN_INTERVAL) < 0) {
-            throw new IllegalArgumentException("Doucement : un message toutes les 10 secondes.");
+            throw new IllegalArgumentException("Doucement : un message toutes les 3 secondes.");
+        }
+        if (last.isPresent() && text.equalsIgnoreCase(last.get().getText())) {
+            throw new IllegalArgumentException("Tu viens déjà d'envoyer ce message.");
         }
         if (messageRepository.countByUser_IdAndCreatedAtAfter(userId, now.minus(Duration.ofHours(1))) >= MAX_PER_HOUR) {
             throw new IllegalArgumentException("Beaucoup de messages en peu de temps : réessaie dans un moment.");
@@ -211,11 +215,18 @@ public class NightThreadService {
         socialNotifier.mentions(message.getUser(), text, matchId == null ? "/soiree" : "/matches/" + matchId + "?onglet=fil", null);
     }
 
-    /** Mots entiers, sans tenir compte des accents ni des majuscules : « con » ne bloque pas « contre ». */
+    /**
+     * Mots entiers (pluriel compris), sans tenir compte des accents ni des majuscules :
+     * « con » ne bloque pas « contre ». Lu deux fois : la ponctuation sépare les mots
+     * (« de con,toi ») mais peut aussi servir à les cacher (« p.u.t.e »).
+     */
     static boolean containsBannedWord(String text, List<String> words) {
-        String normalized = " " + PlayerPropsService.normalize(text) + " ";
-        return words.stream().map(PlayerPropsService::normalize).filter(w -> !w.isBlank())
-                .anyMatch(w -> normalized.contains(" " + w + " "));
+        String ascii = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD).replaceAll("\\p{M}", "").toLowerCase(java.util.Locale.ROOT);
+        String spaced = " " + ascii.replaceAll("[^a-z]+", " ").trim() + " ";
+        String joined = " " + PlayerPropsService.normalize(text) + " ";
+        return words.stream().map(PlayerPropsService::normalize).filter(w -> !w.isBlank()).anyMatch(w ->
+                spaced.contains(" " + w + " ") || spaced.contains(" " + w + "s ")
+                        || joined.contains(" " + w + " ") || joined.contains(" " + w + "s "));
     }
 
     @Transactional

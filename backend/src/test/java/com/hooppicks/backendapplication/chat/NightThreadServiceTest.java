@@ -114,11 +114,24 @@ class NightThreadServiceTest {
     }
 
     @Test
-    void un_message_toutes_les_10_secondes() {
+    void un_message_toutes_les_3_secondes() {
         NightMessage last = new NightMessage();
-        last.setCreatedAt(NOW.minusSeconds(5));
+        last.setCreatedAt(NOW.minusSeconds(2));
         when(messages.findTopByUser_IdOrderByCreatedAtDesc("me")).thenReturn(Optional.of(last));
         refused("Encore");
+
+        last.setCreatedAt(NOW.minusSeconds(3));
+        service.post("me", "Encore", null);
+        verify(messages).save(any());
+    }
+
+    @Test
+    void jamais_deux_fois_le_meme_message_d_affilee() {
+        NightMessage last = new NightMessage();
+        last.setCreatedAt(NOW.minusSeconds(60));
+        last.setText("Allez les Knicks");
+        when(messages.findTopByUser_IdOrderByCreatedAtDesc("me")).thenReturn(Optional.of(last));
+        refused("ALLEZ les knicks");
     }
 
     @Test
@@ -126,6 +139,30 @@ class NightThreadServiceTest {
         assertThat(NightThreadService.containsBannedWord("Espèce de CRÉTIN !", List.of("cretin"))).isTrue();
         // Mot entier : « con » ne bloque pas « contre ».
         assertThat(NightThreadService.containsBannedWord("Je joue contre eux", List.of("con"))).isFalse();
+        assertThat(NightThreadService.containsBannedWord("bande de con,toi", List.of("con"))).isTrue();
+        assertThat(NightThreadService.containsBannedWord("p.u.t.e", List.of("pute"))).isTrue();
+        assertThat(NightThreadService.containsBannedWord("Des connards !", List.of("connard"))).isTrue();
+        assertThat(NightThreadService.containsBannedWord("espèce de SALE noir", List.of("sale noir"))).isTrue();
+    }
+
+    @Test
+    void la_liste_de_depart_laisse_passer_les_messages_de_basket() {
+        for (String ok : List.of("Quel contre de Wemby !", "Il est en retard sur la défense", "Belle passe décisive",
+                "Le noir de leur maillot est sale", "Nul ce match", "Quelle bête ce Giannis", "Ce gaou a pris les Nets")) {
+            assertThat(NightThreadService.containsBannedWord(ok, ChatWordSeeder.DEFAULT_WORDS)).as(ok).isFalse();
+        }
+        assertThat(NightThreadService.containsBannedWord("Ferme-la connard", ChatWordSeeder.DEFAULT_WORDS)).isTrue();
+    }
+
+    @Test
+    void liste_de_depart_posee_une_seule_fois() {
+        new ChatWordSeeder(words).seed();
+        verify(words).saveAll(any());
+
+        clearInvocations(words);
+        when(words.count()).thenReturn(1L);
+        new ChatWordSeeder(words).seed();
+        verify(words, never()).saveAll(any());
     }
 
     private NightMessage messageOf(User author) {

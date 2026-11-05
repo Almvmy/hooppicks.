@@ -4,6 +4,7 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 
 ## En attente (technique)
 
+- [ ] **Traduction des actus** : passer à Azure Translator (choix du propriétaire, plus tard). Le quota à vie de DeepL (1 000 000 de caractères) est épuisé : les actus restent en anglais. Clé à mettre sur Railway.
 - [ ] **Tester les notifications push** sur iPhone depuis l'app ajoutée à l'écran d'accueil (clés VAPID en place sur Railway).
 
 ## Lancement public
@@ -28,6 +29,14 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 - [ ] **Pick'em du soir** : le vainqueur de chaque match de la soirée, sans mise, un point par bon choix, classement à part.
 - [ ] **Score exact** du match boosté du jour : le plus proche gagne.
 - [ ] **Défis de la semaine** : missions (« gagne un combiné avec un outsider », « gagne un pari joueur ») qui rapportent des badges.
+
+## Se retrouver et débattre
+
+- [ ] **Le débat du jour** : une question par jour, deux camps, on vote puis on argumente dans son camp ; résultat partageable.
+- [ ] **Quiz du jour** : 5 questions tirées de nos données, les mêmes pour tous, classement du jour et par ligue, score à partager. Puis défi quiz 1 contre 1.
+- [ ] **Guerre des fans** : classement des équipes par la moyenne de leurs fans (équipe favorite), avec un fil par équipe.
+- [ ] **Homme du match voté** par les joueurs après chaque match.
+- [ ] **Paris tenus** : une prédiction publique (« Les Knicks en finale »), les autres sont d'accord ou non, verdict plus tard.
 
 ## Événements
 
