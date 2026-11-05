@@ -63,6 +63,30 @@ public class ShareController {
                 bet.getResolvedAt() == null ? null : bet.getResolvedAt().toString()));
     }
 
+    // Facultatif : les tests construisent ce contrôleur sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.engagement.WeeklyRecapService weeklyRecapService;
+
+    public record SharedWeek(String username, int avatarNumber, String avatarColorway, String week, long points,
+                             int tickets, int won, Integer rank, int players, boolean champion,
+                             Double bestOdds, Long bestProfit, String bestLabels) {}
+
+    /**
+     * Carte « ma semaine » : ce que le classement montrait de lui la semaine
+     * passée, et son meilleur ticket (réglé). Rien sur ses ligues ni ses duels.
+     */
+    @GetMapping("/players/{username}/week")
+    public ResponseEntity<?> playerWeek(@PathVariable String username) {
+        User u = userRepository.findByUsername(username).orElse(null);
+        if (u == null || weeklyRecapService == null) return ResponseEntity.notFound().build();
+        return weeklyRecapService.lastWeek(u.getId()).<ResponseEntity<?>>map(r -> ResponseEntity.ok(new SharedWeek(
+                u.getUsername(), u.getAvatarNumber(), u.getAvatarColorway(), r.week().toString(), r.points(), r.tickets(), r.won(),
+                r.rank(), r.players(), r.champion(),
+                r.best() == null ? null : r.best().odds(), r.best() == null ? null : r.best().profit(),
+                r.best() == null ? null : r.best().labels())))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/players/{username}")
     public ResponseEntity<?> player(@PathVariable String username) {
         User u = userRepository.findByUsername(username).orElse(null);

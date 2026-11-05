@@ -13,7 +13,7 @@
 // (variante « full », à garder ≥ ~110 px pour que les pointillés se voient).
 
 import { LogoMark } from "@/app/logo-mark";
-import { SITE_URL, SharedPlayer, SharedTicket, plainNumber, signedPlain } from "@/lib/share";
+import { SITE_URL, SharedPlayer, SharedTicket, SharedWeek, plainNumber, signedPlain } from "@/lib/share";
 import type { LeaderboardEntry, WeekChampion } from "@/lib/types";
 import { headlineFor } from "@/components/weekly-recap-card";
 import { getTeamColor } from "@/lib/team-colors";
@@ -852,6 +852,71 @@ export function SeasonChampionArt({ champions, season }: { champions: WeekChampi
         </div>
 
         <ChampionFooter left="Le titre suprême" color={gold} />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------ semaine passée */
+
+/** La semaine qui vient de finir d'un joueur (story du lundi), en image carrée. */
+export function WeekRecapArt({ week, label }: { week: SharedWeek; label: string }) {
+  const gold = MEDAL[1].color;
+  const accent = week.champion ? gold : ORANGE;
+  const stats = [
+    { k: "Classement", v: week.rank ? `#${week.rank}` : "–", hint: week.rank ? `sur ${week.players} joueur${week.players > 1 ? "s" : ""}` : "" },
+    { k: "Tickets gagnés", v: `${week.won}/${week.tickets}`, hint: `${Math.round((week.won * 100) / Math.max(1, week.tickets))} % de réussite` },
+    { k: "Meilleur coup", v: week.bestProfit ? signedPlain(week.bestProfit) : "–", hint: week.bestOdds ? `cote ${week.bestOdds.toFixed(2).replace(".", ",")}` : "" },
+  ];
+  return (
+    <div style={{ position: "relative", display: "flex", width: 1080, height: 1080, color: TEXT, fontFamily: BODY }}>
+      <Backdrop w={1080} h={1080} slab={{ color: week.champion ? "#2A2108" : "#3A1D0C", left: 560, width: 700 }} />
+      <div style={{ position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between", width: 1080, height: 1080, padding: "60px 72px 56px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Lockup mark={118} text={56} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+            <Label color={accent} size={24} spacing={5}>Ma semaine</Label>
+            <Label color={MUTED} size={24} spacing={3}>{label}</Label>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {week.champion && (
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+              <Crown size={56} color={gold} />
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 40, letterSpacing: 5, textTransform: "uppercase", color: gold }}>Champion de la semaine</div>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
+            <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 230, lineHeight: 0.92, letterSpacing: -3, color: accent }}>{signedPlain(week.points)}</div>
+            <Label color={MUTED} size={40} spacing={3}>pts</Label>
+          </div>
+          {week.bestLabels && (
+            <div style={{ display: "flex", fontFamily: BODY, fontWeight: 600, fontSize: 32, color: TEXT, marginTop: 18, maxWidth: 930, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{week.bestLabels}</div>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 38 }}>
+          <div style={{ display: "flex", background: PAPER, color: INK, transform: "rotate(-1deg)", boxShadow: "0 26px 56px rgba(0,0,0,0.5)", borderRadius: 8 }}>
+            {stats.map((s, i) => (
+              <div key={s.k} style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 0 16px 26px", borderLeft: i > 0 ? `2px dashed ${PAPER_LINE}` : "none" }}>
+                <Label color={PAPER_MUTED} size={20} spacing={3}>{s.k}</Label>
+                <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: s.v.length <= 5 ? 96 : 76, lineHeight: 1, marginTop: 6, whiteSpace: "nowrap" }}>{s.v}</div>
+                <div style={{ display: "flex", fontFamily: BODY, fontWeight: 500, fontSize: 22, color: PAPER_MUTED, minHeight: 28, marginTop: 4 }}>{s.hint}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+              <Jersey number={week.avatarNumber} size={70} colorway={week.avatarColorway} />
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 800, fontSize: 56, lineHeight: 1 }}>{`@${week.username}`}</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+              <div style={{ display: "flex", fontFamily: COND, fontWeight: 900, fontStyle: "italic", fontSize: 38, lineHeight: 1, color: ORANGE, textTransform: "uppercase" }}>Viens me défier</div>
+              <Label color={MUTED} size={22} spacing={1.5} upper={false}>{HOST}</Label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

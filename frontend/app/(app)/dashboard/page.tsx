@@ -15,6 +15,7 @@ import { buildDashboardSlate, computeWinStreak, pendingBetsSummary, weekSummary 
 import { WeekCard } from "@/components/dashboard/week-card";
 import { LiveTickets } from "@/components/dashboard/live-tickets";
 import { CompetitionCard } from "@/components/dashboard/competition-card";
+import { WeeklyStoryEntry } from "@/components/weekly-story";
 import { PickOfDay } from "@/components/dashboard/pick-of-day";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -88,6 +89,7 @@ export default function DashboardPage() {
       />
 
       <LiveTickets matches={matchesQuery.data} bets={betsQuery.data} />
+      <WeeklyStoryEntry />
 
       <SeasonCountdownCard matches={matchesQuery.data} />
       <SeasonStoryAutoOpen />

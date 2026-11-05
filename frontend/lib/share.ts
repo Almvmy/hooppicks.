@@ -52,6 +52,24 @@ async function get<T>(path: string, fresh = false): Promise<T | null> {
 }
 
 export const fetchSharedTicket = (id: string) => get<SharedTicket>(`/share/tickets/${encodeURIComponent(id)}`);
+export interface SharedWeek {
+  username: string;
+  avatarNumber: number;
+  avatarColorway: string;
+  week: string;
+  points: number;
+  tickets: number;
+  won: number;
+  rank: number | null;
+  players: number;
+  champion: boolean;
+  bestOdds: number | null;
+  bestProfit: number | null;
+  bestLabels: string | null;
+}
+
+export const fetchSharedWeek = (username: string) => get<SharedWeek>(`/share/players/${encodeURIComponent(username)}/week`, true);
+
 export const fetchSharedPlayer = (username: string, fresh = false) =>
   get<SharedPlayer>(`/share/players/${encodeURIComponent(username)}`, fresh);
 
