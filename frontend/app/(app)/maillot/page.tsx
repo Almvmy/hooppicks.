@@ -26,7 +26,6 @@ export default function JerseyPage({ searchParams }: { searchParams: Promise<{ b
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
       <PageHeader
-        badge={welcome ? "Bienvenue" : "Mon maillot"}
         title={welcome ? "Choisis ton maillot" : "Ton maillot"}
         subtitle="Il te suit partout : classement, ligues, cartes à partager."
       />

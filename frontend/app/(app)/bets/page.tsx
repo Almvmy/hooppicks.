@@ -284,7 +284,7 @@ export default function BetsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader badge="Mes tickets" title="Mes paris" subtitle="Avancement et bilan." />
+      <PageHeader title="Mes paris" subtitle="Avancement et bilan." />
 
       {isLoading && <BasketballLoader label="Chargement de tes tickets..." />}
       {isError && <p className="text-destructive">Impossible de charger tes paris.</p>}

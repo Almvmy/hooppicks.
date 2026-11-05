@@ -8,12 +8,26 @@ const split = (s: string) => {
 // En dessous, la note dirait surtout « pas assez joué ».
 const MIN_MINUTES = 5;
 
+// Game Score → note. Plus dur à mesure qu'on monte : un 10 doit rester un
+// événement. L'ancienne droite (6 + 0,2 par point, 10 dès 20) en donnait un dans
+// 2 matchs sur 3 ; ici, sur nos feuilles de match, 45 points valent 9,7.
+const SCALE: [number, number][] = [[-5, 4.5], [0, 5.5], [5, 6.2], [10, 6.9], [15, 7.5], [20, 8], [30, 9], [40, 9.7], [50, 10]];
+
+function scaled(gameScore: number): number {
+  if (gameScore <= SCALE[0][0]) return SCALE[0][1];
+  for (let i = 1; i < SCALE.length; i++) {
+    const [x0, y0] = SCALE[i - 1];
+    const [x1, y1] = SCALE[i];
+    if (gameScore <= x1) return y0 + ((y1 - y0) * (gameScore - x0)) / (x1 - x0);
+  }
+  return 10;
+}
+
 /**
  * Note HoopPicks sur 10, d'après la feuille de match. Ce n'est pas la note
  * de Sofascore (leur formule n'est pas publique) : le « Game Score » de John
  * Hollinger, sans rebonds offensifs ni fautes (ESPN ne les détaille pas
- * ici), ramené sur 10 (0 → 6,0 ; 10 → 8,0 ; 20 et plus → 10). Rien sous
- * {@link MIN_MINUTES} minutes jouées.
+ * ici), ramené sur 10 par {@link SCALE}. Rien sous {@link MIN_MINUTES} minutes jouées.
  */
 export function playerRating(p: PlayerBoxScore): number | null {
   if ((Number.parseInt(p.minutes, 10) || 0) < MIN_MINUTES) return null;
@@ -22,7 +36,7 @@ export function playerRating(p: PlayerBoxScore): number | null {
   const gameScore =
     p.points + 0.4 * fg.made - 0.7 * fg.attempted - 0.4 * (ft.attempted - ft.made) + 0.5 * p.rebounds +
     p.steals + 0.7 * p.assists + 0.7 * p.blocks - p.turnovers;
-  return Math.round(Math.min(10, Math.max(3, 6 + gameScore * 0.2)) * 10) / 10;
+  return Math.round(scaled(gameScore) * 10) / 10;
 }
 
 /** Couleur de pastille, du rouge (match raté) au vert (grand match). */

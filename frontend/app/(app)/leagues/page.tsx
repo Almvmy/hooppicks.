@@ -295,7 +295,7 @@ export default function LeaguesPage({ searchParams }: { searchParams: Promise<{ 
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader badge="Compétition" title="Ligues" />
+      <PageHeader title="Ligues" />
 
       {actionsFirst && actions}
 

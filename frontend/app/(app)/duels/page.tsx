@@ -213,7 +213,7 @@ export default function DuelsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader badge="Compétition" title="Duels" subtitle={`Fin de la semaine ${formatBankrollReset()}`} />
+      <PageHeader title="Duels" subtitle={`Fin de la semaine ${formatBankrollReset()}`} />
 
       {finished.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
