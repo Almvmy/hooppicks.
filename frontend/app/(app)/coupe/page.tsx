@@ -3,89 +3,72 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X } from "lucide-react";
+import { ChevronRight, ListOrdered, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CupBracket, EMPTY_SLOTS, type BracketSlot, type BracketSlots, type SlotState } from "@/components/cup-bracket";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { ShareButton } from "@/components/share-button";
 import { TeamLogo } from "@/components/team-logo";
-import { fetchBracket, pairOf, roundLabel, saveBracketPicks, withPick, type Bracket, type BracketGame } from "@/lib/api/bracket";
+import { fetchBracket, saveBracketPicks, withPick, type Bracket } from "@/lib/api/bracket";
 import { useTeamsByAbbreviation } from "@/lib/use-teams";
 import { cn, formatShortDateTime } from "@/lib/utils";
+
+// Ordre du tableau (BracketTree) : quarts 0 et 1 à l'Est, 2 et 3 à l'Ouest, demies 4 (Est) et 5 (Ouest), finale 6.
+const EAST_QUARTERS = [0, 1];
+const WEST_QUARTERS = [2, 3];
+const EAST_SEMI = 4;
+const WEST_SEMI = 5;
+const FINAL = 6;
+
+function CupLinks() {
+  return (
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <Link href="/players?tab=equipes&vue=coupe" className="glass flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold hover:text-primary">
+        <ListOrdered className="h-4 w-4 shrink-0 text-primary" />
+        <span className="flex-1">Classement des poules</span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Link>
+      <Link href="/leaderboard?periode=cup" className="glass flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold hover:text-primary">
+        <Trophy className="h-4 w-4 shrink-0 text-primary" />
+        <span className="flex-1">Classement des pronostiqueurs</span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Link>
+    </div>
+  );
+}
 
 export default function CoupePage() {
   const query = useQuery({ queryKey: ["bracket"], queryFn: fetchBracket });
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <h1 className="font-heading text-2xl font-bold">{query.data?.label ?? "Coupe NBA"}</h1>
-      {query.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}
+      {query.isLoading && <Skeleton className="aspect-[600/470] w-full rounded-2xl" />}
       {query.isError && <p className="text-sm text-destructive">Impossible de charger le tableau.</p>}
       {query.data === null && (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
-            <p className="font-heading text-lg font-bold">Le tableau ouvre à la fin des poules</p>
-            <Link href="/leaderboard" className="text-sm font-semibold text-primary hover:underline">
-              Voir le classement
-            </Link>
-          </CardContent>
-        </Card>
+        <>
+          <CupBracket slots={EMPTY_SLOTS} />
+          <p className="text-center text-sm font-semibold">Le tableau ouvre à la fin des poules</p>
+        </>
       )}
       {query.data && (query.data.locked ? <LockedBracket bracket={query.data} /> : <OpenBracket key={query.data.id} bracket={query.data} />)}
+      <CupLinks />
     </div>
-  );
-}
-
-function useTeamLabel() {
-  const teams = useTeamsByAbbreviation();
-  return (abbreviation: string) => teams.get(abbreviation)?.name ?? abbreviation;
-}
-
-function roundsOf(games: BracketGame[]): { round: number; label: string; points: number; games: BracketGame[] }[] {
-  const rounds = [...new Set(games.map((g) => g.round))];
-  return rounds.map((round) => {
-    const inRound = games.filter((g) => g.round === round);
-    return { round, label: roundLabel(games, round), points: inRound[0].points, games: inRound };
-  });
-}
-
-function TeamChoice({ team, chosen, disabled, onPick }: { team: string | null; chosen: boolean; disabled: boolean; onPick: () => void }) {
-  const teams = useTeamsByAbbreviation();
-  const info = team ? teams.get(team) : undefined;
-  return (
-    <button
-      type="button"
-      disabled={disabled || !team}
-      aria-pressed={chosen}
-      onClick={onPick}
-      className={cn(
-        "flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 text-left text-sm font-semibold transition-colors",
-        chosen ? "glass-accent" : "glass-inset-quiet",
-        team ? "hover:text-primary" : "justify-center text-muted-foreground"
-      )}
-    >
-      {team ? (
-        <>
-          <TeamLogo abbreviation={team} logoUrl={info?.logoUrl} size={26} />
-          <span className="min-w-0 truncate">{info?.name ?? team}</span>
-        </>
-      ) : (
-        "À choisir"
-      )}
-    </button>
   );
 }
 
 function OpenBracket({ bracket }: { bracket: Bracket }) {
   const queryClient = useQueryClient();
-  const teamLabel = useTeamLabel();
+  const teams = useTeamsByAbbreviation();
   const [draft, setDraft] = useState<(string | null)[] | null>(null);
   const picks = draft ?? bracket.myPicks ?? bracket.games.map(() => null);
   const complete = picks.every(Boolean);
   const dirty = draft !== null;
-  const champion = picks[picks.length - 1];
+  const champion = picks[FINAL] ?? null;
+  const name = (team: string) => teams.get(team)?.name ?? team;
 
   const save = useMutation({
     mutationFn: () => saveBracketPicks(picks as string[]),
@@ -100,36 +83,45 @@ function OpenBracket({ bracket }: { bracket: Bracket }) {
     },
   });
 
+  const pick = (game: number, team: string) => setDraft(withPick(bracket.games, bracket.teams, picks, game, team));
+
+  // Une case propose son équipe pour le match suivant ; une fois ce match choisi, l'autre s'éteint.
+  function slot(team: string | null, game: number): BracketSlot {
+    const chosen = picks[game];
+    const state: SlotState = !team || !chosen ? "normal" : chosen === team ? (game === FINAL ? "champion" : "chosen") : "out";
+    return { team, state, onPick: team ? () => pick(game, team) : undefined };
+  }
+
+  const quarterSlots = (games: number[]) =>
+    games.flatMap((g) => [slot(bracket.games[g].teamA, g), slot(bracket.games[g].teamB, g)]);
+
+  const slots: BracketSlots = {
+    westQuarters: quarterSlots(WEST_QUARTERS),
+    eastQuarters: quarterSlots(EAST_QUARTERS),
+    westSemis: WEST_QUARTERS.map((g) => slot(picks[g] ?? null, WEST_SEMI)),
+    eastSemis: EAST_QUARTERS.map((g) => slot(picks[g] ?? null, EAST_SEMI)),
+    westFinalist: slot(picks[WEST_SEMI] ?? null, FINAL),
+    eastFinalist: slot(picks[EAST_SEMI] ?? null, FINAL),
+  };
+
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
-        Avant le {formatShortDateTime(new Date(bracket.locksAt))} · {bracket.players} tableau{bracket.players > 1 ? "x" : ""} rempli{bracket.players > 1 ? "s" : ""}
+        Touche une équipe pour la qualifier · avant le {formatShortDateTime(new Date(bracket.locksAt))}
       </p>
-
-      {roundsOf(bracket.games).map((round) => (
-        <section key={round.round} className="flex flex-col gap-2">
-          <h2 className="flex items-baseline justify-between gap-2 font-heading text-base font-bold">
-            {round.label}
-            <span className="font-mono text-xs font-normal text-muted-foreground">{round.points} pts</span>
-          </h2>
-          {round.games.map((game) => {
-            const [a, b] = pairOf(bracket.games, bracket.teams, picks, game.index);
-            return (
-              <div key={game.index} className="flex items-center gap-2">
-                <TeamChoice team={a} chosen={!!a && picks[game.index] === a} disabled={false} onPick={() => a && setDraft(withPick(bracket.games, bracket.teams, picks, game.index, a))} />
-                <span className="shrink-0 text-xs text-muted-foreground">ou</span>
-                <TeamChoice team={b} chosen={!!b && picks[game.index] === b} disabled={false} onPick={() => b && setDraft(withPick(bracket.games, bracket.teams, picks, game.index, b))} />
-              </div>
-            );
-          })}
-        </section>
-      ))}
-
+      <CupBracket slots={slots} />
+      <p className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span>Quart 10 pts · Demie 20 pts · Finale 40 pts</span>
+        <span>
+          {bracket.players} tableau{bracket.players > 1 ? "x" : ""} rempli{bracket.players > 1 ? "s" : ""}
+        </span>
+      </p>
+      {champion && <p className="text-center font-heading text-lg font-bold">Ton champion : {name(champion)}</p>}
       <Button size="lg" disabled={!complete || !dirty || save.isPending} onClick={() => save.mutate()}>
         {bracket.myPicks && !dirty ? "Tableau enregistré" : "Valider mon tableau"}
       </Button>
       {bracket.myPicks && !dirty && champion && (
-        <ShareButton path="/coupe" text={`Mon champion de la ${bracket.label} : ${teamLabel(champion)}. Et toi ?`} label="Partager mon champion" className="self-center" />
+        <ShareButton path="/coupe" text={`Mon champion de la ${bracket.label} : ${name(champion)}. Et toi ?`} label="Partager mon champion" className="self-center" />
       )}
     </div>
   );
@@ -137,11 +129,49 @@ function OpenBracket({ bracket }: { bracket: Bracket }) {
 
 function LockedBracket({ bracket }: { bracket: Bracket }) {
   const teams = useTeamsByAbbreviation();
-  const teamLabel = useTeamLabel();
+  const name = (team: string) => teams.get(team)?.name ?? team;
+  const winners = bracket.games.map((g) => g.winner);
+  const mine = bracket.myPicks;
   const total = bracket.champions?.reduce((sum, c) => sum + c.players, 0) ?? 0;
+
+  // Une équipe de quart : éteinte quand elle a perdu.
+  function quarter(team: string | null, game: number): BracketSlot {
+    return { team, state: winners[game] && winners[game] !== team ? "out" : "normal" };
+  }
+  // Le vainqueur d'un match avance, cerclé selon ce qu'on avait choisi ; sans résultat, son choix en transparence.
+  function advanced(game: number): BracketSlot {
+    const winner = winners[game];
+    const pick = mine?.[game] ?? null;
+    if (!winner) return { team: pick, state: pick ? "ghost" : "normal" };
+    const next = game === EAST_SEMI || game === WEST_SEMI ? FINAL : game === EAST_QUARTERS[0] || game === EAST_QUARTERS[1] ? EAST_SEMI : WEST_SEMI;
+    const lost = !!winners[next] && winners[next] !== winner;
+    const state: SlotState = lost ? "out" : !pick ? "normal" : pick === winner ? "right" : "wrong";
+    return { team: winner, state };
+  }
+
+  const slots: BracketSlots = {
+    westQuarters: WEST_QUARTERS.flatMap((g) => [quarter(bracket.games[g].teamA, g), quarter(bracket.games[g].teamB, g)]),
+    eastQuarters: EAST_QUARTERS.flatMap((g) => [quarter(bracket.games[g].teamA, g), quarter(bracket.games[g].teamB, g)]),
+    westSemis: WEST_QUARTERS.map(advanced),
+    eastSemis: EAST_QUARTERS.map(advanced),
+    westFinalist: advanced(WEST_SEMI),
+    eastFinalist: advanced(EAST_SEMI),
+  };
+  if (winners[FINAL]) {
+    for (const key of ["westFinalist", "eastFinalist"] as const) {
+      if (slots[key].team === winners[FINAL]) slots[key] = { team: winners[FINAL], state: "champion" };
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
+      <CupBracket slots={slots} />
+
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-sm">
+        {winners[FINAL] && <p className="font-heading text-lg font-bold">Champion : {name(winners[FINAL])}</p>}
+        {mine?.[FINAL] && <p className="text-muted-foreground">Ton champion : {name(mine[FINAL])}</p>}
+      </div>
+
       {bracket.myPoints !== null && (
         <Card>
           <CardContent className="flex items-center justify-between gap-3 pt-5">
@@ -150,36 +180,6 @@ function LockedBracket({ bracket }: { bracket: Bracket }) {
           </CardContent>
         </Card>
       )}
-
-      {roundsOf(bracket.games).map((round) => (
-        <section key={round.round} className="flex flex-col gap-2">
-          <h2 className="flex items-baseline justify-between gap-2 font-heading text-base font-bold">
-            {round.label}
-            <span className="font-mono text-xs font-normal text-muted-foreground">{round.points} pts</span>
-          </h2>
-          {round.games.map((game) => {
-            const mine = bracket.myPicks?.[game.index] ?? null;
-            return (
-              <div key={game.index} className="glass flex flex-col gap-1.5 rounded-xl px-3 py-2 text-sm">
-                <div className="flex items-center gap-2">
-                  {[game.teamA, game.teamB].map((team, i) => (
-                    <span key={i} className={cn("flex min-w-0 flex-1 items-center gap-1.5", game.winner && team !== game.winner && "opacity-50", game.winner === team && team && "font-bold")}>
-                      {team ? <TeamLogo abbreviation={team} logoUrl={teams.get(team)?.logoUrl} size={22} /> : null}
-                      <span className="min-w-0 truncate">{team ? teamLabel(team) : "À venir"}</span>
-                    </span>
-                  ))}
-                </div>
-                {mine && (
-                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                    {game.winner && (mine === game.winner ? <Check className="h-3.5 w-3.5 text-success" /> : <X className="h-3.5 w-3.5 text-destructive" />)}
-                    Ton choix : {teamLabel(mine)}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </section>
-      ))}
 
       {bracket.champions && bracket.champions.length > 0 && (
         <section className="flex flex-col gap-2">
@@ -190,7 +190,7 @@ function LockedBracket({ bracket }: { bracket: Bracket }) {
               <div key={c.team} className="glass-inset-quiet relative flex items-center gap-2 overflow-hidden rounded-xl px-3 py-2 text-sm font-semibold">
                 <span aria-hidden className="absolute inset-y-0 left-0 bg-primary/20" style={{ width: `${share}%` }} />
                 <TeamLogo abbreviation={c.team} logoUrl={teams.get(c.team)?.logoUrl} size={22} className="relative" />
-                <span className="relative min-w-0 flex-1 truncate">{teamLabel(c.team)}</span>
+                <span className="relative min-w-0 flex-1 truncate">{name(c.team)}</span>
                 <span className="relative shrink-0 font-mono">{share} %</span>
               </div>
             );

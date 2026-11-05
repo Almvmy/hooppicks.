@@ -96,8 +96,8 @@ function MyPosition({
   );
 }
 
-function PlayersRanking({ username }: { username: string | undefined }) {
-  const [period, setPeriod] = useState<LeaderboardPeriod>("season");
+function PlayersRanking({ username, initialPeriod }: { username: string | undefined; initialPeriod: LeaderboardPeriod }) {
+  const [period, setPeriod] = useState<LeaderboardPeriod>(initialPeriod);
   const periods = useLeaderboardPeriods();
   const { data, isLoading, isError } = useQuery({
     queryKey: leaderboardQueryKey(period),
@@ -294,9 +294,9 @@ const VIEWS: { value: View; label: string; icon: typeof Users }[] = [
   { value: "fans", label: "Fans par équipe", icon: Heart },
 ];
 
-export default function LeaderboardPage({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
+export default function LeaderboardPage({ searchParams }: { searchParams: Promise<{ vue?: string; periode?: string }> }) {
   // Onglet dans l'adresse (?vue=fans) : retrouvé au retour sur la page et partageable.
-  const { vue } = use(searchParams);
+  const { vue, periode } = use(searchParams);
   const router = useRouter();
   const [view, setViewState] = useState<View>(VIEWS.some((v) => v.value === vue) ? (vue as View) : "joueurs");
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });
@@ -334,7 +334,7 @@ export default function LeaderboardPage({ searchParams }: { searchParams: Promis
         ))}
       </div>
 
-      {view === "joueurs" && <PlayersRanking username={profile?.username} />}
+      {view === "joueurs" && <PlayersRanking username={profile?.username} initialPeriod={periode === "cup" ? "cup" : "season"} />}
       {view === "fans" && <FansRanking favoriteTeam={profile?.favoriteTeam} />}
     </div>
   );

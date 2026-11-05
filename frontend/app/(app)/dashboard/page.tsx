@@ -93,6 +93,7 @@ export default function DashboardPage() {
       />
 
       <LiveTickets matches={matchesQuery.data} bets={betsQuery.data} />
+      <QuizCard />
       <WeeklyStoryEntry />
 
       <SeasonCountdownCard matches={matchesQuery.data} />
@@ -107,7 +108,6 @@ export default function DashboardPage() {
           {freshResults && recent}
           <SeasonPicksNudge />
           <BracketNudge />
-          <QuizCard />
           <DebateCard />
           <MissionsCard />
           <BoostCard matches={matchesQuery.data} />

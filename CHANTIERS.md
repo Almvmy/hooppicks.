@@ -19,7 +19,7 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 ## Coupe NBA (avant mi-novembre)
 
 - [ ] **Pronostics de poules de la Coupe** : édition 2027 seulement (celle de 2026 a commencé le 30 octobre, trop tard). Vainqueur de chaque poule, repêchés, champion, à fermer avant le premier match.
-- [ ] **Composition des poules** saisie une fois dans la console admin (ni balldontlie ni ESPN ne la donnent de façon fiable). Vérifier le format 2026 (jusqu'ici 6 poules de 5, 8 qualifiés).
+- [ ] **Composition des poules 2027-28** à écrire dans `CupStandingsService.GROUPS` à l'annonce de la NBA (ni balldontlie ni ESPN ne la donnent ; celle de 2026-27 est en place).
 - [x] **Tableau final** des quarts à la finale : page `/coupe`. **À faire le 27 novembre** : saisir les 8 équipes et l'heure du premier quart dans la console (onglet Saison).
 - [x] **Trophée** au palmarès et icône de maillot pour le meilleur tableau.
 

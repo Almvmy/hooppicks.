@@ -14,6 +14,7 @@ import { PlayerCompareTray } from "@/components/players/player-compare";
 import { fetchLeaderList, fetchPlayerInjuries, fetchPlayerLeaders, fetchPlayers, fetchTopPerformances } from "@/lib/api/players";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { fetchPowerRankings, fetchTeamRankings, fetchTeamRoster } from "@/lib/api/teams";
+import { CupStandings } from "@/components/cup-standings";
 import { formatChance, seasonChances } from "@/lib/season-odds";
 import { cn } from "@/lib/utils";
 import { useFavoriteTeam } from "@/lib/use-teams";
@@ -573,7 +574,7 @@ function PlayersTab() {
 
 /* ── Onglet Équipes ─────────────────────────────────────────────────── */
 
-type TeamSortMode = "official" | "elo";
+type TeamSortMode = "official" | "elo" | "cup";
 
 function winPct(t: TeamRank): string {
   if (t.wins === null || t.losses === null || t.wins + t.losses === 0) return "-";
@@ -639,8 +640,8 @@ function StandingsTable({ conference, teams }: { conference: string; teams: Team
   );
 }
 
-function TeamsTab() {
-  const [sortMode, setSortMode] = useState<TeamSortMode>("official");
+function TeamsTab({ initialMode }: { initialMode: TeamSortMode }) {
+  const [sortMode, setSortMode] = useState<TeamSortMode>(initialMode);
   // Une conférence à la fois sur téléphone (on défilait jusqu'en bas pour
   // l'autre tableau) ; les deux côte à côte sur grand écran. Par défaut, celle
   // de l'équipe favorite.
@@ -671,17 +672,24 @@ function TeamsTab() {
           <Trophy className="h-4 w-4 text-primary" />
           {sortMode === "elo"
             ? "Power rankings HoopPicks : la force de chaque équipe (Elo), mise à jour après chaque match."
-            : "Classement officiel NBA, par conférence."}
+            : sortMode === "cup"
+              ? "Coupe NBA : classement des poules."
+              : "Classement officiel NBA, par conférence."}
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button type="button" className={chipClass(sortMode === "official")} onClick={() => setSortMode("official")}>
             Classement officiel
           </button>
           <button type="button" className={chipClass(sortMode === "elo")} onClick={() => setSortMode("elo")}>
             Power rankings
           </button>
+          <button type="button" className={chipClass(sortMode === "cup")} onClick={() => setSortMode("cup")}>
+            Coupe NBA
+          </button>
         </div>
       </div>
+
+      {sortMode === "cup" && <CupStandings />}
 
       {isLoading && <BasketballLoader label="Chargement des équipes..." />}
       {isError && <p className="text-destructive">Impossible de charger les équipes.</p>}
@@ -777,17 +785,17 @@ function TeamsTab() {
   );
 }
 
-export default function PlayersPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default function PlayersPage({ searchParams }: { searchParams: Promise<{ tab?: string; vue?: string }> }) {
   // Joueurs et Équipes sont deux onglets de la rubrique NBA (SectionTabs),
   // distingués par l'adresse (?tab=equipes) : partageable et retrouvé au retour.
-  const { tab } = use(searchParams);
+  const { tab, vue } = use(searchParams);
   const teams = tab === "equipes";
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-heading text-2xl font-bold">{teams ? "Équipes" : "Joueurs"}</h1>
 
-      {teams ? <TeamsTab /> : <PlayersTab />}
+      {teams ? <TeamsTab initialMode={vue === "coupe" ? "cup" : "official"} /> : <PlayersTab />}
     </div>
   );
 }

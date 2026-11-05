@@ -2,41 +2,43 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { CircleHelp } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ChevronRight } from "lucide-react";
 import { fetchQuiz, shotsCount, shotsLine } from "@/lib/api/quiz";
 
-/** Le quiz du jour sur l'accueil : l'invitation à jouer, puis le résultat et la place de la semaine. */
+/**
+ * Le quiz du jour sur l'accueil : toute la carte est le lien. Elle reste affichée
+ * si le serveur ne répond pas : le lien, lui, n'a besoin de rien.
+ */
 export function QuizCard() {
-  const { data, isError } = useQuery({ queryKey: ["quiz", "state"], queryFn: fetchQuiz, staleTime: 60_000 });
-  if (isError || !data) return null;
-  const { standing } = data;
+  const { data } = useQuery({ queryKey: ["quiz", "state"], queryFn: fetchQuiz, staleTime: 60_000 });
+  const status = data?.status ?? "ready";
+  const standing = data?.standing;
+  const done = status === "done";
 
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between gap-3 pt-5">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 font-heading text-base font-bold">
-            <CircleHelp className="h-4 w-4 text-primary" />
-            Quiz du jour
-          </h2>
-          {data.status === "done" ? (
-            <p className="mt-1 text-sm">
-              {shotsLine(data.shots)} <span className="font-mono font-bold">{shotsCount(data.shots)}/5</span>
-            </p>
-          ) : (
-            <p className="mt-1 text-sm text-muted-foreground">5 tirs, 15 secondes par tir</p>
+    <Link
+      href="/quiz"
+      className="island relative block overflow-hidden rounded-2xl bg-[#101828] p-4 text-foreground shadow-[inset_0_0_0_1px_rgba(255,122,26,0.35)] transition-transform hover:-translate-y-0.5"
+    >
+      <span aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(90% 140% at 100% 0%, rgba(255,122,26,0.28), transparent 60%)" }} />
+      <span className="relative flex items-center gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-bold uppercase tracking-[.16em] text-[#FF7A1A]">Quiz du jour</span>
+          <span className="mt-1 block font-heading text-xl font-extrabold leading-tight">
+            {done ? `${shotsCount(data!.shots)}/5 panier${shotsCount(data!.shots) > 1 ? "s" : ""}` : "5 tirs, 15 secondes par tir"}
+          </span>
+          <span className="mt-1.5 block text-lg leading-none tracking-wide">{done ? shotsLine(data!.shots) : "🏀🏀🏀🏀🏀"}</span>
+          {standing && standing.rank > 0 && (
+            <span className="mt-1.5 block text-xs text-muted-foreground">
+              {standing.rank === 1 ? "1er" : `${standing.rank}e`} de la semaine · {standing.baskets} panier{standing.baskets > 1 ? "s" : ""} · {standing.level}
+            </span>
           )}
-          {standing.rank > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {standing.rank === 1 ? "1er" : `${standing.rank}e`} de la semaine · {standing.baskets} panier{standing.baskets > 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-        <Link href="/quiz" className="glass-accent shrink-0 rounded-full px-4 py-2 text-sm font-semibold">
-          {data.status === "ready" ? "Jouer" : data.status === "playing" ? "Reprendre" : "Classement"}
-        </Link>
-      </CardContent>
-    </Card>
+        </span>
+        <span className="flex shrink-0 items-center gap-1 rounded-full bg-[#FF7A1A] px-4 py-2.5 text-sm font-bold text-[#0B1120]">
+          {status === "ready" ? "Jouer" : status === "playing" ? "Reprendre" : "Classement"}
+          <ChevronRight className="h-4 w-4" />
+        </span>
+      </span>
+    </Link>
   );
 }
