@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, CalendarDays, Gauge, LayoutDashboard, Medal, Megaphone, MessageSquare, RefreshCw, ScrollText, Share2, ShieldCheck, Ticket, Users } from "lucide-react";
+import { Activity, CalendarDays, Flag, Gauge, LayoutDashboard, Medal, Megaphone, MessageSquare, RefreshCw, ScrollText, Share2, ShieldCheck, Ticket, Users } from "lucide-react";
 import { BasketballLoader } from "@/components/ui/basketball-loader";
 import { AdminOverview } from "@/components/admin/admin-overview";
 import { AdminSyncPanel } from "@/components/admin/admin-sync-panel";
@@ -18,6 +18,8 @@ import { AdminHealthPanel } from "@/components/admin/admin-health-panel";
 import { AdminGamePanel } from "@/components/admin/admin-game-panel";
 import { AdminSocialPanel } from "@/components/admin/admin-social-panel";
 import { AdminBoostCard } from "@/components/admin/admin-boost-card";
+import { AdminReportsPanel } from "@/components/admin/admin-reports-panel";
+import { fetchChatModeration } from "@/lib/api/night-thread";
 import { fetchProfile } from "@/lib/api/auth";
 import { fetchAdminFeedback } from "@/lib/api/admin";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,7 @@ const TABS = [
   { value: "saison", label: "Saison", icon: Medal, group: "Jeu" },
   { value: "utilisateurs", label: "Utilisateurs", icon: Users, group: "Joueurs" },
   { value: "messages", label: "Messages", icon: MessageSquare, group: "Joueurs" },
+  { value: "signalements", label: "Signalements", icon: Flag, group: "Joueurs" },
   { value: "annonces", label: "Annonces", icon: Megaphone, group: "Joueurs" },
   { value: "reseaux", label: "Réseaux", icon: Share2, group: "Joueurs" },
 ] as const;
@@ -54,6 +57,12 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
     enabled: !!profileQuery.data?.isAdmin,
   });
   const openFeedback = feedbackQuery.data?.openCount ?? 0;
+  const moderationQuery = useQuery({
+    queryKey: ["chat-moderation"],
+    queryFn: fetchChatModeration,
+    enabled: !!profileQuery.data?.isAdmin,
+  });
+  const openReports = moderationQuery.data?.reported.length ?? 0;
 
   useEffect(() => {
     if (profileQuery.data && !profileQuery.data.isAdmin) {
@@ -106,6 +115,9 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
               {value === "messages" && openFeedback > 0 && (
                 <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold leading-4 text-primary-foreground">{openFeedback}</span>
               )}
+              {value === "signalements" && openReports > 0 && (
+                <span className="rounded-full bg-primary px-1.5 text-[11px] font-bold leading-4 text-primary-foreground">{openReports}</span>
+              )}
             </button>
             </div>
           ))}
@@ -126,6 +138,7 @@ export default function AdminPage({ searchParams }: { searchParams: Promise<{ on
       {tab === "paris" && <AdminPendingBetsPanel />}
       {tab === "utilisateurs" && <AdminUsersPanel />}
       {tab === "messages" && <AdminFeedbackPanel />}
+      {tab === "signalements" && <AdminReportsPanel />}
       {tab === "annonces" && <AdminAnnouncements />}
       {tab === "saison" && <AdminSeasonResults />}
       {tab === "journal" && <AdminAuditLog />}

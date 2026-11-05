@@ -50,6 +50,7 @@ public class JobMonitor {
         job("classement-officiel", "Classement officiel (ESPN)", Duration.ofDays(1));
         job("photo-classement", "Photo du classement", Duration.ofDays(1));
         // Seulement quand de nouvelles actus sont demandées : d'où le long délai.
+        job("fil-soiree", "Messages automatiques du fil", Duration.ofMinutes(1));
         job("traduction-actus", "Traduction des actus (DeepL)", Duration.ofDays(1));
     }
 

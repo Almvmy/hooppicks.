@@ -360,7 +360,7 @@ public class LeagueService {
         if (!ALLOWED_EMOJIS.contains(emoji)) {
             throw new IllegalArgumentException("Emoji non supporté.");
         }
-        if (!Set.of("BET", "MEMBERSHIP", "MESSAGE", "TITLE").contains(targetType)) {
+        if (!Set.of("BET", "MEMBERSHIP", "MESSAGE", "TITLE", "NIGHT").contains(targetType)) {
             throw new IllegalArgumentException("Type de cible invalide.");
         }
 

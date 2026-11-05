@@ -47,6 +47,10 @@ public class SocialNotifier {
         this.pushService = pushService;
     }
 
+    // Facultatif : les tests construisent ce service sans lui.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private NightMessageRepository nightRepository;
+
     private record Target(User owner, String description, String link) {}
 
     private Optional<Target> target(String type, String id) {
@@ -58,6 +62,10 @@ public class SocialNotifier {
             case "TITLE" -> titleRepository.findById(id)
                     .flatMap(t -> userRepository.findById(t.getUserId()).map(u -> new Target(u, "à ton titre de champion",
                             t.getLeagueId() == null ? "/profile" : "/leagues/" + t.getLeagueId())));
+            case "NIGHT" -> nightRepository == null ? Optional.empty() : nightRepository.findById(id)
+                    .filter(m -> m.getUser() != null)
+                    .map(m -> new Target(m.getUser(), "à ton message : « " + m.getText() + " »",
+                            m.getMatchId() == null ? "/soiree" : "/matches/" + m.getMatchId() + "?onglet=fil"));
             // « X a rejoint la ligue » : pas de quoi notifier.
             default -> Optional.empty();
         };

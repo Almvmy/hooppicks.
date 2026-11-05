@@ -22,6 +22,10 @@ public class NotificationCleanupScheduler {
 
     private final NotificationRepository notificationRepository;
 
+    // Fil de la soirée : une conversation de match n'a plus d'intérêt après un mois.
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.hooppicks.backendapplication.repository.NightMessageRepository nightMessageRepository;
+
     public NotificationCleanupScheduler(NotificationRepository notificationRepository) {
         this.notificationRepository = notificationRepository;
     }
@@ -30,5 +34,6 @@ public class NotificationCleanupScheduler {
     public void purge() {
         int deleted = notificationRepository.deleteOlderThan(Instant.now().minus(RETENTION));
         if (deleted > 0) log.info("{} notification(s) de plus de {} jours supprimée(s)", deleted, RETENTION.toDays());
+        if (nightMessageRepository != null) nightMessageRepository.deleteOlderThan(Instant.now().minus(Duration.ofDays(30)));
     }
 }

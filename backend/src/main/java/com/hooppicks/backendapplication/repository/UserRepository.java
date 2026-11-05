@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByUsernameIgnoreCase(String username);
 
+    java.util.List<User> findByChatMutedUntilAfter(java.time.Instant now);
+
     long countByReferredBy(String referrerId);
 
     // Supporters d'une équipe : l'équipe favorite est stockée en nom complet

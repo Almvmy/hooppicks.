@@ -75,6 +75,9 @@ public class User {
     @Column(columnDefinition = "boolean default true")
     private boolean notifyFavoriteTeam = true;
 
+    // Parole coupée dans le fil de la soirée par un admin, jusqu'à cette date.
+    private java.time.Instant chatMutedUntil;
+
     // Rappels de la semaine : budget restant le dimanche soir, nouvelle semaine le lundi.
     @Column(columnDefinition = "boolean default true")
     private boolean notifyWeeklyReminders = true;

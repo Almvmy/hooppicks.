@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MatchOddsRow } from "@/components/match-odds-row";
 import { PlayerPropsCard } from "@/components/player-props-card";
 import { FriendsOnMatch } from "@/components/friends-on-match";
+import { NightThread } from "@/components/night-thread";
 import { TeamRoster } from "@/components/team-roster";
 import { useQuery } from "@tanstack/react-query";
 import { BoxScoreTable } from "@/components/box-score-table";
@@ -77,11 +78,12 @@ function StickyScore({ match }: { match: Match }) {
   );
 }
 
-type Tab = "video" | "paris" | "avant" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
+type Tab = "video" | "paris" | "fil" | "avant" | "resume" | "actions" | "stats" | "feuille" | "tirs" | "effectifs" | "actus";
 
 const LABELS: Record<Tab, string> = {
   video: "Vidéo",
   paris: "Paris",
+  fil: "Fil",
   avant: "Avant-match",
   resume: "Résumé",
   actions: "Temps forts",
@@ -121,7 +123,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
   }, []);
   const started = match.status !== "scheduled";
 
-  const baseTabs: Tab[] = !started
+  const stateTabs: Tab[] = !started
     ? ["paris", "avant", "effectifs", "actus"]
     : live
       ? ([
@@ -135,6 +137,7 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
       : match.status === "finished"
         ? ["feuille", "actus"]
         : ["effectifs", "actus"];
+  const baseTabs: Tab[] = [stateTabs[0], "fil", ...stateTabs.slice(1)];
   // Résumé vidéo officiel en premier : c'est ce qu'on vient voir après le match.
   const tabs: Tab[] = match.status === "finished" && highlightSources(match).length > 0 ? ["video", ...baseTabs] : baseTabs;
   const active: Tab = tabs.includes(requested as Tab) ? (requested as Tab) : tabs[0];
@@ -208,6 +211,8 @@ export function MatchDetailTabs({ match, tab: requested }: { match: Match; tab: 
             ))}
 
           {active === "video" && <HighlightsVideo match={match} />}
+
+          {active === "fil" && <NightThread matchId={match.id} />}
 
           {active === "resume" && live && (
             <>

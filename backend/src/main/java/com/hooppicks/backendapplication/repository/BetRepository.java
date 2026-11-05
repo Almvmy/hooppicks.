@@ -9,6 +9,12 @@ import java.util.List;
 public interface BetRepository extends JpaRepository<Bet, String> {
     List<Bet> findByUserIdOrderByPlacedAtDesc(String userId);
 
+    java.util.Optional<Bet> findFirstByUser_Id(String userId);
+
+    /** Tickets gagnés réglés depuis cette date, joueur chargé : messages automatiques du fil. */
+    @org.springframework.data.jpa.repository.Query("SELECT b FROM Bet b JOIN FETCH b.user WHERE b.status = com.hooppicks.backendapplication.entity.BetStatus.WON AND b.resolvedAt >= :since")
+    List<Bet> findWonSince(java.time.Instant since);
+
     // Phase d'un classement (`:phase`) : ALL (semaine, mois), SEASON, CUP ou
     // PLAYOFFS, selon le type des matchs du ticket (un match sans type, pas
     // encore relié à ESPN, compte comme de la saison régulière).

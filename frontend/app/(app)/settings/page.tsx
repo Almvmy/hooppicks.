@@ -23,6 +23,7 @@ import { NotificationPreferences } from "@/lib/types";
 import { PageHeader } from "@/components/page-header";
 import { DisplaySettingsCard } from "@/components/settings/display-settings-card";
 import { PushDeviceSetting } from "@/components/settings/push-device-setting";
+import { BlockedPlayersCard } from "@/components/settings/blocked-players-card";
 
 const NOTIFICATION_ROWS: { key: keyof NotificationPreferences; label: string; description: string }[] = [
   {
@@ -402,6 +403,8 @@ export default function SettingsPage() {
       <NotificationsCard />
 
       <DisplaySettingsCard />
+
+      <BlockedPlayersCard />
 
       <Card className="shadow-[inset_0_0_0_1px_rgba(239,68,68,0.3)]">
         <CardContent className="flex flex-col gap-3 pt-6">

@@ -42,10 +42,11 @@ export const NAV_SECTIONS: NavSection[] = [
     href: "/matches",
     label: "Matchs",
     icon: CalendarDays,
-    routes: ["/matches", "/paris-joueurs"],
+    routes: ["/matches", "/paris-joueurs", "/soiree"],
     tabs: [
       { href: "/matches", label: "Matchs" },
       { href: "/paris-joueurs", label: "Paris joueurs" },
+      { href: "/soiree", label: "Le fil" },
     ],
   },
   { href: "/bets", label: "Mes paris", icon: Ticket, routes: ["/bets"] },
