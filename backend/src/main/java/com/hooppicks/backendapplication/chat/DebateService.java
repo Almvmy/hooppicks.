@@ -1,13 +1,17 @@
 package com.hooppicks.backendapplication.chat;
 
 import com.hooppicks.backendapplication.bankroll.BankrollService;
+import com.hooppicks.backendapplication.bet.PlayerPropsService;
 import com.hooppicks.backendapplication.entity.Debate;
 import com.hooppicks.backendapplication.entity.DebateVote;
 import com.hooppicks.backendapplication.entity.MatchType;
+import com.hooppicks.backendapplication.entity.RosterPlayer;
+import com.hooppicks.backendapplication.entity.Team;
 import com.hooppicks.backendapplication.repository.DebateRepository;
 import com.hooppicks.backendapplication.repository.DebateVoteRepository;
 import com.hooppicks.backendapplication.repository.NightMessageRepository;
 import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
+import com.hooppicks.backendapplication.repository.RosterPlayerRepository;
 import com.hooppicks.backendapplication.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,7 +49,8 @@ public class DebateService {
     private static final int NEWS_SUBJECT_COOLDOWN_DAYS = 7;
 
     public record DebateDto(LocalDate day, String question, String optionA, String optionB, boolean open, String myVote,
-                            Long votesA, Long votesB, long total, long comments, List<PastDebate> history) {}
+                            Long votesA, Long votesB, long total, long comments, List<PastDebate> history,
+                            String imageA, String imageB, String imageUrl) {}
 
     public record PastDebate(LocalDate day, String question, String optionA, String optionB, long votesA, long votesB) {}
 
@@ -56,23 +62,25 @@ public class DebateService {
     private final NightThreadService threadService;
     private final PlayerMatchStatRepository statRepository;
     private final TeamRepository teamRepository;
+    private final RosterPlayerRepository rosterRepository;
     private final Clock clock;
 
     @Autowired
     public DebateService(DebateRepository debateRepository, DebateVoteRepository voteRepository,
                          NightMessageRepository messageRepository, NightThreadService threadService,
-                         PlayerMatchStatRepository statRepository, TeamRepository teamRepository) {
-        this(debateRepository, voteRepository, messageRepository, threadService, statRepository, teamRepository, Clock.system(BankrollService.ZONE));
+                         PlayerMatchStatRepository statRepository, TeamRepository teamRepository, RosterPlayerRepository rosterRepository) {
+        this(debateRepository, voteRepository, messageRepository, threadService, statRepository, teamRepository, rosterRepository, Clock.system(BankrollService.ZONE));
     }
 
     DebateService(DebateRepository debateRepository, DebateVoteRepository voteRepository,
                   NightMessageRepository messageRepository, NightThreadService threadService,
-                  PlayerMatchStatRepository statRepository, TeamRepository teamRepository, Clock clock) {
+                  PlayerMatchStatRepository statRepository, TeamRepository teamRepository, RosterPlayerRepository rosterRepository, Clock clock) {
         this.debateRepository = debateRepository;
         this.voteRepository = voteRepository;
         this.messageRepository = messageRepository;
         this.threadService = threadService;
         this.statRepository = statRepository;
+        this.rosterRepository = rosterRepository;
         this.teamRepository = teamRepository;
         this.clock = clock;
     }
@@ -114,6 +122,7 @@ public class DebateService {
             debate.setOptionA(news.get().optionA());
             debate.setOptionB(news.get().optionB());
             debate.setKind(news.get().kind());
+            debate.setImageUrl(subjectImage(news.get()));
             return debate;
         }
         DebateBank.Question q = DebateBank.next(day, keys(season));
@@ -138,6 +147,18 @@ public class DebateService {
         return DebateNews.pick(day, night, teams, blocked, recent);
     }
 
+    // Figée à la création : la photo du débat ne dépend plus ensuite de l'effectif du moment.
+    private String subjectImage(DebateNews.News news) {
+        if (news.kind().equals("serie") || news.kind().equals("crise")) {
+            return teamRepository.findAll().stream().filter(t -> news.subject().equals(t.getName()))
+                    .map(Team::getLogoUrl).filter(Objects::nonNull).findFirst().orElse(null);
+        }
+        String name = PlayerPropsService.normalize(news.subject());
+        return rosterRepository.findAllWithTeam().stream()
+                .filter(p -> PlayerPropsService.normalize(p.getFirstName() + " " + p.getLastName()).equals(name))
+                .map(RosterPlayer::getHeadshotUrl).filter(Objects::nonNull).findFirst().orElse(null);
+    }
+
     public DebateDto today(String userId) {
         return dto(userId, ensure(today()));
     }
@@ -157,7 +178,8 @@ public class DebateService {
         return new DebateDto(day, d.getQuestion(), d.getOptionA(), d.getOptionB(), open, mine,
                 reveal ? voteRepository.countByDayAndSide(day, "A") : null,
                 reveal ? voteRepository.countByDayAndSide(day, "B") : null,
-                voteRepository.countByDay(day), messageRepository.countVisibleForDebate(day), history(day));
+                voteRepository.countByDay(day), messageRepository.countVisibleForDebate(day), history(day),
+                DebateFaces.of(d.getOptionA()), DebateFaces.of(d.getOptionB()), d.getImageUrl());
     }
 
     private List<PastDebate> history(LocalDate before) {

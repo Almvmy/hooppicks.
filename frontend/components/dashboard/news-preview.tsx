@@ -13,6 +13,9 @@ export function NewsPreview({
   isLoading: boolean;
 }) {
   const top = items.slice(0, 3);
+  // La première actu en grand quand elle a une photo : une image donne envie, trois vignettes non.
+  const lead = top[0]?.imageUrl ? top[0] : null;
+  const rows = lead ? top.slice(1) : top;
 
   return (
     <Card>
@@ -33,8 +36,20 @@ export function NewsPreview({
           </p>
         )}
 
+        {!isLoading && lead && (
+          <a href={lead.link} target="_blank" rel="noopener noreferrer" className="group relative mb-1 block overflow-hidden rounded-xl">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={lead.imageUrl!} alt="" loading="lazy" className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+            <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+            <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 p-3 text-white">
+              <span className="line-clamp-2 font-heading text-sm font-bold leading-snug">{lead.title}</span>
+              <span className="font-mono text-xs text-white/75">{formatRelativeTime(lead.publishedAt)}</span>
+            </span>
+          </a>
+        )}
+
         {!isLoading &&
-          top.map((item) => (
+          rows.map((item) => (
             <a
               key={item.link}
               href={item.link}

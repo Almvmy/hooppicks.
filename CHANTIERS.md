@@ -7,6 +7,10 @@ Idées et travaux en attente. Rien ici n'est commencé tant que ce n'est pas dem
 - [ ] **Traduction des actus** : passer à Azure Translator (choix du propriétaire, plus tard). Le quota à vie de DeepL (1 000 000 de caractères) est épuisé : les actus restent en anglais. Clé à mettre sur Railway.
 - [ ] **Tester les notifications push** sur iPhone depuis l'app ajoutée à l'écran d'accueil (clés VAPID en place sur Railway).
 
+## Design
+
+- [ ] **Vitrine, connexion et inscription avec des photos** : première maquette pas convaincante pour le propriétaire (coucher de soleil orange, photos Pexels), à reprendre plus tard : https://claude.ai/artifact/GhH2mxn395Yttb2hasabbw
+
 ## Lancement public
 
 - [ ] **Sauvegardes de la base** : activer les sauvegardes du service Postgres sur Railway (onglet Backups).

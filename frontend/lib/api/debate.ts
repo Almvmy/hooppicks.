@@ -23,6 +23,11 @@ export interface Debate {
   total: number;
   comments: number;
   history: PastDebate[];
+  /** Photo ou logo de chaque camp, quand c'est un joueur ou une équipe connus. */
+  imageA: string | null;
+  imageB: string | null;
+  /** Le joueur ou l'équipe dont parle un débat d'actualité. */
+  imageUrl: string | null;
 }
 
 export interface PlannedDebate {

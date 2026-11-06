@@ -32,4 +32,8 @@ public class Debate {
 
     /** Écrit par un admin, pas tiré de la liste. */
     private Boolean planned;
+
+    /** Photo du joueur ou logo de l'équipe dont parle un débat d'actualité. */
+    @Column(length = 500)
+    private String imageUrl;
 }

@@ -36,7 +36,8 @@ class DebateServiceTest {
     private final NightThreadService thread = mock(NightThreadService.class);
     private final com.hooppicks.backendapplication.repository.PlayerMatchStatRepository stats = mock(com.hooppicks.backendapplication.repository.PlayerMatchStatRepository.class);
     private final com.hooppicks.backendapplication.repository.TeamRepository teams = mock(com.hooppicks.backendapplication.repository.TeamRepository.class);
-    private final DebateService service = new DebateService(debates, votes, messages, thread, stats, teams, Clock.fixed(NOW, BankrollService.ZONE));
+    private final com.hooppicks.backendapplication.repository.RosterPlayerRepository roster = mock(com.hooppicks.backendapplication.repository.RosterPlayerRepository.class);
+    private final DebateService service = new DebateService(debates, votes, messages, thread, stats, teams, roster, Clock.fixed(NOW, BankrollService.ZONE));
 
     private Debate debate(LocalDate day) {
         Debate d = new Debate();
@@ -96,6 +97,23 @@ class DebateServiceTest {
         when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.REGULAR)));
 
         assertThat(service.today("me").question()).startsWith("Edwards à 61 points");
+    }
+
+    @Test
+    void un_debat_d_actualite_porte_la_photo_du_joueur() {
+        noDebateYet();
+        when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Anthony Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.REGULAR)));
+        com.hooppicks.backendapplication.entity.RosterPlayer edwards = new com.hooppicks.backendapplication.entity.RosterPlayer();
+        edwards.setFirstName("Anthony");
+        edwards.setLastName("Edwards");
+        edwards.setHeadshotUrl("https://photo/edwards.png");
+        com.hooppicks.backendapplication.entity.RosterPlayer other = new com.hooppicks.backendapplication.entity.RosterPlayer();
+        other.setFirstName("Cole");
+        other.setLastName("Anthony");
+        other.setHeadshotUrl("https://photo/cole.png");
+        when(roster.findAllWithTeam()).thenReturn(List.of(other, edwards));
+
+        assertThat(service.today("me").imageUrl()).isEqualTo("https://photo/edwards.png");
     }
 
     @Test
@@ -278,5 +296,29 @@ class DebateServiceTest {
         assertThat(days).hasSize(7);
         assertThat(days.get(1).question()).isEqualTo(DebateBank.of(TODAY.plusDays(1)).text());
         verify(debates, never()).saveAndFlush(any());
+    }
+    @Test
+    void chaque_camp_garde_sa_photo_seulement_quand_on_est_sur_du_joueur() {
+        assertThat(DebateFaces.of("LeBron")).endsWith("/1966.png");
+        assertThat(DebateFaces.of("Jokić")).endsWith("/3112335.png");
+        assertThat(DebateFaces.of("Celtics")).endsWith("/bos.png");
+        // Magic = Magic Johnson dans les débats, pas l'équipe d'Orlando ; pas de portrait chez ESPN.
+        assertThat(DebateFaces.of("Magic")).isNull();
+        assertThat(DebateFaces.of("Jordan")).isNull();
+        assertThat(DebateFaces.of("Oui")).isNull();
+        assertThat(DebateFaces.of(null)).isNull();
+    }
+
+    @Test
+    void les_photos_des_deux_camps_arrivent_dans_le_debat() {
+        Debate d = debate(TODAY);
+        d.setOptionA("Kobe");
+        d.setOptionB("Shaq");
+        d.setImageUrl("https://photo");
+        when(debates.findById(TODAY)).thenReturn(java.util.Optional.of(d));
+        var dto = service.today("moi");
+        assertThat(dto.imageA()).endsWith("/110.png");
+        assertThat(dto.imageB()).endsWith("/614.png");
+        assertThat(dto.imageUrl()).isEqualTo("https://photo");
     }
 }

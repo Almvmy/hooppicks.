@@ -5,6 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CourtWatermark } from "@/components/court-watermark";
 import { CountUp } from "@/components/motion/count-up";
 import { greetingForNow } from "@/lib/dashboard";
+import { getTeamColor } from "@/lib/team-colors";
+import { useFavoriteTeam } from "@/lib/use-teams";
 import type { MyStanding } from "@/lib/api/leaderboard";
 import { WEEKLY_BANKROLL, cn, formatBankrollReset, formatSignedPoints } from "@/lib/utils";
 
@@ -26,6 +28,20 @@ function Sparkline({ series }: { series: number[] }) {
     <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="h-10 w-28 shrink-0" preserveAspectRatio="none" aria-hidden>
       <path d={line} fill="none" stroke={up ? "var(--success)" : "var(--destructive)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+/** La carte prend les couleurs de l'équipe favorite : c'est sa semaine, pas celle de tout le monde. */
+function TeamBackdrop({ abbreviation, logoUrl }: { abbreviation: string; logoUrl: string | null | undefined }) {
+  const color = getTeamColor(abbreviation);
+  return (
+    <div aria-hidden className="decor-clip">
+      <div className="absolute inset-0" style={{ background: `radial-gradient(110% 130% at 100% 0%, ${color}66 0%, ${color}1f 48%, transparent 72%)` }} />
+      {logoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt="" className="absolute -right-8 -top-8 h-48 w-48 object-contain opacity-20 sm:h-56 sm:w-56" />
+      )}
+    </div>
   );
 }
 
@@ -54,11 +70,12 @@ export function WeekCard({
   streak: number;
   isLoading: boolean;
 }) {
+  const { team } = useFavoriteTeam();
   const budgetShare = balance === undefined ? 0 : Math.max(0, Math.min(100, (balance / WEEKLY_BANKROLL) * 100));
 
   return (
     <div className="glass relative overflow-hidden rounded-3xl p-4 sm:p-6">
-      <CourtWatermark />
+      {team ? <TeamBackdrop abbreviation={team.abbreviation} logoUrl={team.logoUrl} /> : <CourtWatermark />}
       <div className="relative flex items-center justify-between gap-3">
         {isLoading ? (
           <Skeleton className="h-6 w-48" />

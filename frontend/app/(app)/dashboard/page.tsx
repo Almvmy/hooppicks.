@@ -19,6 +19,7 @@ import { WeeklyStoryEntry } from "@/components/weekly-story";
 import { TodayCard } from "@/components/dashboard/today-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { NightPerformance } from "@/components/dashboard/night-performance";
 import { NewsPreview } from "@/components/dashboard/news-preview";
 import { FavoriteTeamCard } from "@/components/dashboard/favorite-team-card";
 import { AppNudges } from "@/components/app-nudges";
@@ -100,6 +101,7 @@ export default function DashboardPage() {
         <div className="reveal-children flex min-w-0 flex-col gap-6 lg:col-span-2">
           <AppNudges hasBets={(betsQuery.data?.length ?? 0) > 0} />
           {freshResults && recent}
+          <NightPerformance />
           <BoostCard matches={matchesQuery.data} />
           <UpcomingMatches matches={slate.spotlight ? [slate.spotlight, ...slate.upcoming] : slate.upcoming} isLoading={matchesQuery.isLoading} />
         </div>

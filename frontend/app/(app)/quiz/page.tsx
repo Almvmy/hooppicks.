@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Crown, X } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerAvatar } from "@/components/player-avatar";
+import { QuizArena } from "@/components/quiz-arena";
 import { ShareButton } from "@/components/share-button";
 import { answerQuiz, fetchQuiz, fetchQuizBoard, shotsCount, shotsLine, startQuiz, type QuizQuestion, type QuizState } from "@/lib/api/quiz";
 import { cn } from "@/lib/utils";
@@ -64,18 +64,7 @@ export default function QuizPage() {
       {query.isLoading && <Skeleton className="h-64 w-full rounded-2xl" />}
       {query.isError && <p className="text-sm text-destructive">Impossible de charger le quiz.</p>}
 
-      {state?.status === "ready" && (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-            <p className="text-3xl">🏀🏀🏀🏀🏀</p>
-            <p className="font-heading text-lg font-bold">5 tirs, 15 secondes par tir</p>
-            <p className="text-sm text-muted-foreground">Un seul essai par jour.</p>
-            <Button size="lg" disabled={start.isPending} onClick={() => start.mutate()}>
-              Jouer
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {state?.status === "ready" && <QuizArena pending={start.isPending} onPlay={() => start.mutate()} />}
 
       {question && (
         <QuestionCard
