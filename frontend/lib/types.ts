@@ -384,6 +384,13 @@ export interface LeagueMember {
   avatarIcon: AvatarIcon;
 }
 
+/** Le message auquel on répond. `text` null : supprimé ou masqué depuis. */
+export interface ReplyPreview {
+  id: string;
+  username: string | null;
+  text: string | null;
+}
+
 export interface LeagueActivity {
   targetType: "BET" | "MEMBERSHIP" | "MESSAGE" | "TITLE";
   targetId: string;
@@ -398,6 +405,7 @@ export interface LeagueActivity {
   myReactions: string[];
   /** Message que l'on peut supprimer : le sien, ou si l'on dirige la ligue. */
   deletable: boolean;
+  reply: ReplyPreview | null;
   /** Ticket d'un autre membre encore jouable (« Je joue pareil »), sinon vide. */
   selections: {
     matchId: string;

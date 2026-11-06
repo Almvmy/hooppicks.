@@ -17,7 +17,8 @@ public record LeagueActivityDto(
         Map<String, Integer> reactionCounts, // emoji -> nombre de réactions
         List<String> myReactions, // emojis avec lesquels l'appelant a déjà réagi
         boolean deletable, // message que l'appelant peut supprimer (le sien, ou s'il dirige la ligue)
-        List<CopySelection> selections // ticket d'un autre membre encore jouable : de quoi le reprendre, sinon vide
+        List<CopySelection> selections, // ticket d'un autre membre encore jouable : de quoi le reprendre, sinon vide
+        ReplyPreview reply // le message auquel celui-ci répond, sinon null
 ) {
     public record CopySelection(String matchId, String matchLabel, String market, String outcome, String label,
                                 double odds, String playerId, Double line) {}

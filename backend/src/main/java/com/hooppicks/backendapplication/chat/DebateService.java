@@ -138,10 +138,10 @@ public class DebateService {
         return threadService.debateFeed(userId, day, sides, open ? null : "Ce débat est clos.");
     }
 
-    public NightThreadService.Feed comment(String userId, LocalDate day, String text) {
+    public NightThreadService.Feed comment(String userId, LocalDate day, String text, String replyToId) {
         if (!day.equals(today())) throw new IllegalArgumentException("Ce débat est clos.");
         if (!voteRepository.existsById(voteId(userId, day))) throw new IllegalArgumentException("Choisis ton camp avant d'argumenter.");
-        threadService.postDebate(userId, text, day);
+        threadService.postDebate(userId, text, day, replyToId);
         return comments(userId, day);
     }
 

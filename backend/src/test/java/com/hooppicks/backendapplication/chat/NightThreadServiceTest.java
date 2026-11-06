@@ -323,6 +323,112 @@ class NightThreadServiceTest {
         assertThat(feed.cannotWrite()).isNull();
     }
 
+    // --- Réponses ---
+
+    private NightMessage inThread(String id, User author) {
+        NightMessage m = new NightMessage();
+        m.setId(id);
+        m.setUser(author);
+        m.setText("Allez les Knicks");
+        m.setNight(LocalDate.of(2026, 11, 6));
+        m.setCreatedAt(NOW.minusSeconds(60));
+        when(messages.findById(id)).thenReturn(Optional.of(m));
+        return m;
+    }
+
+    @Test
+    void repondre_previent_l_auteur_une_seule_fois_meme_s_il_est_tague() {
+        User kader = user("k", "Kader");
+        inThread("p", kader);
+
+        service.post("me", "@Kader non", null, "p");
+
+        ArgumentCaptor<NightMessage> saved = ArgumentCaptor.forClass(NightMessage.class);
+        verify(messages).save(saved.capture());
+        assertThat(saved.getValue().getReplyToId()).isEqualTo("p");
+        verify(notifier).replied(me, kader, "@Kader non", "/soiree");
+        verify(notifier).mentions(me, "@Kader non", "/soiree", null, "k");
+    }
+
+    @Test
+    void une_reponse_reprend_le_match_du_message() {
+        NightMessage parent = inThread("p", user("k", "Kader"));
+        parent.setMatchId("x");
+        when(matches.findById("x")).thenReturn(Optional.of(match(MatchStatus.LIVE, NOW.minusSeconds(600))));
+
+        service.post("me", "Oui", null, "p");
+
+        ArgumentCaptor<NightMessage> saved = ArgumentCaptor.forClass(NightMessage.class);
+        verify(messages).save(saved.capture());
+        assertThat(saved.getValue().getMatchId()).isEqualTo("x");
+    }
+
+    @Test
+    void on_ne_repond_ni_a_un_message_masque_ni_automatique_ni_d_une_autre_conversation() {
+        inThread("masque", user("k", "Kader")).setHidden(true);
+        inThread("auto", null);
+        inThread("hier", user("k", "Kader")).setNight(LocalDate.of(2026, 11, 5));
+        inThread("debat", user("k", "Kader")).setDebateDay(LocalDate.of(2026, 11, 6));
+
+        for (String id : List.of("masque", "auto", "hier", "debat", "inconnu")) {
+            assertThatThrownBy(() -> service.post("me", "Oui", null, id)).isInstanceOf(IllegalArgumentException.class);
+        }
+        verify(messages, never()).save(any());
+    }
+
+    @Test
+    void dans_un_debat_on_repond_seulement_aux_arguments_de_ce_debat() {
+        LocalDate day = LocalDate.of(2026, 11, 6);
+        inThread("nuit", user("k", "Kader"));
+        assertThatThrownBy(() -> service.postDebate("me", "Oui", day, "nuit")).isInstanceOf(IllegalArgumentException.class);
+
+        inThread("arg", user("k", "Kader")).setDebateDay(day);
+        service.postDebate("me", "Oui", day, "arg");
+        verify(messages).save(any());
+    }
+
+    @Test
+    void la_reponse_montre_le_message_lu_a_l_affichage_jamais_une_copie() {
+        User kader = user("k", "Kader");
+        NightMessage parent = posted(kader, null);
+        parent.setId("p");
+        parent.setText("x".repeat(100));
+        NightMessage answer = posted(user("a", "Awa"), null);
+        answer.setReplyToId("p");
+        when(messages.findTop100ByNightAndDebateDayIsNullOrderByCreatedAtDesc(any())).thenReturn(List.of(answer));
+        when(messages.findAllById(any())).thenReturn(List.of(parent));
+
+        var reply = service.feed("me", null).messages().get(0).reply();
+        assertThat(reply.username()).isEqualTo("Kader");
+        assertThat(reply.text()).hasSize(80).endsWith("…");
+
+        // Masqué par la modération : plus rien dans ses réponses.
+        parent.setHidden(true);
+        assertThat(service.feed("me", null).messages().get(0).reply().text()).isNull();
+
+        // Supprimé.
+        when(messages.findAllById(any())).thenReturn(List.of());
+        assertThat(service.feed("me", null).messages().get(0).reply().text()).isNull();
+    }
+
+    @Test
+    void la_reponse_ne_montre_pas_le_message_d_un_joueur_bloque() {
+        User kader = user("k", "Kader");
+        NightMessage parent = posted(kader, null);
+        parent.setId("p");
+        NightMessage answer = posted(user("a", "Awa"), null);
+        answer.setReplyToId("p");
+        when(messages.findTop100ByNightAndDebateDayIsNullOrderByCreatedAtDesc(any())).thenReturn(List.of(answer));
+        when(messages.findAllById(any())).thenReturn(List.of(parent));
+        UserBlock block = new UserBlock();
+        block.setBlockedId("k");
+        when(blocks.findByBlockerId("me")).thenReturn(List.of(block));
+
+        var reply = service.feed("me", null).messages().get(0).reply();
+        assertThat(reply.username()).isNull();
+        assertThat(reply.text()).isNull();
+    }
+
     @Test
     void on_ne_peut_pas_se_bloquer_soi_meme() {
         when(users.findByUsernameIgnoreCase("Moi")).thenReturn(Optional.of(me));

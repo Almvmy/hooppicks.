@@ -2,6 +2,7 @@ package com.hooppicks.backendapplication.chat;
 
 import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.bet.PlayerPropsService;
+import com.hooppicks.backendapplication.dto.ReplyPreview;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.repository.*;
 import com.hooppicks.backendapplication.social.SocialNotifier;
@@ -42,7 +43,7 @@ public class NightThreadService {
     public record Message(String id, boolean auto, String username, Integer avatarNumber, String avatarPosition,
                           String avatarColorway, String avatarIcon, String text, String matchId, String matchLabel,
                           String camp, Instant createdAt, Map<String, Integer> reactionCounts, List<String> myReactions,
-                          boolean mine, boolean reportedByMe) {}
+                          boolean mine, boolean reportedByMe, ReplyPreview reply) {}
 
     /** `cannotWrite` : pourquoi ce joueur ne peut pas écrire, null s'il le peut. */
     public record Feed(LocalDate night, List<Message> messages, String cannotWrite) {}
@@ -136,6 +137,10 @@ public class NightThreadService {
         Set<String> reported = ids.isEmpty() ? Set.of() : reportRepository.findByMessageIdIn(ids).stream()
                 .filter(r -> userId.equals(r.getReporterId())).map(MessageReport::getMessageId).collect(Collectors.toSet());
 
+        Set<String> replyIds = raw.stream().map(NightMessage::getReplyToId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<String, NightMessage> parents = replyIds.isEmpty() ? Map.of()
+                : messageRepository.findAllById(replyIds).stream().collect(Collectors.toMap(NightMessage::getId, Function.identity()));
+
         return raw.stream().map(m -> {
             User u = m.getUser();
             Match match = m.getMatchId() == null ? null : matches.get(m.getMatchId());
@@ -145,8 +150,17 @@ public class NightThreadService {
                     m.getText(), m.getMatchId(), match == null ? null : label(match),
                     u == null ? null : sides != null ? sides.get(u.getId()) : camps.get(campKey(u.getId(), m.getMatchId())), m.getCreatedAt(),
                     counts.getOrDefault(m.getId(), Map.of()), mine.getOrDefault(m.getId(), List.of()),
-                    u != null && u.getId().equals(userId), reported.contains(m.getId()));
+                    u != null && u.getId().equals(userId), reported.contains(m.getId()), reply(m.getReplyToId(), parents, blocked));
         }).toList();
+    }
+
+    private static ReplyPreview reply(String replyToId, Map<String, NightMessage> parents, Set<String> blocked) {
+        if (replyToId == null) return null;
+        NightMessage parent = parents.get(replyToId);
+        if (parent == null || parent.getUser() == null || Boolean.TRUE.equals(parent.getHidden()) || blocked.contains(parent.getUser().getId())) {
+            return ReplyPreview.gone(replyToId);
+        }
+        return ReplyPreview.of(replyToId, parent.getUser().getUsername(), parent.getText());
     }
 
     // On écrit dans le fil de la soirée en cours : pas sur le match d'une autre soirée.
@@ -192,16 +206,43 @@ public class NightThreadService {
 
     @Transactional
     public void post(String userId, String rawText, String matchId) {
+        post(userId, rawText, matchId, null);
+    }
+
+    @Transactional
+    public void post(String userId, String rawText, String matchId, String replyToId) {
         Instant now = clock.instant();
         String text = validated(userId, rawText, now);
-        if (matchId != null && !isTonight(matchId, nightOf(now))) throw new IllegalArgumentException("Le fil de ce match n'est pas ouvert.");
-        save(userId, text, matchId, null, now, matchId == null ? "/soiree" : "/matches/" + matchId + "?onglet=fil");
+        NightMessage parent = parent(replyToId, null, now);
+        // Une réponse reste dans la conversation : écrite depuis /soiree, elle apparaît aussi sur le match de son message.
+        String match = matchId == null && parent != null ? parent.getMatchId() : matchId;
+        if (match != null && !isTonight(match, nightOf(now))) throw new IllegalArgumentException("Le fil de ce match n'est pas ouvert.");
+        save(userId, text, match, null, now, match == null ? "/soiree" : "/matches/" + match + "?onglet=fil", parent);
     }
 
     @Transactional
     public void postDebate(String userId, String rawText, LocalDate day) {
+        postDebate(userId, rawText, day, null);
+    }
+
+    @Transactional
+    public void postDebate(String userId, String rawText, LocalDate day, String replyToId) {
         Instant now = clock.instant();
-        save(userId, validated(userId, rawText, now), null, day, now, "/debat");
+        String text = validated(userId, rawText, now);
+        save(userId, text, null, day, now, "/debat", parent(replyToId, day, now));
+    }
+
+    // Seulement un message encore visible, écrit par un joueur, dans la même conversation.
+    private NightMessage parent(String replyToId, LocalDate debateDay, Instant now) {
+        if (replyToId == null) return null;
+        NightMessage parent = messageRepository.findById(replyToId).orElse(null);
+        boolean sameThread = parent != null && (debateDay != null
+                ? debateDay.equals(parent.getDebateDay())
+                : parent.getDebateDay() == null && nightOf(now).equals(parent.getNight()));
+        if (!sameThread || parent.getUser() == null || Boolean.TRUE.equals(parent.getHidden())) {
+            throw new IllegalArgumentException("Ce message n'est plus disponible.");
+        }
+        return parent;
     }
 
     private String validated(String userId, String rawText, Instant now) {
@@ -228,17 +269,23 @@ public class NightThreadService {
         return text;
     }
 
-    private void save(String userId, String text, String matchId, LocalDate debateDay, Instant now, String link) {
+    private void save(String userId, String text, String matchId, LocalDate debateDay, Instant now, String link, NightMessage parent) {
         NightMessage message = new NightMessage();
         message.setId(UUID.randomUUID().toString());
         message.setNight(nightOf(now));
         message.setMatchId(matchId);
         message.setDebateDay(debateDay);
+        if (parent != null) message.setReplyToId(parent.getId());
         message.setUser(userRepository.findById(userId).orElseThrow());
         message.setText(text);
         message.setCreatedAt(now);
         messageRepository.save(message);
-        socialNotifier.mentions(message.getUser(), text, link, null);
+        if (parent == null) {
+            socialNotifier.mentions(message.getUser(), text, link, null);
+        } else {
+            socialNotifier.replied(message.getUser(), parent.getUser(), text, link);
+            socialNotifier.mentions(message.getUser(), text, link, null, parent.getUser().getId());
+        }
     }
 
     /**

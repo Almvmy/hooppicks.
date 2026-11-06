@@ -18,6 +18,9 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     Optional<User> findByUsernameIgnoreCase(String username);
 
+    /** Sept : le joueur qui écrit peut en faire partie, il en reste six à proposer. */
+    java.util.List<User> findTop7ByUsernameStartingWithIgnoreCaseOrderByUsernameAsc(String prefix);
+
     java.util.List<User> findByChatMutedUntilAfter(java.time.Instant now);
 
     long countByReferredBy(String referrerId);

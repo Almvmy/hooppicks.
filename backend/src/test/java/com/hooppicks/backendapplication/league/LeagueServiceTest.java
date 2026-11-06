@@ -417,6 +417,40 @@ class LeagueServiceTest {
         assertThat(saved.getValue().getLeagueId()).isEqualTo("league-1");
     }
 
+    private com.hooppicks.backendapplication.entity.LeagueMessage leagueMessage(String id, String leagueId, User author) {
+        com.hooppicks.backendapplication.entity.LeagueMessage m = new com.hooppicks.backendapplication.entity.LeagueMessage();
+        m.setId(id);
+        m.setLeagueId(leagueId);
+        m.setUser(author);
+        m.setText("On y croit");
+        when(messageRepository.findById(id)).thenReturn(Optional.of(m));
+        return m;
+    }
+
+    @Test
+    void repondre_a_un_message_de_la_ligue_garde_le_lien() {
+        wireThread();
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(userWithId("user-1")));
+        leagueMessage("p", "league-1", userWithId("user-2"));
+
+        leagueService.postMessage("league-1", "user-1", "Moi aussi", "p");
+
+        ArgumentCaptor<com.hooppicks.backendapplication.entity.LeagueMessage> saved =
+                ArgumentCaptor.forClass(com.hooppicks.backendapplication.entity.LeagueMessage.class);
+        verify(messageRepository).save(saved.capture());
+        assertThat(saved.getValue().getReplyToId()).isEqualTo("p");
+    }
+
+    @Test
+    void on_ne_repond_pas_a_un_message_d_une_autre_ligue() {
+        wireThread();
+        leagueMessage("p", "league-2", userWithId("user-2"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> leagueService.postMessage("league-1", "user-1", "Moi aussi", "p"))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(messageRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
     @Test
     void message_vide_trop_long_ou_trop_de_messages_refuse() {
         wireThread();

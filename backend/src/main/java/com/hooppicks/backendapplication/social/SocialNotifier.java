@@ -51,6 +51,14 @@ public class SocialNotifier {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private NightMessageRepository nightRepository;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private UserBlockRepository blockRepository;
+
+    // Bloquer quelqu'un, c'est aussi ne plus recevoir ses notifications.
+    private boolean blocks(User to, User from) {
+        return blockRepository != null && blockRepository.existsById(to.getId() + ":" + from.getId());
+    }
+
     private record Target(User owner, String description, String link) {}
 
     private Optional<Target> target(String type, String id) {
@@ -74,7 +82,7 @@ public class SocialNotifier {
     /** Une seule fois par joueur et par cible, quoi qu'il fasse ensuite de sa réaction. */
     public void reacted(User reactor, String targetType, String targetId, String emoji) {
         Target t = target(targetType, targetId).orElse(null);
-        if (t == null || t.owner() == null || t.owner().getId().equals(reactor.getId())) return;
+        if (t == null || t.owner() == null || t.owner().getId().equals(reactor.getId()) || blocks(t.owner(), reactor)) return;
         String id = reactor.getId() + ":" + targetType + ":" + targetId;
         if (notifiedRepository.existsById(id)) return;
         ReactionNotified marker = new ReactionNotified();
@@ -88,15 +96,26 @@ public class SocialNotifier {
      * cités (les membres, pour un fil de ligue) ; null : tout le monde.
      */
     public void mentions(User author, String text, String link, Set<String> allowedIds) {
+        mentions(author, text, link, allowedIds, null);
+    }
+
+    /** `alreadyNotified` : déjà prévenu par ailleurs (l'auteur du message auquel on répond) : pas deux notifications. */
+    public void mentions(User author, String text, String link, Set<String> allowedIds, String alreadyNotified) {
         Set<String> names = new LinkedHashSet<>();
         Matcher m = MENTION.matcher(text == null ? "" : text);
         while (m.find() && names.size() < MAX_MENTIONS) names.add(stripEnd(m.group(1)));
         for (String name : names) {
             User cited = userRepository.findByUsernameIgnoreCase(name).orElse(null);
-            if (cited == null || cited.getId().equals(author.getId())) continue;
+            if (cited == null || cited.getId().equals(author.getId()) || cited.getId().equals(alreadyNotified) || blocks(cited, author)) continue;
             if (allowedIds != null && !allowedIds.contains(cited.getId())) continue;
             send(cited, author.getUsername() + " t'a cité : « " + text + " »", link, "On parle de toi");
         }
+    }
+
+    /** Une réponse à son message prévient l'auteur, sans qu'on ait à le taguer. */
+    public void replied(User author, User to, String text, String link) {
+        if (to == null || to.getId().equals(author.getId()) || blocks(to, author)) return;
+        send(to, author.getUsername() + " a répondu à ton message : « " + text + " »", link, "Nouvelle réponse");
     }
 
     // « @Kader. » : le point final n'appartient pas au pseudo.

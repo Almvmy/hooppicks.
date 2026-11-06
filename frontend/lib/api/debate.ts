@@ -41,7 +41,7 @@ export const fetchTodayDebate = () => apiFetch<Debate>("/debates/today");
 export const fetchDebate = (day: string) => apiFetch<Debate>(`/debates/${day}`);
 export const voteDebate = (side: "A" | "B") => post<Debate>("/debates/today/vote", { side });
 export const fetchDebateComments = (day: string) => apiFetch<NightFeed>(`/debates/${day}/comments`);
-export const postDebateComment = (day: string, text: string) => post<NightFeed>(`/debates/${day}/comments`, { text });
+export const postDebateComment = (day: string, text: string, replyToId?: string) => post<NightFeed>(`/debates/${day}/comments`, { text, replyToId: replyToId ?? null });
 
 export const fetchDebatePlanning = () => apiFetch<PlannedDebate[]>("/console/debates");
 export const planDebate = (debate: { day: string; question: string; optionA: string; optionB: string }) =>

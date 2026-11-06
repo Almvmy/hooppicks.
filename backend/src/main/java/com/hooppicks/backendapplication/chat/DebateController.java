@@ -18,7 +18,7 @@ import java.util.function.Function;
 public class DebateController {
 
     public record VoteRequest(String side) {}
-    public record CommentRequest(String text) {}
+    public record CommentRequest(String text, String replyToId) {}
     public record PlanRequest(String day, String question, String optionA, String optionB) {}
     public record SharedDebate(String day, String question, String optionA, String optionB, long votesA, long votesB) {}
 
@@ -79,7 +79,7 @@ public class DebateController {
 
     @PostMapping("/debates/{day}/comments")
     public ResponseEntity<?> comment(@PathVariable String day, @RequestBody CommentRequest body, HttpServletRequest request) {
-        return run(request, userId -> service.comment(userId, parse(day), body.text()));
+        return run(request, userId -> service.comment(userId, parse(day), body.text(), body.replyToId()));
     }
 
     /** Pour la carte à partager : la question et les totaux, rien sur les joueurs. */

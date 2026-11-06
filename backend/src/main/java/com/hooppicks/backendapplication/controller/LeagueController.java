@@ -100,14 +100,14 @@ public class LeagueController {
         }
     }
 
-    public record MessageRequest(String text) {}
+    public record MessageRequest(String text, String replyToId) {}
 
     @PostMapping("/{id}/messages")
     public ResponseEntity<?> postMessage(@PathVariable String id, @RequestBody MessageRequest body, HttpServletRequest request) {
         String userId = sessionStore.getUserIdFromRequest(request);
         if (userId == null) return ResponseEntity.status(401).build();
         try {
-            leagueService.postMessage(id, userId, body.text());
+            leagueService.postMessage(id, userId, body.text(), body.replyToId());
             return ResponseEntity.ok(leagueService.getRecentActivity(id, userId));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(403).body(e.getMessage());

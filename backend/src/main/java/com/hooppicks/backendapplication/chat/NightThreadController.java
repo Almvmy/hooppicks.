@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 @RequestMapping("/night-thread")
 public class NightThreadController {
 
-    public record PostRequest(String text, String matchId) {}
+    public record PostRequest(String text, String matchId, String replyToId) {}
     public record ReactRequest(String emoji) {}
     public record UsernameRequest(String username) {}
 
@@ -48,7 +48,7 @@ public class NightThreadController {
     @PostMapping
     public ResponseEntity<?> post(@RequestBody PostRequest body, HttpServletRequest request) {
         return run(request, userId -> {
-            service.post(userId, body.text(), body.matchId());
+            service.post(userId, body.text(), body.matchId(), body.replyToId());
             return service.feed(userId, body.matchId());
         });
     }

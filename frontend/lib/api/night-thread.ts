@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/http";
-import type { AvatarColorway, AvatarIcon, AvatarPosition } from "@/lib/types";
+import type { AvatarColorway, AvatarIcon, AvatarPosition, ReplyPreview } from "@/lib/types";
 
 export interface NightMessage {
   id: string;
@@ -20,6 +20,7 @@ export interface NightMessage {
   myReactions: string[];
   mine: boolean;
   reportedByMe: boolean;
+  reply: ReplyPreview | null;
 }
 
 export interface NightFeed {
@@ -53,7 +54,8 @@ const post = <T,>(path: string, body?: unknown) =>
 
 export const fetchNightFeed = (matchId?: string) =>
   apiFetch<NightFeed>(matchId ? `/night-thread?matchId=${encodeURIComponent(matchId)}` : "/night-thread");
-export const postNightMessage = (text: string, matchId?: string) => post<NightFeed>("/night-thread", { text, matchId: matchId ?? null });
+export const postNightMessage = (text: string, matchId?: string, replyToId?: string) =>
+  post<NightFeed>("/night-thread", { text, matchId: matchId ?? null, replyToId: replyToId ?? null });
 export const deleteNightMessage = (id: string) => post<unknown>(`/night-thread/${id}/delete`);
 export const reportNightMessage = (id: string) => post<unknown>(`/night-thread/${id}/report`);
 export const reactToNightMessage = (id: string, emoji: string) => post<unknown>(`/night-thread/${id}/react`, { emoji });

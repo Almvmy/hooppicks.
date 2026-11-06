@@ -17,6 +17,20 @@ export interface TicketReactions {
   mine: string[];
 }
 
+/** Un joueur proposé pendant qu'on écrit @ka. */
+export interface MentionCandidate {
+  username: string;
+  avatarNumber: number;
+  avatarPosition: AvatarPosition;
+  avatarColorway: AvatarColorway;
+  avatarIcon: AvatarIcon;
+}
+
+export async function fetchMentions(q: string, leagueId?: string): Promise<MentionCandidate[]> {
+  const league = leagueId ? `&leagueId=${encodeURIComponent(leagueId)}` : "";
+  return apiFetch<MentionCandidate[]>(`/mentions?q=${encodeURIComponent(q)}${league}`);
+}
+
 export async function fetchFriendsOnMatch(matchId: string): Promise<FriendPick[]> {
   return apiFetch<FriendPick[]>(`/matches/${matchId}/friends`);
 }

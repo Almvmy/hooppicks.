@@ -263,6 +263,11 @@ public class LeagueService {
     /** Pas de notification : un message par personne à chaque phrase serait vite coupé par tout le monde. */
     @Transactional
     public void postMessage(String leagueId, String userId, String rawText) {
+        postMessage(leagueId, userId, rawText, null);
+    }
+
+    @Transactional
+    public void postMessage(String leagueId, String userId, String rawText, String replyToId) {
         if (membershipRepository.findByLeagueIdAndUserId(leagueId, userId).isEmpty()) {
             throw new IllegalStateException("Tu n'es pas membre de cette ligue.");
         }
@@ -273,8 +278,12 @@ public class LeagueService {
         if (messageRepository.countByUser_IdAndCreatedAtAfter(userId, now.minus(java.time.Duration.ofHours(1))) >= MAX_MESSAGES_PER_HOUR) {
             throw new IllegalArgumentException("Beaucoup de messages en peu de temps : réessaie dans un moment.");
         }
+        com.hooppicks.backendapplication.entity.LeagueMessage parent = replyToId == null ? null
+                : messageRepository.findById(replyToId).filter(m -> leagueId.equals(m.getLeagueId()))
+                        .orElseThrow(() -> new IllegalArgumentException("Ce message n'est plus disponible."));
         com.hooppicks.backendapplication.entity.LeagueMessage message = new com.hooppicks.backendapplication.entity.LeagueMessage();
         message.setLeagueId(leagueId);
+        if (parent != null) message.setReplyToId(parent.getId());
         message.setUser(userRepository.findById(userId).orElseThrow());
         message.setText(text);
         message.setCreatedAt(now);
@@ -282,7 +291,13 @@ public class LeagueService {
         if (socialNotifier != null) {
             Set<String> members = membershipRepository.findByLeagueId(leagueId).stream()
                     .map(m -> m.getUser().getId()).collect(Collectors.toSet());
-            socialNotifier.mentions(message.getUser(), text, "/leagues/" + leagueId, members);
+            String link = "/leagues/" + leagueId;
+            if (parent == null) {
+                socialNotifier.mentions(message.getUser(), text, link, members);
+            } else {
+                socialNotifier.replied(message.getUser(), parent.getUser(), text, link);
+                socialNotifier.mentions(message.getUser(), text, link, members, parent.getUser().getId());
+            }
         }
     }
 
@@ -319,6 +334,7 @@ public class LeagueService {
 
         Map<String, List<ActivityReaction>> byTarget = reactions.stream()
                 .collect(Collectors.groupingBy(ActivityReaction::getTargetId));
+        Map<String, com.hooppicks.backendapplication.dto.ReplyPreview> replies = replies(items);
 
         return items.stream().map(item -> {
             List<ActivityReaction> forTarget = byTarget.getOrDefault(item.targetId(), List.of());
@@ -331,9 +347,30 @@ public class LeagueService {
             return new LeagueActivityDto(
                     item.targetType(), item.targetId(), item.username(), item.message(), item.occurredAt(),
                     item.avatarNumber(), item.avatarPosition(), item.avatarColorway(), item.avatarIcon(),
-                    counts, mine, item.deletable(), item.selections()
+                    counts, mine, item.deletable(), item.selections(), replies.get(item.targetId())
             );
         }).toList();
+    }
+
+    // Lu à l'affichage, jamais copié : un message supprimé ne survit pas dans ses réponses.
+    private Map<String, com.hooppicks.backendapplication.dto.ReplyPreview> replies(List<RawActivity> items) {
+        if (messageRepository == null) return Map.of();
+        List<String> messageIds = items.stream().filter(i -> "MESSAGE".equals(i.targetType())).map(RawActivity::targetId).toList();
+        if (messageIds.isEmpty()) return Map.of();
+        Map<String, String> parentOf = new HashMap<>();
+        for (com.hooppicks.backendapplication.entity.LeagueMessage m : messageRepository.findAllById(messageIds)) {
+            if (m.getReplyToId() != null) parentOf.put(m.getId(), m.getReplyToId());
+        }
+        if (parentOf.isEmpty()) return Map.of();
+        Map<String, com.hooppicks.backendapplication.entity.LeagueMessage> parents = messageRepository.findAllById(new java.util.HashSet<>(parentOf.values())).stream()
+                .collect(Collectors.toMap(com.hooppicks.backendapplication.entity.LeagueMessage::getId, m -> m));
+        Map<String, com.hooppicks.backendapplication.dto.ReplyPreview> replies = new HashMap<>();
+        parentOf.forEach((id, parentId) -> {
+            com.hooppicks.backendapplication.entity.LeagueMessage parent = parents.get(parentId);
+            replies.put(id, parent == null ? com.hooppicks.backendapplication.dto.ReplyPreview.gone(parentId)
+                    : com.hooppicks.backendapplication.dto.ReplyPreview.of(parentId, parent.getUser().getUsername(), parent.getText()));
+        });
+        return replies;
     }
 
     /**

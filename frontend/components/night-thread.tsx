@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, Flag, Send, Trash2 } from "lucide-react";
+import { Ban, Flag, Reply, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlayerAvatar } from "@/components/player-avatar";
+import { MessageText, ReplyQuote, ThreadComposer, threadMessageId, type ReplyTarget } from "@/components/thread-composer";
 import { fetchProfile } from "@/lib/api/auth";
 import {
   blockPlayer,
@@ -19,6 +19,7 @@ import {
   type NightMessage,
 } from "@/lib/api/night-thread";
 import { fetchDebateComments, postDebateComment } from "@/lib/api/debate";
+import type { MentionCandidate } from "@/lib/api/social";
 import { cn, formatRelativeTime } from "@/lib/utils";
 
 const MAX_LENGTH = 280;
@@ -29,23 +30,6 @@ function chipClass(active: boolean) {
   return cn(
     "shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
     active ? "glass-accent" : "glass-inset-quiet text-muted-foreground hover:text-foreground"
-  );
-}
-
-/** @pseudo cliquable, comme dans le fil des ligues. */
-function MessageText({ text }: { text: string }) {
-  return (
-    <>
-      {text.split(/((?<![\p{L}\p{N}_])@[\p{L}\p{N}_.-]{2,30})/u).map((part, i) =>
-        i % 2 === 1 ? (
-          <Link key={i} href={`/u/${encodeURIComponent(part.slice(1).replace(/[.-]+$/, ""))}`} className="font-semibold text-primary hover:underline">
-            {part}
-          </Link>
-        ) : (
-          part
-        )
-      )}
-    </>
   );
 }
 
@@ -65,12 +49,22 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
     refetchInterval: 15_000,
   });
   const [draft, setDraft] = useState("");
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const [filter, setFilter] = useState<string | null>(null);
 
   const tagged = useMemo(() => {
     const seen = new Map<string, string>();
     for (const m of feed.data?.messages ?? []) if (m.matchId && m.matchLabel) seen.set(m.matchId, m.matchLabel);
     return [...seen.entries()];
+  }, [feed.data]);
+  // Ceux qui écrivent dans ce fil : les premiers proposés après un @.
+  const authors = useMemo(() => {
+    const seen = new Map<string, MentionCandidate>();
+    for (const m of feed.data?.messages ?? []) {
+      if (m.mine || !m.username || seen.has(m.username)) continue;
+      seen.set(m.username, { username: m.username, avatarNumber: m.avatarNumber ?? 0, avatarPosition: m.avatarPosition!, avatarColorway: m.avatarColorway!, avatarIcon: m.avatarIcon! });
+    }
+    return [...seen.values()];
   }, [feed.data]);
   const activeFilter = filter && tagged.some(([id]) => id === filter) ? filter : null;
   const messages = (feed.data?.messages ?? []).filter((m) => !activeFilter || m.matchId === activeFilter);
@@ -79,9 +73,10 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
   const onError = (e: Error) => toast.error(e.message || "Action impossible. Réessaie.");
 
   const send = useMutation({
-    mutationFn: () => (debateDay ? postDebateComment(debateDay, draft.trim()) : postNightMessage(draft.trim(), matchId ?? activeFilter ?? undefined)),
+    mutationFn: () => (debateDay ? postDebateComment(debateDay, draft.trim(), replyTo?.id) : postNightMessage(draft.trim(), matchId ?? activeFilter ?? undefined, replyTo?.id)),
     onSuccess: () => {
       setDraft("");
+      setReplyTo(null);
       refresh();
       if (debateDay) queryClient.invalidateQueries({ queryKey: ["debate"] });
     },
@@ -107,11 +102,6 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
     onError,
   });
 
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    if (draft.trim() && !send.isPending) send.mutate();
-  }
-
   if (!profile && !profileLoading) {
     return (
       <p className="glass rounded-2xl px-4 py-6 text-center text-sm text-muted-foreground">
@@ -129,24 +119,17 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
         <p className="glass-inset-quiet rounded-2xl px-4 py-3 text-sm text-muted-foreground">{feed.data.cannotWrite}</p>
       ) : (
         feed.data && (
-          <form onSubmit={submit} className="flex items-center gap-2">
-            <Input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              maxLength={MAX_LENGTH}
-              placeholder={debateDay ? "Ton argument…" : "Écris dans le fil…"}
-              aria-label="Message"
-              className="min-w-0 flex-1"
-            />
-            <button
-              type="submit"
-              disabled={!draft.trim() || send.isPending}
-              aria-label="Envoyer"
-              className="glass-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-40"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          </form>
+          <ThreadComposer
+            value={draft}
+            onChange={setDraft}
+            onSubmit={() => send.mutate()}
+            pending={send.isPending}
+            placeholder={debateDay ? "Ton argument…" : "Écris dans le fil…"}
+            maxLength={MAX_LENGTH}
+            authors={authors}
+            replyTo={replyTo}
+            onCancelReply={() => setReplyTo(null)}
+          />
         )
       )}
 
@@ -172,7 +155,7 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
           m.auto ? (
             <AutoLine key={m.id} message={m} showMatch={!matchId} />
           ) : (
-            <div key={m.id} className="glass flex gap-2.5 rounded-2xl px-3 py-2.5">
+            <div key={m.id} id={threadMessageId(m.id)} className="glass flex gap-2.5 rounded-2xl px-3 py-2.5">
               <Link href={`/u/${encodeURIComponent(m.username ?? "")}`} className="shrink-0">
                 <PlayerAvatar
                   number={m.avatarNumber ?? 0}
@@ -195,6 +178,11 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
                   )}
                   <span className="ml-auto text-[10px] text-muted-foreground">{formatRelativeTime(m.createdAt)}</span>
                 </div>
+                {m.reply && (
+                  <div className="mt-1">
+                    <ReplyQuote reply={m.reply} />
+                  </div>
+                )}
                 <p className="mt-0.5 break-words text-sm">
                   <MessageText text={m.text} />
                 </p>
@@ -218,6 +206,11 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
                     );
                   })}
                   <span className="ml-auto flex items-center gap-1 text-muted-foreground">
+                    {!feed.data?.cannotWrite && m.username && (
+                      <IconAction label="Répondre" onClick={() => setReplyTo({ id: m.id, username: m.username!, text: m.text })}>
+                        <Reply className="h-3.5 w-3.5" />
+                      </IconAction>
+                    )}
                     {m.mine ? (
                       <IconAction label="Supprimer" onClick={() => remove.mutate(m.id)}>
                         <Trash2 className="h-3.5 w-3.5" />

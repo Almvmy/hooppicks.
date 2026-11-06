@@ -6,17 +6,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Copy, Crown, LogOut, MessageCircle, Send, Share2, Ticket, Trash2, TrendingUp, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Copy, Crown, LogOut, MessageCircle, Reply, Share2, Ticket, Trash2, TrendingUp, Trophy, UserPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MessageText, ReplyQuote, ThreadComposer, threadMessageId, type ReplyTarget } from "@/components/thread-composer";
 import { LeaderboardTable } from "@/components/leaderboard-table";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { LeagueCrest, hueFromName } from "@/components/league-crest";
 import { ChampionBanner } from "@/components/leaderboard/champion-banner";
 import { Podium } from "@/components/leaderboard/podium";
 import { useBetSlip } from "@/components/bet-slip-provider";
-import { Input } from "@/components/ui/input";
 import { copyLeagueCode, shareLeagueInvite } from "@/lib/league-invite";
 import {
   fetchLeagueActivity,
@@ -75,6 +75,7 @@ export default function LeagueDetailPage({
   const [confirmingLeave, setConfirmingLeave] = useState(false);
   const [tab, setTab] = useState<Tab>("classement");
   const [draft, setDraft] = useState("");
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);
   const { selections: slip, toggleSelection } = useBetSlip();
 
   const leaguesQuery = useQuery({ queryKey: ["leagues"], queryFn: fetchMyLeagues });
@@ -128,10 +129,11 @@ export default function LeagueDetailPage({
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => postLeagueMessage(id, draft.trim()),
+    mutationFn: () => postLeagueMessage(id, draft.trim(), replyTo?.id),
     onSuccess: (fresh) => {
       queryClient.setQueryData(["league-activity", id], fresh);
       setDraft("");
+      setReplyTo(null);
     },
     onError: (e) => toast.error(e instanceof Error && e.message ? e.message : "Message non envoyé. Réessaie."),
   });
@@ -380,24 +382,18 @@ export default function LeagueDetailPage({
       {tab === "fil" && (
         <Card role="tabpanel">
           <CardContent className="flex flex-col gap-4 pt-6">
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (draft.trim()) sendMutation.mutate();
-              }}
-            >
-              <Input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                maxLength={MAX_MESSAGE}
-                placeholder="Écris à ta ligue"
-                aria-label="Écris à ta ligue"
-              />
-              <Button type="submit" aria-label="Envoyer" disabled={!draft.trim() || sendMutation.isPending}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+            <ThreadComposer
+              value={draft}
+              onChange={setDraft}
+              onSubmit={() => sendMutation.mutate()}
+              pending={sendMutation.isPending}
+              placeholder="Écris à ta ligue"
+              maxLength={MAX_MESSAGE}
+              leagueId={id}
+              authors={[]}
+              replyTo={replyTo}
+              onCancelReply={() => setReplyTo(null)}
+            />
 
             {activityQuery.isLoading && (
               <div className="flex flex-col gap-2">
@@ -421,7 +417,7 @@ export default function LeagueDetailPage({
               const isPick = event.message.startsWith("a misé");
               const Icon = isChat ? MessageCircle : isTitle ? Crown : isWin ? Trophy : isPick ? Ticket : UserPlus;
               return (
-                <div key={`${event.targetType}-${event.targetId}-${event.occurredAt}`} className="flex items-start gap-2.5 text-sm">
+                <div key={`${event.targetType}-${event.targetId}-${event.occurredAt}`} id={isChat ? threadMessageId(event.targetId) : undefined} className="flex items-start gap-2.5 rounded-lg text-sm">
                   <span className="relative mt-0.5 shrink-0">
                     <PlayerAvatar
                       number={event.avatarNumber}
@@ -444,7 +440,16 @@ export default function LeagueDetailPage({
                       {event.username}
                     </Link>{" "}
                     {isChat ? (
-                      <p className="mt-0.5 whitespace-pre-wrap break-words">{event.message}</p>
+                      <>
+                        {event.reply && (
+                          <div className="mt-1">
+                            <ReplyQuote reply={event.reply} />
+                          </div>
+                        )}
+                        <p className="mt-0.5 whitespace-pre-wrap break-words">
+                          <MessageText text={event.message} />
+                        </p>
+                      </>
                     ) : (
                       <span className="text-muted-foreground">{event.message}</span>
                     )}
@@ -482,6 +487,17 @@ export default function LeagueDetailPage({
                           </button>
                         );
                       })}
+                      {isChat && (
+                        <button
+                          type="button"
+                          onClick={() => setReplyTo({ id: event.targetId, username: event.username, text: event.message })}
+                          aria-label="Répondre"
+                          title="Répondre"
+                          className="rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          <Reply className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       {event.deletable && (
                         <button
                           type="button"

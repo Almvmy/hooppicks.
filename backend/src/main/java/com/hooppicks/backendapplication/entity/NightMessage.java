@@ -42,6 +42,10 @@ public class NightMessage {
     @Column(name = "debate_day")
     private LocalDate debateDay;
 
+    /** Le message auquel celui-ci répond. Sans clé étrangère : il peut disparaître, la réponse reste. */
+    @Column(name = "reply_to_id")
+    private String replyToId;
+
     /** Masqué : 3 signalements, en attente de la décision d'un admin. */
     private Boolean hidden;
 

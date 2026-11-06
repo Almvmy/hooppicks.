@@ -29,4 +29,8 @@ public class LeagueMessage {
 
     @Column(name = "created_at")
     private Instant createdAt;
+
+    /** Le message auquel celui-ci répond. Sans clé étrangère : il peut disparaître, la réponse reste. */
+    @Column(name = "reply_to_id")
+    private String replyToId;
 }

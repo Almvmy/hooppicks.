@@ -30,8 +30,8 @@ export async function fetchLeagueRanking(period: LeaderboardPeriod): Promise<Lea
   return apiFetch<LeagueRankingRow[]>(`/leagues/ranking?period=${period}`);
 }
 
-export async function postLeagueMessage(leagueId: string, text: string): Promise<LeagueActivity[]> {
-  return apiFetch<LeagueActivity[]>(`/leagues/${leagueId}/messages`, { method: "POST", body: JSON.stringify({ text }) });
+export async function postLeagueMessage(leagueId: string, text: string, replyToId?: string): Promise<LeagueActivity[]> {
+  return apiFetch<LeagueActivity[]>(`/leagues/${leagueId}/messages`, { method: "POST", body: JSON.stringify({ text, replyToId: replyToId ?? null }) });
 }
 
 export async function deleteLeagueMessage(leagueId: string, messageId: string): Promise<LeagueActivity[]> {

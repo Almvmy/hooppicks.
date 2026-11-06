@@ -154,9 +154,9 @@ class DebateServiceTest {
 
     @Test
     void pas_d_argument_sans_camp() {
-        assertThatThrownBy(() -> service.comment("me", TODAY, "Jordan évidemment")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.comment("me", TODAY, "Jordan évidemment", null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.comments("me", TODAY)).isInstanceOf(IllegalArgumentException.class);
-        verify(thread, never()).postDebate(any(), any(), any());
+        verify(thread, never()).postDebate(any(), any(), any(), any());
     }
 
     @Test
@@ -164,7 +164,7 @@ class DebateServiceTest {
         LocalDate past = TODAY.minusDays(1);
         voted(past, "A");
         when(debates.findById(past)).thenReturn(Optional.of(debate(past)));
-        assertThatThrownBy(() -> service.comment("me", past, "Trop tard")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.comment("me", past, "Trop tard", null)).isInstanceOf(IllegalArgumentException.class);
 
         service.comments("autre", past);
         verify(thread).debateFeed(eq("autre"), eq(past), anyMap(), eq("Ce débat est clos."));
@@ -178,9 +178,9 @@ class DebateServiceTest {
         v.setSide("B");
         when(votes.findByDay(TODAY)).thenReturn(List.of(v));
 
-        service.comment("me", TODAY, "Jordan évidemment");
+        service.comment("me", TODAY, "Jordan évidemment", "m1");
 
-        verify(thread).postDebate("me", "Jordan évidemment", TODAY);
+        verify(thread).postDebate("me", "Jordan évidemment", TODAY, "m1");
         verify(thread).debateFeed("me", TODAY, java.util.Map.of("kader", "LeBron"), null);
     }
 

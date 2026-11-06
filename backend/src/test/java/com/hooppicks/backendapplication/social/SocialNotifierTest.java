@@ -53,6 +53,47 @@ class SocialNotifierTest {
     }
 
     @Test
+    void une_reponse_previent_l_auteur_du_message() {
+        notifier.replied(kader, awa, "Bien vu", "/soiree");
+
+        AppNotification n = sent();
+        assertThat(n.getUser()).isEqualTo(awa);
+        assertThat(n.getMessage()).isEqualTo("Kader a répondu à ton message : « Bien vu »");
+        assertThat(n.getLink()).isEqualTo("/soiree");
+    }
+
+    @Test
+    void on_n_est_pas_prevenu_de_sa_propre_reponse() {
+        notifier.replied(kader, kader, "Bien vu", "/soiree");
+
+        verify(notificationRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void celui_qui_a_repondu_et_tague_le_meme_joueur_ne_le_previent_qu_une_fois() {
+        when(userRepository.findByUsernameIgnoreCase("Awa")).thenReturn(Optional.of(awa));
+
+        notifier.mentions(kader, "@Awa bien vu", "/soiree", null, "a");
+
+        verify(notificationRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void un_joueur_bloque_ne_previent_plus_personne() {
+        UserBlockRepository blocks = mock(UserBlockRepository.class);
+        when(blocks.existsById("a:k")).thenReturn(true);
+        org.springframework.test.util.ReflectionTestUtils.setField(notifier, "blockRepository", blocks);
+        when(userRepository.findByUsernameIgnoreCase("Awa")).thenReturn(Optional.of(awa));
+        betOf(awa, "LAL (V)");
+
+        notifier.replied(kader, awa, "Bien vu", "/soiree");
+        notifier.mentions(kader, "@Awa", "/soiree", null);
+        notifier.reacted(kader, "BET", "b1", "🔥");
+
+        verify(notificationRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
     void une_reaction_previent_l_auteur_du_ticket() {
         betOf(awa, "LAL (V)");
 
