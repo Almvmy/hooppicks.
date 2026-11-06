@@ -3,20 +3,29 @@ package com.hooppicks.backendapplication.chat;
 import com.hooppicks.backendapplication.bankroll.BankrollService;
 import com.hooppicks.backendapplication.entity.Debate;
 import com.hooppicks.backendapplication.entity.DebateVote;
+import com.hooppicks.backendapplication.entity.MatchType;
 import com.hooppicks.backendapplication.repository.DebateRepository;
 import com.hooppicks.backendapplication.repository.DebateVoteRepository;
 import com.hooppicks.backendapplication.repository.NightMessageRepository;
+import com.hooppicks.backendapplication.repository.PlayerMatchStatRepository;
+import com.hooppicks.backendapplication.repository.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Le débat du jour : une question par soirée NBA (12h → 12h GMT), deux camps.
@@ -31,6 +40,8 @@ public class DebateService {
     static final int MAX_QUESTION = 140;
     static final int MAX_OPTION = 40;
     private static final int PLANNING_DAYS = 7;
+    private static final int NEWS_KIND_COOLDOWN_DAYS = 5;
+    private static final int NEWS_SUBJECT_COOLDOWN_DAYS = 7;
 
     public record DebateDto(LocalDate day, String question, String optionA, String optionB, boolean open, String myVote,
                             Long votesA, Long votesB, long total, long comments, List<PastDebate> history) {}
@@ -43,20 +54,26 @@ public class DebateService {
     private final DebateVoteRepository voteRepository;
     private final NightMessageRepository messageRepository;
     private final NightThreadService threadService;
+    private final PlayerMatchStatRepository statRepository;
+    private final TeamRepository teamRepository;
     private final Clock clock;
 
     @Autowired
     public DebateService(DebateRepository debateRepository, DebateVoteRepository voteRepository,
-                         NightMessageRepository messageRepository, NightThreadService threadService) {
-        this(debateRepository, voteRepository, messageRepository, threadService, Clock.system(BankrollService.ZONE));
+                         NightMessageRepository messageRepository, NightThreadService threadService,
+                         PlayerMatchStatRepository statRepository, TeamRepository teamRepository) {
+        this(debateRepository, voteRepository, messageRepository, threadService, statRepository, teamRepository, Clock.system(BankrollService.ZONE));
     }
 
     DebateService(DebateRepository debateRepository, DebateVoteRepository voteRepository,
-                  NightMessageRepository messageRepository, NightThreadService threadService, Clock clock) {
+                  NightMessageRepository messageRepository, NightThreadService threadService,
+                  PlayerMatchStatRepository statRepository, TeamRepository teamRepository, Clock clock) {
         this.debateRepository = debateRepository;
         this.voteRepository = voteRepository;
         this.messageRepository = messageRepository;
         this.threadService = threadService;
+        this.statRepository = statRepository;
+        this.teamRepository = teamRepository;
         this.clock = clock;
     }
 
@@ -67,18 +84,58 @@ public class DebateService {
     // Deux joueurs peuvent ouvrir l'app en même temps à midi : le second retrouve la ligne du premier.
     private Debate ensure(LocalDate day) {
         return debateRepository.findById(day).orElseGet(() -> {
-            DebateBank.Question q = DebateBank.of(day);
-            Debate debate = new Debate();
-            debate.setDay(day);
-            debate.setQuestion(q.text());
-            debate.setOptionA(q.a());
-            debate.setOptionB(q.b());
+            Debate debate = choose(day);
             try {
                 return debateRepository.saveAndFlush(debate);
             } catch (DataIntegrityViolationException e) {
                 return debateRepository.findById(day).orElseThrow(() -> e);
             }
         });
+    }
+
+    private List<Debate> seasonSoFar(LocalDate day) {
+        int startYear = day.getMonthValue() >= 9 ? day.getYear() : day.getYear() - 1;
+        return debateRepository.findByDayGreaterThanEqual(LocalDate.of(startYear, 9, 1));
+    }
+
+    private static Set<String> keys(List<Debate> debates) {
+        return debates.stream().map(d -> DebateBank.key(d.getQuestion(), d.getOptionA())).collect(Collectors.toCollection(HashSet::new));
+    }
+
+    // L'actualité d'abord, un jour sur deux au plus, puis la liste sans rien répéter de la saison.
+    private Debate choose(LocalDate day) {
+        List<Debate> season = seasonSoFar(day);
+        Debate debate = new Debate();
+        debate.setDay(day);
+        boolean newsYesterday = season.stream().anyMatch(d -> d.getDay().equals(day.minusDays(1)) && d.getKind() != null);
+        Optional<DebateNews.News> news = newsYesterday ? Optional.empty() : news(day, season);
+        if (news.isPresent()) {
+            debate.setQuestion(news.get().question());
+            debate.setOptionA(news.get().optionA());
+            debate.setOptionB(news.get().optionB());
+            debate.setKind(news.get().kind());
+            return debate;
+        }
+        DebateBank.Question q = DebateBank.next(day, keys(season));
+        debate.setQuestion(q.text());
+        debate.setOptionA(q.a());
+        debate.setOptionB(q.b());
+        return debate;
+    }
+
+    private Optional<DebateNews.News> news(LocalDate day, List<Debate> season) {
+        Instant to = day.atTime(LocalTime.NOON).atZone(BankrollService.ZONE).toInstant();
+        List<DebateNews.Performance> night = statRepository.findFinishedBetween(to.minus(Duration.ofDays(1)), to).stream()
+                // Pas de débat sur un match de présaison, où les stars jouent à moitié.
+                .filter(s -> s.getMatch().getType() != MatchType.PRESEASON)
+                .map(s -> new DebateNews.Performance(s.getPlayerName(), s.getPoints(), s.getRebounds(), s.getAssists()))
+                .toList();
+        List<DebateNews.TeamForm> teams = teamRepository.findAll().stream().map(t -> new DebateNews.TeamForm(t.getName(), t.getStreak())).toList();
+        LocalDate kindSince = day.minusDays(NEWS_KIND_COOLDOWN_DAYS);
+        Set<String> blocked = season.stream().filter(d -> d.getKind() != null && !d.getDay().isBefore(kindSince)).map(Debate::getKind).collect(Collectors.toSet());
+        LocalDate subjectSince = day.minusDays(NEWS_SUBJECT_COOLDOWN_DAYS);
+        List<String> recent = season.stream().filter(d -> !d.getDay().isBefore(subjectSince)).map(Debate::getQuestion).toList();
+        return DebateNews.pick(day, night, teams, blocked, recent);
     }
 
     public DebateDto today(String userId) {
@@ -150,13 +207,18 @@ public class DebateService {
     /** Les 7 prochains jours, tels que les joueurs les verront. */
     public List<PlannedDebate> planning() {
         List<PlannedDebate> days = new ArrayList<>();
+        Set<String> used = keys(seasonSoFar(today()));
         for (int i = 0; i < PLANNING_DAYS; i++) {
             LocalDate day = today().plusDays(i);
             Debate d = debateRepository.findById(day).orElse(null);
-            DebateBank.Question q = DebateBank.of(day);
-            days.add(d == null
-                    ? new PlannedDebate(day, q.text(), q.a(), q.b(), false, 0)
-                    : new PlannedDebate(day, d.getQuestion(), d.getOptionA(), d.getOptionB(), Boolean.TRUE.equals(d.getPlanned()), voteRepository.countByDay(day)));
+            if (d != null) {
+                used.add(DebateBank.key(d.getQuestion(), d.getOptionA()));
+                days.add(new PlannedDebate(day, d.getQuestion(), d.getOptionA(), d.getOptionB(), Boolean.TRUE.equals(d.getPlanned()), voteRepository.countByDay(day)));
+            } else {
+                DebateBank.Question q = DebateBank.next(day, used);
+                used.add(DebateBank.key(q.text(), q.a()));
+                days.add(new PlannedDebate(day, q.text(), q.a(), q.b(), false, 0));
+            }
         }
         return days;
     }

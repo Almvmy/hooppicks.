@@ -34,7 +34,9 @@ class DebateServiceTest {
     private final DebateVoteRepository votes = mock(DebateVoteRepository.class);
     private final NightMessageRepository messages = mock(NightMessageRepository.class);
     private final NightThreadService thread = mock(NightThreadService.class);
-    private final DebateService service = new DebateService(debates, votes, messages, thread, Clock.fixed(NOW, BankrollService.ZONE));
+    private final com.hooppicks.backendapplication.repository.PlayerMatchStatRepository stats = mock(com.hooppicks.backendapplication.repository.PlayerMatchStatRepository.class);
+    private final com.hooppicks.backendapplication.repository.TeamRepository teams = mock(com.hooppicks.backendapplication.repository.TeamRepository.class);
+    private final DebateService service = new DebateService(debates, votes, messages, thread, stats, teams, Clock.fixed(NOW, BankrollService.ZONE));
 
     private Debate debate(LocalDate day) {
         Debate d = new Debate();
@@ -71,6 +73,66 @@ class DebateServiceTest {
 
         assertThat(dto.day()).isEqualTo(TODAY);
         assertThat(dto.question()).isEqualTo(DebateBank.of(TODAY).text());
+    }
+
+    private void noDebateYet() {
+        when(debates.findById(TODAY)).thenReturn(Optional.empty());
+        when(debates.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+    }
+
+    private com.hooppicks.backendapplication.entity.PlayerMatchStat line(String name, int points, com.hooppicks.backendapplication.entity.MatchType type) {
+        com.hooppicks.backendapplication.entity.Match match = new com.hooppicks.backendapplication.entity.Match();
+        match.setType(type);
+        com.hooppicks.backendapplication.entity.PlayerMatchStat s = new com.hooppicks.backendapplication.entity.PlayerMatchStat();
+        s.setMatch(match);
+        s.setPlayerName(name);
+        s.setPoints(points);
+        return s;
+    }
+
+    @Test
+    void un_exploit_de_la_nuit_passe_avant_la_liste() {
+        noDebateYet();
+        when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.REGULAR)));
+
+        assertThat(service.today("me").question()).startsWith("Edwards à 61 points");
+    }
+
+    @Test
+    void pas_de_debat_d_actualite_sur_la_presaison() {
+        noDebateYet();
+        when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.PRESEASON)));
+
+        assertThat(service.today("me").question()).isEqualTo(DebateBank.of(TODAY).text());
+    }
+
+    @Test
+    void jamais_deux_jours_d_actualite_de_suite() {
+        noDebateYet();
+        Debate yesterday = debate(TODAY.minusDays(1));
+        yesterday.setKind("serie");
+        when(debates.findByDayGreaterThanEqual(any())).thenReturn(List.of(yesterday));
+        when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.REGULAR)));
+
+        assertThat(service.today("me").question()).doesNotContain("Edwards");
+    }
+
+    @Test
+    void une_question_de_la_liste_ne_revient_pas_de_la_saison() {
+        noDebateYet();
+        DebateBank.Question todayQuestion = DebateBank.of(TODAY);
+        Debate past = debate(TODAY.minusDays(30));
+        past.setQuestion(todayQuestion.text());
+        past.setOptionA(todayQuestion.a());
+        when(debates.findByDayGreaterThanEqual(any())).thenReturn(List.of(past));
+
+        assertThat(service.today("me").question()).isNotEqualTo(todayQuestion.text());
+    }
+
+    @Test
+    void la_liste_compte_au_moins_150_questions_toutes_differentes() {
+        assertThat(DebateBank.QUESTIONS.size()).isGreaterThanOrEqualTo(150);
+        assertThat(DebateBank.QUESTIONS.stream().map(q -> DebateBank.key(q.text(), q.a())).toList()).doesNotHaveDuplicates();
     }
 
     @Test

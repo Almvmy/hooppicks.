@@ -9,4 +9,6 @@ import java.util.List;
 public interface QuizQuestionRepository extends JpaRepository<QuizQuestion, String> {
 
     List<QuizQuestion> findByDayOrderByPositionAsc(LocalDate day);
+
+    List<QuizQuestion> findByDayGreaterThanEqual(LocalDate day);
 }

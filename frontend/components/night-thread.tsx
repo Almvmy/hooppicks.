@@ -46,7 +46,8 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
     queryKey,
     queryFn: () => (debateDay ? fetchDebateComments(debateDay) : fetchNightFeed(matchId)),
     enabled: !!profile,
-    refetchInterval: 15_000,
+    // Le match avance vite : à 15 s, les réactions arrivaient après l'action.
+    refetchInterval: 5_000,
   });
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null);

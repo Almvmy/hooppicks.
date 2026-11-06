@@ -26,6 +26,10 @@ public class QuizQuestion {
 
     private int position;
 
+    /** Le modèle de question : le même ne revient pas deux jours de suite. */
+    @Column(length = 40)
+    private String kind;
+
     @Column(length = 200)
     private String text;
 

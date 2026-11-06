@@ -26,6 +26,10 @@ public class Debate {
     @Column(length = 40)
     private String optionB;
 
+    /** Type de débat tiré de l'actualité (exploit, série…), null pour la liste. */
+    @Column(length = 20)
+    private String kind;
+
     /** Écrit par un admin, pas tiré de la liste. */
     private Boolean planned;
 }

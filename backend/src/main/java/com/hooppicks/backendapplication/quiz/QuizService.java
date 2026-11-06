@@ -43,6 +43,7 @@ public class QuizService {
     static final Duration FEEDBACK = Duration.ofMillis(1500);
     static final int COUNTED_DAYS = 5;
     private static final int BOARD_SIZE = 50;
+    private static final int RECENT_KIND_DAYS = 2;
 
     public record QuestionDto(int index, int total, String text, String imageUrl, List<String> choices, double secondsLeft) {}
 
@@ -129,7 +130,7 @@ public class QuizService {
         List<QuizQuestion> existing = questionRepository.findByDayOrderByPositionAsc(day);
         if (!existing.isEmpty()) return existing;
         QuizGenerator.Facts facts = tx.execute(s -> readFacts(day));
-        List<QuizGenerator.Question> generated = QuizGenerator.generate(day, facts);
+        List<QuizGenerator.Question> generated = QuizGenerator.generate(day, facts, history(day));
         List<QuizQuestion> rows = new ArrayList<>();
         for (int i = 0; i < generated.size(); i++) {
             QuizGenerator.Question g = generated.get(i);
@@ -137,6 +138,7 @@ public class QuizService {
             q.setId(day + ":" + i);
             q.setDay(day);
             q.setPosition(i);
+            q.setKind(g.kind());
             q.setText(g.text());
             q.setImageUrl(g.imageUrl());
             q.setChoices(String.join("\n", g.choices()));
@@ -151,22 +153,31 @@ public class QuizService {
         return rows;
     }
 
+    private QuizGenerator.History history(LocalDate day) {
+        int startYear = day.getMonthValue() >= 9 ? day.getYear() : day.getYear() - 1;
+        List<QuizQuestion> season = questionRepository.findByDayGreaterThanEqual(LocalDate.of(startYear, 9, 1));
+        Set<String> used = season.stream().map(QuizQuestion::getText).collect(Collectors.toSet());
+        LocalDate recent = day.minusDays(RECENT_KIND_DAYS);
+        Set<String> kinds = season.stream().filter(q -> !q.getDay().isBefore(recent) && q.getKind() != null).map(QuizQuestion::getKind).collect(Collectors.toSet());
+        return new QuizGenerator.History(used, kinds);
+    }
+
     private QuizGenerator.Facts readFacts(LocalDate day) {
         Instant to = day.atTime(LocalTime.NOON).atZone(BankrollService.ZONE).toInstant();
         Instant from = to.minus(Duration.ofDays(1));
         List<QuizGenerator.PlayerFact> players = rosterRepository.findAllWithTeam().stream()
                 .map(r -> new QuizGenerator.PlayerFact(fullName(r), r.getTeam() == null ? null : r.getTeam().getName(), r.getJersey(),
-                        r.getHeadshotUrl(), r.getMinutesPerGame(), r.getGamesPlayed(), r.getPointsPerGame(), r.getReboundsPerGame(), r.getAssistsPerGame()))
+                        r.getHeadshotUrl(), r.getMinutesPerGame(), r.getGamesPlayed(), r.getPointsPerGame(), r.getReboundsPerGame(), r.getAssistsPerGame(), r.getThreePointersMadePerGame()))
                 .toList();
         List<QuizGenerator.TeamFact> teams = teamRepository.findAll().stream()
-                .map(t -> new QuizGenerator.TeamFact(t.getName(), t.getConference(), t.getWins(), t.getLosses()))
+                .map(t -> new QuizGenerator.TeamFact(t.getName(), t.getConference(), t.getWins(), t.getLosses(), t.getConferenceSeed(), t.getStreak()))
                 .toList();
         List<QuizGenerator.GameFact> games = matchRepository.findByStatusAndDateBetween(MatchStatus.FINISHED, from, to).stream()
                 .filter(m -> m.getHomeScore() != null && m.getAwayScore() != null)
                 .map(m -> new QuizGenerator.GameFact(m.getAwayTeam().getAbbreviation(), m.getHomeTeam().getAbbreviation(), m.getAwayScore(), m.getHomeScore()))
                 .toList();
         List<QuizGenerator.NightLine> lines = statRepository.findFinishedBetween(from, to).stream()
-                .map(s -> new QuizGenerator.NightLine(s.getPlayerName(), s.getPoints()))
+                .map(s -> new QuizGenerator.NightLine(s.getPlayerName(), s.getPoints(), s.getRebounds(), s.getAssists(), s.getThreePointsMade()))
                 .toList();
         return new QuizGenerator.Facts(players, teams, games, lines);
     }

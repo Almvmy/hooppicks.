@@ -108,7 +108,7 @@ export default function LeagueDetailPage({
     queryKey: ["league-activity", id],
     queryFn: () => fetchLeagueActivity(id),
     // La discussion arrive sans recharger la page, seulement quand on la regarde.
-    refetchInterval: tab === "fil" ? 20_000 : false,
+    refetchInterval: tab === "fil" ? 5_000 : false,
   });
 
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: fetchProfile });

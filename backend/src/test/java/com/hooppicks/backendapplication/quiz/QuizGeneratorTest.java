@@ -86,7 +86,7 @@ class QuizGeneratorTest {
     void le_meilleur_marqueur_est_bien_la_bonne_reponse() {
         for (int i = 0; i < 60; i++) {
             for (QuizGenerator.Question q : QuizGenerator.generate(DAY.plusDays(i), rich())) {
-                if (q.text().startsWith("Qui a marqué")) assertThat(q.choices().get(q.correct())).isEqualTo("Joueur 0");
+                if (q.text().equals("Qui a marqué le plus de points la nuit dernière ?")) assertThat(q.choices().get(q.correct())).isEqualTo("Joueur 0");
             }
         }
     }
@@ -97,7 +97,18 @@ class QuizGeneratorTest {
                 new QuizGenerator.NightLine("C", 30), new QuizGenerator.NightLine("D", 20));
         QuizGenerator.Facts facts = new QuizGenerator.Facts(List.of(), List.of(), List.of(), tied);
         for (int i = 0; i < 30; i++) {
-            assertThat(QuizGenerator.generate(DAY.plusDays(i), facts)).noneMatch(q -> q.text().startsWith("Qui a marqué"));
+            assertThat(QuizGenerator.generate(DAY.plusDays(i), facts)).noneMatch(q -> q.text().equals("Qui a marqué le plus de points la nuit dernière ?"));
+        }
+    }
+
+    @Test
+    void seulement_les_120_meilleurs_marqueurs() {
+        List<QuizGenerator.PlayerFact> players = new ArrayList<>();
+        for (int i = 0; i < 120; i++) players.add(new QuizGenerator.PlayerFact("Connu " + i, "Équipe " + (i % 8), "1", "https://p/" + i, 30.0, 10, 30.0 - i * 0.1, 5.0, 5.0));
+        for (int i = 0; i < 40; i++) players.add(new QuizGenerator.PlayerFact("Inconnu " + i, "Équipe " + (i % 8), "1", "https://q/" + i, 22.0, 10, 5.0, 3.0, 1.0));
+        QuizGenerator.Facts facts = new QuizGenerator.Facts(players, List.of(), List.of(), List.of());
+        for (int i = 0; i < 60; i++) {
+            assertThat(QuizGenerator.generate(DAY.plusDays(i), facts)).noneMatch(q -> q.text().contains("Inconnu") || String.join(" ", q.choices()).contains("Inconnu"));
         }
     }
 
@@ -112,12 +123,112 @@ class QuizGeneratorTest {
     }
 
     @Test
-    void la_liste_d_histoire_ne_se_repete_pas_avant_un_mois() {
-        HashSet<String> seen = new HashSet<>();
-        for (int i = 0; i < 28; i++) {
-            assertThat(seen.add(QuizBank.of(DAY.plusDays(i), 0).text())).isTrue();
-            assertThat(seen.add(QuizBank.of(DAY.plusDays(i), 1).text())).isTrue();
+    void la_liste_d_histoire_est_assez_longue_et_bien_formee() {
+        assertThat(QuizBank.ITEMS.size()).isGreaterThanOrEqualTo(200);
+        assertThat(QuizBank.ITEMS).allSatisfy(item -> {
+            assertThat(item.choices()).hasSize(4).doesNotHaveDuplicates();
+            assertThat(item.text().length()).isLessThanOrEqualTo(200);
+        });
+        assertThat(QuizBank.ITEMS.stream().map(QuizBank.Item::text).toList()).doesNotHaveDuplicates();
+    }
+
+    @Test
+    void aucune_question_d_histoire_ne_revient_tant_qu_il_en_reste() {
+        HashSet<String> used = new HashSet<>();
+        int perDay = 2;
+        for (int i = 0; i < QuizBank.ITEMS.size() / perDay - 15; i++) {
+            for (QuizBank.Item item : QuizBank.pick(DAY.plusDays(i), perDay, used)) {
+                assertThat(used.add(item.text())).as(item.text()).isTrue();
+            }
         }
-        assertThat(QuizBank.ITEMS).allSatisfy(item -> assertThat(item.choices()).hasSize(4).doesNotHaveDuplicates());
+    }
+
+    @Test
+    void pas_deux_questions_du_meme_theme_le_meme_jour() {
+        for (int i = 0; i < 100; i++) {
+            List<String> themes = QuizBank.pick(DAY.plusDays(i), 5, java.util.Set.of()).stream().map(QuizBank.Item::theme).toList();
+            assertThat(themes).hasSize(5).doesNotHaveDuplicates();
+        }
+    }
+
+    @Test
+    void liste_epuisee_le_quiz_reste_complet() {
+        java.util.Set<String> all = QuizBank.ITEMS.stream().map(QuizBank.Item::text).collect(java.util.stream.Collectors.toSet());
+        assertThat(QuizBank.pick(DAY, 2, all)).hasSize(2);
+    }
+
+    @Test
+    void le_meme_modele_ne_revient_pas_le_lendemain_quand_il_y_a_le_choix() {
+        QuizGenerator.Facts facts = fullNight();
+        java.util.Set<String> recent = new HashSet<>();
+        for (int i = 0; i < 40; i++) {
+            List<QuizGenerator.Question> questions = QuizGenerator.generate(DAY.plusDays(i), facts, new QuizGenerator.History(java.util.Set.of(), java.util.Set.copyOf(recent)));
+            List<String> dataKinds = questions.stream().map(QuizGenerator.Question::kind).filter(k -> !k.startsWith("histoire-")).toList();
+            assertThat(dataKinds).doesNotHaveDuplicates().hasSize(3).noneMatch(recent::contains);
+            recent = new HashSet<>(dataKinds);
+        }
+    }
+
+    @Test
+    void chaque_modele_de_la_nuit_donne_la_bonne_reponse() {
+        QuizGenerator.Facts facts = fullNight();
+        java.util.Map<String, String> expected = new java.util.HashMap<>();
+        expected.put("Qui a marqué le plus de points la nuit dernière ?", "Joueur 0");
+        expected.put("Qui a pris le plus de rebonds la nuit dernière ?", "Rebondeur");
+        expected.put("Qui a fait le plus de passes la nuit dernière ?", "Passeur");
+        expected.put("Qui a réussi le plus de tirs à 3 points la nuit dernière ?", "Sniper");
+        expected.put("Qui a réussi un triple-double la nuit dernière ?", "Polyvalent");
+        expected.put("Quel match a fini avec le plus gros écart la nuit dernière ?", "A @ B");
+        java.util.Set<String> seen = new HashSet<>();
+        for (int i = 0; i < 300; i++) {
+            for (QuizGenerator.Question q : QuizGenerator.generate(DAY.plusDays(i), facts)) {
+                if (expected.containsKey(q.text()) && q.choices().contains(expected.get(q.text()))) {
+                    assertThat(q.choices().get(q.correct())).as(q.text()).isEqualTo(expected.get(q.text()));
+                    seen.add(q.text());
+                }
+            }
+        }
+        assertThat(seen).hasSize(expected.size());
+    }
+
+    @Test
+    void qui_mene_la_conference_et_plus_longue_serie() {
+        List<QuizGenerator.TeamFact> teams = new ArrayList<>();
+        for (int i = 1; i <= 15; i++) {
+            teams.add(new QuizGenerator.TeamFact("Est " + i, "Est", 20 - i, i, i, "W" + (16 - i)));
+            teams.add(new QuizGenerator.TeamFact("Ouest " + i, "Ouest", 20 - i, i, i, "L" + i));
+        }
+        QuizGenerator.Facts facts = new QuizGenerator.Facts(List.of(), teams, List.of(), List.of());
+        int checked = 0;
+        for (int i = 0; i < 300; i++) {
+            for (QuizGenerator.Question q : QuizGenerator.generate(DAY.plusDays(i), facts)) {
+                if (q.text().startsWith("Qui mène la conférence Est")) {
+                    assertThat(q.choices().get(q.correct())).isEqualTo("Est 1");
+                    checked++;
+                }
+                if (q.text().startsWith("Laquelle de ces équipes a la plus longue série")) {
+                    int best = q.choices().stream().filter(c -> c.startsWith("Est")).mapToInt(c -> 16 - Integer.parseInt(c.substring(4))).max().orElse(0);
+                    assertThat(q.choices().get(q.correct())).isEqualTo("Est " + (16 - best));
+                    checked++;
+                }
+            }
+        }
+        assertThat(checked).isGreaterThan(0);
+    }
+
+    private static QuizGenerator.Facts fullNight() {
+        List<QuizGenerator.NightLine> lines = new ArrayList<>();
+        for (int i = 0; i < 16; i++) lines.add(new QuizGenerator.NightLine("Joueur " + i, 40 - i, 3, 2, 1));
+        lines.add(new QuizGenerator.NightLine("Rebondeur", 8, 19, 1, 0));
+        lines.add(new QuizGenerator.NightLine("Passeur", 7, 2, 17, 0));
+        lines.add(new QuizGenerator.NightLine("Sniper", 9, 1, 1, 9));
+        lines.add(new QuizGenerator.NightLine("Polyvalent", 14, 11, 12, 0));
+        List<QuizGenerator.GameFact> games = List.of(
+                new QuizGenerator.GameFact("A", "B", 90, 130),
+                new QuizGenerator.GameFact("C", "D", 100, 104),
+                new QuizGenerator.GameFact("E", "F", 110, 101),
+                new QuizGenerator.GameFact("G", "H", 99, 98));
+        QuizGenerator.Facts base = rich();
+        return new QuizGenerator.Facts(base.players(), base.teams(), games, lines);
     }
 }

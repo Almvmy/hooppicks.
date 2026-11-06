@@ -9,4 +9,6 @@ import java.util.List;
 public interface DebateRepository extends JpaRepository<Debate, LocalDate> {
 
     List<Debate> findTop7ByDayLessThanOrderByDayDesc(LocalDate day);
+
+    List<Debate> findByDayGreaterThanEqual(LocalDate day);
 }
