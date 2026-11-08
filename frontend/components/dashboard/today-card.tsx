@@ -16,7 +16,7 @@ import { cn, formatMatchDate } from "@/lib/utils";
 
 const DAY = 24 * 3600 * 1000;
 
-/** Début de la soirée NBA en cours : 12h GMT, comme le quiz et le débat. */
+/** Début de la soirée NBA en cours : 12h GMT, comme le fil et la semaine (le quiz et le débat changent à 8h, côté serveur). */
 function nightStart(now: number): number {
   const d = new Date(now);
   const noon = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12);

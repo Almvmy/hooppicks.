@@ -212,7 +212,7 @@ function QuizBoardSection() {
     <section className="flex flex-col gap-3">
       <div>
         <h2 className="font-heading text-lg font-bold">Classement de la semaine</h2>
-        <p className="text-xs text-muted-foreground">Tes 5 meilleurs jours comptent. Remise à zéro le lundi à 12h GMT.</p>
+        <p className="text-xs text-muted-foreground">Tes 5 meilleurs jours comptent. Remise à zéro le lundi à 8h GMT.</p>
       </div>
       {data?.lastChampion && (
         <p className="glass flex items-center gap-2 rounded-2xl px-4 py-3 text-sm">

@@ -100,6 +100,17 @@ class DebateServiceTest {
     }
 
     @Test
+    void le_debat_change_a_8h_gmt_et_lit_la_nuit_qui_vient_de_finir() {
+        DebateService morning = new DebateService(debates, votes, messages, thread, stats, teams, roster,
+                Clock.fixed(Instant.parse("2026-11-07T08:05:00Z"), BankrollService.ZONE));
+        when(debates.findById(any())).thenReturn(java.util.Optional.empty());
+        when(debates.saveAndFlush(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        assertThat(morning.today("me").day()).isEqualTo(LocalDate.of(2026, 11, 7));
+        verify(stats).findFinishedBetween(Instant.parse("2026-11-06T08:00:00Z"), Instant.parse("2026-11-07T08:00:00Z"));
+    }
+
+    @Test
     void un_debat_d_actualite_porte_la_photo_du_joueur() {
         noDebateYet();
         when(stats.findFinishedBetween(any(), any())).thenReturn(List.of(line("Anthony Edwards", 61, com.hooppicks.backendapplication.entity.MatchType.REGULAR)));

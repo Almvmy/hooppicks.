@@ -261,9 +261,10 @@ class QuizServiceTest {
     }
 
     @Test
-    void la_semaine_commence_le_lundi_a_midi() {
-        // Lundi matin : encore la soirée de dimanche, donc la semaine d'avant.
-        assertThat(at(Instant.parse("2026-11-09T08:00:00Z")).state("me").day()).isEqualTo(LocalDate.of(2026, 11, 8));
+    void la_semaine_commence_le_lundi_a_8h() {
+        // Lundi avant 8h GMT : encore le jour de dimanche, donc la semaine d'avant.
+        assertThat(at(Instant.parse("2026-11-09T07:59:00Z")).state("me").day()).isEqualTo(LocalDate.of(2026, 11, 8));
+        assertThat(at(Instant.parse("2026-11-09T08:00:00Z")).state("me").day()).isEqualTo(LocalDate.of(2026, 11, 9));
         assertThat(QuizService.weekOf(LocalDate.of(2026, 11, 8))).isEqualTo(WEEK);
         assertThat(QuizService.weekOf(LocalDate.of(2026, 11, 9))).isEqualTo(LocalDate.of(2026, 11, 9));
     }

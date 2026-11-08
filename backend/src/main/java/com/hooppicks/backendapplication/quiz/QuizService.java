@@ -1,7 +1,7 @@
 package com.hooppicks.backendapplication.quiz;
 
 import com.hooppicks.backendapplication.bankroll.BankrollService;
-import com.hooppicks.backendapplication.chat.NightThreadService;
+import com.hooppicks.backendapplication.bankroll.GameDay;
 import com.hooppicks.backendapplication.entity.*;
 import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.repository.*;
@@ -15,7 +15,6 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.function.Function;
@@ -108,7 +107,7 @@ public class QuizService {
     }
 
     private LocalDate today() {
-        return NightThreadService.nightOf(clock.instant());
+        return GameDay.of(clock.instant());
     }
 
     static LocalDate weekOf(LocalDate day) {
@@ -163,7 +162,7 @@ public class QuizService {
     }
 
     private QuizGenerator.Facts readFacts(LocalDate day) {
-        Instant to = day.atTime(LocalTime.NOON).atZone(BankrollService.ZONE).toInstant();
+        Instant to = GameDay.start(day);
         Instant from = to.minus(Duration.ofDays(1));
         List<QuizGenerator.PlayerFact> players = rosterRepository.findAllWithTeam().stream()
                 .map(r -> new QuizGenerator.PlayerFact(fullName(r), r.getTeam() == null ? null : r.getTeam().getName(), r.getJersey(),

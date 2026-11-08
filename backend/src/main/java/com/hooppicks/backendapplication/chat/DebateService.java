@@ -1,6 +1,7 @@
 package com.hooppicks.backendapplication.chat;
 
 import com.hooppicks.backendapplication.bankroll.BankrollService;
+import com.hooppicks.backendapplication.bankroll.GameDay;
 import com.hooppicks.backendapplication.bet.PlayerPropsService;
 import com.hooppicks.backendapplication.entity.Debate;
 import com.hooppicks.backendapplication.entity.DebateVote;
@@ -21,7 +22,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,7 +86,7 @@ public class DebateService {
     }
 
     private LocalDate today() {
-        return NightThreadService.nightOf(clock.instant());
+        return GameDay.of(clock.instant());
     }
 
     // Deux joueurs peuvent ouvrir l'app en même temps à midi : le second retrouve la ligne du premier.
@@ -133,7 +133,7 @@ public class DebateService {
     }
 
     private Optional<DebateNews.News> news(LocalDate day, List<Debate> season) {
-        Instant to = day.atTime(LocalTime.NOON).atZone(BankrollService.ZONE).toInstant();
+        Instant to = GameDay.start(day);
         List<DebateNews.Performance> night = statRepository.findFinishedBetween(to.minus(Duration.ofDays(1)), to).stream()
                 // Pas de débat sur un match de présaison, où les stars jouent à moitié.
                 .filter(s -> s.getMatch().getType() != MatchType.PRESEASON)
