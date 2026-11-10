@@ -22,6 +22,8 @@ public class AppNotification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
+    // 1000 : une annonce de la console fait jusqu'à 280 caractères (agrandie au démarrage par ColumnWidening).
+    @Column(length = 1000)
     private String message;
 
     /** Page où mène la notification, quand son type ne suffit pas à le dire (une ligue précise…). */
