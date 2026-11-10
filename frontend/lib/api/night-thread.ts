@@ -21,6 +21,8 @@ export interface NightMessage {
   mine: boolean;
   reportedByMe: boolean;
   reply: ReplyPreview | null;
+  /** Pseudos tagués (null : ancien message, les @mots simples sont reconnus à l'affichage). */
+  mentions: string[] | null;
 }
 
 export interface NightFeed {

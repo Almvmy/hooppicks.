@@ -177,4 +177,29 @@ class SocialNotifierTest {
 
         verify(notificationRepository, times(SocialNotifier.MAX_MENTIONS)).save(any());
     }
+    @Test
+    void un_pseudo_avec_une_espace_et_un_emoji_est_tague_en_entier() {
+        User spidey = user("s", "Spidey \uD83D\uDD77");
+        when(userRepository.findTop20ByUsernameStartingWithIgnoreCase("Spidey")).thenReturn(List.of(user("x", "Spid"), spidey));
+
+        List<String> tagged = notifier.mentions(kader, "Bien vu @Spidey \uD83D\uDD77 !", "/soiree", null);
+
+        assertThat(tagged).containsExactly("Spidey \uD83D\uDD77");
+        verify(notificationRepository).save(any());
+    }
+
+    @Test
+    void le_pseudo_le_plus_long_ecrit_en_entier_l_emporte() {
+        User jean = user("j", "Jean");
+        User jeanKader = user("jk", "Jean Kader");
+        when(userRepository.findTop20ByUsernameStartingWithIgnoreCase("Jean")).thenReturn(List.of(jean, jeanKader));
+
+        assertThat(notifier.mentions(kader, "@Jean Kader, @Jean Marc", "/x", null)).containsExactly("Jean Kader", "Jean");
+    }
+
+    @Test
+    void un_tag_sur_un_pseudo_inconnu_ne_donne_rien() {
+        assertThat(notifier.mentions(kader, "@Personne ici", "/x", null)).isEmpty();
+        verify(notificationRepository, org.mockito.Mockito.never()).save(any());
+    }
 }

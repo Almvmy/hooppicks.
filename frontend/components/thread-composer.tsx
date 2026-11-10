@@ -23,19 +23,30 @@ const MENTION_AT_CARET = /(?<![\p{L}\p{N}_])@([\p{L}\p{N}_.-]{0,30})$/u;
 /** Id d'un message dans la page : c'est là que ramène l'extrait d'une réponse. */
 export const threadMessageId = (id: string) => `fil-${id}`;
 
-/** @pseudo cliquable. */
-export function MessageText({ text }: { text: string }) {
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * @pseudo cliquable. `mentions` : les pseudos tagués, reconnus par le serveur à l'envoi
+ * (un pseudo peut contenir une espace ou un emoji, « @Spidey 🕷 ») ; sans eux (anciens
+ * messages), on reconnaît les @mots simples comme avant.
+ */
+export function MessageText({ text, mentions }: { text: string; mentions?: string[] | null }) {
+  const names = [...new Set(mentions ?? [])].sort((a, b) => b.length - a.length);
+  const pattern = names.length
+    ? new RegExp(`((?<![\\p{L}\\p{N}_])@(?:${names.map(escapeRegExp).join("|")})(?![\\p{L}\\p{N}_]))`, "iu")
+    : /((?<![\p{L}\p{N}_])@[\p{L}\p{N}_.-]{2,30})/u;
   return (
     <>
-      {text.split(/((?<![\p{L}\p{N}_])@[\p{L}\p{N}_.-]{2,30})/u).map((part, i) =>
-        i % 2 === 1 ? (
-          <Link key={i} href={`/u/${encodeURIComponent(part.slice(1).replace(/[.-]+$/, ""))}`} className="font-semibold text-primary hover:underline">
+      {text.split(pattern).map((part, i) => {
+        if (i % 2 === 0) return part;
+        const typed = part.slice(1);
+        const username = names.find((n) => n.toLowerCase() === typed.toLowerCase()) ?? typed.replace(/[.-]+$/, "");
+        return (
+          <Link key={i} href={`/u/${encodeURIComponent(username)}`} className="font-semibold text-primary hover:underline">
             {part}
           </Link>
-        ) : (
-          part
-        )
-      )}
+        );
+      })}
     </>
   );
 }

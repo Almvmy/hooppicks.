@@ -447,7 +447,7 @@ export default function LeagueDetailPage({
                           </div>
                         )}
                         <p className="mt-0.5 whitespace-pre-wrap break-words">
-                          <MessageText text={event.message} />
+                          <MessageText text={event.message} mentions={event.mentions} />
                         </p>
                       </>
                     ) : (

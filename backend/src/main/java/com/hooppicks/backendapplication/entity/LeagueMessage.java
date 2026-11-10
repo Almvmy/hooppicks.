@@ -33,4 +33,8 @@ public class LeagueMessage {
     /** Le message auquel celui-ci répond. Sans clé étrangère : il peut disparaître, la réponse reste. */
     @Column(name = "reply_to_id")
     private String replyToId;
+
+    /** Pseudos tagués, un par ligne, tels qu'en base au moment d'écrire : l'app en fait des liens (un pseudo peut contenir une espace). */
+    @Column(length = 400)
+    private String mentions;
 }

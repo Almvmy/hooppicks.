@@ -140,11 +140,11 @@ public class LeagueService {
     private record RawActivity(
             String targetType, String targetId, String username, String message, java.time.Instant occurredAt,
             int avatarNumber, String avatarPosition, String avatarColorway, String avatarIcon,
-            boolean deletable, List<LeagueActivityDto.CopySelection> selections
+            boolean deletable, List<LeagueActivityDto.CopySelection> selections, List<String> mentions
     ) {
         RawActivity(String targetType, String targetId, User user, String message, java.time.Instant occurredAt) {
             this(targetType, targetId, user.getUsername(), message, occurredAt, user.getAvatarNumber(),
-                    user.getAvatarPosition(), user.getAvatarColorway(), user.getAvatarIcon(), false, List.of());
+                    user.getAvatarPosition(), user.getAvatarColorway(), user.getAvatarIcon(), false, List.of(), null);
         }
     }
 
@@ -191,7 +191,7 @@ public class LeagueService {
                     "BET", bet.getId(), u.getUsername(),
                     "a misé " + bet.getStake() + " pts sur " + selectionsSummary(bet), bet.getPlacedAt(),
                     u.getAvatarNumber(), u.getAvatarPosition(), u.getAvatarColorway(), u.getAvatarIcon(),
-                    false, u.getId().equals(requestingUserId) ? List.of() : copyable(bet)
+                    false, u.getId().equals(requestingUserId) ? List.of() : copyable(bet), null
             ));
         }
 
@@ -224,7 +224,8 @@ public class LeagueService {
                 User u = m.getUser();
                 activity.add(new RawActivity("MESSAGE", m.getId(), u.getUsername(), m.getText(), m.getCreatedAt(),
                         u.getAvatarNumber(), u.getAvatarPosition(), u.getAvatarColorway(), u.getAvatarIcon(),
-                        owner || u.getId().equals(requestingUserId), List.of()));
+                        owner || u.getId().equals(requestingUserId), List.of(),
+                        com.hooppicks.backendapplication.chat.NightThreadService.mentionList(m.getMentions())));
             }
         }
 
@@ -287,18 +288,20 @@ public class LeagueService {
         message.setUser(userRepository.findById(userId).orElseThrow());
         message.setText(text);
         message.setCreatedAt(now);
-        messageRepository.save(message);
         if (socialNotifier != null) {
             Set<String> members = membershipRepository.findByLeagueId(leagueId).stream()
                     .map(m -> m.getUser().getId()).collect(Collectors.toSet());
             String link = "/leagues/" + leagueId;
+            List<String> tagged;
             if (parent == null) {
-                socialNotifier.mentions(message.getUser(), text, link, members);
+                tagged = socialNotifier.mentions(message.getUser(), text, link, members);
             } else {
                 socialNotifier.replied(message.getUser(), parent.getUser(), text, link);
-                socialNotifier.mentions(message.getUser(), text, link, members, parent.getUser().getId());
+                tagged = socialNotifier.mentions(message.getUser(), text, link, members, parent.getUser().getId());
             }
+            message.setMentions(com.hooppicks.backendapplication.chat.NightThreadService.joinMentions(tagged));
         }
+        messageRepository.save(message);
     }
 
     /** Par son auteur ou par le créateur de la ligue, seule modération d'un fil privé entre amis. */
@@ -347,7 +350,7 @@ public class LeagueService {
             return new LeagueActivityDto(
                     item.targetType(), item.targetId(), item.username(), item.message(), item.occurredAt(),
                     item.avatarNumber(), item.avatarPosition(), item.avatarColorway(), item.avatarIcon(),
-                    counts, mine, item.deletable(), item.selections(), replies.get(item.targetId())
+                    counts, mine, item.deletable(), item.selections(), replies.get(item.targetId()), item.mentions()
             );
         }).toList();
     }

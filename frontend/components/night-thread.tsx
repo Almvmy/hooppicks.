@@ -185,7 +185,7 @@ export function NightThread({ matchId, debateDay }: { matchId?: string; debateDa
                   </div>
                 )}
                 <p className="mt-0.5 break-words text-sm">
-                  <MessageText text={m.text} />
+                  <MessageText text={m.text} mentions={m.mentions} />
                 </p>
                 <div className="mt-1.5 flex items-center gap-1">
                   {EMOJIS.map((emoji) => {

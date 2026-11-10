@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     /** Sept : le joueur qui écrit peut en faire partie, il en reste six à proposer. */
     java.util.List<User> findTop7ByUsernameStartingWithIgnoreCaseOrderByUsernameAsc(String prefix);
 
+    /** Les pseudos qui commencent comme un tag : « @Spidey » peut viser « Spidey 🕷 » (cf. Mentions). */
+    java.util.List<User> findTop20ByUsernameStartingWithIgnoreCase(String prefix);
+
     java.util.List<User> findByChatMutedUntilAfter(java.time.Instant now);
 
     long countByReferredBy(String referrerId);

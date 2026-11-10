@@ -5,11 +5,9 @@ import com.hooppicks.backendapplication.push.PushService;
 import com.hooppicks.backendapplication.repository.*;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -24,7 +22,6 @@ public class SocialNotifier {
     private static final int MAX_MESSAGE = 240;
     // Garde-fou : un message qui cite tout le monde ne notifie pas tout le monde.
     static final int MAX_MENTIONS = 5;
-    private static final Pattern MENTION = Pattern.compile("(?<![\\p{L}\\p{N}_])@([\\p{L}\\p{N}_.-]{2,30})");
 
     private final BetRepository betRepository;
     private final LeagueMessageRepository messageRepository;
@@ -95,32 +92,29 @@ public class SocialNotifier {
      * @pseudo dans un message. `allowedIds` : seuls ces joueurs peuvent être
      * cités (les membres, pour un fil de ligue) ; null : tout le monde.
      */
-    public void mentions(User author, String text, String link, Set<String> allowedIds) {
-        mentions(author, text, link, allowedIds, null);
+    public List<String> mentions(User author, String text, String link, Set<String> allowedIds) {
+        return mentions(author, text, link, allowedIds, null);
     }
 
-    /** `alreadyNotified` : déjà prévenu par ailleurs (l'auteur du message auquel on répond) : pas deux notifications. */
-    public void mentions(User author, String text, String link, Set<String> allowedIds, String alreadyNotified) {
-        Set<String> names = new LinkedHashSet<>();
-        Matcher m = MENTION.matcher(text == null ? "" : text);
-        while (m.find() && names.size() < MAX_MENTIONS) names.add(stripEnd(m.group(1)));
-        for (String name : names) {
-            User cited = userRepository.findByUsernameIgnoreCase(name).orElse(null);
-            if (cited == null || cited.getId().equals(author.getId()) || cited.getId().equals(alreadyNotified) || blocks(cited, author)) continue;
+    /**
+     * `alreadyNotified` : déjà prévenu par ailleurs (l'auteur du message auquel on répond) : pas deux notifications.
+     * Renvoie les pseudos tagués (tels qu'en base), gardés avec le message pour les afficher en lien.
+     */
+    public List<String> mentions(User author, String text, String link, Set<String> allowedIds, String alreadyNotified) {
+        List<String> tagged = new java.util.ArrayList<>();
+        for (User cited : Mentions.resolve(text, userRepository, MAX_MENTIONS)) {
             if (allowedIds != null && !allowedIds.contains(cited.getId())) continue;
+            tagged.add(cited.getUsername());
+            if (cited.getId().equals(author.getId()) || cited.getId().equals(alreadyNotified) || blocks(cited, author)) continue;
             send(cited, author.getUsername() + " t'a cité : « " + text + " »", link, "On parle de toi");
         }
+        return tagged;
     }
 
     /** Une réponse à son message prévient l'auteur, sans qu'on ait à le taguer. */
     public void replied(User author, User to, String text, String link) {
         if (to == null || to.getId().equals(author.getId()) || blocks(to, author)) return;
         send(to, author.getUsername() + " a répondu à ton message : « " + text + " »", link, "Nouvelle réponse");
-    }
-
-    // « @Kader. » : le point final n'appartient pas au pseudo.
-    private static String stripEnd(String name) {
-        return name.replaceAll("[.-]+$", "");
     }
 
     private void send(User to, String rawMessage, String link, String pushTitle) {

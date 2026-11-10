@@ -43,7 +43,7 @@ public class NightThreadService {
     public record Message(String id, boolean auto, String username, Integer avatarNumber, String avatarPosition,
                           String avatarColorway, String avatarIcon, String text, String matchId, String matchLabel,
                           String camp, Instant createdAt, Map<String, Integer> reactionCounts, List<String> myReactions,
-                          boolean mine, boolean reportedByMe, ReplyPreview reply) {}
+                          boolean mine, boolean reportedByMe, ReplyPreview reply, List<String> mentions) {}
 
     /** `cannotWrite` : pourquoi ce joueur ne peut pas écrire, null s'il le peut. */
     public record Feed(LocalDate night, List<Message> messages, String cannotWrite) {}
@@ -150,7 +150,8 @@ public class NightThreadService {
                     m.getText(), m.getMatchId(), match == null ? null : label(match),
                     u == null ? null : sides != null ? sides.get(u.getId()) : camps.get(campKey(u.getId(), m.getMatchId())), m.getCreatedAt(),
                     counts.getOrDefault(m.getId(), Map.of()), mine.getOrDefault(m.getId(), List.of()),
-                    u != null && u.getId().equals(userId), reported.contains(m.getId()), reply(m.getReplyToId(), parents, blocked));
+                    u != null && u.getId().equals(userId), reported.contains(m.getId()), reply(m.getReplyToId(), parents, blocked),
+                    mentionList(m.getMentions()));
         }).toList();
     }
 
@@ -279,13 +280,24 @@ public class NightThreadService {
         message.setUser(userRepository.findById(userId).orElseThrow());
         message.setText(text);
         message.setCreatedAt(now);
-        messageRepository.save(message);
+        java.util.List<String> tagged;
         if (parent == null) {
-            socialNotifier.mentions(message.getUser(), text, link, null);
+            tagged = socialNotifier.mentions(message.getUser(), text, link, null);
         } else {
             socialNotifier.replied(message.getUser(), parent.getUser(), text, link);
-            socialNotifier.mentions(message.getUser(), text, link, null, parent.getUser().getId());
+            tagged = socialNotifier.mentions(message.getUser(), text, link, null, parent.getUser().getId());
         }
+        message.setMentions(joinMentions(tagged));
+        messageRepository.save(message);
+    }
+
+    /** Null pour un message sans tag (et pour les anciens) : l'app reconnaît alors les @mots simples comme avant. */
+    public static String joinMentions(List<String> tagged) {
+        return tagged == null || tagged.isEmpty() ? null : String.join("\n", tagged);
+    }
+
+    public static List<String> mentionList(String stored) {
+        return stored == null || stored.isBlank() ? null : List.of(stored.split("\n"));
     }
 
     /**

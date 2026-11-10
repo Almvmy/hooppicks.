@@ -406,6 +406,7 @@ export interface LeagueActivity {
   /** Message que l'on peut supprimer : le sien, ou si l'on dirige la ligue. */
   deletable: boolean;
   reply: ReplyPreview | null;
+  mentions: string[] | null;
   /** Ticket d'un autre membre encore jouable (« Je joue pareil »), sinon vide. */
   selections: {
     matchId: string;

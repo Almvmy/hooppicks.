@@ -51,4 +51,8 @@ public class NightMessage {
 
     /** Rétabli par un admin : les nouveaux signalements ne le masquent plus. */
     private Boolean reviewed;
+
+    /** Pseudos tagués, un par ligne, tels qu'en base au moment d'écrire : l'app en fait des liens (un pseudo peut contenir une espace). */
+    @Column(length = 400)
+    private String mentions;
 }
