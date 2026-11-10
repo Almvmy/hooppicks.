@@ -16,7 +16,7 @@ export interface SharedTicket {
   username: string;
   avatarNumber: number;
   avatarColorway: string;
-  status: "won" | "lost" | "void";
+  status: "won" | "lost" | "void" | "cashed_out";
   stake: number;
   totalOdds: number;
   potentialPayout: number;

@@ -15,7 +15,7 @@ export function computeWinStreak(bets: PlacedBet[] | undefined): number {
   if (!bets) return 0;
   let streak = 0;
   for (const bet of bets) {
-    if (bet.status === "pending" || bet.status === "void") continue;
+    if (bet.status === "pending" || bet.status === "void" || bet.status === "cashed_out") continue;
     if (bet.status === "won") {
       streak++;
       continue;
@@ -49,12 +49,12 @@ export function weekSummary(bets: PlacedBet[] | undefined, now: Date = new Date(
   const weekStart = nextBankrollReset(now).getTime() - 7 * 24 * 60 * 60 * 1000;
   const thisWeek = (bets ?? []).filter((b) => new Date(b.placedAt).getTime() >= weekStart);
   const settled = thisWeek
-    .filter((b) => b.status === "won" || b.status === "lost")
+    .filter((b) => b.status === "won" || b.status === "lost" || b.status === "cashed_out")
     .sort((a, b) => new Date(a.resolvedAt ?? a.placedAt).getTime() - new Date(b.resolvedAt ?? b.placedAt).getTime());
 
   const series = [0];
   for (const b of settled) {
-    series.push(series[series.length - 1] + (b.status === "won" ? b.potentialPayout - b.stake : -b.stake));
+    series.push(series[series.length - 1] + (b.status === "lost" ? -b.stake : b.potentialPayout - b.stake));
   }
   if (series.length === 1) series.push(0);
 

@@ -7,6 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface BetRepository extends JpaRepository<Bet, String> {
+    /** Le ticket verrouillé jusqu'à la fin de la transaction : encaissement (CashOutService). */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT b FROM Bet b WHERE b.id = :id")
+    java.util.Optional<Bet> findByIdForUpdate(@org.springframework.data.repository.query.Param("id") String id);
+
     List<Bet> findByUserIdOrderByPlacedAtDesc(String userId);
 
     java.util.Optional<Bet> findFirstByUser_Id(String userId);
@@ -56,21 +61,21 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     // où il a été posé. En SQL natif (Postgres) : regroupement par semaine
     // décalée de 12 h, puis somme par joueur, en une seule requête.
     String WEEKLY_SCORES_ALL = """
-        SELECT b.user_id, COUNT(*) AS total,
+        SELECT b.user_id, SUM(CASE WHEN b.status IN ('WON', 'LOST') THEN 1 ELSE 0 END) AS total,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) AS won,
-               GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
+               GREATEST(0, SUM(CASE WHEN b.status IN ('WON', 'CASHED_OUT') THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
         FROM bet b
-        WHERE b.status IN ('WON', 'LOST')
+        WHERE b.status IN ('WON', 'LOST', 'CASHED_OUT')
     """ + PHASE_FILTER + """
         GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
         HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
     """;
     String WEEKLY_SCORES_MEMBERS = """
-        SELECT b.user_id, COUNT(*) AS total,
+        SELECT b.user_id, SUM(CASE WHEN b.status IN ('WON', 'LOST') THEN 1 ELSE 0 END) AS total,
                SUM(CASE WHEN b.status = 'WON' THEN 1 ELSE 0 END) AS won,
-               GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
+               GREATEST(0, SUM(CASE WHEN b.status IN ('WON', 'CASHED_OUT') THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS score
         FROM bet b
-        WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:memberIds)
+        WHERE b.status IN ('WON', 'LOST', 'CASHED_OUT') AND b.user_id IN (:memberIds)
     """ + PHASE_FILTER + """
         GROUP BY b.user_id, date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
         HAVING date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') >= :fromWeek
@@ -120,9 +125,9 @@ public interface BetRepository extends JpaRepository<Bet, String> {
      */
     @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
         SELECT b.user_id,
-               CAST(GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
+               CAST(GREATEST(0, SUM(CASE WHEN b.status IN ('WON', 'CASHED_OUT') THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
         FROM bet b
-        WHERE b.status IN ('WON', 'LOST') AND b.user_id IN (:userIds)
+        WHERE b.status IN ('WON', 'LOST', 'CASHED_OUT') AND b.user_id IN (:userIds)
           AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
         GROUP BY b.user_id
     """)
@@ -131,9 +136,9 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     /** Points de tous les joueurs ayant un ticket réglé cette semaine-là (palmarès). */
     @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
         SELECT b.user_id,
-               CAST(GREATEST(0, SUM(CASE WHEN b.status = 'WON' THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
+               CAST(GREATEST(0, SUM(CASE WHEN b.status IN ('WON', 'CASHED_OUT') THEN b.potential_payout - b.stake ELSE 0 - b.stake END)) AS bigint)
         FROM bet b
-        WHERE b.status IN ('WON', 'LOST')
+        WHERE b.status IN ('WON', 'LOST', 'CASHED_OUT')
           AND date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours') = :week
         GROUP BY b.user_id
     """)
@@ -146,7 +151,7 @@ public interface BetRepository extends JpaRepository<Bet, String> {
     /** Semaines de jeu (lundi à minuit) ayant au moins un ticket réglé. */
     @org.springframework.data.jpa.repository.Query(nativeQuery = true, value = """
         SELECT DISTINCT date_trunc('week', (b.placed_at AT TIME ZONE 'UTC') - INTERVAL '12 hours')
-        FROM bet b WHERE b.status IN ('WON', 'LOST')
+        FROM bet b WHERE b.status IN ('WON', 'LOST', 'CASHED_OUT')
     """)
     List<Object> findSettledWeeks();
 
@@ -269,9 +274,9 @@ public interface BetRepository extends JpaRepository<Bet, String> {
 
     // [nombre de tickets résolus, bénéfice net] des paris posés entre from et to.
     @org.springframework.data.jpa.repository.Query("""
-        SELECT COUNT(b), SUM(CASE WHEN b.status = 'WON' THEN b.potentialPayout - b.stake ELSE 0 - b.stake END)
+        SELECT COUNT(b), SUM(CASE WHEN b.status IN ('WON', 'CASHED_OUT') THEN b.potentialPayout - b.stake ELSE 0 - b.stake END)
         FROM Bet b
-        WHERE b.user.id = :userId AND b.status IN ('WON', 'LOST')
+        WHERE b.user.id = :userId AND b.status IN ('WON', 'LOST', 'CASHED_OUT')
           AND b.placedAt >= :from AND b.placedAt < :to
     """)
     List<Object[]> getNetResultBetween(String userId, java.time.Instant from, java.time.Instant to);

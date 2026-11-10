@@ -36,4 +36,7 @@ public class Bet {
 
     // « Tout se joue sur le dernier match » déjà annoncé pour ce combiné.
     private Boolean lastLegAlerted;
+
+    /** Gain prévu avant l'encaissement ; `potentialPayout` devient alors la valeur encaissée. */
+    private Integer cashedOutFrom;
 }

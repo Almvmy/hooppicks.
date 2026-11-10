@@ -13,7 +13,9 @@ public record PlacedBetDto(
         String status,
         String placedAt,
         // Null tant que le ticket est en attente (et sur de vieux tickets).
-        String resolvedAt
+        String resolvedAt,
+        // Ticket encaissé : le gain prévu avant (potentialPayout = la valeur encaissée).
+        Integer cashedOutFrom
 ) {
     public static PlacedBetDto from(Bet bet) {
         return new PlacedBetDto(
@@ -24,7 +26,8 @@ public record PlacedBetDto(
                 bet.getPotentialPayout(),
                 bet.getStatus().name().toLowerCase(),
                 bet.getPlacedAt().toString(),
-                bet.getResolvedAt() == null ? null : bet.getResolvedAt().toString()
+                bet.getResolvedAt() == null ? null : bet.getResolvedAt().toString(),
+                bet.getCashedOutFrom()
         );
     }
 }

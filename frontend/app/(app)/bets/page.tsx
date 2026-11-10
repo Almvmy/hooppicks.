@@ -17,6 +17,8 @@ import { LiveStatus, liveClockLabel, useLiveMatch, useLiveStatus, withLiveScore 
 import { PLAYER_PROP_MARKETS, isPlayerPropMarket, normalizePlayerName, propStatValue } from "@/lib/player-props";
 import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
+import { CashOutButton, useCashOutQuotes } from "@/components/cash-out";
+import type { CashOutQuote } from "@/lib/api/bets";
 import { PageHeader } from "@/components/page-header";
 
 const PAGE_SIZE = 8;
@@ -26,6 +28,7 @@ const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "
   won: { label: "Gagné", variant: "success", strip: "bg-success" },
   lost: { label: "Perdu", variant: "destructive", strip: "bg-destructive" },
   void: { label: "Remboursé", variant: "secondary", strip: "bg-muted-foreground/50" },
+  cashed_out: { label: "Encaissé", variant: "secondary", strip: "bg-brand" },
 };
 
 type Filter = "all" | BetStatus;
@@ -35,6 +38,7 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "won", label: "Gagnés" },
   { value: "lost", label: "Perdus" },
   { value: "void", label: "Remboursés" },
+  { value: "cashed_out", label: "Encaissés" },
 ];
 
 // Icône + libellé : l'état ne repose jamais sur la couleur seule.
@@ -150,7 +154,17 @@ function SelectionRow({
   );
 }
 
-function TicketCard({ bet, matchesById, highlighted }: { bet: PlacedBet; matchesById: Map<string, Match>; highlighted: boolean }) {
+function TicketCard({
+  bet,
+  matchesById,
+  highlighted,
+  quote,
+}: {
+  bet: PlacedBet;
+  matchesById: Map<string, Match>;
+  highlighted: boolean;
+  quote: CashOutQuote | undefined;
+}) {
   const config = STATUS_CONFIG[bet.status];
   const isParlay = bet.selections.length > 1;
   const states = bet.selections.map((s) => legState(s, matchesById.get(s.matchId)));
@@ -211,7 +225,18 @@ function TicketCard({ bet, matchesById, highlighted }: { bet: PlacedBet; matches
             <span className="font-mono font-bold text-destructive">−{bet.stake.toLocaleString("fr-FR")} pts</span>
           )}
           {bet.status === "void" && <span className="text-muted-foreground">Mise rendue</span>}
+          {bet.status === "cashed_out" && (
+            <span className="text-muted-foreground">
+              Encaissé {bet.potentialPayout.toLocaleString("fr-FR")}
+              {bet.cashedOutFrom ? ` sur ${bet.cashedOutFrom.toLocaleString("fr-FR")}` : ""} pts ·{" "}
+              <span className={cn("font-mono font-bold", net >= 0 ? "text-success" : "text-destructive")}>
+                {net >= 0 ? "+" : "−"}
+                {Math.abs(net).toLocaleString("fr-FR")} pts
+              </span>
+            </span>
+          )}
         </div>
+        {bet.status === "pending" && <CashOutButton bet={bet} quote={quote} />}
         {/* Seuls les tickets gagnants se partagent : c'est ce qu'on a envie de montrer. */}
         {bet.status === "won" && (
           <ShareButton
@@ -249,6 +274,7 @@ export default function BetsPage() {
     won: bets.filter((b) => b.status === "won").length,
     lost: bets.filter((b) => b.status === "lost").length,
     void: bets.filter((b) => b.status === "void").length,
+    cashed_out: bets.filter((b) => b.status === "cashed_out").length,
   };
   const resolved = counts.won + counts.lost;
   const winRate = resolved === 0 ? 0 : Math.round((counts.won / resolved) * 100);
@@ -256,6 +282,7 @@ export default function BetsPage() {
   const inPlay = bets.filter((b) => b.status === "pending");
   const inPlayStake = inPlay.reduce((sum, b) => sum + b.stake, 0);
   const inPlayPotential = inPlay.reduce((sum, b) => sum + b.potentialPayout - b.stake, 0);
+  const quotes = useCashOutQuotes(inPlay.length > 0);
 
   const filtered = filter === "all" ? bets : bets.filter((b) => b.status === filter);
   const { page, pageCount, pageItems, setPage } = usePagination(filtered, PAGE_SIZE);
@@ -325,7 +352,7 @@ export default function BetsPage() {
           </div>
 
           <div className="glass-scroll edge-scroll flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Filtrer les tickets">
-            {FILTERS.map(({ value, label }) => (
+            {FILTERS.filter((f) => f.value !== "cashed_out" || counts.cashed_out > 0).map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -348,7 +375,7 @@ export default function BetsPage() {
 
           <div className="flex flex-col gap-3">
             {pageItems.map((bet) => (
-              <TicketCard key={bet.id} bet={bet} matchesById={matchesById} highlighted={bet.id === highlighted} />
+              <TicketCard key={bet.id} bet={bet} matchesById={matchesById} highlighted={bet.id === highlighted} quote={quotes.get(bet.id)} />
             ))}
           </div>
 

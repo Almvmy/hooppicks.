@@ -150,6 +150,27 @@ public class LiveMatchService {
                 details.keyPlays()));
     }
 
+    /**
+     * Pour le cash-out : état, score, dernière probabilité de victoire d'ESPN et âge de la
+     * donnée (même cache que la page du match : aucun appel de plus quand elle est ouverte).
+     * Vide : pas commencé chez ESPN, pas relié, ou ESPN muet trop longtemps.
+     */
+    public Optional<com.hooppicks.backendapplication.bet.CashOutPricing.Live> pricing(Match match) {
+        if (match == null || match.getEspnEventId() == null) return Optional.empty();
+        String key = "summary:" + match.getEspnEventId();
+        EspnLiveSummary summary = cached(key,
+                s -> "post".equals(s.status().state()) ? FINISHED_FRESH : FRESH,
+                () -> espnStatsClient.fetchLiveSummary(match.getEspnEventId()).orElse(null));
+        if (summary == null || "pre".equals(summary.status().state())) return Optional.empty();
+        Cached<?> entry = cache.get(key);
+        java.time.Duration age = entry == null ? null : java.time.Duration.between(entry.fetchedAt(), clock.instant());
+        List<EspnLiveSummary.WinPoint> win = summary.details() == null ? null : summary.details().winProbability();
+        Double homeWinPct = win == null || win.isEmpty() ? null : win.get(win.size() - 1).homeWinPct();
+        EspnLiveGame s = summary.status();
+        return Optional.of(new com.hooppicks.backendapplication.bet.CashOutPricing.Live(s.state(), s.period(), s.clock(),
+                s.homeScore() == null ? 0 : s.homeScore(), s.awayScore() == null ? 0 : s.awayScore(), homeWinPct, age));
+    }
+
     private static LiveStatusDto toStatus(String matchId, EspnLiveGame g) {
         return new LiveStatusDto(matchId, g.state(), g.period(), g.clock(), g.detail(), g.homeScore(), g.awayScore());
     }

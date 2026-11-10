@@ -45,6 +45,7 @@ const TICKET_STATUS: Record<PlacedBet["status"], { label: string; variant: "succ
   lost: { label: "Perdu", variant: "destructive" },
   void: { label: "Remboursé", variant: "secondary" },
   pending: { label: "En attente", variant: "secondary" },
+  cashed_out: { label: "Encaissé", variant: "secondary" },
 };
 
 function safeDecode(segment: string): string {

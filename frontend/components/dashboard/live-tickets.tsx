@@ -5,6 +5,7 @@ import { Radio } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TeamLogo } from "@/components/team-logo";
 import { LEG_STATE_LABELS } from "@/components/my-bet-chip";
+import { CashOutButton, useCashOutQuotes } from "@/components/cash-out";
 import { legState } from "@/lib/bet-legs";
 import { liveClockLabel, useLiveStatus, withLiveScore } from "@/lib/live";
 import type { BetSelection, Match, PlacedBet } from "@/lib/types";
@@ -46,12 +47,18 @@ function LiveRow({ match, selections }: { match: Match; selections: PlacedSelect
  * en a pas.
  */
 export function LiveTickets({ matches, bets }: { matches: Match[] | undefined; bets: PlacedBet[] | undefined }) {
-  const pending = (bets ?? []).filter((b) => b.status === "pending").flatMap((b) => b.selections);
+  const pendingBets = (bets ?? []).filter((b) => b.status === "pending");
+  const pending = pendingBets.flatMap((b) => b.selections);
+  const liveIds = new Set((matches ?? []).filter((m) => m.status === "live").map((m) => m.id));
   const rows = (matches ?? [])
-    .filter((m) => m.status === "live")
+    .filter((m) => liveIds.has(m.id))
     .map((m) => ({ match: m, selections: pending.filter((s) => s.matchId === m.id) }))
     .filter((r) => r.selections.length > 0);
+  // Les tickets qui se jouent en ce moment : de quoi les encaisser sans aller dans Mes paris.
+  const liveBets = pendingBets.filter((b) => b.selections.some((s) => liveIds.has(s.matchId)));
+  const quotes = useCashOutQuotes(liveBets.length > 0);
   if (rows.length === 0) return null;
+  const cashable = liveBets.filter((b) => quotes.has(b.id));
 
   return (
     <Card>
@@ -65,6 +72,18 @@ export function LiveTickets({ matches, bets }: { matches: Match[] | undefined; b
             <LiveRow key={r.match.id} match={r.match} selections={r.selections} />
           ))}
         </div>
+        {cashable.length > 0 && (
+          <div className="glass-hairline-t mt-2 flex flex-col gap-2 pt-3">
+            {cashable.map((b) => (
+              <div key={b.id} className="flex flex-col gap-1.5">
+                <p className="truncate text-xs text-muted-foreground">
+                  {b.selections.length > 1 ? `Combiné ×${b.selections.length}` : b.selections[0]?.label} · mise {b.stake.toLocaleString("fr-FR")} pts
+                </p>
+                <CashOutButton bet={b} quote={quotes.get(b.id)} compact />
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -41,6 +41,13 @@ export const FAQ: FaqGroup[] = [
         link: { href: "/matches", label: "Voir les matchs à venir" },
       },
       {
+        id: "encaisser",
+        question: "Comment marche « Encaisser » ?",
+        answer:
+          "Sur un ticket en attente, tu peux l'arrêter avant la fin et prendre tout de suite sa valeur du moment : elle dépend des chances que chaque sélection encore en jeu passe, moins 5 %. Le bénéfice (valeur encaissée moins la mise) compte au classement de la semaine du ticket, comme un ticket réglé ; ton solde, lui, ne bouge pas. Encaisser sécurise un gain plus petit ou limite une perte. L'encaissement est suspendu un moment en fin de match serrée, quand le direct ne répond plus, et pendant le match d'un pari joueur ; il disparaît dès qu'une sélection est perdue.",
+        link: { href: "/bets", label: "Voir mes paris" },
+      },
+      {
         id: "cote-change",
         question: "La cote peut-elle changer après ma validation ?",
         answer:

@@ -12,6 +12,7 @@ const STATUS_CONFIG: Record<BetStatus, { label: string; variant: "secondary" | "
   won: { label: "Gagné", variant: "success" },
   lost: { label: "Perdu", variant: "destructive" },
   void: { label: "Remboursé", variant: "secondary" },
+  cashed_out: { label: "Encaissé", variant: "secondary" },
 };
 
 export function RecentActivity({
@@ -59,12 +60,16 @@ export function RecentActivity({
                 <span
                   className={cn(
                     "font-mono text-sm font-bold",
-                    bet.status === "won" ? "text-success" : bet.status === "lost" ? "text-destructive" : "text-foreground"
+                    bet.status === "won" || (bet.status === "cashed_out" && bet.potentialPayout >= bet.stake)
+                      ? "text-success"
+                      : bet.status === "lost" || bet.status === "cashed_out"
+                        ? "text-destructive"
+                        : "text-foreground"
                   )}
                 >
                   {/* Même lecture que le classement : bénéfice net du ticket.
                       Avant, un ticket remboursé affichait son gain potentiel. */}
-                  {bet.status === "won"
+                  {bet.status === "won" || bet.status === "cashed_out"
                     ? formatSignedPoints(bet.potentialPayout - bet.stake)
                     : bet.status === "lost"
                       ? formatSignedPoints(-bet.stake)

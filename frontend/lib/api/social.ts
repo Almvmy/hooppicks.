@@ -9,7 +9,7 @@ export interface FriendPick {
   avatarColorway: AvatarColorway;
   avatarIcon: AvatarIcon;
   label: string;
-  status: "pending" | "won" | "lost" | "void";
+  status: "pending" | "won" | "lost" | "void" | "cashed_out";
 }
 
 export interface TicketReactions {

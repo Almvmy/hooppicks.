@@ -8,6 +8,7 @@ type Props = { params: Promise<{ id: string }> };
 function headline(t: NonNullable<Awaited<ReturnType<typeof fetchSharedTicket>>>) {
   if (t.status === "won") return `Ticket gagnant de @${t.username} : ${signedPlain(t.potentialPayout - t.stake)} pts`;
   if (t.status === "lost") return `Ticket de @${t.username}`;
+  if (t.status === "cashed_out") return `Ticket encaissé par @${t.username} : ${signedPlain(t.potentialPayout - t.stake)} pts`;
   return `Ticket remboursé de @${t.username}`;
 }
 
@@ -29,7 +30,12 @@ export default async function SharedTicketPage({ params }: Props) {
   const ticket = await fetchSharedTicket(id);
   if (!ticket) notFound();
 
-  const net = ticket.status === "won" ? ticket.potentialPayout - ticket.stake : ticket.status === "lost" ? -ticket.stake : 0;
+  const net =
+    ticket.status === "won" || ticket.status === "cashed_out"
+      ? ticket.potentialPayout - ticket.stake
+      : ticket.status === "lost"
+        ? -ticket.stake
+        : 0;
   return (
     <ShareLanding appHref="/bets">
       <div className="glass flex flex-col gap-4 rounded-2xl p-5">

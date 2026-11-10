@@ -70,9 +70,9 @@ export function legState(
   return result === "win" ? "winning" : result === "lose" ? "losing" : "level";
 }
 
-/** Bilan net d'un ticket résolu : gain moins mise (0 pour un ticket remboursé). */
+/** Bilan net d'un ticket résolu : gain (ou valeur encaissée) moins mise, 0 pour un ticket remboursé. */
 export function netResult(bet: PlacedBet): number {
-  if (bet.status === "won") return bet.potentialPayout - bet.stake;
+  if (bet.status === "won" || bet.status === "cashed_out") return bet.potentialPayout - bet.stake;
   if (bet.status === "lost") return -bet.stake;
   return 0;
 }

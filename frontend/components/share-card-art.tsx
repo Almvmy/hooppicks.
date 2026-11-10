@@ -182,11 +182,15 @@ function shortDate(iso: string | null): string {
 /* ----------------------------------------------------------------- ticket */
 
 export function TicketArt({ ticket }: { ticket: SharedTicket }) {
-  const status = ticket.status as Tone;
+  // Encaissé : couleurs d'un gain ou d'une perte selon le bénéfice, avec son propre libellé.
+  const cashed = ticket.status === "cashed_out";
+  const cashNet = ticket.potentialPayout - ticket.stake;
+  const status = (cashed ? (cashNet >= 0 ? "won" : "lost") : ticket.status) as Tone;
   const t = TONE[status];
   const won = status === "won";
   const lost = status === "lost";
-  const net = won ? ticket.potentialPayout - ticket.stake : lost ? -ticket.stake : 0;
+  const net = cashed ? cashNet : won ? ticket.potentialPayout - ticket.stake : lost ? -ticket.stake : 0;
+  const toneLabel = cashed ? "Encaissé" : t.label;
   const legsAll = ticket.selections;
   const legs = legsAll.slice(0, legsAll.length > 4 ? 3 : 4);
   const hidden = legsAll.length - legs.length;
@@ -195,9 +199,9 @@ export function TicketArt({ ticket }: { ticket: SharedTicket }) {
   const combo = legsAll.length > 1;
   const numStr = status === "void" ? "0" : signedPlain(net);
   const numSize = numStr.length <= 2 ? 270 : numStr.length === 3 ? 250 : numStr.length === 4 ? 200 : numStr.length === 5 ? 176 : 148;
-  const payoutLabel = won ? "Gain" : lost ? "Perdu" : "Remboursé";
+  const payoutLabel = cashed ? "Encaissé" : won ? "Gain" : lost ? "Perdu" : "Remboursé";
   // Gagné : le bénéfice (gain − mise), ce qui compte au classement, comme le grand chiffre.
-  const payoutText = won ? signedPlain(net) : plainNumber(ticket.stake);
+  const payoutText = won || cashed ? signedPlain(net) : plainNumber(ticket.stake);
   const payoutColor = lost ? RED : won ? GREEN : TEXT;
 
   return (
@@ -211,7 +215,7 @@ export function TicketArt({ ticket }: { ticket: SharedTicket }) {
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex" }}>
             <div style={{ display: "flex", padding: "7px 16px 6px", background: t.onDark, color: INK, fontFamily: COND, fontWeight: 800, fontSize: 27, lineHeight: 1, letterSpacing: 3.5, textTransform: "uppercase" }}>
-              {t.label}
+              {toneLabel}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", marginTop: 4 }}>

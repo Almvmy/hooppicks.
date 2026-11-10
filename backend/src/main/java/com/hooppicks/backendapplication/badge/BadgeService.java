@@ -123,7 +123,8 @@ public class BadgeService {
     public int computeWinStreak(List<Bet> betsOrderedMostRecentFirst) {
         int streak = 0;
         for (Bet bet : betsOrderedMostRecentFirst) {
-            if (bet.getStatus() == BetStatus.PENDING || bet.getStatus() == BetStatus.VOID) {
+            // Encaissé : ni gagné ni perdu, la série continue comme pour un remboursé.
+            if (bet.getStatus() == BetStatus.PENDING || bet.getStatus() == BetStatus.VOID || bet.getStatus() == BetStatus.CASHED_OUT) {
                 continue;
             }
             if (bet.getStatus() == BetStatus.WON) {

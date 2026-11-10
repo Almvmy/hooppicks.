@@ -62,11 +62,12 @@ public class WeeklyRecapService {
 
         List<Bet> settled = betRepository.findByUserIdOrderByPlacedAtDesc(userId).stream()
                 .filter(b -> !b.getPlacedAt().isBefore(start) && b.getPlacedAt().isBefore(end))
-                .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST)
+                .filter(b -> b.getStatus() == BetStatus.WON || b.getStatus() == BetStatus.LOST || b.getStatus() == BetStatus.CASHED_OUT)
                 .toList();
         if (settled.isEmpty()) return Optional.empty();
 
-        long net = settled.stream().mapToLong(b -> b.getStatus() == BetStatus.WON ? b.getPotentialPayout() - b.getStake() : -b.getStake()).sum();
+        // Encaissé : la valeur encaissée − mise, comme au classement.
+        long net = settled.stream().mapToLong(b -> b.getStatus() == BetStatus.LOST ? -b.getStake() : b.getPotentialPayout() - b.getStake()).sum();
         int won = (int) settled.stream().filter(b -> b.getStatus() == BetStatus.WON).count();
         BestTicket best = settled.stream().filter(b -> b.getStatus() == BetStatus.WON)
                 .max(Comparator.comparingInt(b -> b.getPotentialPayout() - b.getStake()))

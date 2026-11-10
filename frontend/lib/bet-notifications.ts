@@ -28,7 +28,7 @@ function writeCelebratedIds(ids: Set<string>) {
 export function detectNewlyWonBets<T extends { id: string; status: string }>(bets: T[]): T[] {
   const stored = readCelebratedIds();
   const resolved = bets.filter(
-    (b) => b.status === "won" || b.status === "lost" || b.status === "void"
+    (b) => b.status === "won" || b.status === "lost" || b.status === "void" || b.status === "cashed_out"
   );
   // Premier passage sur cet appareil : les tickets déjà réglés servent de
   // point de départ, sinon une réinstallation refêtait tous les anciens gains.

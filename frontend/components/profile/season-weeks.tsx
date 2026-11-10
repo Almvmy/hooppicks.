@@ -13,7 +13,7 @@ const WEEK_MS = 7 * 24 * 3600 * 1000;
 export function weeklyNet(bets: PlacedBet[] | undefined): { start: number; net: number }[] {
   const weeks = new Map<number, number>();
   for (const b of bets ?? []) {
-    if (b.status !== "won" && b.status !== "lost") continue;
+    if (b.status !== "won" && b.status !== "lost" && b.status !== "cashed_out") continue;
     const start = nextBankrollReset(new Date(b.placedAt)).getTime() - WEEK_MS;
     weeks.set(start, (weeks.get(start) ?? 0) + netResult(b));
   }

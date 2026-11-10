@@ -261,7 +261,8 @@ export interface AltLine {
   secondOdds: number;
 }
 export type BetOutcome = "home" | "away" | "over" | "under";
-export type BetStatus = "pending" | "won" | "lost" | "void";
+/** cashed_out : encaissé avant la fin, potentialPayout = la valeur encaissée. */
+export type BetStatus = "pending" | "won" | "lost" | "void" | "cashed_out";
 
 export interface BetSelection {
   id: string; // `${matchId}-${market}-${outcome}`
@@ -316,6 +317,8 @@ export interface PlacedBet {
   status: BetStatus;
   placedAt: string;
   resolvedAt: string | null;
+  /** Ticket encaissé : le gain prévu avant l'encaissement. */
+  cashedOutFrom?: number | null;
 }
 
 export interface NewsItem {
