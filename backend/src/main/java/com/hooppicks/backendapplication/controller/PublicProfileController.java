@@ -69,7 +69,7 @@ public class PublicProfileController {
         String viewerId = sessionStore.getUserIdFromRequest(request);
         if (viewerId == null) return ResponseEntity.status(401).build();
 
-        User user = userRepository.findByUsername(username).orElse(null);
+        User user = com.hooppicks.backendapplication.security.Usernames.find(userRepository, username).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
 
         List<Bet> bets = betRepository.findByUserIdOrderByPlacedAtDesc(user.getId());

@@ -77,7 +77,7 @@ public class ShareController {
      */
     @GetMapping("/players/{username}/week")
     public ResponseEntity<?> playerWeek(@PathVariable String username) {
-        User u = userRepository.findByUsername(username).orElse(null);
+        User u = com.hooppicks.backendapplication.security.Usernames.find(userRepository, username).orElse(null);
         if (u == null || weeklyRecapService == null) return ResponseEntity.notFound().build();
         return weeklyRecapService.lastWeek(u.getId()).<ResponseEntity<?>>map(r -> ResponseEntity.ok(new SharedWeek(
                 u.getUsername(), u.getAvatarNumber(), u.getAvatarColorway(), r.week().toString(), r.points(), r.tickets(), r.won(),
@@ -89,7 +89,7 @@ public class ShareController {
 
     @GetMapping("/players/{username}")
     public ResponseEntity<?> player(@PathVariable String username) {
-        User u = userRepository.findByUsername(username).orElse(null);
+        User u = com.hooppicks.backendapplication.security.Usernames.find(userRepository, username).orElse(null);
         if (u == null) return ResponseEntity.notFound().build();
         List<Object[]> stats = betRepository.getUserStats(u.getId());
         long total = 0, won = 0;

@@ -78,7 +78,7 @@ public class DuelService {
     @Transactional
     public Duel challenge(String challengerId, String opponentUsername) {
         User challenger = userRepository.findById(challengerId).orElseThrow(() -> new DuelException("Compte introuvable."));
-        User opponent = userRepository.findByUsername(opponentUsername)
+        User opponent = com.hooppicks.backendapplication.security.Usernames.find(userRepository, opponentUsername)
                 .orElseThrow(() -> new DuelException("Ce joueur n'existe pas."));
         if (opponent.getId().equals(challengerId)) throw new DuelException("Tu ne peux pas te défier toi-même.");
 

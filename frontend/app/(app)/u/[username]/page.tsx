@@ -47,6 +47,14 @@ const TICKET_STATUS: Record<PlacedBet["status"], { label: string; variant: "succ
   pending: { label: "En attente", variant: "secondary" },
 };
 
+function safeDecode(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 const REACTION_EMOJIS = ["👍", "🔥", "👎"];
 
 /** Sur son propre profil : on voit les réactions reçues, sans pouvoir s'en ajouter. */
@@ -126,7 +134,9 @@ function TicketRow({ bet }: { bet: PlacedBet }) {
 }
 
 export default function PublicProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const { username } = use(params);
+  // Le segment arrive encodé (« Jean%20Kader ») : le renvoyer tel quel au serveur l'encodait
+  // une seconde fois, et tout pseudo avec une espace ou un emoji était introuvable.
+  const username = safeDecode(use(params).username);
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ["public-profile", username],
     queryFn: () => fetchPublicProfile(username),

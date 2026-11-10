@@ -290,7 +290,7 @@ class AuthControllerTest {
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
         User other = user("u2", "autre@example.com", "pris", "hash2");
-        when(userRepository.findByUsername("pris")).thenReturn(Optional.of(other));
+        when(userRepository.findByUsernameIgnoreCase("pris")).thenReturn(Optional.of(other));
 
         ChangeUsernameRequest body = new ChangeUsernameRequest("pris", "motdepasse");
         ResponseEntity<?> response = controller.changeUsername(body, request);
@@ -305,9 +305,9 @@ class AuthControllerTest {
         User user = user("u1", "joueur@example.com", "joueur", "hash");
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
-        when(userRepository.findByUsername("nouveauPseudo")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameIgnoreCase("nouveauPseudo")).thenReturn(Optional.empty());
 
-        ChangeUsernameRequest body = new ChangeUsernameRequest("nouveauPseudo", "motdepasse");
+        ChangeUsernameRequest body = new ChangeUsernameRequest("  nouveauPseudo ", "motdepasse");
         ResponseEntity<?> response = controller.changeUsername(body, request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
@@ -316,17 +316,56 @@ class AuthControllerTest {
     }
 
     @Test
-    void changeUsername_vers_le_meme_pseudo_ignore_la_verification_d_unicite() {
+    void changeUsername_vers_son_propre_pseudo_avec_d_autres_majuscules_est_accepte() {
         HttpServletRequest request = authenticatedRequest("u1");
         User user = user("u1", "joueur@example.com", "joueur", "hash");
         when(userRepository.findById("u1")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("motdepasse", "hash")).thenReturn(true);
+        when(userRepository.findByUsernameIgnoreCase("Joueur")).thenReturn(Optional.of(user));
 
-        ChangeUsernameRequest body = new ChangeUsernameRequest("joueur", "motdepasse");
+        ChangeUsernameRequest body = new ChangeUsernameRequest("Joueur", "motdepasse");
         ResponseEntity<?> response = controller.changeUsername(body, request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        verify(userRepository, never()).findByUsername(any());
+        assertThat(user.getUsername()).isEqualTo("Joueur");
+    }
+
+    @Test
+    void register_nettoie_les_espaces_du_pseudo() {
+        when(userRepository.findByEmail("joueur@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameIgnoreCase("Jean Kader")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("motdepasse")).thenReturn("hash");
+        when(sessionStore.createSession(any())).thenReturn("token-abc");
+
+        RegisterRequest body = new RegisterRequest("  Jean   Kader ", "joueur@example.com", "motdepasse");
+        ResponseEntity<?> result = controller.register(body, new MockHttpServletResponse());
+
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
+        org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(saved.capture());
+        assertThat(saved.getValue().getUsername()).isEqualTo("Jean Kader");
+    }
+
+    @Test
+    void register_avec_un_pseudo_deja_pris_renvoie_409_et_le_dit() {
+        when(userRepository.findByEmail("joueur@example.com")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameIgnoreCase("Kader")).thenReturn(Optional.of(user("u2", "autre@example.com", "kader", "hash")));
+
+        ResponseEntity<?> response = controller.register(new RegisterRequest("Kader", "joueur@example.com", "motdepasse"), new MockHttpServletResponse());
+
+        assertThat(response.getStatusCode().value()).isEqualTo(409);
+        assertThat(response.getBody()).isEqualTo("Ce pseudo est déjà pris.");
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_refuse_un_pseudo_trop_court_une_fois_nettoye() {
+        when(userRepository.findByEmail("joueur@example.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = controller.register(new RegisterRequest(" ab  ", "joueur@example.com", "motdepasse"), new MockHttpServletResponse());
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        verify(userRepository, never()).save(any());
     }
 
     @Test

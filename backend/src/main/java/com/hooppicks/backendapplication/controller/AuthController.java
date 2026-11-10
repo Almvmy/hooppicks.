@@ -9,6 +9,7 @@ import com.hooppicks.backendapplication.dto.LoginRequest;
 import com.hooppicks.backendapplication.dto.RegisterRequest;
 import com.hooppicks.backendapplication.dto.ResetPasswordRequest;
 import com.hooppicks.backendapplication.dto.UpdateNotificationPreferencesRequest;
+import com.hooppicks.backendapplication.security.Usernames;
 import com.hooppicks.backendapplication.dto.ChangeUsernameRequest;
 import com.hooppicks.backendapplication.dto.UpdateProfileRequest;
 import com.hooppicks.backendapplication.dto.UserProfileDto;
@@ -77,13 +78,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserProfileDto> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            return ResponseEntity.status(409).build();
+            return ResponseEntity.status(409).body("Cet e-mail a déjà un compte.");
+        }
+        String username = Usernames.normalize(request.username());
+        String invalid = Usernames.invalidReason(username);
+        if (invalid != null) return ResponseEntity.badRequest().body(invalid);
+        // Avant, rien n'était vérifié : la base refusait le doublon et l'app parlait d'e-mail déjà pris.
+        if (userRepository.findByUsernameIgnoreCase(username).isPresent()) {
+            return ResponseEntity.status(409).body("Ce pseudo est déjà pris.");
         }
 
         User user = new User();
-        user.setUsername(request.username());
+        user.setUsername(username);
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         // Directement dans la semaine de jeu en cours, avec le solde par défaut :
@@ -278,12 +286,14 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Mot de passe incorrect.");
         }
 
-        if (!request.newUsername().equalsIgnoreCase(user.getUsername())
-                && userRepository.findByUsername(request.newUsername()).isPresent()) {
-            return ResponseEntity.status(409).body("Ce pseudo est déjà pris.");
-        }
+        String username = Usernames.normalize(request.newUsername());
+        String invalid = Usernames.invalidReason(username);
+        if (invalid != null) return ResponseEntity.badRequest().body(invalid);
+        // Sans tenir compte des majuscules : « kader » et « Kader » se confondraient dans les mentions.
+        boolean takenByOther = userRepository.findByUsernameIgnoreCase(username).filter(u -> !u.getId().equals(user.getId())).isPresent();
+        if (takenByOther) return ResponseEntity.status(409).body("Ce pseudo est déjà pris.");
 
-        user.setUsername(request.newUsername());
+        user.setUsername(username);
         userRepository.save(user);
 
         return ResponseEntity.ok(buildProfileDto(user));

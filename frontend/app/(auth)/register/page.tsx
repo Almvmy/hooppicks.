@@ -34,8 +34,10 @@ export default function RegisterPage({ searchParams }: { searchParams: Promise<{
       if (ref) await claimReferral(ref).catch(() => undefined);
       // Choisir son maillot tout de suite, quand l'envie est là (« Plus tard » possible).
       router.push(`/maillot?bienvenue=1&suite=${encodeURIComponent(destination)}`);
-    } catch {
-      setError("Impossible de créer le compte (e-mail déjà utilisé ?).");
+    } catch (err) {
+      // Le serveur dit pourquoi (pseudo pris, e-mail déjà inscrit, pseudo trop court…).
+      const message = err instanceof Error ? err.message : "";
+      setError(message && !message.startsWith("Erreur API") ? message : "Impossible de créer le compte. Réessaie.");
     } finally {
       setIsSubmitting(false);
     }
