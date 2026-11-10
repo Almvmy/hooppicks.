@@ -203,7 +203,7 @@ export function ThreadComposer({
 
       <div className="relative flex items-center gap-2">
         {suggestions.length > 0 && (
-          <ul role="listbox" aria-label="Joueurs" className="absolute bottom-full left-0 z-30 mb-1 w-full max-w-xs overflow-hidden rounded-xl border border-tint/15 bg-popover shadow-lg">
+          <ul role="listbox" aria-label="Joueurs" className="absolute left-0 top-full z-30 mt-1 w-full max-w-xs overflow-hidden rounded-xl border border-tint/15 bg-popover shadow-lg">
             {suggestions.map((c, i) => (
               <li key={c.username} role="option" aria-selected={i === highlighted}>
                 <button
