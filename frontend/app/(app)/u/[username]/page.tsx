@@ -28,15 +28,14 @@ import { cn, formatMonthYear, formatRelativeTime, formatSignedPoints } from "@/l
 import { ShareButton } from "@/components/share-button";
 import { PalmaresCard } from "@/components/palmares-card";
 
-function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+/** Un chiffre de la bande de l'en-tête : saison, semaine, réussite, série. */
+function HeroStat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <Card size="sm">
-      <CardContent>
-        <p className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-        <div className="mt-0.5 whitespace-nowrap font-heading text-xl font-bold sm:text-2xl">{value}</div>
-        {hint && <p className="truncate text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
+    <div className="flex min-w-0 flex-col items-center gap-0.5 px-1 text-center">
+      <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="whitespace-nowrap font-heading text-lg font-bold tabular-nums leading-tight sm:text-2xl">{value}</span>
+      {hint && <span className="truncate text-[10px] text-muted-foreground sm:text-xs">{hint}</span>}
+    </div>
   );
 }
 
@@ -231,7 +230,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
             size="lg"
           />
           <div className="min-w-[10rem] flex-1">
-            <h1 className="truncate font-heading text-3xl font-bold">@{profile.username}</h1>
+            <h1 className="truncate font-heading text-2xl font-bold sm:text-3xl">@{profile.username}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
               <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-xs font-bold text-primary">
                 {title}
@@ -287,39 +286,34 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Chiffres ───────────────────────────────────────────────────── */}
-      <div className="stagger-children grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <Stat
-          label="Points saison"
-          value={formatSignedPoints(profile.seasonPoints)}
-          hint={profile.seasonRank !== null ? `#${profile.seasonRank} sur ${profile.seasonPlayers}` : "pas encore classé"}
-        />
-        <Stat
-          label="Points semaine"
-          value={formatSignedPoints(profile.weekPoints)}
-          hint={profile.weekRank !== null ? `#${profile.weekRank} sur ${profile.weekPlayers}` : "aucun ticket réglé"}
-        />
-        <Stat
-          label="Réussite"
-          value={profile.totalBets === 0 ? "—" : `${profile.winRate}%`}
-          hint={
-            profile.totalBets === 0
-              ? "aucun ticket réglé"
-              : `sur ${profile.totalBets} ticket${plural(profile.totalBets)} réglé${plural(profile.totalBets)}`
-          }
-        />
-        <Stat
-          label="Série en cours"
-          value={
-            <span className="flex items-center gap-1.5">
-              {profile.currentStreak >= 3 && <Flame className="h-5 w-5 text-primary" />}
-              {profile.currentStreak}
-            </span>
-          }
-          hint={`record : ${profile.bestStreak}`}
-        />
+        <div className="relative mt-5 grid grid-cols-4 divide-x divide-tint/10 rounded-2xl bg-tint/[0.06] py-3">
+          <HeroStat
+            label="Saison"
+            value={formatSignedPoints(profile.seasonPoints, false)}
+            hint={profile.seasonRank !== null ? `#${profile.seasonRank} sur ${profile.seasonPlayers}` : "non classé"}
+          />
+          <HeroStat
+            label="Semaine"
+            value={formatSignedPoints(profile.weekPoints, false)}
+            hint={profile.weekRank !== null ? `#${profile.weekRank} sur ${profile.weekPlayers}` : "rien de réglé"}
+          />
+          <HeroStat
+            label="Réussite"
+            value={profile.totalBets === 0 ? "—" : `${profile.winRate} %`}
+            hint={profile.totalBets === 0 ? "aucun ticket" : `${profile.totalBets} ticket${plural(profile.totalBets)}`}
+          />
+          <HeroStat
+            label="Série"
+            value={
+              <span className="flex items-center justify-center gap-1">
+                {profile.currentStreak >= 3 && <Flame className="h-4 w-4 text-primary sm:h-5 sm:w-5" />}
+                {profile.currentStreak}
+              </span>
+            }
+            hint={`record ${profile.bestStreak}`}
+          />
+        </div>
       </div>
 
       <PalmaresCard palmares={profile.palmares} />
