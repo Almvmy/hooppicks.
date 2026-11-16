@@ -236,6 +236,7 @@ export function BoxScoreTable({
         team={selected ? teamOf(selected) : null}
         info={selected ? roster.get(normalizePlayerName(selected.playerName)) : undefined}
         shots={shots}
+        matchPlayers={players}
         onOpenChange={(open) => !open && setSelected(null)}
       />
     </div>
