@@ -20,9 +20,11 @@ export function useCashOutQuotes(enabled: boolean): Map<string, CashOutQuote> {
 }
 
 /**
- * « Encaisser 142 pts » sur un ticket en attente, avec une confirmation qui dit ce que ça
- * compte au classement. Rien ne revient sur le solde : seul le bénéfice compte, comme un
- * ticket gagnant. Grisé (avec la raison) quand c'est suspendu, absent quand c'est fini.
+ * « Encaisser +42 pts » sur un ticket en attente, avec une confirmation. Toujours le
+ * bénéfice (valeur encaissée − mise), comme « À gagner » : la mise ne revient jamais sur le
+ * solde, et la valeur brute affichée à côté du bénéfice prévu faisait croire qu'encaisser
+ * rapportait plus que d'aller au bout (6 194 contre +6 163 sur une mise de 700).
+ * Grisé (avec la raison) quand c'est suspendu, absent quand c'est fini.
  */
 export function CashOutButton({ bet, quote, compact }: { bet: PlacedBet; quote: CashOutQuote | undefined; compact?: boolean }) {
   const queryClient = useQueryClient();
@@ -56,15 +58,16 @@ export function CashOutButton({ bet, quote, compact }: { bet: PlacedBet; quote: 
   }
 
   const profit = quote.value - bet.stake;
+  const fullProfit = bet.potentialPayout - bet.stake;
   const Trend = seen.trend > 0 ? ArrowUp : seen.trend < 0 ? ArrowDown : null;
 
   if (confirming) {
     return (
       <div className="glass-inset-quiet flex flex-col gap-2 rounded-xl p-3 text-sm">
         <p>
-          Encaisser <span className="font-mono font-bold">{quote.value.toLocaleString("fr-FR")} pts</span> maintenant ?{" "}
-          <span className={cn("font-semibold", profit >= 0 ? "text-success" : "text-destructive")}>{formatSignedPoints(profit)}</span> au classement,
-          le ticket s&apos;arrête là.
+          Encaisser maintenant :{" "}
+          <span className={cn("font-mono font-bold", profit >= 0 ? "text-success" : "text-destructive")}>{formatSignedPoints(profit)}</span> au
+          classement, au lieu de {formatSignedPoints(fullProfit)} si tout passe. Le ticket s&apos;arrête là.
         </p>
         <div className="flex gap-2">
           <button
@@ -96,7 +99,7 @@ export function CashOutButton({ bet, quote, compact }: { bet: PlacedBet; quote: 
       )}
     >
       <HandCoins className="h-4 w-4" />
-      Encaisser <span className="font-mono tabular-nums">{quote.value.toLocaleString("fr-FR")} pts</span>
+      Encaisser <span className="font-mono tabular-nums">{formatSignedPoints(profit)}</span>
       {Trend && <Trend className={cn("h-3.5 w-3.5", seen.trend > 0 ? "text-success" : "text-destructive")} aria-label={seen.trend > 0 ? "en hausse" : "en baisse"} />}
     </button>
   );

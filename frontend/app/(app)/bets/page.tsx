@@ -15,7 +15,7 @@ import { LegState, legState, netResult } from "@/lib/bet-legs";
 import { BetSelection, BetStatus, Match, PlacedBet, PlayerPropMarket } from "@/lib/types";
 import { LiveStatus, liveClockLabel, useLiveMatch, useLiveStatus, withLiveScore } from "@/lib/live";
 import { PLAYER_PROP_MARKETS, isPlayerPropMarket, normalizePlayerName, propStatValue } from "@/lib/player-props";
-import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds } from "@/lib/utils";
+import { cn, formatLongDate, formatMatchDate, formatMatchTime, formatOdds, formatSignedPoints } from "@/lib/utils";
 import { ShareButton } from "@/components/share-button";
 import { CashOutButton, useCashOutQuotes } from "@/components/cash-out";
 import type { CashOutQuote } from "@/lib/api/bets";
@@ -227,12 +227,9 @@ function TicketCard({
           {bet.status === "void" && <span className="text-muted-foreground">Mise rendue</span>}
           {bet.status === "cashed_out" && (
             <span className="text-muted-foreground">
-              Encaissé {bet.potentialPayout.toLocaleString("fr-FR")}
-              {bet.cashedOutFrom ? ` sur ${bet.cashedOutFrom.toLocaleString("fr-FR")}` : ""} pts ·{" "}
-              <span className={cn("font-mono font-bold", net >= 0 ? "text-success" : "text-destructive")}>
-                {net >= 0 ? "+" : "−"}
-                {Math.abs(net).toLocaleString("fr-FR")} pts
-              </span>
+              Encaissé{" "}
+              <span className={cn("font-mono font-bold", net >= 0 ? "text-success" : "text-destructive")}>{formatSignedPoints(net)}</span>
+              {bet.cashedOutFrom ? ` au lieu de ${formatSignedPoints(bet.cashedOutFrom - bet.stake)}` : ""}
             </span>
           )}
         </div>
