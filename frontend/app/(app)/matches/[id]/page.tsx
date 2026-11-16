@@ -20,14 +20,11 @@ import { MatchDetailTabs } from "@/components/match-detail-tabs";
 import { MyBetChip } from "@/components/my-bet-chip";
 import { FollowMatchButton } from "@/components/follow-match-button";
 
-/** Une équipe de l'affiche : logo, nom, bilan de la saison, absents. Grisée si elle a perdu. */
+/** Une équipe de l'affiche : logo, nom, bilan de la saison, absents. Jamais grisée : seul le score du perdant l'est. */
 function HeroTeam({ match, side, rank }: { match: Match; side: "away" | "home"; rank: TeamRank | undefined }) {
   const team = side === "away" ? match.awayTeam : match.homeTeam;
-  const mine = side === "away" ? match.awayScore : match.homeScore;
-  const theirs = side === "away" ? match.homeScore : match.awayScore;
-  const lost = match.status === "finished" && (mine ?? 0) < (theirs ?? 0);
   return (
-    <div className={cn("flex min-w-0 flex-col items-center gap-1.5 text-center", lost && "opacity-60")}>
+    <div className="flex min-w-0 flex-col items-center gap-1.5 text-center">
       <MorphingTeamLogo morphName={teamLogoMorphName(match.id, side)} abbreviation={team.abbreviation} logoUrl={team.logoUrl} size={56} />
       {/* Sigle sur téléphone : avec le score en grand, « Timberwolves » ne tenait plus. */}
       <span className="max-w-full truncate font-heading text-base font-bold leading-tight">
