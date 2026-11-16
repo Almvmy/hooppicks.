@@ -52,6 +52,48 @@ const LEG_DISPLAY: Record<LegState, { icon: React.ElementType; label: string; cl
   upcoming: { icon: Clock, label: "À venir", className: "bg-tint/10 text-muted-foreground" },
   unknown: { icon: Clock, label: "", className: "hidden" },
 };
+// Fond de la ligne et segment de la barre d'un combiné, par état de la sélection.
+const ROW_TINT: Partial<Record<LegState, string>> = {
+  won: "bg-success/[0.07]",
+  lost: "bg-destructive/[0.07]",
+};
+const SEGMENT: Record<LegState, string> = {
+  won: "bg-success",
+  push: "bg-muted-foreground/50",
+  lost: "bg-destructive",
+  winning: "bg-success/45",
+  losing: "bg-destructive/45",
+  level: "bg-tint/25",
+  upcoming: "bg-tint/15",
+  unknown: "bg-tint/15",
+};
+
+/** Le résultat du ticket, en grand : ce que le joueur cherche en ouvrant Mes paris. */
+function TicketOutcome({ bet, net }: { bet: PlacedBet; net: number }) {
+  const [label, value, tone, sub] =
+    bet.status === "pending"
+      ? ["À gagner", formatSignedPoints(bet.potentialPayout - bet.stake), "text-foreground", null]
+      : bet.status === "won"
+        ? ["Gagné", formatSignedPoints(net), "text-success", null]
+        : bet.status === "lost"
+          ? ["Perdu", formatSignedPoints(-bet.stake), "text-destructive", null]
+          : bet.status === "void"
+            ? ["Remboursé", "0 pts", "text-muted-foreground", "mise rendue"]
+            : [
+                "Encaissé",
+                formatSignedPoints(net),
+                net >= 0 ? "text-success" : "text-destructive",
+                bet.cashedOutFrom ? `au lieu de ${formatSignedPoints(bet.cashedOutFrom - bet.stake)}` : null,
+              ];
+  return (
+    <div className="flex flex-col items-end text-right">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn("font-heading text-2xl font-bold tabular-nums leading-tight", tone)}>{value}</span>
+      {sub && <span className="text-[11px] text-muted-foreground">{sub}</span>}
+    </div>
+  );
+}
+
 // Ticket remboursé (égalité ou annulation par un admin) : ses sélections ne
 // comptent plus, quel que soit le résultat du match.
 const CANCELLED_DISPLAY = { icon: Undo2, label: "Annulée", className: "bg-tint/10 text-muted-foreground" };
@@ -121,7 +163,7 @@ function SelectionRow({
     // Toute la ligne mène au match du pari (score, direct, vidéo).
     <Link
       href={`/matches/${selection.matchId}`}
-      className="-mx-2 flex items-center justify-between gap-3 rounded-xl px-2 py-1 transition-colors hover:bg-tint/5"
+      className={cn("-mx-2 flex items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-tint/5", !cancelled && ROW_TINT[state])}
     >
       <div className="flex min-w-0 items-center gap-3">
         <SelectionTeamLogo selection={selection} matchesById={matchesById} size={32} />
@@ -196,42 +238,25 @@ function TicketCard({
 
         {bet.status === "pending" && isParlay && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tint/10">
-              <div
-                className="h-full rounded-full bg-success transition-[width] duration-700"
-                style={{ width: `${(settledWins / bet.selections.length) * 100}%` }}
-              />
+            <div className="flex h-1.5 flex-1 gap-1" aria-hidden>
+              {states.map((s, i) => (
+                <span key={i} className={cn("flex-1 rounded-full transition-colors duration-700", SEGMENT[s])} />
+              ))}
             </div>
             {settledWins}/{bet.selections.length} validée{settledWins > 1 ? "s" : ""}
           </div>
         )}
 
-        <div className="glass-hairline-t flex flex-wrap items-center justify-between gap-2 pt-3 text-sm">
-          <span className="text-muted-foreground">
-            Mise <span className="font-mono text-foreground">{bet.stake.toLocaleString("fr-FR")}</span> pts · cote{" "}
-            <span className="font-mono text-foreground">{formatOdds(bet.totalOdds)}</span>
-          </span>
-          {bet.status === "pending" && (
-            <span className="text-muted-foreground">
-              À gagner <span className="font-mono font-bold text-foreground">+{(bet.potentialPayout - bet.stake).toLocaleString("fr-FR")} pts</span>
+        <div className="glass-hairline-t flex items-end justify-between gap-3 pt-3">
+          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+            <span>
+              Mise <span className="font-mono font-bold text-foreground">{bet.stake.toLocaleString("fr-FR")} pts</span>
             </span>
-          )}
-          {bet.status === "won" && (
-            <span className="font-mono font-bold text-success">
-              +{net.toLocaleString("fr-FR")} pts
+            <span>
+              Cote <span className="font-mono font-bold text-foreground">{formatOdds(bet.totalOdds)}</span>
             </span>
-          )}
-          {bet.status === "lost" && (
-            <span className="font-mono font-bold text-destructive">−{bet.stake.toLocaleString("fr-FR")} pts</span>
-          )}
-          {bet.status === "void" && <span className="text-muted-foreground">Mise rendue</span>}
-          {bet.status === "cashed_out" && (
-            <span className="text-muted-foreground">
-              Encaissé{" "}
-              <span className={cn("font-mono font-bold", net >= 0 ? "text-success" : "text-destructive")}>{formatSignedPoints(net)}</span>
-              {bet.cashedOutFrom ? ` au lieu de ${formatSignedPoints(bet.cashedOutFrom - bet.stake)}` : ""}
-            </span>
-          )}
+          </div>
+          <TicketOutcome bet={bet} net={net} />
         </div>
         {bet.status === "pending" && <CashOutButton bet={bet} quote={quote} />}
         {/* Seuls les tickets gagnants se partagent : c'est ce qu'on a envie de montrer. */}
